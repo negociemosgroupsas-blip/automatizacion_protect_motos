@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Protect Motos — Sistema de Cobros</title>
+<style>
+  :root{
+    --azul:#13223f;
+    --azul-claro:#1c3050;
+    --dorado:#d6a417;
+    --dorado-claro:#f0c94a;
+    --fondo:#f4f5f7;
+    --tarjeta:#ffffff;
+    --texto:#1f2430;
+    --texto-suave:#6b7280;
+    --borde:#e3e6eb;
+    --verde:#1f9d55;
+    --verde-bg:#e7f8ee;
+    --naranja:#d97706;
+    --naranja-bg:#fff3e0;
+    --rojo:#dc2626;
+    --rojo-bg:#fdeaea;
+    --azulinfo:#2563eb;
+    --azulinfo-bg:#eaf1fd;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--fondo);
+    color:var(--texto);
+  }
+  header{
+    background:linear-gradient(135deg,var(--azul),var(--azul-claro));
+    color:#fff;
+    padding:18px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  header .marca{display:flex;align-items:center;gap:12px;}
+  header .marca img{height:42px;border-radius:6px;}
+  header h1{font-size:1.25rem;margin:0;font-weight:700;letter-spacing:.3px;}
+  header p{margin:2px 0 0;font-size:.8rem;color:#cbd3e6;}
+  .barra-conector{display:flex;align-items:center;gap:8px;font-size:.8rem;flex-wrap:wrap;}
+  .barra-conector input{
+    background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.3);
+    color:#fff;
+    border-radius:6px;
+    padding:6px 10px;
+    font-size:.78rem;
+    width:300px;
+    max-width:60vw;
+  }
+  .barra-conector input::placeholder{color:#c3cae0;}
+  .btn{
+    border:none;
+    border-radius:8px;
+    padding:8px 14px;
+    font-size:.85rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:filter .15s;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn:active{filter:brightness(.95);}
+  .btn-oro{background:var(--dorado);color:var(--azul);}
+  .btn-azul{background:var(--azul);color:#fff;}
+  .btn-verde{background:var(--verde);color:#fff;}
+  .btn-rojo{background:var(--rojo);color:#fff;}
+  .btn-gris{background:#eceef1;color:var(--texto);}
+  .btn-sm{padding:5px 10px;font-size:.75rem;border-radius:6px;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  main{padding:20px;max-width:1400px;margin:0 auto;}
+
+  .estado-conexion{
+    font-size:.78rem;
+    padding:8px 12px;
+    border-radius:8px;
+    margin-bottom:16px;
+    display:none;
+  }
+  .estado-conexion.ok{display:block;background:var(--verde-bg);color:var(--verde);}
+  .estado-conexion.error{display:block;background:var(--rojo-bg);color:var(--rojo);}
+  .estado-conexion.cargando{display:block;background:var(--azulinfo-bg);color:var(--azulinfo);}
+
+  .contadores{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:12px;
+    margin-bottom:24px;
+  }
+  .tarjeta-contador{
+    background:var(--tarjeta);
+    border-radius:12px;
+    padding:14px 16px;
+    border:1px solid var(--borde);
+    box-shadow:0 1px 2px rgba(0,0,0,.03);
+  }
+  .tarjeta-contador .valor{font-size:1.5rem;font-weight:800;color:var(--azul);}
+  .tarjeta-contador .etiqueta{font-size:.72rem;color:var(--texto-suave);margin-top:2px;text-transform:uppercase;letter-spacing:.4px;}
+  .tarjeta-contador.destacado .valor{color:var(--dorado);}
+  .tarjeta-contador.alerta .valor{color:var(--rojo);}
+
+  section.panel{
+    background:var(--tarjeta);
+    border-radius:14px;
+    border:1px solid var(--borde);
+    margin-bottom:22px;
+    overflow:hidden;
+  }
+  section.panel > .cabecera{
+    padding:14px 18px;
+    border-bottom:1px solid var(--borde);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  section.panel > .cabecera h2{margin:0;font-size:1.02rem;color:var(--azul);}
+  section.panel > .cabecera .sub{font-size:.78rem;color:var(--texto-suave);}
+  .contenido-panel{padding:14px 18px;}
+
+  table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  thead th{
+    text-align:left;
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+    color:var(--texto-suave);
+    padding:8px 10px;
+    border-bottom:2px solid var(--borde);
+    white-space:nowrap;
+  }
+  tbody td{padding:9px 10px;border-bottom:1px solid var(--borde);vertical-align:middle;}
+  tbody tr:hover{background:#fafbfc;}
+  .acciones-fila{display:flex;gap:6px;flex-wrap:wrap;}
+
+  .semaforo{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:3px 9px;
+    border-radius:999px;
+    font-size:.72rem;
+    font-weight:700;
+    white-space:nowrap;
+  }
+  .semaforo.verde{background:var(--verde-bg);color:var(--verde);}
+  .semaforo.naranja{background:var(--naranja-bg);color:var(--naranja);}
+  .semaforo.rojo{background:var(--rojo-bg);color:var(--rojo);}
+  .semaforo.finalizado{background:#e9e9ef;color:#4b4f5a;}
+  .semaforo .punto{width:8px;height:8px;border-radius:50%;background:currentColor;}
+
+  .vacio{padding:26px;text-align:center;color:var(--texto-suave);font-size:.85rem;}
+
+  .caja-busqueda{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  .caja-busqueda input{
+    flex:1;
+    min-width:220px;
+    padding:9px 12px;
+    border-radius:8px;
+    border:1px solid var(--borde);
+    font-size:.85rem;
+  }
+
+  .ficha-cliente{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:10px;
+    margin-bottom:16px;
+    padding:14px;
+    background:#f8f9fb;
+    border-radius:10px;
+  }
+  .ficha-cliente .campo .etiqueta{font-size:.68rem;text-transform:uppercase;color:var(--texto-suave);letter-spacing:.3px;}
+  .ficha-cliente .campo .valor{font-size:.9rem;font-weight:600;color:var(--texto);}
+
+  .modal-fondo{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(19,34,63,.55);
+    align-items:center;justify-content:center;
+    z-index:100;
+    padding:16px;
+  }
+  .modal-fondo.abierto{display:flex;}
+  .modal{
+    background:#fff;
+    border-radius:14px;
+    width:100%;
+    max-width:420px;
+    padding:20px;
+    max-height:90vh;
+    overflow-y:auto;
+  }
+  .modal h3{margin:0 0 4px;color:var(--azul);}
+  .modal .sub{font-size:.8rem;color:var(--texto-suave);margin-bottom:14px;}
+  .campo-form{margin-bottom:12px;}
+  .campo-form label{display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--texto);}
+  .campo-form input, .campo-form select, .campo-form textarea{
+    width:100%;
+    padding:9px 10px;
+    border-radius:8px;
+    border:1px solid var(--borde);
+    font-size:.85rem;
+    font-family:inherit;
+  }
+  .modal-acciones{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+  .msg-modal{font-size:.8rem;padding:8px 10px;border-radius:8px;margin-top:10px;display:none;}
+  .msg-modal.ok{display:block;background:var(--verde-bg);color:var(--verde);}
+  .msg-modal.error{display:block;background:var(--rojo-bg);color:var(--rojo);}
+
+  footer{text-align:center;padding:20px;color:var(--texto-suave);font-size:.75rem;}
+
+  @media (max-width:640px){
+    header{padding:14px 16px;}
+    .barra-conector input{width:100%;max-width:100%;}
+    main{padding:12px;}
+    table, thead, tbody, th, td, tr{display:block;}
+    thead{display:none;}
+    tbody tr{
+      border:1px solid var(--borde);
+      border-radius:10px;
+      margin-bottom:10px;
+      padding:8px 10px;
+    }
+    tbody td{border:none;padding:5px 2px;display:flex;justify-content:space-between;gap:10px;}
+    tbody td::before{content:attr(data-etiqueta);font-weight:700;color:var(--texto-suave);font-size:.7rem;text-transform:uppercase;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marca">
+    <div>
+      <h1>Protect Motos · Sistema de Cobros</h1>
+      <p>Garantía suplementaria para motos — Medellín</p>
+    </div>
+  </div>
+  <div class="barra-conector">
+    <input type="text" id="inputUrlConector" placeholder="Pega aquí la URL del conector (Apps Script)">
+    <button class="btn btn-oro" id="btnGuardarUrl">Guardar</button>
+    <button class="btn btn-azul" id="btnRecargar">Actualizar datos</button>
+  </div>
+</header>
+
+<main>
+  <div class="estado-conexion" id="estadoConexion"></div>
+
+  <div class="contadores">
+    <div class="tarjeta-contador"><div class="valor" id="cActivos">–</div><div class="etiqueta">Activos</div></div>
+    <div class="tarjeta-contador"><div class="valor" id="cCancelados">–</div><div class="etiqueta">Cancelados</div></div>
+    <div class="tarjeta-contador"><div class="valor" id="cFinalizados">–</div><div class="etiqueta">Finalizados</div></div>
+    <div class="tarjeta-contador destacado"><div class="valor" id="cPendientesHoy">–</div><div class="etiqueta">Pendientes de cobro hoy</div></div>
+    <div class="tarjeta-contador destacado"><div class="valor" id="cTotalPendiente">–</div><div class="etiqueta">Total pendiente por cobrar</div></div>
+    <div class="tarjeta-contador alerta"><div class="valor" id="cRenovar">–</div><div class="etiqueta">Pólizas por renovar (≤8 días)</div></div>
+  </div>
+
+  <section class="panel">
+    <div class="cabecera">
+      <h2>Cobros de hoy / pendientes</h2>
+      <span class="sub">Solo clientes financiados y activos con cuota pendiente</span>
+    </div>
+    <div class="contenido-panel">
+      <table id="tablaCobros">
+        <thead>
+          <tr>
+            <th>Cliente</th><th>Placa</th><th>Contrato</th><th>Cuota</th>
+            <th>Valor</th><th>Atraso</th><th>Estado</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpoCobros"></tbody>
+      </table>
+      <div class="vacio" id="vacioCobros" style="display:none;">No hay datos cargados todavía.</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="cabecera">
+      <h2>Por renovar</h2>
+      <span class="sub">Vence en 8 días o menos (contado y financiado)</span>
+    </div>
+    <div class="contenido-panel">
+      <table id="tablaRenovar">
+        <thead>
+          <tr><th>Cliente</th><th>Placa</th><th>Contrato</th><th>Vence</th><th>Días</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="cuerpoRenovar"></tbody>
+      </table>
+      <div class="vacio" id="vacioRenovar" style="display:none;">No hay pólizas próximas a vencer.</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="cabecera">
+      <h2>Historial del cliente</h2>
+      <span class="sub">Busca por cédula, N° de contrato o placa</span>
+    </div>
+    <div class="contenido-panel">
+      <div class="caja-busqueda">
+        <input type="text" id="inputBusqueda" placeholder="Cédula, contrato o placa...">
+        <button class="btn btn-azul btn-sm" id="btnBuscar">Buscar</button>
+      </div>
+      <div id="resultadoHistorial"></div>
+    </div>
+  </section>
+</main>
+
+<footer>Protect Motos © <span id="anioActual"></span> — Panel interno de cobros</footer>
+
+<!-- MODAL: registrar pago -->
+<div class="modal-fondo" id="modalPago">
+  <div class="modal">
+    <h3>Registrar pago</h3>
+    <div class="sub" id="pagoContexto"></div>
+    <input type="hidden" id="pagoContrato">
+    <input type="hidden" id="pagoCedula">
+    <input type="hidden" id="pagoCliente">
+    <div class="campo-form">
+      <label>N° de cuota (ej: 5, o "4 a 6" si paga varias)</label>
+      <input type="text" id="pagoCuota">
+    </div>
+    <div class="campo-form">
+      <label>Valor pagado</label>
+      <input type="number" id="pagoValor" min="1" step="1">
+    </div>
+    <div class="campo-form">
+      <label>Fecha de pago</label>
+      <input type="date" id="pagoFecha">
+    </div>
+    <div class="campo-form">
+      <label>Comprobante / nota</label>
+      <textarea id="pagoNota" rows="2" placeholder="N° de comprobante, observación..."></textarea>
+    </div>
+    <div class="campo-form">
+      <label>Registrado por</label>
+      <input type="text" id="pagoRegistradoPor" placeholder="Tu nombre">
+    </div>
+    <div class="msg-modal" id="msgPago"></div>
+    <div class="modal-acciones">
+      <button class="btn btn-gris" id="btnCancelarPago">Cancelar</button>
+      <button class="btn btn-verde" id="btnGuardarPago">Guardar pago</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: cancelar cliente -->
+<div class="modal-fondo" id="modalCancelar">
+  <div class="modal">
+    <h3>Cancelar cliente</h3>
+    <div class="sub" id="cancelarContexto"></div>
+    <p style="font-size:.85rem;">Esto marcará el estado del cliente como <strong>CANCELADO</strong> y dejará de aparecer en cobros. Esta acción se puede revertir manualmente desde la hoja si te equivocas.</p>
+    <input type="hidden" id="cancelarContrato">
+    <div class="msg-modal" id="msgCancelar"></div>
+    <div class="modal-acciones">
+      <button class="btn btn-gris" id="btnCerrarCancelar">Volver</button>
+      <button class="btn btn-rojo" id="btnConfirmarCancelar">Sí, cancelar cliente</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ==================== CONFIGURACIÓN ====================
+  var TOKEN = 'PM-COBROS-2026';
+  var CLAVE_URL = 'pm_cobros_url_conector';
+  var UMBRAL_DIAS_ROJO = 5; // días de atraso para pasar de naranja a rojo
+  var DIAS_AVISO_RENOVACION = 8;
+  var TIMEOUT_JSONP_MS = 15000;
+
+  var estado = {
+    contratos: [],
+    pagos: [],
+    urlConector: localStorage.getItem(CLAVE_URL) || ''
+  };
+
+  // ==================== UTILIDADES DE FECHA / DINERO ====================
+  function hoy(){
+    var d = new Date();
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function parsearISO(iso){
+    if(!iso) return null;
+    var partes = iso.split('-');
+    if(partes.length!==3) return null;
+    var d = new Date(Number(partes[0]), Number(partes[1])-1, Number(partes[2]));
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function formatoFechaCO(d){
+    if(!d) return '—';
+    return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
+  }
+
+  function formatoFechaInput(d){
+    if(!d) return '';
+    var m = ('0'+(d.getMonth()+1)).slice(-2);
+    var dd = ('0'+d.getDate()).slice(-2);
+    return d.getFullYear()+'-'+m+'-'+dd;
+  }
+
+  function formatoDinero(valor){
+    valor = Math.round(Number(valor)||0);
+    var texto = valor.toString();
+    var signo = '';
+    if(texto[0]==='-'){ signo='-'; texto = texto.slice(1); }
+    var conPuntos = texto.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+    return '$'+signo+conPuntos;
+  }
+
+  function addMonths(date, n){
+    var d = new Date(date.getFullYear(), date.getMonth()+n, 1);
+    var ultimoDia = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+    d.setDate(Math.min(date.getDate(), ultimoDia));
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function diferenciaDias(a,b){
+    return Math.round((a.getTime()-b.getTime())/86400000);
+  }
+
+  function extraerNumerosCuota(texto){
+    texto = String(texto||'').trim();
+    var numeros = [];
+    var rangoTexto = texto.match(/^(\d+)\s*a\s*(\d+)$/i);
+    if(rangoTexto){
+      var x=parseInt(rangoTexto[1],10), y=parseInt(rangoTexto[2],10);
+      for(var k=x;k<=y;k++) numeros.push(k);
+      return numeros;
+    }
+    var partes = texto.replace(/,/g,' ').split(/\s+/).filter(function(p){return p!=='';});
+    for(var i=0;i<partes.length;i++){
+      var parte = partes[i];
+      var rango = parte.match(/^(\d+)-(\d+)$/);
+      if(rango){
+        var a=parseInt(rango[1],10), b=parseInt(rango[2],10);
+        for(var n=a;n<=b;n++) numeros.push(n);
+      } else if(/^\d+$/.test(parte)){
+        numeros.push(parseInt(parte,10));
+      }
+    }
+    return numeros;
+  }
+
+  // ==================== JSONP ====================
+  var contadorJsonp = 0;
+  function llamarConector(params){
+    return new Promise(function(resolve, reject){
+      if(!estado.urlConector){
+        reject(new Error('Primero guarda la URL del conector.'));
+        return;
+      }
+      contadorJsonp++;
+      var nombreCallback = 'pm_cb_'+Date.now()+'_'+contadorJsonp;
+      var script = document.createElement('script');
+      var terminado = false;
+
+      var temporizador = setTimeout(function(){
+        if(terminado) return;
+        terminado = true;
+        limpiar();
+        reject(new Error('El conector no respondió a tiempo. Revisa la URL o tu conexión.'));
+      }, TIMEOUT_JSONP_MS);
+
+      function limpiar(){
+        clearTimeout(temporizador);
+        delete window[nombreCallback];
+        if(script.parentNode) script.parentNode.removeChild(script);
+      }
+
+      window[nombreCallback] = function(respuesta){
+        if(terminado) return;
+        terminado = true;
+        limpiar();
+        resolve(respuesta);
+      };
+
+      script.onerror = function(){
+        if(terminado) return;
+        terminado = true;
+        limpiar();
+        reject(new Error('No se pudo contactar el conector. Revisa la URL.'));
+      };
+
+      var query = 'token='+encodeURIComponent(TOKEN)+'&callback='+nombreCallback;
+      Object.keys(params||{}).forEach(function(clave){
+        query += '&'+encodeURIComponent(clave)+'='+encodeURIComponent(params[clave]);
+      });
+
+      var separador = estado.urlConector.indexOf('?')===-1 ? '?' : '&';
+      script.src = estado.urlConector + separador + query;
+      document.body.appendChild(script);
+    });
+  }
+
+  // ==================== ESTADO DE CONEXIÓN (UI) ====================
+  var elEstadoConexion = document.getElementById('estadoConexion');
+  function mostrarEstado(tipo, texto){
+    elEstadoConexion.className = 'estado-conexion '+tipo;
+    elEstadoConexion.textContent = texto;
+  }
+
+  // ==================== CARGA DE DATOS ====================
+  function cargarDatos(){
+    mostrarEstado('cargando','Cargando datos desde Google Sheets...');
+    return llamarConector({action:'datos'}).then(function(resp){
+      if(!resp.ok){
+        mostrarEstado('error', resp.error || 'Error desconocido al cargar datos.');
+        return;
+      }
+      estado.contratos = resp.contratos || [];
+      estado.pagos = resp.pagos || [];
+      mostrarEstado('ok', 'Datos actualizados · '+estado.contratos.length+' contratos · '+estado.pagos.length+' pagos registrados.');
+      renderizarTodo();
+    }).catch(function(err){
+      mostrarEstado('error', err.message);
+    });
+  }
+
+  // ==================== LÓGICA DE NEGOCIO ====================
+  function construirMapaPagos(){
+    var mapa = {}; // contrato -> {cuotasPagadas:Set, totalPagado:number, pagos:[]}
+    estado.pagos.forEach(function(p){
+      if(!mapa[p.contrato]){
+        mapa[p.contrato] = { cuotasPagadas: {}, totalPagado:0, pagos:[] };
+      }
+      var registro = mapa[p.contrato];
+      registro.totalPagado += Number(p.valorPagado)||0;
+      registro.pagos.push(p);
+      extraerNumerosCuota(p.cuota).forEach(function(n){ registro.cuotasPagadas[n]=true; });
+    });
+    return mapa;
+  }
+
+  function calcularEstadoCuotas(contrato, mapaPagos){
+    var registro = mapaPagos[contrato.contrato] || {cuotasPagadas:{}, totalPagado:0, pagos:[]};
+    var pagadasSet = registro.cuotasPagadas;
+    var numPagadas = Object.keys(pagadasSet).length;
+    var plazo = contrato.plazo || 0;
+    var faltantes = Math.max(0, plazo - numPagadas);
+    var saldo = faltantes * (contrato.valorCuota||0);
+
+    var cuotaPendiente = null;
+    if(contrato.forma==='FINANCIADO' && contrato.fechaFirmaISO && plazo>0){
+      var firma = parsearISO(contrato.fechaFirmaISO);
+      var hoyD = hoy();
+      for(var n=1;n<=plazo;n++){
+        if(pagadasSet[n]) continue;
+        var vence = addMonths(firma, n);
+        if(vence.getTime() <= hoyD.getTime()){
+          cuotaPendiente = { numero:n, fechaVence:vence, diasAtraso: diferenciaDias(hoyD, vence) };
+          break;
+        } else {
+          break; // la próxima cuota aún no vence: no hay pendiente todavía
+        }
+      }
+    }
+
+    return {
+      cuotasPagadas: numPagadas,
+      faltantes: faltantes,
+      saldo: saldo,
+      totalPagado: registro.totalPagado,
+      pagos: registro.pagos,
+      cuotaPendiente: cuotaPendiente,
+      completado: plazo>0 && numPagadas>=plazo
+    };
+  }
+
+  function semaforoDe(contrato, infoCuotas){
+    if(contrato.estado==='FINALIZADO' || infoCuotas.completado){
+      return {clase:'finalizado', texto:'Finalizado'};
+    }
+    if(!infoCuotas.cuotaPendiente){
+      return {clase:'verde', texto:'Al día'};
+    }
+    var dias = infoCuotas.cuotaPendiente.diasAtraso;
+    if(dias >= UMBRAL_DIAS_ROJO) return {clase:'rojo', texto:'Atrasado ('+dias+'d)'};
+    if(dias >= 0) return {clase:'naranja', texto: dias===0 ? 'Cobrar hoy' : 'Atraso leve ('+dias+'d)'};
+    return {clase:'verde', texto:'Al día'};
+  }
+
+  // Marca automáticamente como FINALIZADO en el servidor si ya pagó todo y sigue ACTIVO
+  function sincronizarFinalizados(mapaPagos){
+    var pendientesDeMarcar = [];
+    estado.contratos.forEach(function(c){
+      if(c.forma!=='FINANCIADO' || c.estado!=='ACTIVO') return;
+      var info = calcularEstadoCuotas(c, mapaPagos);
+      if(info.completado) pendientesDeMarcar.push(c.contrato);
+    });
+    if(pendientesDeMarcar.length===0) return Promise.resolve();
+    var promesas = pendientesDeMarcar.map(function(contratoId){
+      return llamarConector({action:'estado', contrato:contratoId, nuevoEstado:'FINALIZADO'}).catch(function(){});
+    });
+    return Promise.all(promesas).then(function(){
+      pendientesDeMarcar.forEach(function(id){
+        var c = estado.contratos.find(function(x){return x.contrato===id;});
+        if(c) c.estado='FINALIZADO';
+      });
+    });
+  }
+
+  // ==================== RENDERIZADO ====================
+  function renderizarTodo(){
+    var mapaPagos = construirMapaPagos();
+    sincronizarFinalizados(mapaPagos).then(function(){
+      renderizarContadores(mapaPagos);
+      renderizarCobros(mapaPagos);
+      renderizarRenovaciones();
+    });
+  }
+
+  function renderizarContadores(mapaPagos){
+    var activos=0, cancelados=0, finalizados=0, pendientesHoy=0, totalPendiente=0, porRenovar=0;
+    var hoyD = hoy();
+
+    estado.contratos.forEach(function(c){
+      if(c.estado==='ACTIVO') activos++;
+      else if(c.estado==='CANCELADO') cancelados++;
+      else if(c.estado==='FINALIZADO') finalizados++;
+
+      if(c.forma==='FINANCIADO' && c.estado==='ACTIVO'){
+        var info = calcularEstadoCuotas(c, mapaPagos);
+        if(info.cuotaPendiente){
+          pendientesHoy++;
+          totalPendiente += c.valorCuota||0;
+        }
+      }
+
+      if(c.estado!=='CANCELADO' && c.finISO){
+        var fin = parsearISO(c.finISO);
+        if(fin){
+          var dias = diferenciaDias(fin, hoyD);
+          if(dias<=DIAS_AVISO_RENOVACION) porRenovar++;
+        }
+      }
+    });
+
+    document.getElementById('cActivos').textContent = activos;
+    document.getElementById('cCancelados').textContent = cancelados;
+    document.getElementById('cFinalizados').textContent = finalizados;
+    document.getElementById('cPendientesHoy').textContent = pendientesHoy;
+    document.getElementById('cTotalPendiente').textContent = formatoDinero(totalPendiente);
+    document.getElementById('cRenovar').textContent = porRenovar;
+  }
+
+  function renderizarCobros(mapaPagos){
+    var cuerpo = document.getElementById('cuerpoCobros');
+    var vacio = document.getElementById('vacioCobros');
+    cuerpo.innerHTML='';
+
+    var lista = [];
+    estado.contratos.forEach(function(c){
+      if(c.forma!=='FINANCIADO' || c.estado!=='ACTIVO') return;
+      var info = calcularEstadoCuotas(c, mapaPagos);
+      if(!info.cuotaPendiente) return;
+      lista.push({contrato:c, info:info});
+    });
+
+    lista.sort(function(a,b){ return b.info.cuotaPendiente.diasAtraso - a.info.cuotaPendiente.diasAtraso; });
+
+    if(lista.length===0){
+      vacio.style.display='block';
+      vacio.textContent = estado.contratos.length ? 'No hay cobros pendientes en este momento. ¡Vas al día!' : 'No hay datos cargados todavía.';
+      return;
+    }
+    vacio.style.display='none';
+
+    lista.forEach(function(item){
+      var c = item.contrato, info = item.info;
+      var sem = semaforoDe(c, info);
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td data-etiqueta="Cliente"><strong>'+escapeHtml(c.cliente)+'</strong><br><span style="color:var(--texto-suave);font-size:.75rem;">'+escapeHtml(c.cedula)+'</span></td>'+
+        '<td data-etiqueta="Placa">'+escapeHtml(c.placa)+'</td>'+
+        '<td data-etiqueta="Contrato">'+escapeHtml(c.contrato)+'</td>'+
+        '<td data-etiqueta="Cuota">#'+info.cuotaPendiente.numero+' de '+c.plazo+'</td>'+
+        '<td data-etiqueta="Valor">'+formatoDinero(c.valorCuota)+'</td>'+
+        '<td data-etiqueta="Atraso">'+(info.cuotaPendiente.diasAtraso===0?'Hoy':info.cuotaPendiente.diasAtraso+' día(s)')+'</td>'+
+        '<td data-etiqueta="Estado"><span class="semaforo '+sem.clase+'"><span class="punto"></span>'+sem.texto+'</span></td>'+
+        '<td data-etiqueta="Acciones"><div class="acciones-fila">'+
+          '<button class="btn btn-verde btn-sm" data-accion="whatsapp-cobro">WhatsApp</button>'+
+          '<button class="btn btn-azul btn-sm" data-accion="registrar-pago">Registrar pago</button>'+
+          '<button class="btn btn-rojo btn-sm" data-accion="cancelar">Cancelar</button>'+
+        '</div></td>';
+
+      tr.querySelector('[data-accion="whatsapp-cobro"]').addEventListener('click', function(){
+        abrirWhatsAppCobro(c, info);
+      });
+      tr.querySelector('[data-accion="registrar-pago"]').addEventListener('click', function(){
+        abrirModalPago(c, info);
+      });
+      tr.querySelector('[data-accion="cancelar"]').addEventListener('click', function(){
+        abrirModalCancelar(c);
+      });
+
+      cuerpo.appendChild(tr);
+    });
+  }
+
+  function renderizarRenovaciones(){
+    var cuerpo = document.getElementById('cuerpoRenovar');
+    var vacio = document.getElementById('vacioRenovar');
+    cuerpo.innerHTML='';
+
+    var hoyD = hoy();
+    var lista = [];
+    estado.contratos.forEach(function(c){
+      if(c.estado==='CANCELADO' || !c.finISO) return;
+      var fin = parsearISO(c.finISO);
+      if(!fin) return;
+      var dias = diferenciaDias(fin, hoyD);
+      if(dias<=DIAS_AVISO_RENOVACION){
+        lista.push({contrato:c, fin:fin, dias:dias});
+      }
+    });
+
+    lista.sort(function(a,b){ return a.dias-b.dias; });
+
+    if(lista.length===0){
+      vacio.style.display='block';
+      return;
+    }
+    vacio.style.display='none';
+
+    lista.forEach(function(item){
+      var c = item.contrato;
+      var etiquetaDias = item.dias<0 ? ('Vencido hace '+Math.abs(item.dias)+'d') : (item.dias===0?'Vence hoy':item.dias+' día(s)');
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td data-etiqueta="Cliente"><strong>'+escapeHtml(c.cliente)+'</strong></td>'+
+        '<td data-etiqueta="Placa">'+escapeHtml(c.placa)+'</td>'+
+        '<td data-etiqueta="Contrato">'+escapeHtml(c.contrato)+'</td>'+
+        '<td data-etiqueta="Vence">'+formatoFechaCO(item.fin)+'</td>'+
+        '<td data-etiqueta="Días"><span class="semaforo '+(item.dias<0?'rojo':item.dias<=3?'naranja':'verde')+'"><span class="punto"></span>'+etiquetaDias+'</span></td>'+
+        '<td data-etiqueta="Acciones"><button class="btn btn-verde btn-sm" data-accion="whatsapp-renovar">WhatsApp</button></td>';
+
+      tr.querySelector('[data-accion="whatsapp-renovar"]').addEventListener('click', function(){
+        abrirWhatsAppRenovacion(c, item.fin);
+      });
+
+      cuerpo.appendChild(tr);
+    });
+  }
+
+  function escapeHtml(texto){
+    var div = document.createElement('div');
+    div.textContent = texto==null?'':String(texto);
+    return div.innerHTML;
+  }
+
+  // ==================== WHATSAPP ====================
+  function numeroWhatsApp(celular){
+    var digitos = String(celular||'').replace(/\D/g,'');
+    if(digitos.indexOf('57')===0 && digitos.length>10) return digitos;
+    return '57'+digitos;
+  }
+
+  function abrirWhatsAppCobro(c, info){
+    var mensaje =
+      'Hola, '+c.cliente+' 😊\n'+
+      'Te escribimos de Protect Motos para recordarte que tienes pendiente la cuota #'+info.cuotaPendiente.numero+' de tu contrato.\n\n'+
+      'Valor de la cuota: '+formatoDinero(c.valorCuota)+'\n'+
+      'Fecha de pago: '+formatoFechaCO(info.cuotaPendiente.fechaVence)+'\n\n'+
+      'Cuando realices el pago, por favor envíanos el comprobante por este medio para poder registrarlo.\n\n'+
+      '¡Muchas gracias! 💙💛';
+    var url = 'https://wa.me/'+numeroWhatsApp(c.celular)+'?text='+encodeURIComponent(mensaje);
+    window.open(url,'_blank');
+  }
+
+  function abrirWhatsAppRenovacion(c, fechaFin){
+    var mensaje =
+      'Hola, '+c.cliente+' 😊\n'+
+      'Te escribimos de Protect Motos porque tu garantía suplementaria para tu moto de placa '+c.placa+' está por vencer el '+formatoFechaCO(fechaFin)+'.\n\n'+
+      'Queremos ayudarte a renovarla a tiempo para que sigas protegido sin interrupciones.\n\n'+
+      '¿Quieres que te contemos las opciones de renovación? 💙💛';
+    var url = 'https://wa.me/'+numeroWhatsApp(c.celular)+'?text='+encodeURIComponent(mensaje);
+    window.open(url,'_blank');
+  }
+
+  // ==================== MODAL: REGISTRAR PAGO ====================
+  var modalPago = document.getElementById('modalPago');
+  var contratoEnPago = null;
+
+  function abrirModalPago(c, info){
+    contratoEnPago = c;
+    document.getElementById('pagoContexto').textContent = c.cliente+' · Contrato '+c.contrato+' · Placa '+c.placa;
+    document.getElementById('pagoContrato').value = c.contrato;
+    document.getElementById('pagoCedula').value = c.cedula;
+    document.getElementById('pagoCliente').value = c.cliente;
+    document.getElementById('pagoCuota').value = info && info.cuotaPendiente ? info.cuotaPendiente.numero : '';
+    document.getElementById('pagoValor').value = c.valorCuota || '';
+    document.getElementById('pagoFecha').value = formatoFechaInput(new Date());
+    document.getElementById('pagoNota').value = '';
+    var registradoPrevio = localStorage.getItem('pm_cobros_registrado_por')||'';
+    document.getElementById('pagoRegistradoPor').value = registradoPrevio;
+    document.getElementById('msgPago').className='msg-modal';
+    document.getElementById('msgPago').textContent='';
+    modalPago.classList.add('abierto');
+  }
+
+  function cerrarModalPago(){
+    modalPago.classList.remove('abierto');
+    contratoEnPago = null;
+  }
+
+  document.getElementById('btnCancelarPago').addEventListener('click', cerrarModalPago);
+
+  document.getElementById('btnGuardarPago').addEventListener('click', function(){
+    var contrato = document.getElementById('pagoContrato').value;
+    var cedula = document.getElementById('pagoCedula').value;
+    var cliente = document.getElementById('pagoCliente').value;
+    var cuota = document.getElementById('pagoCuota').value.trim();
+    var valor = document.getElementById('pagoValor').value;
+    var fecha = document.getElementById('pagoFecha').value;
+    var nota = document.getElementById('pagoNota').value.trim();
+    var registradoPor = document.getElementById('pagoRegistradoPor').value.trim();
+    var msg = document.getElementById('msgPago');
+
+    if(!cuota){ msg.className='msg-modal error'; msg.textContent='Escribe el número de cuota.'; return; }
+    if(!valor || Number(valor)<=0){ msg.className='msg-modal error'; msg.textContent='El valor debe ser mayor a 0.'; return; }
+    if(!fecha){ msg.className='msg-modal error'; msg.textContent='Selecciona la fecha de pago.'; return; }
+
+    localStorage.setItem('pm_cobros_registrado_por', registradoPor);
+
+    var boton = document.getElementById('btnGuardarPago');
+    boton.disabled = true;
+    boton.textContent = 'Guardando...';
+
+    llamarConector({
+      action:'registrarPago',
+      contrato:contrato, cedula:cedula, cliente:cliente,
+      cuota:cuota, valor:valor, fecha:fecha, nota:nota, registradoPor:registradoPor
+    }).then(function(resp){
+      boton.disabled=false; boton.textContent='Guardar pago';
+      if(resp.ok){
+        msg.className='msg-modal ok';
+        msg.textContent='Pago registrado correctamente.';
+        setTimeout(function(){
+          cerrarModalPago();
+          cargarDatos();
+        }, 900);
+      } else {
+        msg.className='msg-modal error';
+        msg.textContent = resp.error || 'No se pudo registrar el pago.';
+      }
+    }).catch(function(err){
+      boton.disabled=false; boton.textContent='Guardar pago';
+      msg.className='msg-modal error';
+      msg.textContent = err.message;
+    });
+  });
+
+  // ==================== MODAL: CANCELAR CLIENTE ====================
+  var modalCancelar = document.getElementById('modalCancelar');
+
+  function abrirModalCancelar(c){
+    document.getElementById('cancelarContexto').textContent = c.cliente+' · Contrato '+c.contrato+' · Placa '+c.placa;
+    document.getElementById('cancelarContrato').value = c.contrato;
+    document.getElementById('msgCancelar').className='msg-modal';
+    document.getElementById('msgCancelar').textContent='';
+    modalCancelar.classList.add('abierto');
+  }
+
+  function cerrarModalCancelar(){
+    modalCancelar.classList.remove('abierto');
+  }
+
+  document.getElementById('btnCerrarCancelar').addEventListener('click', cerrarModalCancelar);
+
+  document.getElementById('btnConfirmarCancelar').addEventListener('click', function(){
+    var contrato = document.getElementById('cancelarContrato').value;
+    var msg = document.getElementById('msgCancelar');
+    var boton = document.getElementById('btnConfirmarCancelar');
+    boton.disabled = true;
+    boton.textContent = 'Cancelando...';
+
+    llamarConector({action:'estado', contrato:contrato, nuevoEstado:'CANCELADO'}).then(function(resp){
+      boton.disabled=false; boton.textContent='Sí, cancelar cliente';
+      if(resp.ok){
+        msg.className='msg-modal ok';
+        msg.textContent='Cliente cancelado.';
+        setTimeout(function(){
+          cerrarModalCancelar();
+          cargarDatos();
+        }, 800);
+      } else {
+        msg.className='msg-modal error';
+        msg.textContent = resp.error || 'No se pudo cancelar.';
+      }
+    }).catch(function(err){
+      boton.disabled=false; boton.textContent='Sí, cancelar cliente';
+      msg.className='msg-modal error';
+      msg.textContent = err.message;
+    });
+  });
+
+  // ==================== HISTORIAL ====================
+  function buscarCliente(){
+    var termino = document.getElementById('inputBusqueda').value.trim().toLowerCase();
+    var contenedor = document.getElementById('resultadoHistorial');
+    contenedor.innerHTML='';
+    if(!termino){ return; }
+
+    var encontrado = estado.contratos.find(function(c){
+      return c.cedula.toLowerCase()===termino ||
+             c.contrato.toLowerCase()===termino ||
+             c.placa.toLowerCase()===termino;
+    });
+
+    if(!encontrado){
+      contenedor.innerHTML = '<div class="vacio">No se encontró ningún cliente con ese dato.</div>';
+      return;
+    }
+
+    var mapaPagos = construirMapaPagos();
+    var info = calcularEstadoCuotas(encontrado, mapaPagos);
+    var sem = semaforoDe(encontrado, info);
+
+    var html = '<div class="ficha-cliente">'+
+      campoFicha('Cliente', encontrado.cliente)+
+      campoFicha('Cédula', encontrado.cedula)+
+      campoFicha('Placa', encontrado.placa)+
+      campoFicha('Contrato', encontrado.contrato)+
+      campoFicha('Forma', encontrado.forma)+
+      campoFicha('Estado', encontrado.estado)+
+      campoFicha('Fecha firma', encontrado.fechaFirma)+
+      campoFicha('Vence póliza', encontrado.fin)+
+      campoFicha('Valor cuota', formatoDinero(encontrado.valorCuota))+
+      campoFicha('Plazo', encontrado.plazo+' cuotas')+
+      campoFicha('Cuotas pagadas', info.cuotasPagadas+' / '+encontrado.plazo)+
+      campoFicha('Saldo pendiente', formatoDinero(info.saldo))+
+      campoFicha('Celular', encontrado.celular)+
+    '</div>';
+
+    html += '<div style="margin-bottom:10px;"><span class="semaforo '+sem.clase+'"><span class="punto"></span>'+sem.texto+'</span></div>';
+
+    if(info.pagos.length===0){
+      html += '<div class="vacio">Este cliente aún no tiene pagos registrados.</div>';
+    } else {
+      var pagosOrdenados = info.pagos.slice().sort(function(a,b){
+        return (a.fechaPagoISO||'').localeCompare(b.fechaPagoISO||'');
+      });
+      html += '<table><thead><tr><th>Fecha de pago</th><th>Cuota</th><th>Valor</th><th>Comprobante / nota</th><th>Registrado por</th><th>Puntualidad</th></tr></thead><tbody>';
+      pagosOrdenados.forEach(function(p){
+        var puntualidad = '—';
+        var numeros = extraerNumerosCuota(p.cuota);
+        if(numeros.length && encontrado.fechaFirmaISO){
+          var firma = parsearISO(encontrado.fechaFirmaISO);
+          var venceCuota = addMonths(firma, numeros[0]);
+          var fechaPago = parsearISO(p.fechaPagoISO);
+          if(fechaPago){
+            var dif = diferenciaDias(fechaPago, venceCuota);
+            if(dif<0) puntualidad = 'Antes de tiempo';
+            else if(dif===0) puntualidad = 'El día';
+            else puntualidad = 'Tarde ('+dif+'d)';
+          }
+        }
+        html += '<tr>'+
+          '<td data-etiqueta="Fecha">'+escapeHtml(p.fechaPago)+'</td>'+
+          '<td data-etiqueta="Cuota">'+escapeHtml(p.cuota)+'</td>'+
+          '<td data-etiqueta="Valor">'+formatoDinero(p.valorPagado)+'</td>'+
+          '<td data-etiqueta="Nota">'+escapeHtml(p.nota)+'</td>'+
+          '<td data-etiqueta="Registrado por">'+escapeHtml(p.registradoPor)+'</td>'+
+          '<td data-etiqueta="Puntualidad">'+puntualidad+'</td>'+
+        '</tr>';
+      });
+      html += '</tbody></table>';
+    }
+
+    contenedor.innerHTML = html;
+  }
+
+  function campoFicha(etiqueta, valor){
+    return '<div class="campo"><div class="etiqueta">'+etiqueta+'</div><div class="valor">'+escapeHtml(valor)+'</div></div>';
+  }
+
+  document.getElementById('btnBuscar').addEventListener('click', buscarCliente);
+  document.getElementById('inputBusqueda').addEventListener('keydown', function(e){
+    if(e.key==='Enter') buscarCliente();
+  });
+
+  // ==================== CONFIGURACIÓN DE URL ====================
+  var inputUrl = document.getElementById('inputUrlConector');
+  inputUrl.value = estado.urlConector;
+
+  document.getElementById('btnGuardarUrl').addEventListener('click', function(){
+    estado.urlConector = inputUrl.value.trim();
+    localStorage.setItem(CLAVE_URL, estado.urlConector);
+    cargarDatos();
+  });
+
+  document.getElementById('btnRecargar').addEventListener('click', function(){
+    cargarDatos();
+  });
+
+  document.getElementById('anioActual').textContent = new Date().getFullYear();
+
+  // ==================== INICIO ====================
+  if(estado.urlConector){
+    cargarDatos();
+  } else {
+    mostrarEstado('error', 'Pega la URL de tu conector (Apps Script publicado como Aplicación web) y presiona Guardar.');
+  }
+})();
+</script>
+</body>
+</html>
