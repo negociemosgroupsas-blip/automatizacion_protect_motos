@@ -376,7 +376,7 @@
   var CLAVE_URL = 'pm_cobros_url_conector';
   var UMBRAL_DIAS_ROJO = 5; // días de atraso para pasar de naranja a rojo
   var DIAS_AVISO_RENOVACION = 8;
-  var TIMEOUT_JSONP_MS = 15000;
+  var TIMEOUT_JSONP_MS = 60000; // tu hoja tiene muchos contratos: dale tiempo suficiente para cargar
 
   var estado = {
     contratos: [],
@@ -516,7 +516,7 @@
 
   // ==================== CARGA DE DATOS ====================
   function cargarDatos(){
-    mostrarEstado('cargando','Cargando datos desde Google Sheets...');
+    mostrarEstado('cargando','Cargando datos desde Google Sheets... (puede tardar hasta 30-40 segundos si tienes muchos contratos, por favor espera)');
     return llamarConector({action:'datos'}).then(function(resp){
       if(!resp.ok){
         mostrarEstado('error', resp.error || 'Error desconocido al cargar datos.');
