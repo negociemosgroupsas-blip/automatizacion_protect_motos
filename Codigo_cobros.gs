@@ -7,8 +7,8 @@
 
 // ==================== CONFIGURACIÓN ====================
 var TOKEN = 'PM-COBROS-2026';
-var SHEET_ID = '1WMR0VhNg6apQa5BPg4bFoRbMqJNdQQ9f3UdlA2fKb04';
-var GID_SEG = 519465373;
+var SHEET_ID = '1Nj418NeYoQMzuEdG8cnOAO0FDXM9bok41LJ3Rzk9A2s';
+var HOJA_SEGUIMIENTO = 'Seguimiento';
 var HOJA_PAGOS = 'Pagos';
 
 var COL = {
@@ -80,7 +80,7 @@ function responder(objeto, callback) {
 // ==================== ACCIÓN: DATOS ====================
 function accionDatos() {
   var ss = SpreadsheetApp.openById(SHEET_ID);
-  var hojaSeg = hojaPorGid(ss, GID_SEG);
+  var hojaSeg = hojaSeguimiento(ss);
   var hojaPagos = ss.getSheetByName(HOJA_PAGOS);
 
   var contratos = leerContratos(hojaSeg);
@@ -187,7 +187,7 @@ function accionRegistrarPago(params) {
 
     // Si con este pago el cliente financiado completó todas las cuotas, marcar FINALIZADO.
     var finalizado = false;
-    var hojaSeg = hojaPorGid(ss, GID_SEG);
+    var hojaSeg = hojaSeguimiento(ss);
     var infoContrato = buscarFilaContrato(hojaSeg, contrato);
     if (infoContrato) {
       var forma = String(infoContrato.fila[COL.FORMA - 1] || '').trim().toUpperCase();
@@ -269,7 +269,7 @@ function accionCambiarEstado(params) {
 
   try {
     var ss = SpreadsheetApp.openById(SHEET_ID);
-    var hojaSeg = hojaPorGid(ss, GID_SEG);
+    var hojaSeg = hojaSeguimiento(ss);
     var info = buscarFilaContrato(hojaSeg, contrato);
     if (!info) {
       return { ok: false, error: 'No se encontró el contrato ' + contrato };
@@ -284,12 +284,12 @@ function accionCambiarEstado(params) {
 }
 
 // ==================== UTILIDADES ====================
-function hojaPorGid(ss, gid) {
-  var hojas = ss.getSheets();
-  for (var i = 0; i < hojas.length; i++) {
-    if (hojas[i].getSheetId() === gid) return hojas[i];
+function hojaSeguimiento(ss) {
+  var hoja = ss.getSheetByName(HOJA_SEGUIMIENTO);
+  if (!hoja) {
+    throw new Error('No se encontró la pestaña "' + HOJA_SEGUIMIENTO + '". Revisa que se llame exactamente así.');
   }
-  throw new Error('No se encontró la pestaña con gid ' + gid);
+  return hoja;
 }
 
 function buscarFilaContrato(hoja, contrato) {
