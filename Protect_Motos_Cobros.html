@@ -101,11 +101,44 @@
     padding:14px 16px;
     border:1px solid var(--borde);
     box-shadow:0 1px 2px rgba(0,0,0,.03);
+    cursor:pointer;
+    transition:box-shadow .15s, transform .1s, border-color .15s;
+    user-select:none;
   }
+  .tarjeta-contador:hover{box-shadow:0 3px 12px rgba(19,34,63,.14);transform:translateY(-1px);}
+  .tarjeta-contador.activo{border-color:var(--azul);box-shadow:0 0 0 2px var(--azul) inset;}
   .tarjeta-contador .valor{font-size:1.5rem;font-weight:800;color:var(--azul);}
   .tarjeta-contador .etiqueta{font-size:.72rem;color:var(--texto-suave);margin-top:2px;text-transform:uppercase;letter-spacing:.4px;}
   .tarjeta-contador.destacado .valor{color:var(--dorado);}
   .tarjeta-contador.alerta .valor{color:var(--rojo);}
+
+  .filtro-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:#eaf0fb;
+    color:var(--azul);
+    padding:5px 8px 5px 12px;
+    border-radius:999px;
+    font-size:.78rem;
+    font-weight:700;
+  }
+  .filtro-chip button{
+    background:rgba(19,34,63,.1);
+    border:none;
+    color:var(--azul);
+    cursor:pointer;
+    font-weight:700;
+    font-size:.8rem;
+    line-height:1;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .filtro-chip button:hover{background:rgba(19,34,63,.2);}
 
   section.panel{
     background:var(--tarjeta);
@@ -256,13 +289,35 @@
   <div class="estado-conexion" id="estadoConexion"></div>
 
   <div class="contadores">
-    <div class="tarjeta-contador"><div class="valor" id="cActivos">–</div><div class="etiqueta">Activos</div></div>
-    <div class="tarjeta-contador"><div class="valor" id="cCancelados">–</div><div class="etiqueta">Cancelados</div></div>
-    <div class="tarjeta-contador"><div class="valor" id="cFinalizados">–</div><div class="etiqueta">Finalizados</div></div>
-    <div class="tarjeta-contador destacado"><div class="valor" id="cPendientesHoy">–</div><div class="etiqueta">Pendientes de cobro hoy</div></div>
-    <div class="tarjeta-contador destacado"><div class="valor" id="cTotalPendiente">–</div><div class="etiqueta">Total pendiente por cobrar</div></div>
-    <div class="tarjeta-contador alerta"><div class="valor" id="cRenovar">–</div><div class="etiqueta">Pólizas por renovar (≤8 días)</div></div>
+    <div class="tarjeta-contador" data-filtro="activos" title="Ver clientes activos"><div class="valor" id="cActivos">–</div><div class="etiqueta">Activos</div></div>
+    <div class="tarjeta-contador" data-filtro="cancelados" title="Ver clientes cancelados"><div class="valor" id="cCancelados">–</div><div class="etiqueta">Cancelados</div></div>
+    <div class="tarjeta-contador" data-filtro="finalizados" title="Ver clientes finalizados"><div class="valor" id="cFinalizados">–</div><div class="etiqueta">Finalizados</div></div>
+    <div class="tarjeta-contador destacado" data-filtro="pendientesHoy" title="Ver pendientes de cobro hoy"><div class="valor" id="cPendientesHoy">–</div><div class="etiqueta">Pendientes de cobro hoy</div></div>
+    <div class="tarjeta-contador destacado" data-filtro="totalPendiente" title="Ver clientes con saldo pendiente"><div class="valor" id="cTotalPendiente">–</div><div class="etiqueta">Total pendiente por cobrar</div></div>
+    <div class="tarjeta-contador alerta" data-filtro="renovar" title="Ver pólizas por renovar"><div class="valor" id="cRenovar">–</div><div class="etiqueta">Pólizas por renovar (≤8 días)</div></div>
   </div>
+
+  <section class="panel" id="panelFiltro" style="display:none;">
+    <div class="cabecera">
+      <h2>Listado filtrado</h2>
+      <div class="filtro-chip">
+        <span id="chipFiltroTexto">Mostrando: —</span>
+        <button id="btnQuitarFiltro" title="Quitar filtro">✕</button>
+      </div>
+    </div>
+    <div class="contenido-panel">
+      <table id="tablaFiltro">
+        <thead>
+          <tr>
+            <th>Cliente</th><th>Cédula</th><th>Placa</th><th>Contrato</th>
+            <th>Forma</th><th>Estado</th><th>Detalle</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpoFiltro"></tbody>
+      </table>
+      <div class="vacio" id="vacioFiltro" style="display:none;">No hay clientes en esta categoría.</div>
+    </div>
+  </section>
 
   <section class="panel">
     <div class="cabecera">
@@ -299,7 +354,7 @@
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel" id="panelHistorial">
     <div class="cabecera">
       <h2>Historial del cliente</h2>
       <span class="sub">Busca por cédula, N° de contrato o placa</span>
@@ -381,7 +436,8 @@
   var estado = {
     contratos: [],
     pagos: [],
-    urlConector: localStorage.getItem(CLAVE_URL) || ''
+    urlConector: localStorage.getItem(CLAVE_URL) || '',
+    filtroActivo: null
   };
 
   // ==================== UTILIDADES DE FECHA / DINERO ====================
@@ -621,6 +677,7 @@
       renderizarContadores(mapaPagos);
       renderizarCobros(mapaPagos);
       renderizarRenovaciones();
+      renderizarFiltro(mapaPagos);
     });
   }
 
@@ -756,6 +813,148 @@
       cuerpo.appendChild(tr);
     });
   }
+
+  // ==================== FILTROS DESDE LOS INDICADORES ====================
+  var FILTROS_INFO = {
+    activos:        { etiqueta: 'Activos' },
+    cancelados:     { etiqueta: 'Cancelados' },
+    finalizados:    { etiqueta: 'Finalizados' },
+    pendientesHoy:  { etiqueta: 'Pendientes de cobro hoy' },
+    totalPendiente: { etiqueta: 'Clientes con saldo pendiente' },
+    renovar:        { etiqueta: 'Pólizas por renovar (≤8 días)' }
+  };
+
+  function construirFilasFiltro(tipo, mapaPagos){
+    var hoyD = hoy();
+    var filas = [];
+
+    if(tipo==='activos' || tipo==='cancelados' || tipo==='finalizados'){
+      var estadoBuscado = tipo==='activos' ? 'ACTIVO' : (tipo==='cancelados' ? 'CANCELADO' : 'FINALIZADO');
+      estado.contratos.forEach(function(c){
+        if(c.estado!==estadoBuscado) return;
+        var detalle = 'Vence póliza: '+(c.fin || '—');
+        if(c.forma==='FINANCIADO') detalle += ' · Cuota: '+formatoDinero(c.valorCuota);
+        filas.push({c:c, detalle:detalle, semaforo:null, tipoAcciones:'historial'});
+      });
+    } else if(tipo==='pendientesHoy' || tipo==='totalPendiente'){
+      estado.contratos.forEach(function(c){
+        if(c.forma!=='FINANCIADO' || c.estado!=='ACTIVO') return;
+        var info = calcularEstadoCuotas(c, mapaPagos);
+        if(!info.cuotaPendiente) return;
+        var sem = semaforoDe(c, info);
+        var atrasoTexto = info.cuotaPendiente.diasAtraso===0 ? 'Hoy' : info.cuotaPendiente.diasAtraso+' día(s) de atraso';
+        var detalle = 'Cuota #'+info.cuotaPendiente.numero+' de '+c.plazo+' · '+formatoDinero(c.valorCuota)+' · '+atrasoTexto;
+        filas.push({c:c, detalle:detalle, semaforo:sem, tipoAcciones:'cobro', info:info});
+      });
+      filas.sort(function(a,b){ return b.info.cuotaPendiente.diasAtraso - a.info.cuotaPendiente.diasAtraso; });
+    } else if(tipo==='renovar'){
+      estado.contratos.forEach(function(c){
+        if(c.estado==='CANCELADO' || !c.finISO) return;
+        var fin = parsearISO(c.finISO);
+        if(!fin) return;
+        var dias = diferenciaDias(fin, hoyD);
+        if(dias>DIAS_AVISO_RENOVACION) return;
+        var etiquetaDias = dias<0 ? ('Vencido hace '+Math.abs(dias)+'d') : (dias===0?'Vence hoy':dias+' día(s)');
+        var sem = { clase: dias<0?'rojo':(dias<=3?'naranja':'verde'), texto: etiquetaDias };
+        filas.push({c:c, detalle:'Vence: '+formatoFechaCO(fin), semaforo:sem, tipoAcciones:'renovar', fin:fin, dias:dias});
+      });
+      filas.sort(function(a,b){ return a.dias-b.dias; });
+    }
+
+    return filas;
+  }
+
+  function crearBotonAccion(texto, clase, manejador){
+    var boton = document.createElement('button');
+    boton.className = 'btn btn-sm '+clase;
+    boton.textContent = texto;
+    boton.addEventListener('click', manejador);
+    return boton;
+  }
+
+  function irAHistorial(c){
+    document.getElementById('inputBusqueda').value = c.contrato || c.cedula || c.placa || '';
+    buscarCliente();
+    var panelHist = document.getElementById('panelHistorial');
+    if(panelHist) panelHist.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function renderizarFiltro(mapaPagos){
+    var panel = document.getElementById('panelFiltro');
+    if(!estado.filtroActivo){
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = '';
+    document.getElementById('chipFiltroTexto').textContent = 'Mostrando: '+FILTROS_INFO[estado.filtroActivo].etiqueta;
+
+    var filas = construirFilasFiltro(estado.filtroActivo, mapaPagos);
+    var cuerpo = document.getElementById('cuerpoFiltro');
+    var vacio = document.getElementById('vacioFiltro');
+    cuerpo.innerHTML = '';
+
+    if(filas.length===0){
+      vacio.style.display = 'block';
+      return;
+    }
+    vacio.style.display = 'none';
+
+    filas.forEach(function(item){
+      var c = item.c;
+      var semHtml = item.semaforo
+        ? '<span class="semaforo '+item.semaforo.clase+'"><span class="punto"></span>'+item.semaforo.texto+'</span>'
+        : escapeHtml(c.estado);
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td data-etiqueta="Cliente"><strong>'+escapeHtml(c.cliente)+'</strong></td>'+
+        '<td data-etiqueta="Cédula">'+escapeHtml(c.cedula)+'</td>'+
+        '<td data-etiqueta="Placa">'+escapeHtml(c.placa)+'</td>'+
+        '<td data-etiqueta="Contrato">'+escapeHtml(c.contrato)+'</td>'+
+        '<td data-etiqueta="Forma">'+escapeHtml(c.forma)+'</td>'+
+        '<td data-etiqueta="Estado">'+semHtml+'</td>'+
+        '<td data-etiqueta="Detalle">'+escapeHtml(item.detalle)+'</td>'+
+        '<td data-etiqueta="Acciones"><div class="acciones-fila" data-acciones></div></td>';
+
+      var celdaAcciones = tr.querySelector('[data-acciones]');
+      if(item.tipoAcciones==='cobro'){
+        celdaAcciones.appendChild(crearBotonAccion('WhatsApp','btn-verde', function(){ abrirWhatsAppCobro(c, item.info); }));
+        celdaAcciones.appendChild(crearBotonAccion('Registrar pago','btn-azul', function(){ abrirModalPago(c, item.info); }));
+        celdaAcciones.appendChild(crearBotonAccion('Cancelar','btn-rojo', function(){ abrirModalCancelar(c); }));
+      } else if(item.tipoAcciones==='renovar'){
+        celdaAcciones.appendChild(crearBotonAccion('WhatsApp','btn-verde', function(){ abrirWhatsAppRenovacion(c, item.fin); }));
+      } else {
+        celdaAcciones.appendChild(crearBotonAccion('Ver historial','btn-azul', function(){ irAHistorial(c); }));
+      }
+
+      cuerpo.appendChild(tr);
+    });
+  }
+
+  function actualizarTarjetasActivas(){
+    document.querySelectorAll('.tarjeta-contador[data-filtro]').forEach(function(el){
+      el.classList.toggle('activo', el.getAttribute('data-filtro')===estado.filtroActivo);
+    });
+  }
+
+  function aplicarFiltro(tipo){
+    estado.filtroActivo = (estado.filtroActivo===tipo) ? null : tipo;
+    actualizarTarjetasActivas();
+    renderizarFiltro(construirMapaPagos());
+    if(estado.filtroActivo){
+      document.getElementById('panelFiltro').scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  }
+
+  function limpiarFiltro(){
+    estado.filtroActivo = null;
+    actualizarTarjetasActivas();
+    renderizarFiltro(construirMapaPagos());
+  }
+
+  document.querySelectorAll('.tarjeta-contador[data-filtro]').forEach(function(el){
+    el.addEventListener('click', function(){ aplicarFiltro(el.getAttribute('data-filtro')); });
+  });
+  document.getElementById('btnQuitarFiltro').addEventListener('click', limpiarFiltro);
 
   function escapeHtml(texto){
     var div = document.createElement('div');
