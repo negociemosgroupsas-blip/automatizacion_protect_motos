@@ -330,7 +330,7 @@
         <thead>
           <tr>
             <th>Cliente</th><th>Placa</th><th>Contrato</th><th>Cuota</th>
-            <th>Valor</th><th>Atraso</th><th>Estado</th><th>Acciones</th>
+            <th>Vence</th><th>Valor</th><th>Atraso</th><th>Estado</th><th>Acciones</th>
           </tr>
         </thead>
         <tbody id="cuerpoCobros"></tbody>
@@ -775,6 +775,7 @@
         '<td data-etiqueta="Placa">'+escapeHtml(c.placa)+'</td>'+
         '<td data-etiqueta="Contrato">'+escapeHtml(c.contrato)+'</td>'+
         '<td data-etiqueta="Cuota">#'+info.cuotaPendiente.numero+' de '+c.plazo+'</td>'+
+        '<td data-etiqueta="Vence">'+formatoFechaCO(info.cuotaPendiente.fechaVence)+'</td>'+
         '<td data-etiqueta="Valor">'+formatoDinero(c.valorCuota)+'</td>'+
         '<td data-etiqueta="Atraso">'+(info.cuotaPendiente.diasAtraso===0?'Hoy':info.cuotaPendiente.diasAtraso+' día(s)')+'</td>'+
         '<td data-etiqueta="Estado"><span class="semaforo '+sem.clase+'"><span class="punto"></span>'+sem.texto+'</span></td>'+
@@ -872,7 +873,7 @@
         if(!info.cuotaPendiente) return;
         var sem = semaforoDe(c, info);
         var atrasoTexto = info.cuotaPendiente.diasAtraso===0 ? 'Hoy' : info.cuotaPendiente.diasAtraso+' día(s) de atraso';
-        var detalle = 'Cuota #'+info.cuotaPendiente.numero+' de '+c.plazo+' · '+formatoDinero(c.valorCuota)+' · '+atrasoTexto;
+        var detalle = 'Cuota #'+info.cuotaPendiente.numero+' de '+c.plazo+' · Fecha de pago: '+formatoFechaCO(info.cuotaPendiente.fechaVence)+' · Valor a pagar: '+formatoDinero(c.valorCuota)+' · '+atrasoTexto;
         filas.push({c:c, detalle:detalle, semaforo:sem, tipoAcciones:'cobro', info:info});
       });
       filas.sort(function(a,b){ return b.info.cuotaPendiente.diasAtraso - a.info.cuotaPendiente.diasAtraso; });
