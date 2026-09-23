@@ -282,6 +282,7 @@
     <input type="text" id="inputUrlConector" placeholder="Pega aquí la URL del conector (Apps Script)">
     <button class="btn btn-oro" id="btnGuardarUrl">Guardar</button>
     <button class="btn btn-azul" id="btnRecargar">Actualizar datos</button>
+    <span style="color:#cbd3e6;font-size:.72rem;">🔄 Se actualiza solo cada 1 min</span>
   </div>
 </header>
 
@@ -432,6 +433,7 @@
   var UMBRAL_DIAS_ROJO = 5; // días de atraso para pasar de naranja a rojo
   var DIAS_AVISO_RENOVACION = 8;
   var TIMEOUT_JSONP_MS = 60000; // tu hoja tiene muchos contratos: dale tiempo suficiente para cargar
+  var AUTO_REFRESCO_MS = 60000; // cada cuánto se refresca solo el panel (1 minuto)
 
   var estado = {
     contratos: [],
@@ -571,8 +573,18 @@
   }
 
   // ==================== CARGA DE DATOS ====================
-  function cargarDatos(){
-    mostrarEstado('cargando','Cargando datos desde Google Sheets... (puede tardar hasta 30-40 segundos si tienes muchos contratos, por favor espera)');
+  var enCarga = false;
+
+  function hayModalAbierto(){
+    return document.querySelector('.modal-fondo.abierto') !== null;
+  }
+
+  function cargarDatos(silencioso){
+    if(enCarga) return Promise.resolve();
+    enCarga = true;
+    if(!silencioso){
+      mostrarEstado('cargando','Cargando datos desde Google Sheets... (puede tardar hasta 30-40 segundos si tienes muchos contratos, por favor espera)');
+    }
     return llamarConector({action:'datos'}).then(function(resp){
       if(!resp.ok){
         mostrarEstado('error', resp.error || 'Error desconocido al cargar datos.');
@@ -580,11 +592,28 @@
       }
       estado.contratos = resp.contratos || [];
       estado.pagos = resp.pagos || [];
-      mostrarEstado('ok', 'Datos actualizados · '+estado.contratos.length+' contratos · '+estado.pagos.length+' pagos registrados.');
+      var hora = new Date().toLocaleTimeString('es-CO');
+      mostrarEstado('ok', 'Datos actualizados · '+estado.contratos.length+' contratos · '+estado.pagos.length+' pagos registrados · Última sincronización: '+hora+'.');
       renderizarTodo();
+      if(document.getElementById('inputBusqueda').value.trim()){
+        buscarCliente();
+      }
     }).catch(function(err){
       mostrarEstado('error', err.message);
+    }).finally(function(){
+      enCarga = false;
     });
+  }
+
+  // ==================== ACTUALIZACIÓN AUTOMÁTICA ====================
+  var temporizadorAutoRefresco = null;
+
+  function iniciarAutoRefresco(){
+    if(temporizadorAutoRefresco) clearInterval(temporizadorAutoRefresco);
+    temporizadorAutoRefresco = setInterval(function(){
+      if(!estado.urlConector || enCarga || hayModalAbierto()) return;
+      cargarDatos(true);
+    }, AUTO_REFRESCO_MS);
   }
 
   // ==================== LÓGICA DE NEGOCIO ====================
@@ -1201,6 +1230,7 @@
     estado.urlConector = inputUrl.value.trim();
     localStorage.setItem(CLAVE_URL, estado.urlConector);
     cargarDatos();
+    iniciarAutoRefresco();
   });
 
   document.getElementById('btnRecargar').addEventListener('click', function(){
@@ -1212,6 +1242,7 @@
   // ==================== INICIO ====================
   if(estado.urlConector){
     cargarDatos();
+    iniciarAutoRefresco();
   } else {
     mostrarEstado('error', 'Pega la URL de tu conector (Apps Script publicado como Aplicación web) y presiona Guardar.');
   }
