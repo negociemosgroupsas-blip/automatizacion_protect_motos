@@ -757,7 +757,8 @@
       lista.push({contrato:c, info:info});
     });
 
-    lista.sort(function(a,b){ return b.info.cuotaPendiente.diasAtraso - a.info.cuotaPendiente.diasAtraso; });
+    // Los de hoy primero; los más atrasados van quedando al final (a la cola)
+    lista.sort(function(a,b){ return a.info.cuotaPendiente.diasAtraso - b.info.cuotaPendiente.diasAtraso; });
 
     if(lista.length===0){
       vacio.style.display='block';
@@ -876,7 +877,8 @@
         var detalle = 'Cuota #'+info.cuotaPendiente.numero+' de '+c.plazo+' · Fecha de pago: '+formatoFechaCO(info.cuotaPendiente.fechaVence)+' · Valor a pagar: '+formatoDinero(c.valorCuota)+' · '+atrasoTexto;
         filas.push({c:c, detalle:detalle, semaforo:sem, tipoAcciones:'cobro', info:info});
       });
-      filas.sort(function(a,b){ return b.info.cuotaPendiente.diasAtraso - a.info.cuotaPendiente.diasAtraso; });
+      // Los de hoy primero; los más atrasados van quedando al final (a la cola)
+      filas.sort(function(a,b){ return a.info.cuotaPendiente.diasAtraso - b.info.cuotaPendiente.diasAtraso; });
     } else if(tipo==='renovar'){
       estado.contratos.forEach(function(c){
         if(c.estado==='CANCELADO' || !c.finISO) return;
