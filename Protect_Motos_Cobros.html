@@ -254,6 +254,7 @@
   .msg-modal{font-size:.8rem;padding:8px 10px;border-radius:8px;margin-top:10px;display:none;}
   .msg-modal.ok{display:block;background:var(--verde-bg);color:var(--verde);}
   .msg-modal.error{display:block;background:var(--rojo-bg);color:var(--rojo);}
+  .msg-modal.aviso{display:block;background:var(--naranja-bg);color:var(--naranja);}
 
   footer{text-align:center;padding:20px;color:var(--texto-suave);font-size:.75rem;}
 
@@ -1190,6 +1191,18 @@
   var modalPago = document.getElementById('modalPago');
   var contratoEnPago = null;
 
+  // Si el cliente ya tiene un pago registrado este mes, devuelve ese pago
+  // (el más reciente), para poder avisar antes de registrar otro.
+  function pagoDeEsteMes(contrato){
+    var mesActual = formatoFechaInput(new Date()).slice(0,7);
+    var pagosDelMes = estado.pagos.filter(function(p){
+      return p.contrato===contrato && (p.fechaPagoISO||'').slice(0,7)===mesActual;
+    });
+    if(pagosDelMes.length===0) return null;
+    pagosDelMes.sort(function(a,b){ return (b.fechaPagoISO||'').localeCompare(a.fechaPagoISO||''); });
+    return pagosDelMes[0];
+  }
+
   function abrirModalPago(c, info){
     contratoEnPago = c;
     document.getElementById('pagoContexto').textContent = c.cliente+' · Contrato '+c.contrato+' · Placa '+c.placa;
@@ -1202,8 +1215,16 @@
     document.getElementById('pagoNota').value = '';
     var registradoPrevio = localStorage.getItem('pm_cobros_registrado_por')||'';
     document.getElementById('pagoRegistradoPor').value = registradoPrevio;
-    document.getElementById('msgPago').className='msg-modal';
-    document.getElementById('msgPago').textContent='';
+
+    var msg = document.getElementById('msgPago');
+    var pagoExistente = pagoDeEsteMes(c.contrato);
+    if(pagoExistente){
+      msg.className = 'msg-modal aviso';
+      msg.textContent = '⚠ Este cliente ya tiene un pago registrado este mes: cuota '+pagoExistente.cuota+' por '+formatoDinero(pagoExistente.valorPagado)+' el '+pagoExistente.fechaPago+'. Revisa antes de registrar otro.';
+    } else {
+      msg.className = 'msg-modal';
+      msg.textContent = '';
+    }
     modalPago.classList.add('abierto');
   }
 
