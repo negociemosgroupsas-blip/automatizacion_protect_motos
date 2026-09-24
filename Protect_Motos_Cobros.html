@@ -967,10 +967,20 @@
         '<td data-etiqueta="Contrato">'+escapeHtml(c.contrato)+'</td>'+
         '<td data-etiqueta="Vence">'+formatoFechaCO(item.fin)+'</td>'+
         '<td data-etiqueta="Días"><span class="semaforo '+(item.dias<0?'rojo':item.dias<=3?'naranja':'verde')+'"><span class="punto"></span>'+etiquetaDias+'</span></td>'+
-        '<td data-etiqueta="Acciones"><button class="btn btn-verde btn-sm" data-accion="whatsapp-renovar">WhatsApp</button></td>';
+        '<td data-etiqueta="Acciones"><div class="acciones-fila">'+
+          '<button class="btn btn-verde btn-sm" data-accion="whatsapp-renovar">WhatsApp</button>'+
+          '<button class="btn btn-azul btn-sm" data-accion="acepto-renovacion">Acepto renovación</button>'+
+          '<button class="btn btn-rojo btn-sm" data-accion="no-acepto-renovacion">No acepto renovación</button>'+
+        '</div></td>';
 
       tr.querySelector('[data-accion="whatsapp-renovar"]').addEventListener('click', function(){
         abrirWhatsAppRenovacion(c, item.fin);
+      });
+      tr.querySelector('[data-accion="acepto-renovacion"]').addEventListener('click', function(e){
+        marcarRenovacion(c, true, e.currentTarget);
+      });
+      tr.querySelector('[data-accion="no-acepto-renovacion"]').addEventListener('click', function(e){
+        marcarRenovacion(c, false, e.currentTarget);
       });
 
       cuerpo.appendChild(tr);
@@ -1385,6 +1395,61 @@
       if(boton){ boton.disabled = false; boton.textContent = textoOriginal; }
       mostrarEstado('error', err.message);
       window.alert('No se pudo registrar la gestión de '+c.cliente+':\n\n'+err.message);
+    });
+  }
+
+  // ==================== POR RENOVAR: ACEPTA / NO ACEPTA ====================
+  // Sea cual sea la respuesta, el contrato que está por vencer se cierra
+  // (queda CANCELADO): si acepta, el nuevo contrato se registra aparte;
+  // si no acepta, simplemente no continúa. En ambos casos deja de salir
+  // en "Por renovar", igual que un cliente gestionado deja de salir en
+  // "Cobros de hoy".
+  function marcarRenovacion(c, acepto, boton){
+    var textoAccion = acepto ? 'Renovación aceptada' : 'Renovación no aceptada';
+    var pregunta = acepto
+      ? '¿Confirmas que '+c.cliente+' ACEPTÓ la renovación?\n\nEl contrato '+c.contrato+' quedará marcado como CANCELADO (el contrato nuevo se registra aparte).'
+      : '¿Confirmas que '+c.cliente+' NO aceptó la renovación?\n\nEl contrato '+c.contrato+' quedará marcado como CANCELADO.';
+    if(!window.confirm(pregunta)) return;
+
+    var registradoPor = localStorage.getItem('pm_cobros_registrado_por') || '';
+    var textoOriginal = boton ? boton.textContent : null;
+    if(boton){ boton.disabled = true; boton.textContent = 'Guardando...'; }
+
+    llamarConector({action:'estado', contrato:c.contrato, nuevoEstado:'CANCELADO'}).then(function(resp){
+      if(!resp.ok){
+        if(boton){ boton.disabled = false; boton.textContent = textoOriginal; }
+        var mensajeError = resp.error || 'No se pudo actualizar el estado.';
+        mostrarEstado('error', mensajeError);
+        window.alert('No se pudo registrar la renovación de '+c.cliente+':\n\n'+mensajeError);
+        return;
+      }
+      c.estado = 'CANCELADO';
+      estadosLocalesPendientes[c.contrato] = 'CANCELADO';
+      mostrarEstado('ok', '✓ '+textoAccion+' — '+c.cliente+'. Contrato '+c.contrato+' marcado como CANCELADO.');
+      renderizarVistas(construirMapaPagos());
+
+      // Deja constancia en el historial de gestiones (no bloquea la vista si falla).
+      llamarConector({
+        action:'registrarGestion', contrato:c.contrato, cedula:c.cedula, cliente:c.cliente,
+        registradoPor:registradoPor, accion:textoAccion
+      }).then(function(respGestion){
+        if(!respGestion.ok) return;
+        if(!Array.isArray(estado.gestiones)) estado.gestiones = [];
+        var hoyD = hoy();
+        estado.gestiones.push({
+          fechaGestion: formatoFechaCO(hoyD),
+          fechaGestionISO: formatoFechaInput(hoyD),
+          contrato: c.contrato, cedula: c.cedula, cliente: c.cliente,
+          accion: textoAccion, registradoPor: registradoPor
+        });
+        if(document.getElementById('inputBusqueda').value.trim()){
+          buscarCliente();
+        }
+      }).catch(function(){});
+    }).catch(function(err){
+      if(boton){ boton.disabled = false; boton.textContent = textoOriginal; }
+      mostrarEstado('error', err.message);
+      window.alert('No se pudo registrar la renovación de '+c.cliente+':\n\n'+err.message);
     });
   }
 

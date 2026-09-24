@@ -195,6 +195,7 @@ function accionRegistrarGestion(params) {
   var cedula = String(params.cedula || '').trim();
   var cliente = String(params.cliente || '').trim();
   var registradoPor = String(params.registradoPor || '').trim();
+  var accion = String(params.accion || '').trim() || 'Cobro realizado';
 
   if (!contrato) return { ok: false, error: 'Falta el número de contrato.' };
 
@@ -212,7 +213,7 @@ function accionRegistrarGestion(params) {
       hojaGestiones.appendRow(ENCABEZADOS_GESTIONES);
     }
 
-    hojaGestiones.appendRow([new Date(), contrato, cedula, cliente, 'Cobro realizado', registradoPor]);
+    hojaGestiones.appendRow([new Date(), contrato, cedula, cliente, accion, registradoPor]);
 
     return { ok: true, mensaje: 'Gestión registrada correctamente.' };
   } catch (err) {
