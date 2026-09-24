@@ -435,6 +435,15 @@
   var TIMEOUT_JSONP_MS = 60000; // tu hoja tiene muchos contratos: dale tiempo suficiente para cargar
   var AUTO_REFRESCO_MS = 60000; // cada cuánto se refresca solo el panel (1 minuto)
 
+  // Datos de la cuenta para pagos, se incluyen en el mensaje de WhatsApp de cobro.
+  var DATOS_PAGO = {
+    banco: 'Bancolombia',
+    tipoCuenta: 'Ahorros',
+    numeroCuenta: '33100007298',
+    titular: 'Negociemos Group SAS',
+    telefono: '3128806873'
+  };
+
   var estado = {
     contratos: [],
     pagos: [],
@@ -1007,6 +1016,11 @@
       'Te escribimos de Protect Motos, la póliza de tu motocicleta, para recordarte que tienes pendiente la cuota #'+info.cuotaPendiente.numero+' de tu póliza.\n\n'+
       'Valor de la cuota: '+formatoDinero(c.valorCuota)+'\n'+
       'Fecha de pago: '+formatoFechaCO(info.cuotaPendiente.fechaVence)+'\n\n'+
+      'Puedes realizar el pago a la siguiente cuenta:\n'+
+      'Banco: '+DATOS_PAGO.banco+'\n'+
+      'Cuenta de '+DATOS_PAGO.tipoCuenta+' N°: '+DATOS_PAGO.numeroCuenta+'\n'+
+      'Titular: '+DATOS_PAGO.titular+'\n'+
+      'Teléfono: '+DATOS_PAGO.telefono+'\n\n'+
       'Cuando realices el pago, por favor envíanos el comprobante por este medio para poder registrarlo.\n\n'+
       '¡Muchas gracias!';
     var url = 'https://wa.me/'+numeroWhatsApp(c.celular)+'?text='+encodeURIComponent(mensaje);
