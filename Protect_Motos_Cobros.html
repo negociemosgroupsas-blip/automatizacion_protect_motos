@@ -604,6 +604,25 @@
     return document.querySelector('.modal-fondo.abierto') !== null;
   }
 
+  // Si una carga de datos que venía lenta desde el servidor responde justo
+  // después de haber marcado "Ya cobré hoy", puede traer una foto de la hoja
+  // tomada ANTES de ese registro y "borrarlo" al reemplazar estado.gestiones.
+  // Para evitar que el cliente reaparezca por esto, conservamos las gestiones
+  // de HOY que ya teníamos localmente si el servidor todavía no las trae.
+  function fusionarGestionesDeHoy(gestionesServidor){
+    var hoyISO = formatoFechaInput(hoy());
+    var yaEnServidor = {};
+    gestionesServidor.forEach(function(g){
+      if(g.fechaGestionISO===hoyISO) yaEnServidor[g.contrato] = true;
+    });
+    (estado.gestiones||[]).forEach(function(g){
+      if(g.fechaGestionISO===hoyISO && !yaEnServidor[g.contrato]){
+        gestionesServidor.push(g);
+      }
+    });
+    return gestionesServidor;
+  }
+
   function cargarDatos(silencioso){
     if(enCarga) return Promise.resolve();
     enCarga = true;
@@ -617,7 +636,7 @@
       }
       estado.contratos = resp.contratos || [];
       estado.pagos = resp.pagos || [];
-      estado.gestiones = resp.gestiones || [];
+      estado.gestiones = fusionarGestionesDeHoy(resp.gestiones || []);
       var hora = new Date().toLocaleTimeString('es-CO');
       mostrarEstado('ok', 'Datos actualizados · '+estado.contratos.length+' contratos · '+estado.pagos.length+' pagos registrados · Última sincronización: '+hora+'.');
       renderizarTodo();
