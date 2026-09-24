@@ -298,6 +298,20 @@
     <div class="tarjeta-contador alerta" data-filtro="renovar" title="Ver pólizas por renovar"><div class="valor" id="cRenovar">–</div><div class="etiqueta">Pólizas por renovar (≤8 días)</div></div>
   </div>
 
+  <section class="panel" id="panelHistorial">
+    <div class="cabecera">
+      <h2>Historial del cliente</h2>
+      <span class="sub">Busca por cédula, N° de contrato o placa</span>
+    </div>
+    <div class="contenido-panel">
+      <div class="caja-busqueda">
+        <input type="text" id="inputBusqueda" placeholder="Cédula, contrato o placa...">
+        <button class="btn btn-azul btn-sm" id="btnBuscar">Buscar</button>
+      </div>
+      <div id="resultadoHistorial"></div>
+    </div>
+  </section>
+
   <section class="panel" id="panelFiltro" style="display:none;">
     <div class="cabecera">
       <h2>Listado filtrado</h2>
@@ -355,19 +369,6 @@
     </div>
   </section>
 
-  <section class="panel" id="panelHistorial">
-    <div class="cabecera">
-      <h2>Historial del cliente</h2>
-      <span class="sub">Busca por cédula, N° de contrato o placa</span>
-    </div>
-    <div class="contenido-panel">
-      <div class="caja-busqueda">
-        <input type="text" id="inputBusqueda" placeholder="Cédula, contrato o placa...">
-        <button class="btn btn-azul btn-sm" id="btnBuscar">Buscar</button>
-      </div>
-      <div id="resultadoHistorial"></div>
-    </div>
-  </section>
 </main>
 
 <footer>Protect Motos © <span id="anioActual"></span> — Panel interno de cobros</footer>
@@ -1060,18 +1061,32 @@
   }
 
   function abrirWhatsAppCobro(c, info){
-    var mensaje =
-      'Hola, '+c.cliente+'\n'+
-      'Te escribimos de Protect Motos, la póliza de tu motocicleta, para recordarte que tienes pendiente la cuota #'+info.cuotaPendiente.numero+' de tu póliza.\n\n'+
-      'Valor de la cuota: '+formatoDinero(c.valorCuota)+'\n'+
-      'Fecha de pago: '+formatoFechaCO(info.cuotaPendiente.fechaVence)+'\n\n'+
-      'Puedes realizar el pago a la siguiente cuenta:\n'+
-      'Banco: '+DATOS_PAGO.banco+'\n'+
-      'Cuenta de '+DATOS_PAGO.tipoCuenta+' N°: '+DATOS_PAGO.numeroCuenta+'\n'+
-      'Titular: '+DATOS_PAGO.titular+'\n'+
-      'Teléfono: '+DATOS_PAGO.telefono+'\n\n'+
-      'Cuando realices el pago, por favor envíanos el comprobante por este medio para poder registrarlo.\n\n'+
-      '¡Muchas gracias!';
+    var mensaje;
+    if(info && info.cuotaPendiente){
+      mensaje =
+        'Hola, '+c.cliente+'\n'+
+        'Te escribimos de Protect Motos, la póliza de tu motocicleta, para recordarte que tienes pendiente la cuota #'+info.cuotaPendiente.numero+' de tu póliza.\n\n'+
+        'Valor de la cuota: '+formatoDinero(c.valorCuota)+'\n'+
+        'Fecha de pago: '+formatoFechaCO(info.cuotaPendiente.fechaVence)+'\n\n'+
+        'Puedes realizar el pago a la siguiente cuenta:\n'+
+        'Banco: '+DATOS_PAGO.banco+'\n'+
+        'Cuenta de '+DATOS_PAGO.tipoCuenta+' N°: '+DATOS_PAGO.numeroCuenta+'\n'+
+        'Titular: '+DATOS_PAGO.titular+'\n'+
+        'Teléfono: '+DATOS_PAGO.telefono+'\n\n'+
+        'Cuando realices el pago, por favor envíanos el comprobante por este medio para poder registrarlo.\n\n'+
+        '¡Muchas gracias!';
+    } else {
+      mensaje =
+        'Hola, '+c.cliente+'\n'+
+        'Te escribimos de Protect Motos, la póliza de tu motocicleta, para saber cómo va todo con tu cuota.\n\n'+
+        'Si deseas realizar el pago, puedes hacerlo a la siguiente cuenta:\n'+
+        'Banco: '+DATOS_PAGO.banco+'\n'+
+        'Cuenta de '+DATOS_PAGO.tipoCuenta+' N°: '+DATOS_PAGO.numeroCuenta+'\n'+
+        'Titular: '+DATOS_PAGO.titular+'\n'+
+        'Teléfono: '+DATOS_PAGO.telefono+'\n\n'+
+        'Cuando realices el pago, por favor envíanos el comprobante por este medio para poder registrarlo.\n\n'+
+        '¡Muchas gracias!';
+    }
     var url = 'https://wa.me/'+numeroWhatsApp(c.celular)+'?text='+encodeURIComponent(mensaje);
     window.open(url,'_blank');
   }
@@ -1229,6 +1244,9 @@
       });
       mostrarEstado('ok', '✓ Gestión registrada para '+c.cliente+'. No volverá a salir en la lista de hoy.');
       renderizarVistas(construirMapaPagos());
+      if(document.getElementById('inputBusqueda').value.trim()){
+        buscarCliente();
+      }
     }).catch(function(err){
       mostrarEstado('error', err.message);
     });
@@ -1273,6 +1291,17 @@
     '</div>';
 
     html += '<div style="margin-bottom:10px;"><span class="semaforo '+sem.clase+'"><span class="punto"></span>'+sem.texto+'</span></div>';
+
+    if(encontrado.estado==='ACTIVO'){
+      html += '<div class="acciones-fila" style="margin-bottom:16px;">';
+      if(encontrado.forma==='FINANCIADO'){
+        html += '<button class="btn btn-verde btn-sm" data-accion="whatsapp-cobro">WhatsApp</button>';
+        html += '<button class="btn btn-azul btn-sm" data-accion="registrar-pago">Registrar pago</button>';
+        html += '<button class="btn btn-gris btn-sm" data-accion="gestion-hoy">Ya cobré hoy</button>';
+      }
+      html += '<button class="btn btn-rojo btn-sm" data-accion="cancelar">Cancelar cliente</button>';
+      html += '</div>';
+    }
 
     if(info.pagos.length===0){
       html += '<div class="vacio">Este cliente aún no tiene pagos registrados.</div>';
@@ -1327,6 +1356,15 @@
     }
 
     contenedor.innerHTML = html;
+
+    var accWhatsapp = contenedor.querySelector('[data-accion="whatsapp-cobro"]');
+    if(accWhatsapp) accWhatsapp.addEventListener('click', function(){ abrirWhatsAppCobro(encontrado, info); });
+    var accPago = contenedor.querySelector('[data-accion="registrar-pago"]');
+    if(accPago) accPago.addEventListener('click', function(){ abrirModalPago(encontrado, info); });
+    var accGestion = contenedor.querySelector('[data-accion="gestion-hoy"]');
+    if(accGestion) accGestion.addEventListener('click', function(){ marcarGestionHoy(encontrado); });
+    var accCancelar = contenedor.querySelector('[data-accion="cancelar"]');
+    if(accCancelar) accCancelar.addEventListener('click', function(){ abrirModalCancelar(encontrado); });
   }
 
   function campoFicha(etiqueta, valor){
