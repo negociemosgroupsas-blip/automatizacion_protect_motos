@@ -314,6 +314,20 @@
     </div>
   </section>
 
+  <section class="panel" id="panelPagosMes">
+    <div class="cabecera">
+      <h2>Pagos por mes</h2>
+      <span class="sub">Ve quién pagó en un mes específico</span>
+    </div>
+    <div class="contenido-panel">
+      <div class="caja-busqueda">
+        <input type="month" id="inputMesPagos">
+        <button class="btn btn-azul btn-sm" id="btnBuscarMesPagos">Ver pagos del mes</button>
+      </div>
+      <div id="resultadoPagosMes"></div>
+    </div>
+  </section>
+
   <section class="panel" id="panelFiltro" style="display:none;">
     <div class="cabecera">
       <h2>Listado filtrado</h2>
@@ -674,6 +688,9 @@
       renderizarTodo();
       if(document.getElementById('inputBusqueda').value.trim()){
         buscarCliente();
+      }
+      if(document.getElementById('inputMesPagos').value){
+        buscarPagosPorMes();
       }
     }).catch(function(err){
       mostrarEstado('error', err.message);
@@ -1236,6 +1253,9 @@
         estado.pagos.push(nuevoPago);
         pagosLocalesPendientes.push(nuevoPago);
         renderizarVistas(construirMapaPagos());
+        if(document.getElementById('inputMesPagos').value){
+          buscarPagosPorMes();
+        }
         setTimeout(function(){
           cerrarModalPago();
           cargarDatos();
@@ -1493,6 +1513,70 @@
   document.getElementById('btnBuscar').addEventListener('click', buscarCliente);
   document.getElementById('inputBusqueda').addEventListener('keydown', function(e){
     if(e.key==='Enter') buscarCliente();
+  });
+
+  // ==================== PAGOS POR MES ====================
+  var NOMBRES_MES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  function etiquetaDeMes(mesInput){
+    var partes = mesInput.split('-');
+    var idx = parseInt(partes[1],10)-1;
+    return (NOMBRES_MES[idx]||partes[1])+' de '+partes[0];
+  }
+
+  function buscarPagosPorMes(){
+    var mes = document.getElementById('inputMesPagos').value; // formato "AAAA-MM"
+    var contenedor = document.getElementById('resultadoPagosMes');
+    contenedor.innerHTML = '';
+    if(!mes) return;
+
+    var pagosDelMes = estado.pagos.filter(function(p){
+      return (p.fechaPagoISO||'').slice(0,7) === mes;
+    }).sort(function(a,b){
+      return (a.fechaPagoISO||'').localeCompare(b.fechaPagoISO||'');
+    });
+
+    if(pagosDelMes.length===0){
+      contenedor.innerHTML = '<div class="vacio">No hay pagos registrados en '+etiquetaDeMes(mes)+'.</div>';
+      return;
+    }
+
+    var total = 0;
+    var clientesUnicos = {};
+    pagosDelMes.forEach(function(p){
+      total += Number(p.valorPagado)||0;
+      clientesUnicos[p.contrato] = true;
+    });
+
+    var html = '<div class="ficha-cliente">'+
+      campoFicha('Mes', etiquetaDeMes(mes))+
+      campoFicha('Pagos registrados', String(pagosDelMes.length))+
+      campoFicha('Clientes distintos', String(Object.keys(clientesUnicos).length))+
+      campoFicha('Total cobrado', formatoDinero(total))+
+    '</div>';
+
+    html += '<table><thead><tr><th>Fecha de pago</th><th>Cliente</th><th>Cédula</th><th>Contrato</th><th>Cuota</th><th>Valor</th><th>Registrado por</th></tr></thead><tbody>';
+    pagosDelMes.forEach(function(p){
+      html += '<tr>'+
+        '<td data-etiqueta="Fecha">'+escapeHtml(p.fechaPago)+'</td>'+
+        '<td data-etiqueta="Cliente">'+escapeHtml(p.cliente)+'</td>'+
+        '<td data-etiqueta="Cédula">'+escapeHtml(p.cedula)+'</td>'+
+        '<td data-etiqueta="Contrato">'+escapeHtml(p.contrato)+'</td>'+
+        '<td data-etiqueta="Cuota">'+escapeHtml(p.cuota)+'</td>'+
+        '<td data-etiqueta="Valor">'+formatoDinero(p.valorPagado)+'</td>'+
+        '<td data-etiqueta="Registrado por">'+escapeHtml(p.registradoPor)+'</td>'+
+      '</tr>';
+    });
+    html += '</tbody></table>';
+
+    contenedor.innerHTML = html;
+  }
+
+  // Por defecto, muestra el mes actual para no tener que elegirlo cada vez.
+  document.getElementById('inputMesPagos').value = formatoFechaInput(new Date()).slice(0,7);
+
+  document.getElementById('btnBuscarMesPagos').addEventListener('click', buscarPagosPorMes);
+  document.getElementById('inputMesPagos').addEventListener('keydown', function(e){
+    if(e.key==='Enter') buscarPagosPorMes();
   });
 
   // ==================== CONFIGURACIÓN DE URL ====================
