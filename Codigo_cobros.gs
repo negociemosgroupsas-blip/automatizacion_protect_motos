@@ -10,6 +10,7 @@ var TOKEN = 'PM-COBROS-2026';
 var SHEET_ID = '1WMR0VhNg6apQa5BPg4bFoRbMqJNdQQ9f3UdlA2fKb04';
 var HOJA_SEGUIMIENTO = 'Protect';
 var HOJA_PAGOS = 'Pagos';
+var HOJA_GESTIONES = 'Gestiones';
 
 var COL = {
   ASESOR: 2,
@@ -37,6 +38,11 @@ var ENCABEZADOS_PAGOS = [
   'N° de cuota', 'Valor pagado', 'Comprobante / nota', 'Registrado por'
 ];
 
+// Encabezados exactos de la hoja "Gestiones" (columnas A-F)
+var ENCABEZADOS_GESTIONES = [
+  'Fecha de gestión', 'N° contrato', 'Cédula', 'Cliente', 'Acción', 'Registrado por'
+];
+
 // ==================== PUNTO DE ENTRADA ====================
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
@@ -54,6 +60,8 @@ function doGet(e) {
         salida = accionRegistrarPago(params);
       } else if (accion === 'estado') {
         salida = accionCambiarEstado(params);
+      } else if (accion === 'registrarGestion') {
+        salida = accionRegistrarGestion(params);
       } else {
         salida = { ok: false, error: 'Acción desconocida: ' + accion };
       }
@@ -82,11 +90,13 @@ function accionDatos() {
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var hojaSeg = hojaSeguimiento(ss);
   var hojaPagos = ss.getSheetByName(HOJA_PAGOS);
+  var hojaGestiones = ss.getSheetByName(HOJA_GESTIONES);
 
   var contratos = leerContratos(hojaSeg);
   var pagos = leerPagos(hojaPagos);
+  var gestiones = leerGestiones(hojaGestiones);
 
-  return { ok: true, contratos: contratos, pagos: pagos };
+  return { ok: true, contratos: contratos, pagos: pagos, gestiones: gestiones };
 }
 
 function leerContratos(hoja) {
@@ -150,6 +160,66 @@ function leerPagos(hoja) {
     });
   }
   return resultado;
+}
+
+function leerGestiones(hoja) {
+  if (!hoja) return [];
+  var ultimaFila = hoja.getLastRow();
+  if (ultimaFila < 2) return [];
+
+  var datos = hoja.getRange(2, 1, ultimaFila - 1, 6).getValues();
+  var resultado = [];
+  for (var i = 0; i < datos.length; i++) {
+    var fila = datos[i];
+    var contrato = String(fila[1] || '').trim();
+    if (!contrato) continue;
+    resultado.push({
+      fechaGestion: formatoFecha(fila[0]),
+      fechaGestionISO: formatoISO(fila[0]),
+      contrato: contrato,
+      cedula: String(fila[2] || ''),
+      cliente: String(fila[3] || ''),
+      accion: String(fila[4] || ''),
+      registradoPor: String(fila[5] || '')
+    });
+  }
+  return resultado;
+}
+
+// ==================== ACCIÓN: REGISTRAR GESTIÓN DE COBRO ====================
+// Marca que hoy ya se contactó al cliente ("YA COBRÉ HOY"). No cambia el
+// estado del cliente ni registra ningún pago — solo queda el registro de
+// que se hizo la gestión, para que no vuelva a salir en la lista de hoy.
+function accionRegistrarGestion(params) {
+  var contrato = String(params.contrato || '').trim();
+  var cedula = String(params.cedula || '').trim();
+  var cliente = String(params.cliente || '').trim();
+  var registradoPor = String(params.registradoPor || '').trim();
+
+  if (!contrato) return { ok: false, error: 'Falta el número de contrato.' };
+
+  var lock = LockService.getScriptLock();
+  var exito = lock.tryLock(15000);
+  if (!exito) {
+    return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
+  }
+
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var hojaGestiones = ss.getSheetByName(HOJA_GESTIONES);
+    if (!hojaGestiones) {
+      hojaGestiones = ss.insertSheet(HOJA_GESTIONES);
+      hojaGestiones.appendRow(ENCABEZADOS_GESTIONES);
+    }
+
+    hojaGestiones.appendRow([new Date(), contrato, cedula, cliente, 'Cobro realizado', registradoPor]);
+
+    return { ok: true, mensaje: 'Gestión registrada correctamente.' };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo registrar la gestión: ' + err.message };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // ==================== ACCIÓN: REGISTRAR PAGO ====================

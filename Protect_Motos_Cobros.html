@@ -447,6 +447,7 @@
   var estado = {
     contratos: [],
     pagos: [],
+    gestiones: [],
     urlConector: localStorage.getItem(CLAVE_URL) || '',
     filtroActivo: null
   };
@@ -601,6 +602,7 @@
       }
       estado.contratos = resp.contratos || [];
       estado.pagos = resp.pagos || [];
+      estado.gestiones = resp.gestiones || [];
       var hora = new Date().toLocaleTimeString('es-CO');
       mostrarEstado('ok', 'Datos actualizados · '+estado.contratos.length+' contratos · '+estado.pagos.length+' pagos registrados · Última sincronización: '+hora+'.');
       renderizarTodo();
@@ -626,6 +628,17 @@
   }
 
   // ==================== LÓGICA DE NEGOCIO ====================
+  // Contratos ya gestionados HOY (botón "Ya cobré hoy"): no es un pago, solo
+  // indica que ya se hizo el contacto, para no repetirlo el mismo día.
+  function construirSetGestionadosHoy(){
+    var hoyISO = formatoFechaInput(hoy());
+    var set = {};
+    estado.gestiones.forEach(function(g){
+      if(g.fechaGestionISO===hoyISO) set[g.contrato] = true;
+    });
+    return set;
+  }
+
   function construirMapaPagos(){
     var mapa = {}; // contrato -> {cuotasPagadas:Set, totalPagado:number, pagos:[]}
     estado.pagos.forEach(function(p){
@@ -712,16 +725,24 @@
   function renderizarTodo(){
     var mapaPagos = construirMapaPagos();
     sincronizarFinalizados(mapaPagos).then(function(){
-      renderizarContadores(mapaPagos);
-      renderizarCobros(mapaPagos);
-      renderizarRenovaciones();
-      renderizarFiltro(mapaPagos);
+      renderizarVistas(mapaPagos);
     });
+  }
+
+  // Vuelve a dibujar todo con los datos que ya están en memoria, sin
+  // pedirle nada nuevo al servidor (para que "Ya cobré hoy" se sienta
+  // instantáneo y se pueda pasar rápido al siguiente cliente).
+  function renderizarVistas(mapaPagos){
+    renderizarContadores(mapaPagos);
+    renderizarCobros(mapaPagos);
+    renderizarRenovaciones();
+    renderizarFiltro(mapaPagos);
   }
 
   function renderizarContadores(mapaPagos){
     var activos=0, cancelados=0, finalizados=0, pendientesHoy=0, totalPendiente=0, porRenovar=0;
     var hoyD = hoy();
+    var gestionadosHoy = construirSetGestionadosHoy();
 
     estado.contratos.forEach(function(c){
       if(c.estado==='ACTIVO') activos++;
@@ -731,8 +752,10 @@
       if(c.forma==='FINANCIADO' && c.estado==='ACTIVO'){
         var info = calcularEstadoCuotas(c, mapaPagos);
         if(info.cuotaPendiente){
-          pendientesHoy++;
+          // "Total pendiente" es dinero que deben (siempre cuenta).
+          // "Pendientes de cobro hoy" es la cola de gestión del día (no cuenta si ya se gestionó hoy).
           totalPendiente += c.valorCuota||0;
+          if(!gestionadosHoy[c.contrato]) pendientesHoy++;
         }
       }
 
@@ -758,11 +781,14 @@
     var vacio = document.getElementById('vacioCobros');
     cuerpo.innerHTML='';
 
+    var gestionadosHoy = construirSetGestionadosHoy();
     var lista = [];
+    var huboGestionados = false;
     estado.contratos.forEach(function(c){
       if(c.forma!=='FINANCIADO' || c.estado!=='ACTIVO') return;
       var info = calcularEstadoCuotas(c, mapaPagos);
       if(!info.cuotaPendiente) return;
+      if(gestionadosHoy[c.contrato]){ huboGestionados = true; return; } // ya se le hizo la gestión hoy
       lista.push({contrato:c, info:info});
     });
 
@@ -771,7 +797,13 @@
 
     if(lista.length===0){
       vacio.style.display='block';
-      vacio.textContent = estado.contratos.length ? 'No hay cobros pendientes en este momento. ¡Vas al día!' : 'No hay datos cargados todavía.';
+      if(!estado.contratos.length){
+        vacio.textContent = 'No hay datos cargados todavía.';
+      } else if(huboGestionados){
+        vacio.textContent = '✓ Ya gestionaste a todos los pendientes de hoy. ¡Buen trabajo!';
+      } else {
+        vacio.textContent = 'No hay cobros pendientes en este momento. ¡Vas al día!';
+      }
       return;
     }
     vacio.style.display='none';
@@ -792,6 +824,7 @@
         '<td data-etiqueta="Acciones"><div class="acciones-fila">'+
           '<button class="btn btn-verde btn-sm" data-accion="whatsapp-cobro">WhatsApp</button>'+
           '<button class="btn btn-azul btn-sm" data-accion="registrar-pago">Registrar pago</button>'+
+          '<button class="btn btn-gris btn-sm" data-accion="gestion-hoy">Ya cobré hoy</button>'+
           '<button class="btn btn-rojo btn-sm" data-accion="cancelar">Cancelar</button>'+
         '</div></td>';
 
@@ -800,6 +833,9 @@
       });
       tr.querySelector('[data-accion="registrar-pago"]').addEventListener('click', function(){
         abrirModalPago(c, info);
+      });
+      tr.querySelector('[data-accion="gestion-hoy"]').addEventListener('click', function(){
+        marcarGestionHoy(c);
       });
       tr.querySelector('[data-accion="cancelar"]').addEventListener('click', function(){
         abrirModalCancelar(c);
@@ -867,6 +903,7 @@
   function construirFilasFiltro(tipo, mapaPagos){
     var hoyD = hoy();
     var filas = [];
+    var gestionadosHoy = construirSetGestionadosHoy();
 
     if(tipo==='activos' || tipo==='cancelados' || tipo==='finalizados'){
       var estadoBuscado = tipo==='activos' ? 'ACTIVO' : (tipo==='cancelados' ? 'CANCELADO' : 'FINALIZADO');
@@ -881,10 +918,14 @@
         if(c.forma!=='FINANCIADO' || c.estado!=='ACTIVO') return;
         var info = calcularEstadoCuotas(c, mapaPagos);
         if(!info.cuotaPendiente) return;
+        // "Pendientes de cobro hoy" es la cola de gestión: si ya se gestionó hoy, no sale.
+        // "Total pendiente" es dinero que deben: sigue apareciendo, solo se marca como gestionado.
+        var yaGestionado = !!gestionadosHoy[c.contrato];
+        if(tipo==='pendientesHoy' && yaGestionado) return;
         var sem = semaforoDe(c, info);
         var atrasoTexto = info.cuotaPendiente.diasAtraso===0 ? 'Hoy' : info.cuotaPendiente.diasAtraso+' día(s) de atraso';
         var detalle = 'Cuota #'+info.cuotaPendiente.numero+' de '+c.plazo+' · Fecha de pago: '+formatoFechaCO(info.cuotaPendiente.fechaVence)+' · Valor a pagar: '+formatoDinero(c.valorCuota)+' · '+atrasoTexto;
-        filas.push({c:c, detalle:detalle, semaforo:sem, tipoAcciones:'cobro', info:info});
+        filas.push({c:c, detalle:detalle, semaforo:sem, tipoAcciones:'cobro', info:info, gestionadoHoy:yaGestionado});
       });
       // Los de hoy primero; los más atrasados van quedando al final (a la cola)
       filas.sort(function(a,b){ return a.info.cuotaPendiente.diasAtraso - b.info.cuotaPendiente.diasAtraso; });
@@ -960,6 +1001,14 @@
       if(item.tipoAcciones==='cobro'){
         celdaAcciones.appendChild(crearBotonAccion('WhatsApp','btn-verde', function(){ abrirWhatsAppCobro(c, item.info); }));
         celdaAcciones.appendChild(crearBotonAccion('Registrar pago','btn-azul', function(){ abrirModalPago(c, item.info); }));
+        if(item.gestionadoHoy){
+          var etiquetaGestion = document.createElement('span');
+          etiquetaGestion.className = 'semaforo finalizado';
+          etiquetaGestion.innerHTML = '<span class="punto"></span>Ya gestionado hoy';
+          celdaAcciones.appendChild(etiquetaGestion);
+        } else {
+          celdaAcciones.appendChild(crearBotonAccion('Ya cobré hoy','btn-gris', function(){ marcarGestionHoy(c); }));
+        }
         celdaAcciones.appendChild(crearBotonAccion('Cancelar','btn-rojo', function(){ abrirModalCancelar(c); }));
       } else if(item.tipoAcciones==='renovar'){
         celdaAcciones.appendChild(crearBotonAccion('WhatsApp','btn-verde', function(){ abrirWhatsAppRenovacion(c, item.fin); }));
@@ -1154,6 +1203,37 @@
     });
   });
 
+  // ==================== GESTIÓN DE COBRO (Ya cobré hoy) ====================
+  // No cambia el estado del cliente ni registra ningún pago: solo deja
+  // constancia de que hoy ya se hizo el contacto, para que no vuelva a
+  // salir en la lista de pendientes de hoy (sí vuelve mañana si sigue debiendo).
+  function marcarGestionHoy(c){
+    var registradoPor = localStorage.getItem('pm_cobros_registrado_por') || '';
+    llamarConector({
+      action:'registrarGestion',
+      contrato:c.contrato, cedula:c.cedula, cliente:c.cliente, registradoPor:registradoPor
+    }).then(function(resp){
+      if(!resp.ok){
+        mostrarEstado('error', resp.error || 'No se pudo registrar la gestión.');
+        return;
+      }
+      var hoyD = hoy();
+      estado.gestiones.push({
+        fechaGestion: formatoFechaCO(hoyD),
+        fechaGestionISO: formatoFechaInput(hoyD),
+        contrato: c.contrato,
+        cedula: c.cedula,
+        cliente: c.cliente,
+        accion: 'Cobro realizado',
+        registradoPor: registradoPor
+      });
+      mostrarEstado('ok', '✓ Gestión registrada para '+c.cliente+'. No volverá a salir en la lista de hoy.');
+      renderizarVistas(construirMapaPagos());
+    }).catch(function(err){
+      mostrarEstado('error', err.message);
+    });
+  }
+
   // ==================== HISTORIAL ====================
   function buscarCliente(){
     var termino = document.getElementById('inputBusqueda').value.trim().toLowerCase();
@@ -1222,6 +1302,25 @@
           '<td data-etiqueta="Nota">'+escapeHtml(p.nota)+'</td>'+
           '<td data-etiqueta="Registrado por">'+escapeHtml(p.registradoPor)+'</td>'+
           '<td data-etiqueta="Puntualidad">'+puntualidad+'</td>'+
+        '</tr>';
+      });
+      html += '</tbody></table>';
+    }
+
+    var gestionesCliente = estado.gestiones.filter(function(g){ return g.contrato===encontrado.contrato; });
+    html += '<h3 style="margin:18px 0 8px;color:var(--azul);font-size:.95rem;">Historial de gestiones de cobro</h3>';
+    if(gestionesCliente.length===0){
+      html += '<div class="vacio">Todavía no se ha registrado ninguna gestión de cobro para este cliente.</div>';
+    } else {
+      var gestionesOrdenadas = gestionesCliente.slice().sort(function(a,b){
+        return (a.fechaGestionISO||'').localeCompare(b.fechaGestionISO||'');
+      });
+      html += '<table><thead><tr><th>Fecha de gestión</th><th>Acción</th><th>Registrado por</th></tr></thead><tbody>';
+      gestionesOrdenadas.forEach(function(g){
+        html += '<tr>'+
+          '<td data-etiqueta="Fecha">'+escapeHtml(g.fechaGestion)+'</td>'+
+          '<td data-etiqueta="Acción">'+escapeHtml(g.accion)+'</td>'+
+          '<td data-etiqueta="Registrado por">'+escapeHtml(g.registradoPor)+'</td>'+
         '</tr>';
       });
       html += '</tbody></table>';
