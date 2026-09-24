@@ -27,7 +27,7 @@ var COL = {
   CELULAR: 31,
   CORREO: 32,
   DIRECCION: 33,
-  ESTADO_CLIENTE: 30 // ACTIVO | CANCELADO | FINALIZADO (columna AD)
+  ESTADO_CLIENTE: 44 // ACTIVO | CANCELADO | FINALIZADO (columna AR)
 };
 
 var FILA_INICIO_DATOS = 2; // fila 1 = encabezados
