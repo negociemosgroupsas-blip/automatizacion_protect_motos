@@ -817,27 +817,24 @@
 
     var gestionadosHoy = construirSetGestionadosHoy();
     var lista = [];
-    var huboGestionados = false;
     estado.contratos.forEach(function(c){
       if(c.forma!=='FINANCIADO' || c.estado!=='ACTIVO') return;
       var info = calcularEstadoCuotas(c, mapaPagos);
       if(!info.cuotaPendiente) return;
-      if(gestionadosHoy[c.contrato]){ huboGestionados = true; return; } // ya se le hizo la gestión hoy
-      lista.push({contrato:c, info:info});
+      lista.push({contrato:c, info:info, gestionadoHoy: !!gestionadosHoy[c.contrato]});
     });
 
-    // Los de hoy primero; los más atrasados van quedando al final (a la cola)
-    lista.sort(function(a,b){ return a.info.cuotaPendiente.diasAtraso - b.info.cuotaPendiente.diasAtraso; });
+    // Los de hoy primero; los más atrasados van quedando al final (a la cola).
+    // Los ya gestionados hoy quedan hasta el fondo: no se pierden de vista,
+    // pero no estorban a los que sí faltan por gestionar.
+    lista.sort(function(a,b){
+      if(a.gestionadoHoy !== b.gestionadoHoy) return a.gestionadoHoy ? 1 : -1;
+      return a.info.cuotaPendiente.diasAtraso - b.info.cuotaPendiente.diasAtraso;
+    });
 
     if(lista.length===0){
       vacio.style.display='block';
-      if(!estado.contratos.length){
-        vacio.textContent = 'No hay datos cargados todavía.';
-      } else if(huboGestionados){
-        vacio.textContent = '✓ Ya gestionaste a todos los pendientes de hoy. ¡Buen trabajo!';
-      } else {
-        vacio.textContent = 'No hay cobros pendientes en este momento. ¡Vas al día!';
-      }
+      vacio.textContent = estado.contratos.length ? 'No hay cobros pendientes en este momento. ¡Vas al día!' : 'No hay datos cargados todavía.';
       return;
     }
     vacio.style.display='none';
@@ -846,6 +843,10 @@
       var c = item.contrato, info = item.info;
       var sem = semaforoDe(c, info);
       var tr = document.createElement('tr');
+      if(item.gestionadoHoy) tr.style.opacity = '0.6';
+      var botonGestionHtml = item.gestionadoHoy
+        ? '<span class="semaforo finalizado"><span class="punto"></span>Ya gestionado hoy</span>'
+        : '<button class="btn btn-gris btn-sm" data-accion="gestion-hoy">Ya cobré hoy</button>';
       tr.innerHTML =
         '<td data-etiqueta="Cliente"><strong>'+escapeHtml(c.cliente)+'</strong><br><span style="color:var(--texto-suave);font-size:.75rem;">'+escapeHtml(c.cedula)+'</span></td>'+
         '<td data-etiqueta="Placa">'+escapeHtml(c.placa)+'</td>'+
@@ -858,7 +859,7 @@
         '<td data-etiqueta="Acciones"><div class="acciones-fila">'+
           '<button class="btn btn-verde btn-sm" data-accion="whatsapp-cobro">WhatsApp</button>'+
           '<button class="btn btn-azul btn-sm" data-accion="registrar-pago">Registrar pago</button>'+
-          '<button class="btn btn-gris btn-sm" data-accion="gestion-hoy">Ya cobré hoy</button>'+
+          botonGestionHtml+
           '<button class="btn btn-rojo btn-sm" data-accion="cancelar">Cancelar</button>'+
         '</div></td>';
 
@@ -868,9 +869,12 @@
       tr.querySelector('[data-accion="registrar-pago"]').addEventListener('click', function(){
         abrirModalPago(c, info);
       });
-      tr.querySelector('[data-accion="gestion-hoy"]').addEventListener('click', function(e){
-        marcarGestionHoy(c, e.currentTarget);
-      });
+      var botonGestion = tr.querySelector('[data-accion="gestion-hoy"]');
+      if(botonGestion){
+        botonGestion.addEventListener('click', function(e){
+          marcarGestionHoy(c, e.currentTarget);
+        });
+      }
       tr.querySelector('[data-accion="cancelar"]').addEventListener('click', function(){
         abrirModalCancelar(c);
       });
