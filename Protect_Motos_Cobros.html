@@ -1427,6 +1427,9 @@
       estadosLocalesPendientes[c.contrato] = 'CANCELADO';
       mostrarEstado('ok', '✓ '+textoAccion+' — '+c.cliente+'. Contrato '+c.contrato+' marcado como CANCELADO.');
       renderizarVistas(construirMapaPagos());
+      if(document.getElementById('inputBusqueda').value.trim()){
+        buscarCliente();
+      }
 
       // Deja constancia en el historial de gestiones (no bloquea la vista si falla).
       llamarConector({
@@ -1529,6 +1532,12 @@
       }
       html += '<button class="btn btn-rojo btn-sm" data-accion="cancelar">Cancelar cliente</button>';
       html += '</div>';
+    } else if(encontrado.estado==='FINALIZADO'){
+      html += '<div class="acciones-fila" style="margin-bottom:16px;">';
+      html += '<button class="btn btn-verde btn-sm" data-accion="whatsapp-renovar-ficha">WhatsApp</button>';
+      html += '<button class="btn btn-azul btn-sm" data-accion="acepto-renovacion-ficha">Acepto renovación</button>';
+      html += '<button class="btn btn-rojo btn-sm" data-accion="no-acepto-renovacion-ficha">No acepto renovación</button>';
+      html += '</div>';
     }
 
     if(info.pagos.length===0){
@@ -1594,6 +1603,20 @@
     if(accGestion) accGestion.addEventListener('click', function(){ marcarGestionHoy(encontrado, accGestion); });
     var accCancelar = tarjeta.querySelector('[data-accion="cancelar"]');
     if(accCancelar) accCancelar.addEventListener('click', function(){ abrirModalCancelar(encontrado); });
+
+    var accWhatsappRenovar = tarjeta.querySelector('[data-accion="whatsapp-renovar-ficha"]');
+    if(accWhatsappRenovar) accWhatsappRenovar.addEventListener('click', function(){
+      var fin = parsearISO(encontrado.finISO);
+      abrirWhatsAppRenovacion(encontrado, fin);
+    });
+    var accAceptoRenovacion = tarjeta.querySelector('[data-accion="acepto-renovacion-ficha"]');
+    if(accAceptoRenovacion) accAceptoRenovacion.addEventListener('click', function(e){
+      marcarRenovacion(encontrado, true, e.currentTarget);
+    });
+    var accNoAceptoRenovacion = tarjeta.querySelector('[data-accion="no-acepto-renovacion-ficha"]');
+    if(accNoAceptoRenovacion) accNoAceptoRenovacion.addEventListener('click', function(e){
+      marcarRenovacion(encontrado, false, e.currentTarget);
+    });
   }
 
   function campoFicha(etiqueta, valor){
