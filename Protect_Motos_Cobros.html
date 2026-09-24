@@ -215,6 +215,8 @@
   .ficha-cliente .campo .etiqueta{font-size:.68rem;text-transform:uppercase;color:var(--texto-suave);letter-spacing:.3px;}
   .ficha-cliente .campo .valor{font-size:.9rem;font-weight:600;color:var(--texto);}
 
+  .tarjeta-poliza + .tarjeta-poliza{margin-top:22px;padding-top:22px;border-top:2px dashed var(--borde);}
+
   .modal-fondo{
     display:none;
     position:fixed;inset:0;
@@ -1259,22 +1261,48 @@
     contenedor.innerHTML='';
     if(!termino){ return; }
 
-    var encontrado = estado.contratos.find(function(c){
+    var encontrados = estado.contratos.filter(function(c){
       return c.cedula.toLowerCase()===termino ||
              c.contrato.toLowerCase()===termino ||
              c.placa.toLowerCase()===termino;
     });
 
-    if(!encontrado){
+    if(encontrados.length===0){
       contenedor.innerHTML = '<div class="vacio">No se encontró ningún cliente con ese dato.</div>';
       return;
     }
 
+    // Más reciente primero, por si el cliente tiene varias pólizas (renovaciones de años distintos)
+    encontrados.sort(function(a,b){
+      return (b.fechaFirmaISO||'').localeCompare(a.fechaFirmaISO||'');
+    });
+
     var mapaPagos = construirMapaPagos();
+
+    if(encontrados.length>1){
+      var aviso = document.createElement('div');
+      aviso.className = 'sub';
+      aviso.style.marginBottom = '12px';
+      aviso.textContent = 'Este cliente tiene '+encontrados.length+' pólizas registradas:';
+      contenedor.appendChild(aviso);
+    }
+
+    encontrados.forEach(function(encontrado){
+      renderizarFichaPoliza(contenedor, encontrado, mapaPagos, encontrados.length);
+    });
+  }
+
+  function renderizarFichaPoliza(contenedor, encontrado, mapaPagos, totalPolizas){
     var info = calcularEstadoCuotas(encontrado, mapaPagos);
     var sem = semaforoDe(encontrado, info);
+    var tarjeta = document.createElement('div');
+    tarjeta.className = 'tarjeta-poliza';
 
-    var html = '<div class="ficha-cliente">'+
+    var html = '';
+    if(totalPolizas>1){
+      html += '<h3 style="margin:0 0 10px;color:var(--azul);font-size:.95rem;">Póliza · Contrato '+escapeHtml(encontrado.contrato)+' ('+escapeHtml(encontrado.fechaFirma)+')</h3>';
+    }
+    html += '<div class="ficha-cliente">'+
       campoFicha('Cliente', encontrado.cliente)+
       campoFicha('Cédula', encontrado.cedula)+
       campoFicha('Placa', encontrado.placa)+
@@ -1355,15 +1383,16 @@
       html += '</tbody></table>';
     }
 
-    contenedor.innerHTML = html;
+    tarjeta.innerHTML = html;
+    contenedor.appendChild(tarjeta);
 
-    var accWhatsapp = contenedor.querySelector('[data-accion="whatsapp-cobro"]');
+    var accWhatsapp = tarjeta.querySelector('[data-accion="whatsapp-cobro"]');
     if(accWhatsapp) accWhatsapp.addEventListener('click', function(){ abrirWhatsAppCobro(encontrado, info); });
-    var accPago = contenedor.querySelector('[data-accion="registrar-pago"]');
+    var accPago = tarjeta.querySelector('[data-accion="registrar-pago"]');
     if(accPago) accPago.addEventListener('click', function(){ abrirModalPago(encontrado, info); });
-    var accGestion = contenedor.querySelector('[data-accion="gestion-hoy"]');
+    var accGestion = tarjeta.querySelector('[data-accion="gestion-hoy"]');
     if(accGestion) accGestion.addEventListener('click', function(){ marcarGestionHoy(encontrado); });
-    var accCancelar = contenedor.querySelector('[data-accion="cancelar"]');
+    var accCancelar = tarjeta.querySelector('[data-accion="cancelar"]');
     if(accCancelar) accCancelar.addEventListener('click', function(){ abrirModalCancelar(encontrado); });
   }
 
