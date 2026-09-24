@@ -580,9 +580,21 @@
 
   // ==================== ESTADO DE CONEXIÓN (UI) ====================
   var elEstadoConexion = document.getElementById('estadoConexion');
+  var temporizadorEstadoConexion = null;
   function mostrarEstado(tipo, texto){
     elEstadoConexion.className = 'estado-conexion '+tipo;
     elEstadoConexion.textContent = texto;
+    if(temporizadorEstadoConexion){
+      clearTimeout(temporizadorEstadoConexion);
+      temporizadorEstadoConexion = null;
+    }
+    // Los mensajes de éxito se borran solos; los de error o carga se quedan visibles.
+    if(tipo==='ok'){
+      temporizadorEstadoConexion = setTimeout(function(){
+        elEstadoConexion.className = 'estado-conexion';
+        elEstadoConexion.textContent = '';
+      }, 6000);
+    }
   }
 
   // ==================== CARGA DE DATOS ====================
