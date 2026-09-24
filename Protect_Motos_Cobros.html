@@ -1010,7 +1010,7 @@
         if(tipo==='pendientesHoy' && yaGestionado) return;
         var sem = semaforoDe(c, info);
         var atrasoTexto = info.cuotaPendiente.diasAtraso===0 ? 'Hoy' : info.cuotaPendiente.diasAtraso+' día(s) de atraso';
-        var detalle = 'Cuota #'+info.cuotaPendiente.numero+' de '+c.plazo+' · Fecha de pago: '+formatoFechaCO(info.cuotaPendiente.fechaVence)+' · Valor a pagar: '+formatoDinero(c.valorCuota)+' · '+atrasoTexto;
+        var detalle = 'Contrato firmado: '+c.fechaFirma+' · Cuota #'+info.cuotaPendiente.numero+' de '+c.plazo+' · Fecha de pago: '+formatoFechaCO(info.cuotaPendiente.fechaVence)+' · Valor a pagar: '+formatoDinero(c.valorCuota)+' · '+atrasoTexto;
         filas.push({c:c, detalle:detalle, semaforo:sem, tipoAcciones:'cobro', info:info, gestionadoHoy:yaGestionado});
       });
       // Los de hoy primero; los más atrasados van quedando al final (a la cola)
