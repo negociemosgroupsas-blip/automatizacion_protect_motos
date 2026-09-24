@@ -837,8 +837,8 @@
       tr.querySelector('[data-accion="registrar-pago"]').addEventListener('click', function(){
         abrirModalPago(c, info);
       });
-      tr.querySelector('[data-accion="gestion-hoy"]').addEventListener('click', function(){
-        marcarGestionHoy(c);
+      tr.querySelector('[data-accion="gestion-hoy"]').addEventListener('click', function(e){
+        marcarGestionHoy(c, e.currentTarget);
       });
       tr.querySelector('[data-accion="cancelar"]').addEventListener('click', function(){
         abrirModalCancelar(c);
@@ -1010,7 +1010,7 @@
           etiquetaGestion.innerHTML = '<span class="punto"></span>Ya gestionado hoy';
           celdaAcciones.appendChild(etiquetaGestion);
         } else {
-          celdaAcciones.appendChild(crearBotonAccion('Ya cobré hoy','btn-gris', function(){ marcarGestionHoy(c); }));
+          celdaAcciones.appendChild(crearBotonAccion('Ya cobré hoy','btn-gris', function(e){ marcarGestionHoy(c, e.currentTarget); }));
         }
         celdaAcciones.appendChild(crearBotonAccion('Cancelar','btn-rojo', function(){ abrirModalCancelar(c); }));
       } else if(item.tipoAcciones==='renovar'){
@@ -1224,17 +1224,24 @@
   // No cambia el estado del cliente ni registra ningún pago: solo deja
   // constancia de que hoy ya se hizo el contacto, para que no vuelva a
   // salir en la lista de pendientes de hoy (sí vuelve mañana si sigue debiendo).
-  function marcarGestionHoy(c){
+  function marcarGestionHoy(c, boton){
     var registradoPor = localStorage.getItem('pm_cobros_registrado_por') || '';
+    var textoOriginal = boton ? boton.textContent : null;
+    if(boton){ boton.disabled = true; boton.textContent = 'Guardando...'; }
+
     llamarConector({
       action:'registrarGestion',
       contrato:c.contrato, cedula:c.cedula, cliente:c.cliente, registradoPor:registradoPor
     }).then(function(resp){
       if(!resp.ok){
-        mostrarEstado('error', resp.error || 'No se pudo registrar la gestión.');
+        if(boton){ boton.disabled = false; boton.textContent = textoOriginal; }
+        var mensajeError = resp.error || 'No se pudo registrar la gestión.';
+        mostrarEstado('error', mensajeError);
+        window.alert('No se pudo registrar la gestión de '+c.cliente+':\n\n'+mensajeError);
         return;
       }
       var hoyD = hoy();
+      if(!Array.isArray(estado.gestiones)) estado.gestiones = [];
       estado.gestiones.push({
         fechaGestion: formatoFechaCO(hoyD),
         fechaGestionISO: formatoFechaInput(hoyD),
@@ -1250,7 +1257,9 @@
         buscarCliente();
       }
     }).catch(function(err){
+      if(boton){ boton.disabled = false; boton.textContent = textoOriginal; }
       mostrarEstado('error', err.message);
+      window.alert('No se pudo registrar la gestión de '+c.cliente+':\n\n'+err.message);
     });
   }
 
@@ -1391,7 +1400,7 @@
     var accPago = tarjeta.querySelector('[data-accion="registrar-pago"]');
     if(accPago) accPago.addEventListener('click', function(){ abrirModalPago(encontrado, info); });
     var accGestion = tarjeta.querySelector('[data-accion="gestion-hoy"]');
-    if(accGestion) accGestion.addEventListener('click', function(){ marcarGestionHoy(encontrado); });
+    if(accGestion) accGestion.addEventListener('click', function(){ marcarGestionHoy(encontrado, accGestion); });
     var accCancelar = tarjeta.querySelector('[data-accion="cancelar"]');
     if(accCancelar) accCancelar.addEventListener('click', function(){ abrirModalCancelar(encontrado); });
   }
