@@ -306,11 +306,11 @@
   <section class="panel" id="panelHistorial">
     <div class="cabecera">
       <h2>Historial del cliente</h2>
-      <span class="sub">Busca por cédula, N° de contrato o placa</span>
+      <span class="sub">Busca por cédula, N° de contrato, placa o nombre</span>
     </div>
     <div class="contenido-panel">
       <div class="caja-busqueda">
-        <input type="text" id="inputBusqueda" placeholder="Cédula, contrato o placa...">
+        <input type="text" id="inputBusqueda" placeholder="Cédula, contrato, placa o nombre...">
         <button class="btn btn-azul btn-sm" id="btnBuscar">Buscar</button>
       </div>
       <div id="resultadoHistorial"></div>
@@ -1377,7 +1377,8 @@
     var encontrados = estado.contratos.filter(function(c){
       return c.cedula.toLowerCase()===termino ||
              c.contrato.toLowerCase()===termino ||
-             c.placa.toLowerCase()===termino;
+             c.placa.toLowerCase()===termino ||
+             c.cliente.toLowerCase().indexOf(termino)!==-1;
     });
 
     if(encontrados.length===0){
