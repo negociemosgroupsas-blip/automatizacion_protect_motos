@@ -1003,12 +1003,12 @@
 
   function abrirWhatsAppCobro(c, info){
     var mensaje =
-      'Hola, '+c.cliente+' 😊\n'+
-      'Te escribimos de Protect Motos para recordarte que tienes pendiente la cuota #'+info.cuotaPendiente.numero+' de tu contrato.\n\n'+
+      'Hola, '+c.cliente+'\n'+
+      'Te escribimos de Protect Motos, la póliza de tu motocicleta, para recordarte que tienes pendiente la cuota #'+info.cuotaPendiente.numero+' de tu póliza.\n\n'+
       'Valor de la cuota: '+formatoDinero(c.valorCuota)+'\n'+
       'Fecha de pago: '+formatoFechaCO(info.cuotaPendiente.fechaVence)+'\n\n'+
       'Cuando realices el pago, por favor envíanos el comprobante por este medio para poder registrarlo.\n\n'+
-      '¡Muchas gracias! 💙💛';
+      '¡Muchas gracias!';
     var url = 'https://wa.me/'+numeroWhatsApp(c.celular)+'?text='+encodeURIComponent(mensaje);
     window.open(url,'_blank');
   }
