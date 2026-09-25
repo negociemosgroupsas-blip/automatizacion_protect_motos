@@ -266,7 +266,9 @@ function accionRegistrarPago(params) {
       var estadoActual = String(infoContrato.fila[COL.ESTADO_CLIENTE - 1] || '').trim().toUpperCase();
 
       if (forma === 'FINANCIADO' && estadoActual === 'ACTIVO' && plazo > 0) {
-        var cuotasPagadas = contarCuotasPagadas(hojaPagos, contrato, plazo);
+        // La cuota 1 se paga al firmar y nunca queda registrada en "Pagos",
+        // así que se suma como ya pagada al comparar contra el plazo.
+        var cuotasPagadas = contarCuotasPagadas(hojaPagos, contrato, plazo) + 1;
         if (cuotasPagadas >= plazo) {
           hojaSeg.getRange(infoContrato.numeroFila, COL.ESTADO_CLIENTE).setValue('FINALIZADO');
           finalizado = true;

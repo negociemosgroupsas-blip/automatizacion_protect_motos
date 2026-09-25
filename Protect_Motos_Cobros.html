@@ -519,6 +519,14 @@
     return d;
   }
 
+  // La cuota 1 siempre se paga en el momento de firmar el contrato (fuera de
+  // este panel, nunca se registra en "Pagos"), así que la cuota N vence
+  // N-1 meses después de la firma: la cuota 2 vence al mes de firmar, la
+  // cuota 3 a los 2 meses, etc.
+  function fechaVenceCuota(firma, numeroCuota){
+    return addMonths(firma, numeroCuota - 1);
+  }
+
   function diferenciaDias(a,b){
     return Math.round((a.getTime()-b.getTime())/86400000);
   }
@@ -743,7 +751,12 @@
 
   function calcularEstadoCuotas(contrato, mapaPagos){
     var registro = mapaPagos[contrato.contrato] || {cuotasPagadas:{}, totalPagado:0, pagos:[]};
+    // La cuota 1 se paga al firmar (fuera del panel): se da por pagada
+    // aunque no tenga fila en "Pagos", para que nunca aparezca como pendiente.
     var pagadasSet = registro.cuotasPagadas;
+    if(contrato.forma==='FINANCIADO' && (contrato.plazo||0)>0){
+      pagadasSet = Object.assign({}, pagadasSet, {1:true});
+    }
     var numPagadas = Object.keys(pagadasSet).length;
     var plazo = contrato.plazo || 0;
     var faltantes = Math.max(0, plazo - numPagadas);
@@ -755,7 +768,7 @@
       var hoyD = hoy();
       for(var n=1;n<=plazo;n++){
         if(pagadasSet[n]) continue;
-        var vence = addMonths(firma, n);
+        var vence = fechaVenceCuota(firma, n);
         if(vence.getTime() <= hoyD.getTime()){
           cuotaPendiente = { numero:n, fechaVence:vence, diasAtraso: diferenciaDias(hoyD, vence) };
           break;
@@ -1250,13 +1263,14 @@
   }
 
   // A qué mes(es) corresponde cada número de cuota, según la fecha de firma
-  // del contrato (cuota N vence N meses después de la firma). Ej: "Septiembre
-  // de 2026" o, si son varias, "Septiembre y Octubre de 2026".
+  // del contrato (la cuota 1 se paga al firmar; la cuota N vence N-1 meses
+  // después). Ej: "Septiembre de 2026" o, si son varias, "Septiembre y
+  // Octubre de 2026".
   function textoMesesDeCuotas(numeros){
     if(!contratoEnPago || !contratoEnPago.fechaFirmaISO || numeros.length===0) return '';
     var firma = parsearISO(contratoEnPago.fechaFirmaISO);
     if(!firma) return '';
-    var fechas = numeros.map(function(n){ return addMonths(firma, n); });
+    var fechas = numeros.map(function(n){ return fechaVenceCuota(firma, n); });
     var mismoAnio = fechas.every(function(f){ return f.getFullYear()===fechas[0].getFullYear(); });
     var nombres = fechas.map(function(f){
       return NOMBRES_MES[f.getMonth()] + (mismoAnio ? '' : ' de '+f.getFullYear());
@@ -1602,7 +1616,7 @@
         var numeros = extraerNumerosCuota(p.cuota);
         if(numeros.length && encontrado.fechaFirmaISO){
           var firma = parsearISO(encontrado.fechaFirmaISO);
-          var venceCuota = addMonths(firma, numeros[0]);
+          var venceCuota = fechaVenceCuota(firma, numeros[0]);
           var fechaPago = parsearISO(p.fechaPagoISO);
           if(fechaPago){
             var dif = diferenciaDias(fechaPago, venceCuota);

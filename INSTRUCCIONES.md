@@ -50,5 +50,5 @@
 - **El sistema nunca cancela solo:** si un cliente no paga, sigue apareciendo como pendiente indefinidamente (con más días de atraso) hasta que tú lo canceles manualmente desde el panel.
 - **Umbral de color naranja→rojo:** está en la constante `UMBRAL_DIAS_ROJO` dentro del `<script>` del HTML (por defecto 5 días). Puedes cambiarlo ahí si quieres ajustar la sensibilidad.
 - **Aviso de renovación:** está en `DIAS_AVISO_RENOVACION` (por defecto 8 días), también editable ahí mismo.
-- **Supuesto sobre el día de cobro:** la cuota N vence N meses después de la fecha de firma, respetando el mismo día del mes (ej: firmó el 15 de enero → cuota 1 vence 15 de febrero, cuota 2 el 15 de marzo, etc.). Si tu negocio cobra la primera cuota en un momento distinto (por ejemplo, al firmar), dime y ajusto la fórmula.
+- **Supuesto sobre el día de cobro:** la cuota 1 siempre se paga al firmar el contrato y por eso nunca se registra en la hoja "Pagos" — el sistema la da por pagada automáticamente. Las demás cuotas vencen N-1 meses después de la fecha de firma, respetando el mismo día del mes (ej: firmó el 15 de enero → cuota 2 vence 15 de febrero, cuota 3 el 15 de marzo, etc.).
 - **Token de seguridad:** cualquiera con la URL del conector y el token puede leer/escribir en tu hoja. No compartas la URL del conector públicamente.
