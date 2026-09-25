@@ -1324,8 +1324,8 @@
   // Si el cliente lleva cuotas pagadas de antes de tener este sistema (nunca
   // quedaron en "Pagos"), regístralas como "histórico" antes del pago real,
   // para que el sistema deje de considerarlas pendientes.
-  function registrarCuotasHistoricas(contrato, cedula, cliente, numerosFaltantes, fecha, registradoPor){
-    var valorHistorico = numerosFaltantes.length * (contratoEnPago.valorCuota || 0);
+  function registrarCuotasHistoricas(contrato, cedula, cliente, numerosFaltantes, fecha, registradoPor, valorUnitario){
+    var valorHistorico = numerosFaltantes.length * (valorUnitario || 0);
     var cuotaTexto = numerosFaltantes.join(',');
     var notaHistorico = 'Cubierta — pago histórico anterior al sistema';
     return llamarConector({
@@ -1424,10 +1424,23 @@
     }
 
     if(faltantes.length){
+      // Valor a usar para cada cuota histórica: el de la hoja Protect si lo
+      // tiene cargado; si no (falta o quedó en 0), usamos el valor por cuota
+      // que se ve en el pago de hoy, para no intentar guardar un histórico
+      // en $0.
+      var valorUnitario = (contratoEnPago && contratoEnPago.valorCuota) ? contratoEnPago.valorCuota :
+        (numeros.length ? Math.round(Number(valor) / numeros.length) : 0);
+
+      if(!valorUnitario || valorUnitario <= 0){
+        msg.className = 'msg-modal error';
+        msg.textContent = 'No pude calcular el valor de las cuotas históricas (el contrato no tiene cargado el valor de la cuota en Protect). Corrígelo en la hoja o escribe primero el valor pagado de hoy y vuelve a intentar.';
+        return;
+      }
+
       var listaTxt = faltantes.join(', ');
       var confirmar = window.confirm(
         'Este cliente no tiene registrada'+(faltantes.length>1?'s las cuotas ':' la cuota ')+listaTxt+'.\n\n'+
-        '¿Fueron pagadas antes de tener este sistema y quieres marcarlas como cubiertas (histórico)?\n\n'+
+        '¿Fueron pagadas antes de tener este sistema y quieres marcarlas como cubiertas (histórico), por '+formatoDinero(valorUnitario)+' c/u?\n\n'+
         'Aceptar = sí, cúbrelas como histórico y sigue con el registro de hoy.\n'+
         'Cancelar = no, el cliente las debe — no se registra nada.'
       );
@@ -1435,7 +1448,7 @@
 
       boton.disabled = true;
       boton.textContent = 'Guardando histórico...';
-      registrarCuotasHistoricas(contrato, cedula, cliente, faltantes, fecha, registradoPor).then(function(resp){
+      registrarCuotasHistoricas(contrato, cedula, cliente, faltantes, fecha, registradoPor, valorUnitario).then(function(resp){
         if(!resp.ok){
           boton.disabled = false; boton.textContent = 'Guardar pago';
           msg.className = 'msg-modal error';
