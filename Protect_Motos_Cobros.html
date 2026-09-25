@@ -344,7 +344,7 @@
       <table id="tablaFiltro">
         <thead>
           <tr>
-            <th>Cliente</th><th>Cédula</th><th>Placa</th><th>Contrato</th>
+            <th>Cliente</th><th>Celular</th><th>Cédula</th><th>Placa</th><th>Contrato</th>
             <th>Forma</th><th>Estado</th><th>Detalle</th><th>Acciones</th>
           </tr>
         </thead>
@@ -363,7 +363,7 @@
       <table id="tablaCobros">
         <thead>
           <tr>
-            <th>Cliente</th><th>Placa</th><th>Contrato</th><th>Cuota</th>
+            <th>Cliente</th><th>Celular</th><th>Placa</th><th>Contrato</th><th>Cuota</th>
             <th>Vence</th><th>Valor</th><th>Atraso</th><th>Estado</th><th>Acciones</th>
           </tr>
         </thead>
@@ -381,7 +381,7 @@
     <div class="contenido-panel">
       <table id="tablaRenovar">
         <thead>
-          <tr><th>Cliente</th><th>Placa</th><th>Contrato</th><th>Vence</th><th>Días</th><th>Acciones</th></tr>
+          <tr><th>Cliente</th><th>Celular</th><th>Placa</th><th>Contrato</th><th>Vence</th><th>Días</th><th>Acciones</th></tr>
         </thead>
         <tbody id="cuerpoRenovar"></tbody>
       </table>
@@ -901,6 +901,7 @@
       var tr = document.createElement('tr');
       tr.innerHTML =
         '<td data-etiqueta="Cliente"><strong>'+escapeHtml(c.cliente)+'</strong><br><span style="color:var(--texto-suave);font-size:.75rem;">'+escapeHtml(c.cedula)+'</span></td>'+
+        '<td data-etiqueta="Celular">'+escapeHtml(c.celular)+'</td>'+
         '<td data-etiqueta="Placa">'+escapeHtml(c.placa)+'</td>'+
         '<td data-etiqueta="Contrato">'+escapeHtml(c.contrato)+'</td>'+
         '<td data-etiqueta="Cuota">#'+info.cuotaPendiente.numero+' de '+c.plazo+'</td>'+
@@ -963,6 +964,7 @@
       var tr = document.createElement('tr');
       tr.innerHTML =
         '<td data-etiqueta="Cliente"><strong>'+escapeHtml(c.cliente)+'</strong></td>'+
+        '<td data-etiqueta="Celular">'+escapeHtml(c.celular)+'</td>'+
         '<td data-etiqueta="Placa">'+escapeHtml(c.placa)+'</td>'+
         '<td data-etiqueta="Contrato">'+escapeHtml(c.contrato)+'</td>'+
         '<td data-etiqueta="Vence">'+formatoFechaCO(item.fin)+'</td>'+
@@ -1086,6 +1088,7 @@
       var tr = document.createElement('tr');
       tr.innerHTML =
         '<td data-etiqueta="Cliente"><strong>'+escapeHtml(c.cliente)+'</strong></td>'+
+        '<td data-etiqueta="Celular">'+escapeHtml(c.celular)+'</td>'+
         '<td data-etiqueta="Cédula">'+escapeHtml(c.cedula)+'</td>'+
         '<td data-etiqueta="Placa">'+escapeHtml(c.placa)+'</td>'+
         '<td data-etiqueta="Contrato">'+escapeHtml(c.contrato)+'</td>'+
