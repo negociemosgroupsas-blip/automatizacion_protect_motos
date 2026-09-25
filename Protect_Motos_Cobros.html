@@ -256,6 +256,30 @@
   .msg-modal.error{display:block;background:var(--rojo-bg);color:var(--rojo);}
   .msg-modal.aviso{display:block;background:var(--naranja-bg);color:var(--naranja);}
 
+  .cuotas-checklist{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(84px,1fr));
+    gap:6px;
+    max-height:180px;
+    overflow-y:auto;
+    padding:8px;
+    border:1px solid var(--borde);
+    border-radius:8px;
+  }
+  .cuota-chip{
+    display:flex;align-items:center;gap:5px;
+    font-size:.75rem;
+    padding:6px 7px;
+    border-radius:6px;
+    border:1px solid var(--borde);
+    cursor:pointer;
+    user-select:none;
+  }
+  .cuota-chip input{width:auto;padding:0;margin:0;}
+  .cuota-chip.pagada{background:var(--verde-bg);color:var(--verde);border-color:transparent;cursor:default;}
+  .cuota-chip.marcada{background:var(--azul);color:#fff;border-color:var(--azul);}
+  .cuota-chip .num{font-weight:700;}
+
   footer{text-align:center;padding:20px;color:var(--texto-suave);font-size:.75rem;}
 
   @media (max-width:640px){
@@ -401,9 +425,10 @@
     <input type="hidden" id="pagoContrato">
     <input type="hidden" id="pagoCedula">
     <input type="hidden" id="pagoCliente">
+    <input type="hidden" id="pagoCuota">
     <div class="campo-form">
-      <label>N° de cuota (ej: 5, o "4 a 6" si paga varias)</label>
-      <input type="text" id="pagoCuota">
+      <label>Cuotas que cubre este pago (marca todas las que apliquen — también sirve para poner al día cuotas antiguas que el cliente ya pagó antes de tener este sistema)</label>
+      <div class="cuotas-checklist" id="pagoCuotasChecklist"></div>
     </div>
     <div class="campo-form">
       <label>Valor pagado</label>
@@ -1230,18 +1255,78 @@
     return pagosDelMes[0];
   }
 
+  // Cuotas que el sistema ya sabe que están pagadas: la 1 (siempre se paga
+  // al firmar) más las que ya tengan fila en "Pagos".
+  function construirSetCuotasPagadas(c, info){
+    var set = {};
+    if(c.forma==='FINANCIADO' && (c.plazo||0)>0) set[1] = true;
+    (info && info.pagos || []).forEach(function(p){
+      extraerNumerosCuota(p.cuota).forEach(function(n){ set[n] = true; });
+    });
+    return set;
+  }
+
+  // Dibuja una casilla por cada cuota del plazo. Las ya pagadas quedan
+  // marcadas y bloqueadas; las demás se pueden chulear — tanto para
+  // registrar el pago de hoy como para ponerse al día con cuotas antiguas
+  // que el cliente ya pagó antes de tener este sistema (no quedaron en
+  // "Pagos", pero sí las pagó).
+  function renderizarChecklistCuotas(c, pagadasSet){
+    var cont = document.getElementById('pagoCuotasChecklist');
+    cont.innerHTML = '';
+    var plazo = c.plazo || 0;
+    var firma = c.fechaFirmaISO ? parsearISO(c.fechaFirmaISO) : null;
+    for(var n=1; n<=plazo; n++){
+      var pagada = !!pagadasSet[n];
+      var vence = firma ? fechaVenceCuota(firma, n) : null;
+      var chip = document.createElement('label');
+      chip.className = 'cuota-chip' + (pagada ? ' pagada' : '');
+      chip.innerHTML =
+        '<input type="checkbox" data-cuota="'+n+'" '+(pagada?'checked disabled':'')+'>'+
+        '<span class="num">#'+n+'</span>'+
+        (vence ? ' <span style="opacity:.7">'+formatoFechaCO(vence)+'</span>' : '');
+      cont.appendChild(chip);
+    }
+  }
+
+  // Lee las casillas marcadas (y no bloqueadas), actualiza el campo oculto
+  // pagoCuota (lo que realmente se envía al conector) y recalcula valor/nota.
+  function actualizarSeleccionCuotas(){
+    var checks = document.querySelectorAll('#pagoCuotasChecklist input[type=checkbox]:not([disabled])');
+    var numeros = [];
+    checks.forEach(function(chk){
+      chk.closest('.cuota-chip').classList.toggle('marcada', chk.checked);
+      if(chk.checked) numeros.push(Number(chk.dataset.cuota));
+    });
+    numeros.sort(function(a,b){ return a-b; });
+    document.getElementById('pagoCuota').value = numeros.join(',');
+    actualizarValorSugeridoPago(numeros);
+  }
+  document.getElementById('pagoCuotasChecklist').addEventListener('change', function(e){
+    if(e.target && e.target.matches('input[type=checkbox]')) actualizarSeleccionCuotas();
+  });
+
   function abrirModalPago(c, info){
     contratoEnPago = c;
     document.getElementById('pagoContexto').textContent = c.cliente+' · Contrato '+c.contrato+' · Placa '+c.placa;
     document.getElementById('pagoContrato').value = c.contrato;
     document.getElementById('pagoCedula').value = c.cedula;
     document.getElementById('pagoCliente').value = c.cliente;
-    document.getElementById('pagoCuota').value = info && info.cuotaPendiente ? info.cuotaPendiente.numero : '';
-    document.getElementById('pagoValor').value = c.valorCuota || '';
-    document.getElementById('pagoValorAyuda').textContent = '';
+
+    var pagadasSet = construirSetCuotasPagadas(c, info);
+    renderizarChecklistCuotas(c, pagadasSet);
+    // Por defecto solo marcada la próxima cuota pendiente (como antes);
+    // el usuario puede chulear más si el pago cubre varias o si está
+    // poniendo al día cuotas antiguas.
+    if(info && info.cuotaPendiente){
+      var chkPendiente = document.querySelector('#pagoCuotasChecklist input[data-cuota="'+info.cuotaPendiente.numero+'"]');
+      if(chkPendiente && !chkPendiente.disabled) chkPendiente.checked = true;
+    }
     document.getElementById('pagoFecha').value = formatoFechaInput(new Date());
     document.getElementById('pagoNota').value = '';
     notaEsAutomatica = true;
+    actualizarSeleccionCuotas();
+
     var registradoPrevio = localStorage.getItem('pm_cobros_registrado_por')||'';
     document.getElementById('pagoRegistradoPor').value = registradoPrevio;
 
@@ -1286,11 +1371,9 @@
   var notaEsAutomatica = true;
   document.getElementById('pagoNota').addEventListener('input', function(){ notaEsAutomatica = false; });
 
-  function actualizarValorSugeridoPago(){
+  function actualizarValorSugeridoPago(numeros){
     var ayuda = document.getElementById('pagoValorAyuda');
-    if(!contratoEnPago || !contratoEnPago.valorCuota){ ayuda.textContent=''; return; }
-    var numeros = extraerNumerosCuota(document.getElementById('pagoCuota').value.trim());
-    if(numeros.length===0){ ayuda.textContent=''; return; }
+    if(!contratoEnPago || !contratoEnPago.valorCuota || !numeros || numeros.length===0){ ayuda.textContent=''; return; }
     var total = numeros.length * contratoEnPago.valorCuota;
     document.getElementById('pagoValor').value = total;
 
@@ -1305,7 +1388,6 @@
       ? 'Calculado para '+numeros.length+' cuotas ('+formatoDinero(contratoEnPago.valorCuota)+' c/u = '+formatoDinero(total)+'). Ajústalo si el valor real fue distinto.'
       : '';
   }
-  document.getElementById('pagoCuota').addEventListener('input', actualizarValorSugeridoPago);
 
   document.getElementById('btnCancelarPago').addEventListener('click', cerrarModalPago);
 
@@ -1320,7 +1402,7 @@
     var registradoPor = document.getElementById('pagoRegistradoPor').value.trim();
     var msg = document.getElementById('msgPago');
 
-    if(!cuota){ msg.className='msg-modal error'; msg.textContent='Escribe el número de cuota.'; return; }
+    if(!cuota){ msg.className='msg-modal error'; msg.textContent='Marca al menos una cuota.'; return; }
     if(!valor || Number(valor)<=0){ msg.className='msg-modal error'; msg.textContent='El valor debe ser mayor a 0.'; return; }
     if(!fecha){ msg.className='msg-modal error'; msg.textContent='Selecciona la fecha de pago.'; return; }
 
