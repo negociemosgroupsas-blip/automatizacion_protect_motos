@@ -408,6 +408,7 @@
     <div class="campo-form">
       <label>Valor pagado</label>
       <input type="number" id="pagoValor" min="1" step="1">
+      <span class="sub" id="pagoValorAyuda" style="display:block;margin-top:4px;"></span>
     </div>
     <div class="campo-form">
       <label>Fecha de pago</label>
@@ -1224,6 +1225,7 @@
     document.getElementById('pagoCliente').value = c.cliente;
     document.getElementById('pagoCuota').value = info && info.cuotaPendiente ? info.cuotaPendiente.numero : '';
     document.getElementById('pagoValor').value = c.valorCuota || '';
+    document.getElementById('pagoValorAyuda').textContent = '';
     document.getElementById('pagoFecha').value = formatoFechaInput(new Date());
     document.getElementById('pagoNota').value = '';
     var registradoPrevio = localStorage.getItem('pm_cobros_registrado_por')||'';
@@ -1245,6 +1247,22 @@
     modalPago.classList.remove('abierto');
     contratoEnPago = null;
   }
+
+  // Si escribe varias cuotas ("3 a 4"), recalcula el valor sugerido
+  // (N cuotas × valor de la cuota) para que no quede guardado el valor
+  // de una sola cuota cuando en realidad pagó varias.
+  function actualizarValorSugeridoPago(){
+    var ayuda = document.getElementById('pagoValorAyuda');
+    if(!contratoEnPago || !contratoEnPago.valorCuota){ ayuda.textContent=''; return; }
+    var numeros = extraerNumerosCuota(document.getElementById('pagoCuota').value.trim());
+    if(numeros.length===0){ ayuda.textContent=''; return; }
+    var total = numeros.length * contratoEnPago.valorCuota;
+    document.getElementById('pagoValor').value = total;
+    ayuda.textContent = numeros.length>1
+      ? 'Calculado para '+numeros.length+' cuotas ('+formatoDinero(contratoEnPago.valorCuota)+' c/u = '+formatoDinero(total)+'). Ajústalo si el valor real fue distinto.'
+      : '';
+  }
+  document.getElementById('pagoCuota').addEventListener('input', actualizarValorSugeridoPago);
 
   document.getElementById('btnCancelarPago').addEventListener('click', cerrarModalPago);
 
