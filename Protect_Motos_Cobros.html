@@ -1228,6 +1228,7 @@
     document.getElementById('pagoValorAyuda').textContent = '';
     document.getElementById('pagoFecha').value = formatoFechaInput(new Date());
     document.getElementById('pagoNota').value = '';
+    notaEsAutomatica = true;
     var registradoPrevio = localStorage.getItem('pm_cobros_registrado_por')||'';
     document.getElementById('pagoRegistradoPor').value = registradoPrevio;
 
@@ -1248,9 +1249,29 @@
     contratoEnPago = null;
   }
 
+  // A qué mes(es) corresponde cada número de cuota, según la fecha de firma
+  // del contrato (cuota N vence N meses después de la firma). Ej: "Septiembre
+  // de 2026" o, si son varias, "Septiembre y Octubre de 2026".
+  function textoMesesDeCuotas(numeros){
+    if(!contratoEnPago || !contratoEnPago.fechaFirmaISO || numeros.length===0) return '';
+    var firma = parsearISO(contratoEnPago.fechaFirmaISO);
+    if(!firma) return '';
+    var fechas = numeros.map(function(n){ return addMonths(firma, n); });
+    var mismoAnio = fechas.every(function(f){ return f.getFullYear()===fechas[0].getFullYear(); });
+    var nombres = fechas.map(function(f){
+      return NOMBRES_MES[f.getMonth()] + (mismoAnio ? '' : ' de '+f.getFullYear());
+    });
+    var texto = nombres.length===1 ? nombres[0] : nombres.slice(0,-1).join(', ')+' y '+nombres[nombres.length-1];
+    return mismoAnio ? texto+' de '+fechas[0].getFullYear() : texto;
+  }
+
   // Si escribe varias cuotas ("3 a 4"), recalcula el valor sugerido
   // (N cuotas × valor de la cuota) para que no quede guardado el valor
-  // de una sola cuota cuando en realidad pagó varias.
+  // de una sola cuota cuando en realidad pagó varias, y deja escrito en
+  // la nota a qué mes(es) corresponde, para que quede claro en la hoja.
+  var notaEsAutomatica = true;
+  document.getElementById('pagoNota').addEventListener('input', function(){ notaEsAutomatica = false; });
+
   function actualizarValorSugeridoPago(){
     var ayuda = document.getElementById('pagoValorAyuda');
     if(!contratoEnPago || !contratoEnPago.valorCuota){ ayuda.textContent=''; return; }
@@ -1258,6 +1279,14 @@
     if(numeros.length===0){ ayuda.textContent=''; return; }
     var total = numeros.length * contratoEnPago.valorCuota;
     document.getElementById('pagoValor').value = total;
+
+    var textoMeses = textoMesesDeCuotas(numeros);
+    if(textoMeses && notaEsAutomatica){
+      var campoNota = document.getElementById('pagoNota');
+      campoNota.value = 'Pago cuota'+(numeros.length>1?'s ':' ')+numeros.join(', ')+' — '+textoMeses;
+      notaEsAutomatica = true; // ese cambio lo hicimos nosotros, no cuenta como edición manual
+    }
+
     ayuda.textContent = numeros.length>1
       ? 'Calculado para '+numeros.length+' cuotas ('+formatoDinero(contratoEnPago.valorCuota)+' c/u = '+formatoDinero(total)+'). Ajústalo si el valor real fue distinto.'
       : '';
