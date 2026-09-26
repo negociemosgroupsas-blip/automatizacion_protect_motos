@@ -42,6 +42,7 @@
 - **Cancelar un cliente:** botón "Cancelar" → confirmar. Esto escribe `CANCELADO` en la columna Estado del cliente y el cliente deja de aparecer en cobros.
 - **Finalizado automático:** cuando un cliente financiado completa todas sus cuotas (según lo registrado en "Pagos"), el sistema mismo escribe `FINALIZADO` en la hoja y deja de aparecer en cobros. Tú no tienes que hacer nada.
 - **Por renovar:** aparecen automáticamente los contratos (contado y financiado) cuya fecha "Fin" está a 8 días o menos. Botón WhatsApp para avisarles.
+- **Renovaciones enviadas:** después de escribirle el mensaje de renovación al cliente (manualmente, por WhatsApp), da clic en "Ya envié mensaje de renovación". El cliente pasa de "Por renovar" a la sección **"Renovaciones enviadas"**, donde queda esperando su respuesta (con fecha de envío visible) sin que tengas que recordar a quién ya le escribiste. Desde ahí mismo puedes marcar "Acepto renovación" o "No acepto renovación" cuando el cliente responda — en ambos casos el contrato queda `CANCELADO` (el contrato nuevo, si acepta, se registra aparte). Si llega la fecha de vencimiento de la póliza y el cliente nunca respondió, el sistema lo cancela automáticamente solo (queda constancia en "Gestiones" como "Cancelado automático — venció sin confirmar renovación").
 - **Historial:** busca por cédula, número de contrato o placa para ver todos sus pagos, saldo, cuotas pagadas/faltantes y si pagó antes, a tiempo o tarde.
 - **WhatsApp:** los botones abren `wa.me` con el mensaje ya redactado; solo debes darle enviar.
 
