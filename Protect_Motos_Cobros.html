@@ -302,6 +302,7 @@
     <div class="tarjeta-contador destacado" data-filtro="pendientesHoy" title="Ver pendientes de cobro hoy"><div class="valor" id="cPendientesHoy">–</div><div class="etiqueta">Pendientes de cobro hoy</div></div>
     <div class="tarjeta-contador destacado" data-filtro="totalPendiente" title="Ver clientes con saldo pendiente"><div class="valor" id="cTotalPendiente">–</div><div class="etiqueta">Total pendiente por cobrar</div></div>
     <div class="tarjeta-contador alerta" data-filtro="renovar" title="Ver pólizas por renovar"><div class="valor" id="cRenovar">–</div><div class="etiqueta">Pólizas por renovar (≤8 días)</div></div>
+    <div class="tarjeta-contador" data-filtro="renovacionesEnviadas" title="Ver renovaciones con mensaje ya enviado, esperando respuesta"><div class="valor" id="cRenovarEnviadas">–</div><div class="etiqueta">Renovaciones enviadas</div></div>
   </div>
 
   <section class="panel" id="panelHistorial">
@@ -386,6 +387,22 @@
         <tbody id="cuerpoRenovar"></tbody>
       </table>
       <div class="vacio" id="vacioRenovar" style="display:none;">No hay pólizas próximas a vencer.</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="cabecera">
+      <h2>Renovaciones enviadas</h2>
+      <span class="sub">Ya se les envió el mensaje de renovación — esperando su respuesta</span>
+    </div>
+    <div class="contenido-panel">
+      <table id="tablaRenovarEnviadas">
+        <thead>
+          <tr><th>Cliente</th><th>Celular</th><th>Placa</th><th>Contrato</th><th>Vence</th><th>Días</th><th>Enviado</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="cuerpoRenovarEnviadas"></tbody>
+      </table>
+      <div class="vacio" id="vacioRenovarEnviadas" style="display:none;">No hay renovaciones esperando respuesta.</div>
     </div>
   </section>
 
@@ -511,12 +528,28 @@
     return '$'+signo+conPuntos;
   }
 
+  // Algunos contratos no tienen cargado el valor de la cuota en Protect
+  // (columna en 0 o vacía). En vez de mostrar "$0" — que se confunde con
+  // "no debe nada" — mostramos que ese dato no está registrado.
+  function formatoDineroOTexto(valor, textoSiFalta){
+    if(!valor) return textoSiFalta;
+    return formatoDinero(valor);
+  }
+
   function addMonths(date, n){
     var d = new Date(date.getFullYear(), date.getMonth()+n, 1);
     var ultimoDia = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
     d.setDate(Math.min(date.getDate(), ultimoDia));
     d.setHours(0,0,0,0);
     return d;
+  }
+
+  // La cuota 1 siempre se paga en el momento de firmar el contrato (fuera de
+  // este panel, nunca se registra en "Pagos"), así que la cuota N vence
+  // N-1 meses después de la firma: la cuota 2 vence al mes de firmar, la
+  // cuota 3 a los 2 meses, etc.
+  function fechaVenceCuota(firma, numeroCuota){
+    return addMonths(firma, numeroCuota - 1);
   }
 
   function diferenciaDias(a,b){
@@ -727,6 +760,24 @@
     return set;
   }
 
+  var ACCION_RENOVACION_ENVIADA = 'Mensaje de renovación enviado';
+
+  // Contratos a los que ya se les envió el mensaje de renovación y siguen
+  // esperando respuesta (todavía ACTIVO: si ya aceptó/no aceptó, el contrato
+  // queda CANCELADO y sale solo de este grupo). Guarda también la fecha del
+  // envío más reciente, para mostrarla en la tabla.
+  function construirMapaRenovacionEnviada(){
+    var mapa = {};
+    estado.gestiones.forEach(function(g){
+      if(g.accion !== ACCION_RENOVACION_ENVIADA) return;
+      var actual = mapa[g.contrato];
+      if(!actual || (g.fechaGestionISO||'') > (actual.fechaGestionISO||'')){
+        mapa[g.contrato] = g;
+      }
+    });
+    return mapa;
+  }
+
   function construirMapaPagos(){
     var mapa = {}; // contrato -> {cuotasPagadas:Set, totalPagado:number, pagos:[]}
     estado.pagos.forEach(function(p){
@@ -743,7 +794,12 @@
 
   function calcularEstadoCuotas(contrato, mapaPagos){
     var registro = mapaPagos[contrato.contrato] || {cuotasPagadas:{}, totalPagado:0, pagos:[]};
+    // La cuota 1 se paga al firmar (fuera del panel): se da por pagada
+    // aunque no tenga fila en "Pagos", para que nunca aparezca como pendiente.
     var pagadasSet = registro.cuotasPagadas;
+    if(contrato.forma==='FINANCIADO' && (contrato.plazo||0)>0){
+      pagadasSet = Object.assign({}, pagadasSet, {1:true});
+    }
     var numPagadas = Object.keys(pagadasSet).length;
     var plazo = contrato.plazo || 0;
     var faltantes = Math.max(0, plazo - numPagadas);
@@ -755,7 +811,7 @@
       var hoyD = hoy();
       for(var n=1;n<=plazo;n++){
         if(pagadasSet[n]) continue;
-        var vence = addMonths(firma, n);
+        var vence = fechaVenceCuota(firma, n);
         if(vence.getTime() <= hoyD.getTime()){
           cuotaPendiente = { numero:n, fechaVence:vence, diasAtraso: diferenciaDias(hoyD, vence) };
           break;
@@ -809,10 +865,53 @@
     });
   }
 
+  var ACCION_RENOVACION_VENCIDA = 'Cancelado automático — venció sin confirmar renovación';
+
+  // Si a un cliente ya se le envió el mensaje de renovación y llegó (o pasó)
+  // la fecha de vencimiento de su póliza sin que se haya registrado
+  // Acepto/No acepto renovación, el sistema mismo lo marca CANCELADO — no
+  // debe quedar esperando una respuesta indefinidamente después de vencido.
+  function sincronizarRenovacionesVencidas(){
+    var hoyD = hoy();
+    var renovacionEnviadaMapa = construirMapaRenovacionEnviada();
+    var vencidos = [];
+    estado.contratos.forEach(function(c){
+      if(c.estado!=='ACTIVO' || !c.finISO) return;
+      if(!renovacionEnviadaMapa[c.contrato]) return;
+      var fin = parsearISO(c.finISO);
+      if(!fin) return;
+      if(diferenciaDias(fin, hoyD) < 0) vencidos.push(c);
+    });
+    if(vencidos.length===0) return Promise.resolve();
+
+    var registradoPor = localStorage.getItem('pm_cobros_registrado_por') || '';
+    var promesas = vencidos.map(function(c){
+      return llamarConector({action:'estado', contrato:c.contrato, nuevoEstado:'CANCELADO'}).then(function(resp){
+        if(!resp.ok) return;
+        c.estado = 'CANCELADO';
+        estadosLocalesPendientes[c.contrato] = 'CANCELADO';
+        return llamarConector({
+          action:'registrarGestion', contrato:c.contrato, cedula:c.cedula, cliente:c.cliente,
+          registradoPor:registradoPor, accion:ACCION_RENOVACION_VENCIDA
+        }).then(function(respGestion){
+          if(!respGestion.ok) return;
+          if(!Array.isArray(estado.gestiones)) estado.gestiones = [];
+          var hoyD2 = hoy();
+          estado.gestiones.push({
+            fechaGestion: formatoFechaCO(hoyD2), fechaGestionISO: formatoFechaInput(hoyD2),
+            contrato: c.contrato, cedula: c.cedula, cliente: c.cliente,
+            accion: ACCION_RENOVACION_VENCIDA, registradoPor: registradoPor
+          });
+        }).catch(function(){});
+      }).catch(function(){});
+    });
+    return Promise.all(promesas);
+  }
+
   // ==================== RENDERIZADO ====================
   function renderizarTodo(){
     var mapaPagos = construirMapaPagos();
-    sincronizarFinalizados(mapaPagos).then(function(){
+    Promise.all([sincronizarFinalizados(mapaPagos), sincronizarRenovacionesVencidas()]).then(function(){
       renderizarVistas(mapaPagos);
     });
   }
@@ -824,13 +923,15 @@
     renderizarContadores(mapaPagos);
     renderizarCobros(mapaPagos);
     renderizarRenovaciones();
+    renderizarRenovacionesEnviadas();
     renderizarFiltro(mapaPagos);
   }
 
   function renderizarContadores(mapaPagos){
-    var activos=0, cancelados=0, finalizados=0, pendientesHoy=0, totalPendiente=0, porRenovar=0;
+    var activos=0, cancelados=0, finalizados=0, pendientesHoy=0, totalPendiente=0, porRenovar=0, porRenovarEnviadas=0;
     var hoyD = hoy();
     var gestionadosHoy = construirSetGestionadosHoy();
+    var renovacionEnviadaMapa = construirMapaRenovacionEnviada();
 
     estado.contratos.forEach(function(c){
       if(c.estado==='ACTIVO') activos++;
@@ -851,7 +952,12 @@
         var fin = parsearISO(c.finISO);
         if(fin){
           var dias = diferenciaDias(fin, hoyD);
-          if(dias<=DIAS_AVISO_RENOVACION) porRenovar++;
+          if(dias<=DIAS_AVISO_RENOVACION){
+            // Ya se le envió el mensaje y sigue ACTIVO (esperando respuesta):
+            // cuenta en "Renovaciones enviadas", no en "Por renovar" (pendiente de enviar).
+            if(c.estado==='ACTIVO' && renovacionEnviadaMapa[c.contrato]) porRenovarEnviadas++;
+            else porRenovar++;
+          }
         }
       }
     });
@@ -862,6 +968,7 @@
     document.getElementById('cPendientesHoy').textContent = pendientesHoy;
     document.getElementById('cTotalPendiente').textContent = formatoDinero(totalPendiente);
     document.getElementById('cRenovar').textContent = porRenovar;
+    document.getElementById('cRenovarEnviadas').textContent = porRenovarEnviadas;
   }
 
   function renderizarCobros(mapaPagos){
@@ -907,7 +1014,7 @@
         '<td data-etiqueta="Contrato">'+escapeHtml(c.contrato)+'</td>'+
         '<td data-etiqueta="Cuota">#'+info.cuotaPendiente.numero+' de '+c.plazo+'</td>'+
         '<td data-etiqueta="Vence">'+formatoFechaCO(info.cuotaPendiente.fechaVence)+'</td>'+
-        '<td data-etiqueta="Valor">'+formatoDinero(c.valorCuota)+'</td>'+
+        '<td data-etiqueta="Valor">'+formatoDineroOTexto(c.valorCuota, 'No registrado')+'</td>'+
         '<td data-etiqueta="Atraso">'+(info.cuotaPendiente.diasAtraso===0?'Hoy':info.cuotaPendiente.diasAtraso+' día(s)')+'</td>'+
         '<td data-etiqueta="Estado"><span class="semaforo '+sem.clase+'"><span class="punto"></span>'+sem.texto+'</span></td>'+
         '<td data-etiqueta="Acciones"><div class="acciones-fila">'+
@@ -940,9 +1047,11 @@
     cuerpo.innerHTML='';
 
     var hoyD = hoy();
+    var renovacionEnviadaMapa = construirMapaRenovacionEnviada();
     var lista = [];
     estado.contratos.forEach(function(c){
       if(c.estado==='CANCELADO' || !c.finISO) return;
+      if(renovacionEnviadaMapa[c.contrato]) return; // ya se le envió el mensaje: está en "Renovaciones enviadas"
       var fin = parsearISO(c.finISO);
       if(!fin) return;
       var dias = diferenciaDias(fin, hoyD);
@@ -972,6 +1081,72 @@
         '<td data-etiqueta="Días"><span class="semaforo '+(item.dias<0?'rojo':item.dias<=3?'naranja':'verde')+'"><span class="punto"></span>'+etiquetaDias+'</span></td>'+
         '<td data-etiqueta="Acciones"><div class="acciones-fila">'+
           '<button class="btn btn-verde btn-sm" data-accion="whatsapp-renovar">WhatsApp</button>'+
+          '<button class="btn btn-gris btn-sm" data-accion="mensaje-enviado">Ya envié mensaje de renovación</button>'+
+          '<button class="btn btn-azul btn-sm" data-accion="acepto-renovacion">Acepto renovación</button>'+
+          '<button class="btn btn-rojo btn-sm" data-accion="no-acepto-renovacion">No acepto renovación</button>'+
+        '</div></td>';
+
+      tr.querySelector('[data-accion="whatsapp-renovar"]').addEventListener('click', function(){
+        abrirWhatsAppRenovacion(c, item.fin);
+      });
+      tr.querySelector('[data-accion="mensaje-enviado"]').addEventListener('click', function(e){
+        marcarMensajeRenovacionEnviado(c, e.currentTarget);
+      });
+      tr.querySelector('[data-accion="acepto-renovacion"]').addEventListener('click', function(e){
+        marcarRenovacion(c, true, e.currentTarget);
+      });
+      tr.querySelector('[data-accion="no-acepto-renovacion"]').addEventListener('click', function(e){
+        marcarRenovacion(c, false, e.currentTarget);
+      });
+
+      cuerpo.appendChild(tr);
+    });
+  }
+
+  // Clientes a los que ya se les envió el mensaje de renovación y siguen
+  // ACTIVOS (esperando que confirmen o venza el plazo). Aquí no aparece el
+  // botón de reenvío automático de mensaje otra vez: si hace falta reenviar,
+  // el botón de WhatsApp sigue disponible.
+  function renderizarRenovacionesEnviadas(){
+    var cuerpo = document.getElementById('cuerpoRenovarEnviadas');
+    var vacio = document.getElementById('vacioRenovarEnviadas');
+    cuerpo.innerHTML='';
+
+    var hoyD = hoy();
+    var renovacionEnviadaMapa = construirMapaRenovacionEnviada();
+    var lista = [];
+    estado.contratos.forEach(function(c){
+      if(c.estado!=='ACTIVO' || !c.finISO) return;
+      var gestion = renovacionEnviadaMapa[c.contrato];
+      if(!gestion) return;
+      var fin = parsearISO(c.finISO);
+      if(!fin) return;
+      var dias = diferenciaDias(fin, hoyD);
+      lista.push({contrato:c, fin:fin, dias:dias, gestion:gestion});
+    });
+
+    lista.sort(function(a,b){ return a.dias-b.dias; });
+
+    if(lista.length===0){
+      vacio.style.display='block';
+      return;
+    }
+    vacio.style.display='none';
+
+    lista.forEach(function(item){
+      var c = item.contrato;
+      var etiquetaDias = item.dias<0 ? ('Vencido hace '+Math.abs(item.dias)+'d') : (item.dias===0?'Vence hoy':item.dias+' día(s)');
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td data-etiqueta="Cliente"><strong>'+escapeHtml(c.cliente)+'</strong></td>'+
+        '<td data-etiqueta="Celular">'+escapeHtml(c.celular)+'</td>'+
+        '<td data-etiqueta="Placa">'+escapeHtml(c.placa)+'</td>'+
+        '<td data-etiqueta="Contrato">'+escapeHtml(c.contrato)+'</td>'+
+        '<td data-etiqueta="Vence">'+formatoFechaCO(item.fin)+'</td>'+
+        '<td data-etiqueta="Días"><span class="semaforo '+(item.dias<0?'rojo':item.dias<=3?'naranja':'verde')+'"><span class="punto"></span>'+etiquetaDias+'</span></td>'+
+        '<td data-etiqueta="Enviado">'+escapeHtml(item.gestion.fechaGestion||'—')+'</td>'+
+        '<td data-etiqueta="Acciones"><div class="acciones-fila">'+
+          '<button class="btn btn-verde btn-sm" data-accion="whatsapp-renovar">WhatsApp</button>'+
           '<button class="btn btn-azul btn-sm" data-accion="acepto-renovacion">Acepto renovación</button>'+
           '<button class="btn btn-rojo btn-sm" data-accion="no-acepto-renovacion">No acepto renovación</button>'+
         '</div></td>';
@@ -997,20 +1172,22 @@
     finalizados:    { etiqueta: 'Finalizados' },
     pendientesHoy:  { etiqueta: 'Pendientes de cobro hoy' },
     totalPendiente: { etiqueta: 'Clientes con saldo pendiente' },
-    renovar:        { etiqueta: 'Pólizas por renovar (≤8 días)' }
+    renovar:        { etiqueta: 'Pólizas por renovar (≤8 días)' },
+    renovacionesEnviadas: { etiqueta: 'Renovaciones enviadas — esperando respuesta' }
   };
 
   function construirFilasFiltro(tipo, mapaPagos){
     var hoyD = hoy();
     var filas = [];
     var gestionadosHoy = construirSetGestionadosHoy();
+    var renovacionEnviadaMapa = construirMapaRenovacionEnviada();
 
     if(tipo==='activos' || tipo==='cancelados' || tipo==='finalizados'){
       var estadoBuscado = tipo==='activos' ? 'ACTIVO' : (tipo==='cancelados' ? 'CANCELADO' : 'FINALIZADO');
       estado.contratos.forEach(function(c){
         if(c.estado!==estadoBuscado) return;
         var detalle = 'Vence póliza: '+(c.fin || '—');
-        if(c.forma==='FINANCIADO') detalle += ' · Cuota: '+formatoDinero(c.valorCuota);
+        if(c.forma==='FINANCIADO') detalle += ' · Cuota: '+formatoDineroOTexto(c.valorCuota, 'no registrada');
         filas.push({c:c, detalle:detalle, semaforo:null, tipoAcciones:'historial'});
       });
     } else if(tipo==='pendientesHoy' || tipo==='totalPendiente'){
@@ -1024,7 +1201,7 @@
         if(tipo==='pendientesHoy' && yaGestionado) return;
         var sem = semaforoDe(c, info);
         var atrasoTexto = info.cuotaPendiente.diasAtraso===0 ? 'Hoy' : info.cuotaPendiente.diasAtraso+' día(s) de atraso';
-        var detalle = 'Contrato firmado: '+c.fechaFirma+' · Cuota #'+info.cuotaPendiente.numero+' de '+c.plazo+' · Fecha de pago: '+formatoFechaCO(info.cuotaPendiente.fechaVence)+' · Valor a pagar: '+formatoDinero(c.valorCuota)+' · '+atrasoTexto;
+        var detalle = 'Contrato firmado: '+c.fechaFirma+' · Cuota #'+info.cuotaPendiente.numero+' de '+c.plazo+' · Fecha de pago: '+formatoFechaCO(info.cuotaPendiente.fechaVence)+' · Valor a pagar: '+formatoDineroOTexto(c.valorCuota, 'no registrado')+' · '+atrasoTexto;
         filas.push({c:c, detalle:detalle, semaforo:sem, tipoAcciones:'cobro', info:info, gestionadoHoy:yaGestionado});
       });
       // Los de hoy primero; los más atrasados van quedando al final (a la cola)
@@ -1032,6 +1209,7 @@
     } else if(tipo==='renovar'){
       estado.contratos.forEach(function(c){
         if(c.estado==='CANCELADO' || !c.finISO) return;
+        if(renovacionEnviadaMapa[c.contrato]) return; // ya enviado: sale en "renovacionesEnviadas"
         var fin = parsearISO(c.finISO);
         if(!fin) return;
         var dias = diferenciaDias(fin, hoyD);
@@ -1039,6 +1217,20 @@
         var etiquetaDias = dias<0 ? ('Vencido hace '+Math.abs(dias)+'d') : (dias===0?'Vence hoy':dias+' día(s)');
         var sem = { clase: dias<0?'rojo':(dias<=3?'naranja':'verde'), texto: etiquetaDias };
         filas.push({c:c, detalle:'Vence: '+formatoFechaCO(fin), semaforo:sem, tipoAcciones:'renovar', fin:fin, dias:dias});
+      });
+      filas.sort(function(a,b){ return a.dias-b.dias; });
+    } else if(tipo==='renovacionesEnviadas'){
+      estado.contratos.forEach(function(c){
+        if(c.estado!=='ACTIVO' || !c.finISO) return;
+        var gestion = renovacionEnviadaMapa[c.contrato];
+        if(!gestion) return;
+        var fin = parsearISO(c.finISO);
+        if(!fin) return;
+        var dias = diferenciaDias(fin, hoyD);
+        var etiquetaDias = dias<0 ? ('Vencido hace '+Math.abs(dias)+'d') : (dias===0?'Vence hoy':dias+' día(s)');
+        var sem = { clase: dias<0?'rojo':(dias<=3?'naranja':'verde'), texto: etiquetaDias };
+        var detalle = 'Vence: '+formatoFechaCO(fin)+' · Mensaje enviado: '+(gestion.fechaGestion||'—');
+        filas.push({c:c, detalle:detalle, semaforo:sem, tipoAcciones:'renovarEnviada', fin:fin, dias:dias});
       });
       filas.sort(function(a,b){ return a.dias-b.dias; });
     }
@@ -1111,8 +1303,13 @@
           celdaAcciones.appendChild(crearBotonAccion('Ya cobré hoy','btn-gris', function(e){ marcarGestionHoy(c, e.currentTarget); }));
         }
         celdaAcciones.appendChild(crearBotonAccion('Cancelar','btn-rojo', function(){ abrirModalCancelar(c); }));
-      } else if(item.tipoAcciones==='renovar'){
+      } else if(item.tipoAcciones==='renovar' || item.tipoAcciones==='renovarEnviada'){
         celdaAcciones.appendChild(crearBotonAccion('WhatsApp','btn-verde', function(){ abrirWhatsAppRenovacion(c, item.fin); }));
+        if(item.tipoAcciones==='renovar'){
+          celdaAcciones.appendChild(crearBotonAccion('Ya envié mensaje','btn-gris', function(e){ marcarMensajeRenovacionEnviado(c, e.currentTarget); }));
+        }
+        celdaAcciones.appendChild(crearBotonAccion('Acepto renovación','btn-azul', function(e){ marcarRenovacion(c, true, e.currentTarget); }));
+        celdaAcciones.appendChild(crearBotonAccion('No acepto renovación','btn-rojo', function(e){ marcarRenovacion(c, false, e.currentTarget); }));
       } else {
         celdaAcciones.appendChild(crearBotonAccion('Ver historial','btn-azul', function(){ irAHistorial(c); }));
       }
@@ -1166,7 +1363,7 @@
       mensaje =
         'Hola, '+c.cliente+'\n'+
         'Te escribimos de Protect Motos, la póliza de tu motocicleta, para recordarte que tienes pendiente la cuota #'+info.cuotaPendiente.numero+' de tu póliza.\n\n'+
-        'Valor de la cuota: '+formatoDinero(c.valorCuota)+'\n'+
+        (c.valorCuota ? 'Valor de la cuota: '+formatoDinero(c.valorCuota)+'\n' : '')+
         'Fecha de pago: '+formatoFechaCO(info.cuotaPendiente.fechaVence)+'\n\n'+
         'Puedes realizar el pago a la siguiente cuenta:\n'+
         'Banco: '+DATOS_PAGO.banco+'\n'+
@@ -1217,6 +1414,18 @@
     return pagosDelMes[0];
   }
 
+  // Cuotas que el sistema ya sabe que están pagadas de este contrato: la 1
+  // (siempre se paga al firmar) más las que ya tengan fila en "Pagos".
+  function obtenerCuotasPagadas(c){
+    var set = {};
+    if(c.forma==='FINANCIADO' && (c.plazo||0)>0) set[1] = true;
+    estado.pagos.forEach(function(p){
+      if(p.contrato !== c.contrato) return;
+      extraerNumerosCuota(p.cuota).forEach(function(n){ set[n] = true; });
+    });
+    return set;
+  }
+
   function abrirModalPago(c, info){
     contratoEnPago = c;
     document.getElementById('pagoContexto').textContent = c.cliente+' · Contrato '+c.contrato+' · Placa '+c.placa;
@@ -1250,13 +1459,14 @@
   }
 
   // A qué mes(es) corresponde cada número de cuota, según la fecha de firma
-  // del contrato (cuota N vence N meses después de la firma). Ej: "Septiembre
-  // de 2026" o, si son varias, "Septiembre y Octubre de 2026".
+  // del contrato (la cuota 1 se paga al firmar; la cuota N vence N-1 meses
+  // después). Ej: "Septiembre de 2026" o, si son varias, "Septiembre y
+  // Octubre de 2026".
   function textoMesesDeCuotas(numeros){
     if(!contratoEnPago || !contratoEnPago.fechaFirmaISO || numeros.length===0) return '';
     var firma = parsearISO(contratoEnPago.fechaFirmaISO);
     if(!firma) return '';
-    var fechas = numeros.map(function(n){ return addMonths(firma, n); });
+    var fechas = numeros.map(function(n){ return fechaVenceCuota(firma, n); });
     var mismoAnio = fechas.every(function(f){ return f.getFullYear()===fechas[0].getFullYear(); });
     var nombres = fechas.map(function(f){
       return NOMBRES_MES[f.getMonth()] + (mismoAnio ? '' : ' de '+f.getFullYear());
@@ -1295,6 +1505,34 @@
 
   document.getElementById('btnCancelarPago').addEventListener('click', cerrarModalPago);
 
+  // Si el cliente lleva cuotas pagadas de antes de tener este sistema (nunca
+  // quedaron en "Pagos"), regístralas como "histórico" antes del pago real,
+  // para que el sistema deje de considerarlas pendientes.
+  function registrarCuotasHistoricas(contrato, cedula, cliente, numerosFaltantes, fecha, registradoPor, valorUnitario){
+    var valorHistorico = numerosFaltantes.length * (valorUnitario || 0);
+    var cuotaTexto = numerosFaltantes.join(',');
+    var notaHistorico = 'Cubierta — pago histórico anterior al sistema';
+    return llamarConector({
+      action:'registrarPago',
+      contrato:contrato, cedula:cedula, cliente:cliente,
+      cuota:cuotaTexto, valor:valorHistorico, fecha:fecha,
+      nota:notaHistorico, registradoPor:registradoPor
+    }).then(function(resp){
+      if(resp.ok){
+        var fechaPagoDate = parsearISO(fecha) || new Date();
+        var pagoHistorico = {
+          fechaPago: formatoFechaCO(fechaPagoDate), fechaPagoISO: fecha,
+          contrato: contrato, cedula: cedula, cliente: cliente,
+          cuota: cuotaTexto, valorPagado: valorHistorico,
+          nota: notaHistorico, registradoPor: registradoPor
+        };
+        estado.pagos.push(pagoHistorico);
+        pagosLocalesPendientes.push(pagoHistorico);
+      }
+      return resp;
+    });
+  }
+
   document.getElementById('btnGuardarPago').addEventListener('click', function(){
     var contrato = document.getElementById('pagoContrato').value;
     var cedula = document.getElementById('pagoCedula').value;
@@ -1310,49 +1548,107 @@
     if(!valor || Number(valor)<=0){ msg.className='msg-modal error'; msg.textContent='El valor debe ser mayor a 0.'; return; }
     if(!fecha){ msg.className='msg-modal error'; msg.textContent='Selecciona la fecha de pago.'; return; }
 
-    localStorage.setItem('pm_cobros_registrado_por', registradoPor);
-
     var boton = document.getElementById('btnGuardarPago');
-    boton.disabled = true;
-    boton.textContent = 'Guardando...';
 
-    llamarConector({
-      action:'registrarPago',
-      contrato:contrato, cedula:cedula, cliente:cliente,
-      cuota:cuota, valor:valor, fecha:fecha, nota:nota, registradoPor:registradoPor
-    }).then(function(resp){
-      boton.disabled=false; boton.textContent='Guardar pago';
-      if(resp.ok){
-        msg.className='msg-modal ok';
-        msg.textContent='Pago registrado correctamente.';
-        // Actualización al instante: no esperar a recargar todo para que
-        // el cliente salga de "Cobros de hoy" si ya no tiene cuota pendiente.
-        var fechaPagoDate = parsearISO(fecha) || new Date();
-        var nuevoPago = {
-          fechaPago: formatoFechaCO(fechaPagoDate),
-          fechaPagoISO: fecha,
-          contrato: contrato, cedula: cedula, cliente: cliente,
-          cuota: cuota, valorPagado: Number(valor), nota: nota, registradoPor: registradoPor
-        };
-        estado.pagos.push(nuevoPago);
-        pagosLocalesPendientes.push(nuevoPago);
-        renderizarVistas(construirMapaPagos());
-        if(pagosMesEstaAbierto()){
-          buscarPagosPorMes();
+    function guardarPagoReal(){
+      localStorage.setItem('pm_cobros_registrado_por', registradoPor);
+      boton.disabled = true;
+      boton.textContent = 'Guardando...';
+
+      llamarConector({
+        action:'registrarPago',
+        contrato:contrato, cedula:cedula, cliente:cliente,
+        cuota:cuota, valor:valor, fecha:fecha, nota:nota, registradoPor:registradoPor
+      }).then(function(resp){
+        boton.disabled=false; boton.textContent='Guardar pago';
+        if(resp.ok){
+          msg.className='msg-modal ok';
+          msg.textContent='Pago registrado correctamente.';
+          // Actualización al instante: no esperar a recargar todo para que
+          // el cliente salga de "Cobros de hoy" si ya no tiene cuota pendiente.
+          var fechaPagoDate = parsearISO(fecha) || new Date();
+          var nuevoPago = {
+            fechaPago: formatoFechaCO(fechaPagoDate),
+            fechaPagoISO: fecha,
+            contrato: contrato, cedula: cedula, cliente: cliente,
+            cuota: cuota, valorPagado: Number(valor), nota: nota, registradoPor: registradoPor
+          };
+          estado.pagos.push(nuevoPago);
+          pagosLocalesPendientes.push(nuevoPago);
+          renderizarVistas(construirMapaPagos());
+          if(pagosMesEstaAbierto()){
+            buscarPagosPorMes();
+          }
+          setTimeout(function(){
+            cerrarModalPago();
+            cargarDatos();
+          }, 900);
+        } else {
+          msg.className='msg-modal error';
+          msg.textContent = resp.error || 'No se pudo registrar el pago.';
         }
-        setTimeout(function(){
-          cerrarModalPago();
-          cargarDatos();
-        }, 900);
-      } else {
+      }).catch(function(err){
+        boton.disabled=false; boton.textContent='Guardar pago';
         msg.className='msg-modal error';
-        msg.textContent = resp.error || 'No se pudo registrar el pago.';
+        msg.textContent = err.message;
+      });
+    }
+
+    // ¿La cuota que está registrando deja huecos atrás (cuotas que el
+    // sistema no tiene registradas y que tampoco está marcando ahora)?
+    // Puede ser un cliente que ya llevaba pagando antes de este sistema.
+    var numeros = extraerNumerosCuota(cuota);
+    var faltantes = [];
+    if(numeros.length && contratoEnPago){
+      var pagadasSet = obtenerCuotasPagadas(contratoEnPago);
+      var maxSeleccionada = Math.max.apply(null, numeros);
+      for(var n=1; n<maxSeleccionada; n++){
+        if(!pagadasSet[n] && numeros.indexOf(n)===-1) faltantes.push(n);
       }
-    }).catch(function(err){
-      boton.disabled=false; boton.textContent='Guardar pago';
-      msg.className='msg-modal error';
-      msg.textContent = err.message;
-    });
+    }
+
+    if(faltantes.length){
+      // Valor a usar para cada cuota histórica: el de la hoja Protect si lo
+      // tiene cargado; si no (falta o quedó en 0), usamos el valor por cuota
+      // que se ve en el pago de hoy, para no intentar guardar un histórico
+      // en $0.
+      var valorUnitario = (contratoEnPago && contratoEnPago.valorCuota) ? contratoEnPago.valorCuota :
+        (numeros.length ? Math.round(Number(valor) / numeros.length) : 0);
+
+      if(!valorUnitario || valorUnitario <= 0){
+        msg.className = 'msg-modal error';
+        msg.textContent = 'No pude calcular el valor de las cuotas históricas (el contrato no tiene cargado el valor de la cuota en Protect). Corrígelo en la hoja o escribe primero el valor pagado de hoy y vuelve a intentar.';
+        return;
+      }
+
+      var listaTxt = faltantes.join(', ');
+      var confirmar = window.confirm(
+        'Este cliente no tiene registrada'+(faltantes.length>1?'s las cuotas ':' la cuota ')+listaTxt+'.\n\n'+
+        '¿Fueron pagadas antes de tener este sistema y quieres marcarlas como cubiertas (histórico), por '+formatoDinero(valorUnitario)+' c/u?\n\n'+
+        'Aceptar = sí, cúbrelas como histórico y sigue con el registro de hoy.\n'+
+        'Cancelar = no, el cliente las debe — no se registra nada.'
+      );
+      if(!confirmar) return;
+
+      boton.disabled = true;
+      boton.textContent = 'Guardando histórico...';
+      registrarCuotasHistoricas(contrato, cedula, cliente, faltantes, fecha, registradoPor, valorUnitario).then(function(resp){
+        if(!resp.ok){
+          boton.disabled = false; boton.textContent = 'Guardar pago';
+          msg.className = 'msg-modal error';
+          msg.textContent = 'No se pudieron registrar las cuotas históricas: '+(resp.error||'error desconocido');
+          return;
+        }
+        guardarPagoReal();
+      }).catch(function(err){
+        boton.disabled = false; boton.textContent = 'Guardar pago';
+        msg.className = 'msg-modal error';
+        msg.textContent = err.message;
+      });
+      return;
+    }
+
+    guardarPagoReal();
   });
 
   // ==================== MODAL: CANCELAR CLIENTE ====================
@@ -1445,6 +1741,51 @@
       if(boton){ boton.disabled = false; boton.textContent = textoOriginal; }
       mostrarEstado('error', err.message);
       window.alert('No se pudo registrar la gestión de '+c.cliente+':\n\n'+err.message);
+    });
+  }
+
+  // ==================== POR RENOVAR: YA ENVIÉ MENSAJE ====================
+  // Registra que ya se le mandó el aviso de renovación al cliente. No cambia
+  // su estado ni cancela nada: solo lo mueve de "Por renovar" a "Renovaciones
+  // enviadas", donde queda esperando que confirme o hasta que venza el plazo
+  // (ahí sí se cancela solo, ver sincronizarRenovacionesVencidas).
+  function marcarMensajeRenovacionEnviado(c, boton){
+    var registradoPor = localStorage.getItem('pm_cobros_registrado_por') || '';
+    var textoOriginal = boton ? boton.textContent : null;
+    if(boton){ boton.disabled = true; boton.textContent = 'Guardando...'; }
+
+    llamarConector({
+      action:'registrarGestion',
+      contrato:c.contrato, cedula:c.cedula, cliente:c.cliente,
+      registradoPor:registradoPor, accion:ACCION_RENOVACION_ENVIADA
+    }).then(function(resp){
+      if(!resp.ok){
+        if(boton){ boton.disabled = false; boton.textContent = textoOriginal; }
+        var mensajeError = resp.error || 'No se pudo registrar la gestión.';
+        mostrarEstado('error', mensajeError);
+        window.alert('No se pudo registrar el envío del mensaje de '+c.cliente+':\n\n'+mensajeError);
+        return;
+      }
+      var hoyD = hoy();
+      if(!Array.isArray(estado.gestiones)) estado.gestiones = [];
+      estado.gestiones.push({
+        fechaGestion: formatoFechaCO(hoyD),
+        fechaGestionISO: formatoFechaInput(hoyD),
+        contrato: c.contrato,
+        cedula: c.cedula,
+        cliente: c.cliente,
+        accion: ACCION_RENOVACION_ENVIADA,
+        registradoPor: registradoPor
+      });
+      mostrarEstado('ok', '✓ Mensaje de renovación registrado para '+c.cliente+'. Pasó a "Renovaciones enviadas".');
+      renderizarVistas(construirMapaPagos());
+      if(document.getElementById('inputBusqueda').value.trim()){
+        buscarCliente();
+      }
+    }).catch(function(err){
+      if(boton){ boton.disabled = false; boton.textContent = textoOriginal; }
+      mostrarEstado('error', err.message);
+      window.alert('No se pudo registrar el envío del mensaje de '+c.cliente+':\n\n'+err.message);
     });
   }
 
@@ -1564,7 +1905,7 @@
       campoFicha('Estado', encontrado.estado)+
       campoFicha('Fecha firma', encontrado.fechaFirma)+
       campoFicha('Vence póliza', encontrado.fin)+
-      campoFicha('Valor cuota', formatoDinero(encontrado.valorCuota))+
+      campoFicha('Valor cuota', formatoDineroOTexto(encontrado.valorCuota, 'No registrado'))+
       campoFicha('Plazo', encontrado.plazo+' cuotas')+
       campoFicha('Cuotas pagadas', info.cuotasPagadas+' / '+encontrado.plazo)+
       campoFicha('Saldo pendiente', formatoDinero(info.saldo))+
@@ -1602,7 +1943,7 @@
         var numeros = extraerNumerosCuota(p.cuota);
         if(numeros.length && encontrado.fechaFirmaISO){
           var firma = parsearISO(encontrado.fechaFirmaISO);
-          var venceCuota = addMonths(firma, numeros[0]);
+          var venceCuota = fechaVenceCuota(firma, numeros[0]);
           var fechaPago = parsearISO(p.fechaPagoISO);
           if(fechaPago){
             var dif = diferenciaDias(fechaPago, venceCuota);
