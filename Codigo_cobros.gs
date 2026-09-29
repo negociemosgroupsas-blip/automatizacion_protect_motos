@@ -153,7 +153,7 @@ function leerPagos(hoja) {
       contrato: contrato,
       cedula: String(fila[2] || ''),
       cliente: String(fila[3] || ''),
-      cuota: String(fila[4] || ''),
+      cuota: textoCuota(fila[4]),
       valorPagado: Number(fila[5] || 0),
       nota: String(fila[6] || ''),
       registradoPor: String(fila[7] || '')
@@ -254,7 +254,11 @@ function accionRegistrarPago(params) {
       hojaPagos.appendRow(ENCABEZADOS_PAGOS);
     }
 
-    hojaPagos.appendRow([fechaPago, contrato, cedula, cliente, cuota, valor, nota, registradoPor]);
+    // La cuota se guarda como TEXTO: si no, Google Sheets convierte "2-3" en
+    // una fecha (2 de marzo) y el sistema ya no sabe qué cuotas se pagaron.
+    var filaNueva = hojaPagos.getLastRow() + 1;
+    hojaPagos.getRange(filaNueva, 5).setNumberFormat('@');
+    hojaPagos.getRange(filaNueva, 1, 1, 8).setValues([[fechaPago, contrato, cedula, cliente, cuota, valor, nota, registradoPor]]);
 
     // Si con este pago el cliente financiado completó todas las cuotas, marcar FINALIZADO.
     var finalizado = false;
@@ -282,6 +286,17 @@ function accionRegistrarPago(params) {
   }
 }
 
+// Devuelve el texto de la cuota tal como se escribió. Si Sheets la convirtió
+// en fecha ("2-3" -> 2 de marzo), la reconstruye como día-mes ("2-3"), así
+// también se recuperan los pagos que ya quedaron mal guardados.
+function textoCuota(valor) {
+  if (valor instanceof Date) {
+    if (isNaN(valor.getTime())) return '';
+    return valor.getDate() + '-' + (valor.getMonth() + 1);
+  }
+  return String(valor || '').trim();
+}
+
 function contarCuotasPagadas(hojaPagos, contrato, plazo) {
   var ultimaFila = hojaPagos.getLastRow();
   if (ultimaFila < 2) return 0;
@@ -289,7 +304,7 @@ function contarCuotasPagadas(hojaPagos, contrato, plazo) {
   var pagadas = {};
   for (var i = 0; i < datos.length; i++) {
     if (String(datos[i][1] || '').trim() !== contrato) continue;
-    var numeros = extraerNumerosCuota(String(datos[i][4] || ''));
+    var numeros = extraerNumerosCuota(textoCuota(datos[i][4]));
     for (var j = 0; j < numeros.length; j++) {
       if (numeros[j] >= 1 && numeros[j] <= plazo) pagadas[numeros[j]] = true;
     }
