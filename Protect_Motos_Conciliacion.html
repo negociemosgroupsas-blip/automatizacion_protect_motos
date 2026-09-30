@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Protect Motos — Conciliación de Pagos</title>
+<style>
+  :root{
+    --azul:#13223f; --azul-claro:#1c3050; --dorado:#d6a417; --fondo:#f4f5f7; --tarjeta:#ffffff;
+    --texto:#1f2430; --texto-suave:#6b7280; --borde:#e3e6eb;
+    --verde:#1f9d55; --verde-bg:#e7f8ee; --naranja:#d97706; --naranja-bg:#fff3e0;
+    --rojo:#dc2626; --rojo-bg:#fdeaea; --azulinfo:#2563eb; --azulinfo-bg:#eaf1fd; --morado:#6d4fc2; --morado-bg:#efeafb;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fondo);color:var(--texto);}
+  header{background:linear-gradient(135deg,var(--azul),var(--azul-claro));color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  header h1{font-size:1.25rem;margin:0;font-weight:700;letter-spacing:.3px;}
+  header p{margin:2px 0 0;font-size:.8rem;color:#cbd3e6;}
+  .barra-conector{display:flex;align-items:center;gap:8px;font-size:.8rem;flex-wrap:wrap;}
+  .barra-conector input[type=text]{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:6px 10px;font-size:.78rem;width:300px;max-width:60vw;}
+  .barra-conector input[type=number]{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:6px 8px;font-size:.78rem;width:90px;}
+  .barra-conector input::placeholder{color:#c3cae0;}
+  .barra-conector label{color:#cbd3e6;font-size:.72rem;display:flex;align-items:center;gap:6px;}
+  .btn{border:none;border-radius:8px;padding:8px 14px;font-size:.85rem;font-weight:600;cursor:pointer;transition:filter .15s;}
+  .btn:hover{filter:brightness(1.08);} .btn:active{filter:brightness(.95);}
+  .btn-oro{background:var(--dorado);color:var(--azul);} .btn-azul{background:var(--azul);color:#fff;}
+  .btn-gris{background:#eceef1;color:var(--texto);} .btn-sm{padding:5px 10px;font-size:.75rem;border-radius:6px;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  main{padding:20px;max-width:1400px;margin:0 auto;}
+  .estado-conexion{font-size:.78rem;padding:8px 12px;border-radius:8px;margin-bottom:16px;display:none;}
+  .estado-conexion.ok{display:block;background:var(--verde-bg);color:var(--verde);}
+  .estado-conexion.error{display:block;background:var(--rojo-bg);color:var(--rojo);}
+  .estado-conexion.cargando{display:block;background:var(--azulinfo-bg);color:var(--azulinfo);}
+  .contadores{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px;}
+  .tarjeta-contador{background:var(--tarjeta);border-radius:12px;padding:14px 16px;border:1px solid var(--borde);box-shadow:0 1px 2px rgba(0,0,0,.03);cursor:pointer;transition:box-shadow .15s,transform .1s,border-color .15s;user-select:none;}
+  .tarjeta-contador:hover{box-shadow:0 3px 12px rgba(19,34,63,.14);transform:translateY(-1px);}
+  .tarjeta-contador.activo{border-color:var(--azul);box-shadow:0 0 0 2px var(--azul) inset;}
+  .tarjeta-contador .valor{font-size:1.5rem;font-weight:800;color:var(--azul);}
+  .tarjeta-contador .etiqueta{font-size:.72rem;color:var(--texto-suave);margin-top:2px;text-transform:uppercase;letter-spacing:.4px;}
+  .tarjeta-contador .valor.chico{font-size:1.2rem;padding-top:4px;}
+  .tarjeta-contador.destacado .valor{color:var(--dorado);} .tarjeta-contador.alerta .valor{color:var(--rojo);} .tarjeta-contador.bueno .valor{color:var(--verde);}
+  .filtro-chip{display:inline-flex;align-items:center;gap:8px;background:#eaf0fb;color:var(--azul);padding:5px 8px 5px 12px;border-radius:999px;font-size:.78rem;font-weight:700;}
+  .filtro-chip button{background:rgba(19,34,63,.1);border:none;color:var(--azul);cursor:pointer;font-weight:700;font-size:.8rem;line-height:1;width:20px;height:20px;border-radius:50%;}
+  section.panel{background:var(--tarjeta);border-radius:14px;border:1px solid var(--borde);margin-bottom:22px;overflow:hidden;}
+  section.panel > .cabecera{padding:14px 18px;border-bottom:1px solid var(--borde);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  section.panel > .cabecera h2{margin:0;font-size:1.02rem;color:var(--azul);}
+  section.panel > .cabecera .sub{font-size:.78rem;color:var(--texto-suave);}
+  .contenido-panel{padding:14px 18px;}
+  .tabla-wrap{overflow:auto;max-height:68vh;}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  thead th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;color:var(--texto-suave);padding:8px 10px;border-bottom:2px solid var(--borde);white-space:nowrap;position:sticky;top:0;background:#fff;}
+  tbody td{padding:9px 10px;border-bottom:1px solid var(--borde);vertical-align:middle;white-space:nowrap;}
+  tbody tr.clic{cursor:pointer;} tbody tr:hover{background:#fafbfc;}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .pos{color:var(--naranja);font-weight:600;} .neg{color:var(--rojo);font-weight:600;}
+  .semaforo{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;font-size:.72rem;font-weight:700;white-space:nowrap;}
+  .semaforo.verde{background:var(--verde-bg);color:var(--verde);} .semaforo.naranja{background:var(--naranja-bg);color:var(--naranja);}
+  .semaforo.rojo{background:var(--rojo-bg);color:var(--rojo);} .semaforo.gris{background:#e9e9ef;color:#4b4f5a;} .semaforo.morado{background:var(--morado-bg);color:var(--morado);}
+  .semaforo .punto{width:8px;height:8px;border-radius:50%;background:currentColor;}
+  .vacio{padding:26px;text-align:center;color:var(--texto-suave);font-size:.85rem;}
+  .caja-busqueda{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  .caja-busqueda input{flex:1;min-width:220px;padding:9px 12px;border-radius:8px;border:1px solid var(--borde);font-size:.85rem;}
+  .ficha-cliente{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;padding:14px;background:#f8f9fb;border-radius:10px;}
+  .ficha-cliente .campo .etiqueta{font-size:.68rem;text-transform:uppercase;color:var(--texto-suave);letter-spacing:.3px;}
+  .ficha-cliente .campo .valor{font-size:.9rem;font-weight:600;color:var(--texto);}
+  .tarjeta-poliza + .tarjeta-poliza{margin-top:22px;padding-top:22px;border-top:2px dashed var(--borde);}
+  .tarjeta-poliza h3{margin:0 0 10px;font-size:1rem;color:var(--azul);}
+  .tarjeta-poliza h4{margin:14px 0 6px;font-size:.85rem;color:var(--azul);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .obs{font-size:.8rem;color:var(--texto-suave);margin:8px 0 0;}
+  footer{text-align:center;padding:20px;color:var(--texto-suave);font-size:.75rem;}
+  @media (max-width:640px){ header{padding:14px 16px;} .barra-conector input[type=text]{width:100%;max-width:100%;} main{padding:12px;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Protect Motos · Conciliación de Pagos</h1>
+    <p>Protect!P (pagado a Dugo Motos) contra Consolidados C y D — sin sumarlos</p>
+  </div>
+  <div class="barra-conector">
+    <input type="text" id="inputUrlConector" placeholder="Pega aquí la URL del conector (Apps Script)">
+    <button class="btn btn-oro" id="btnGuardarUrl">Guardar</button>
+    <label>Tolerancia $ <input type="number" id="inputTol" min="0" step="1" value="0"></label>
+    <button class="btn btn-azul" id="btnRecargar">Actualizar datos</button>
+  </div>
+</header>
+
+<main>
+  <div class="estado-conexion" id="estadoConexion"></div>
+
+  <div class="contadores" id="contadores">
+    <div class="tarjeta-contador bueno" data-filtro="conciliado"><div class="valor" id="cConciliado">–</div><div class="etiqueta">Conciliados</div></div>
+    <div class="tarjeta-contador destacado" data-filtro="mas"><div class="valor" id="cMas">–</div><div class="etiqueta">Pagaron de más</div></div>
+    <div class="tarjeta-contador alerta" data-filtro="menos"><div class="valor" id="cMenos">–</div><div class="etiqueta">Pagaron de menos</div></div>
+    <div class="tarjeta-contador destacado" data-filtro="sinCons"><div class="valor" id="cSinCons">–</div><div class="etiqueta">Sin pago en Consolidados</div></div>
+    <div class="tarjeta-contador" data-filtro="sinProtect"><div class="valor" id="cSinProtect">–</div><div class="etiqueta">Sin registro en Protect</div></div>
+    <div class="tarjeta-contador alerta" data-filtro="revisar"><div class="valor" id="cRevisar">–</div><div class="etiqueta">Por revisar</div></div>
+    <div class="tarjeta-contador" data-filtro="todos"><div class="valor chico" id="cTotalP">–</div><div class="etiqueta">Total pagado a Dugo (P) · ver todos</div></div>
+    <div class="tarjeta-contador bueno" data-filtro="conciliado"><div class="valor chico" id="cValorConc">–</div><div class="etiqueta">Valor conciliado</div></div>
+  </div>
+
+  <section class="panel" id="panelHistorial">
+    <div class="cabecera">
+      <h2>Historial del cliente</h2>
+      <span class="sub">Busca por cédula, N° de contrato, placa o nombre</span>
+    </div>
+    <div class="contenido-panel">
+      <div class="caja-busqueda">
+        <input type="text" id="inputBusqueda" placeholder="Cédula, contrato, placa o nombre...">
+        <button class="btn btn-azul btn-sm" id="btnBuscar">Buscar</button>
+      </div>
+      <div id="resultadoHistorial"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panelListado" style="display:none;">
+    <div class="cabecera">
+      <h2>Listado de conciliación</h2>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div class="filtro-chip"><span id="chipTexto">Mostrando: —</span><button id="btnQuitarFiltro" title="Quitar filtro">✕</button></div>
+        <button class="btn btn-gris btn-sm" id="btnCsv">Descargar CSV</button>
+      </div>
+    </div>
+    <div class="contenido-panel">
+      <div class="caja-busqueda"><input type="text" id="inputFiltroLista" placeholder="Filtrar este listado por cédula, cliente, placa, contrato o asesor..."></div>
+      <div class="tabla-wrap">
+        <table>
+          <thead><tr>
+            <th>Conciliación</th><th>Cliente</th><th>Cédula</th><th>Placa</th><th>Contrato</th><th>Forma</th><th>Estado</th>
+            <th class="num">Protect!P</th><th class="num">C</th><th class="num">D</th><th>Concordó con</th><th class="num">Diferencia</th>
+          </tr></thead>
+          <tbody id="tbodyListado"></tbody>
+        </table>
+      </div>
+      <p class="obs" id="conteoListado"></p>
+    </div>
+  </section>
+</main>
+
+<footer>Al actualizar solo se reescribe la hoja «Conciliacion_Dugo». No se modifican Protect, Consolidados, Pagos ni Gestiones.</footer>
+
+<script>
+(function () {
+  var TOKEN = 'PM-CONC-3e97c3a8bb5298ef9d192391';
+  var FILTROS = {
+    todos: { t: 'Todos los registros', f: function () { return true; } },
+    conciliado: { t: 'Conciliados', f: function (x) { return x.estado === 'Conciliado'; } },
+    mas: { t: 'Pagaron de más', f: function (x) { return x.estado === 'Pagó de más'; } },
+    menos: { t: 'Pagaron de menos', f: function (x) { return x.estado === 'Pagó de menos'; } },
+    sinCons: { t: 'Sin pago en Consolidados', f: function (x) { return x.estado === 'Sin registro en Consolidados'; } },
+    sinProtect: { t: 'Sin registro en Protect', f: function (x) { return x.estado === 'Sin registro en Protect'; } },
+    revisar: { t: 'Por revisar', f: function (x) { return x.estado === 'Ambiguo (revisar)' || x.estado === 'Sin valor de contabilidad' || x.estado === 'Sin valor en Protect!P'; } }
+  };
+  var SEMAFORO = {
+    'Conciliado': 'verde', 'Pagó de más': 'naranja', 'Pagó de menos': 'rojo', 'Sin registro en Consolidados': 'naranja',
+    'Sin registro en Protect': 'gris', 'Sin valor de contabilidad': 'gris', 'Sin valor en Protect!P': 'gris', 'Ambiguo (revisar)': 'morado'
+  };
+  var datos = [], filtroActivo = null, textoLista = '';
+  var $ = function (id) { return document.getElementById(id); };
+  var fmt = new Intl.NumberFormat('es-CO');
+  function num(v) { return v === null || v === undefined || v === '' ? '' : fmt.format(v); }
+  function money(v) { return v === null || v === undefined || v === '' ? '—' : '$ ' + fmt.format(v); }
+  function signo(d) { return d === null || d === undefined || d === '' ? '—' : (d > 0 ? '+' : '') + fmt.format(d); }
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; }
+  function ex(f) { return f.extra || {}; }
+  function norm(s) { return String(s === null || s === undefined ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function semaforo(estado) {
+    var s = el('span', 'semaforo ' + (SEMAFORO[estado] || 'gris')); s.appendChild(el('span', 'punto')); s.appendChild(document.createTextNode(estado)); return s;
+  }
+  function estadoConexion(tipo, texto) { var b = $('estadoConexion'); b.className = 'estado-conexion' + (tipo ? ' ' + tipo : ''); b.textContent = texto || ''; }
+
+  // Conexión por JSONP (igual que el HTML de cobros). Funciona abriendo el archivo desde el computador.
+  function llamar(tol, ok, fail) {
+    var url = $('inputUrlConector').value.trim();
+    if (!/^https:\/\/script\.google\.com\//.test(url)) { fail('Pega la URL del conector (termina en /exec) y pulsa Guardar.'); return; }
+    var cb = 'conc_cb_' + Date.now(), s = document.createElement('script'), listo = false;
+    var limpiar = function () { delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); clearTimeout(t); };
+    var t = setTimeout(function () { if (!listo) { limpiar(); fail('Sin respuesta. Revisa la URL y que la implementación tenga acceso "Cualquier usuario".'); } }, 120000);
+    window[cb] = function (r) { listo = true; limpiar(); r && r.ok ? ok(r.data) : fail(r && r.error ? r.error : 'Respuesta inválida.'); };
+    s.onerror = function () { if (!listo) { limpiar(); fail('No se pudo conectar. Revisa la URL y que el acceso sea "Cualquier usuario".'); } };
+    s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=conciliar&token=' + encodeURIComponent(TOKEN) +
+      '&tolerancia=' + encodeURIComponent(tol) + '&callback=' + cb + '&_=' + Date.now();
+    document.head.appendChild(s);
+  }
+  $('btnGuardarUrl').addEventListener('click', function () {
+    try { localStorage.setItem('conc_url', $('inputUrlConector').value.trim()); } catch (e) {}
+    cargar();
+  });
+
+  function cargar() {
+    var btn = $('btnRecargar'); btn.disabled = true; btn.textContent = 'Conciliando…';
+    estadoConexion('cargando', 'Leyendo la hoja y conciliando, esto puede tardar unos segundos…');
+    llamar($('inputTol').value, function (r) {
+      btn.disabled = false; btn.textContent = 'Actualizar datos';
+      datos = r.filas || [];
+      estadoConexion('ok', 'Datos cargados: ' + datos.length + ' registros. Tolerancia: $' + fmt.format(r.tolerancia) + '. Hoja «' + r.hoja + '» actualizada (' + r.generado + ').');
+      pintarContadores(r.resumen || {}); buscar(); if (filtroActivo) pintarListado();
+    }, function (msg) {
+      btn.disabled = false; btn.textContent = 'Actualizar datos';
+      estadoConexion('error', 'Error: ' + msg);
+    });
+  }
+
+  function pintarContadores(res) {
+    var totalP = 0, conc = 0;
+    datos.forEach(function (f) { if (f.pagado) { totalP += f.pagado; if (f.estado === 'Conciliado') conc += f.pagado; } });
+    $('cConciliado').textContent = res['Conciliado'] || 0;
+    $('cMas').textContent = res['Pagó de más'] || 0;
+    $('cMenos').textContent = res['Pagó de menos'] || 0;
+    $('cSinCons').textContent = res['Sin registro en Consolidados'] || 0;
+    $('cSinProtect').textContent = res['Sin registro en Protect'] || 0;
+    $('cRevisar').textContent = (res['Ambiguo (revisar)'] || 0) + (res['Sin valor de contabilidad'] || 0) + (res['Sin valor en Protect!P'] || 0);
+    $('cTotalP').textContent = '$' + fmt.format(totalP);
+    $('cValorConc').textContent = '$' + fmt.format(conc);
+  }
+
+  // ---------- Historial del cliente ----------
+  function buscar() {
+    var q = norm($('inputBusqueda').value).trim(), box = $('resultadoHistorial'); box.textContent = '';
+    if (!q) { box.appendChild(el('div', 'vacio', datos.length ? 'Escribe una cédula, contrato, placa o nombre para ver el historial y su conciliación.' : 'Aún no hay datos cargados.')); return; }
+    var qd = q.replace(/\D/g, '');
+    var hallados = datos.filter(function (f) {
+      var e = ex(f);
+      var campos = [f.cedula, f.contrato, f.placa, f.clienteProtect, f.clienteCons].map(norm);
+      if (campos.some(function (c) { return c.indexOf(q) !== -1; })) return true;
+      return qd.length >= 5 && norm(f.cedula).replace(/\D/g, '').indexOf(qd) !== -1;
+    });
+    if (!hallados.length) { box.appendChild(el('div', 'vacio', 'No se encontró ningún cliente con «' + $('inputBusqueda').value + '».')); return; }
+    box.appendChild(el('p', '', hallados.length === 1 ? 'Se encontró 1 registro:' : 'Se encontraron ' + hallados.length + ' registros:'));
+    hallados.forEach(function (f) { box.appendChild(poliza(f)); });
+  }
+
+  function campo(etq, val) { var c = el('div', 'campo'); c.appendChild(el('div', 'etiqueta', etq)); c.appendChild(el('div', 'valor', val === undefined || val === null || val === '' ? '—' : String(val))); return c; }
+
+  function poliza(f) {
+    var e = ex(f), t = el('div', 'tarjeta-poliza');
+    var enProtect = f.filaProtect !== '' && f.filaProtect !== null && f.filaProtect !== undefined;
+    t.appendChild(el('h3', '', enProtect ? 'Póliza · Contrato ' + (f.contrato || '—') + (e.fechaFirma ? ' (' + e.fechaFirma + ')' : '') : 'Registro solo en Consolidados (fila ' + f.filaCons + ')'));
+    var g = el('div', 'ficha-cliente');
+    [['Cliente', f.clienteProtect || f.clienteCons], ['Cédula', f.cedula], ['Placa', f.placa], ['Contrato', f.contrato], ['Forma', e.forma],
+     ['Estado', e.estadoCliente], ['Fecha firma', e.fechaFirma], ['Vence póliza', e.fin],
+     ['Valor cuota', e.cuota ? '$' + fmt.format(e.cuota) : 'No registrado'], ['Plazo', e.plazo ? e.plazo + ' cuotas' : ''],
+     ['Asesor', e.asesor], ['Celular', e.celular]
+    ].forEach(function (p) { g.appendChild(campo(p[0], p[1])); });
+    t.appendChild(g);
+
+    var h = el('h4', '', 'Conciliación con Consolidados '); h.appendChild(semaforo(f.estado)); t.appendChild(h);
+    var tb = el('table'), th = el('thead'), trh = el('tr');
+    ['Fuente', 'Valor', 'Diferencia vs Protect!P', 'Resultado'].forEach(function (x, i) { trh.appendChild(el('th', i === 1 || i === 2 ? 'num' : '', x)); });
+    th.appendChild(trh); tb.appendChild(th);
+    var body = el('tbody');
+    function fila(nombre, val, dif, res) {
+      var r = el('tr'); r.appendChild(el('td', '', nombre)); r.appendChild(el('td', 'num', money(val)));
+      r.appendChild(el('td', 'num' + (dif > 0 ? ' pos' : dif < 0 ? ' neg' : ''), signo(dif))); r.appendChild(el('td', '', res)); body.appendChild(r);
+    }
+    fila('Protect!P (pagado a Dugo Motos)', f.pagado, null, '');
+    fila('Consolidados C', f.c, f.difC, f.difC === 0 ? 'Concuerda ✔' : '');
+    fila('Consolidados D', f.d, f.difD, f.difD === 0 ? 'Concuerda ✔' : '');
+    tb.appendChild(body); t.appendChild(tb);
+    var nota = [];
+    if (f.concordo) nota.push('Concordó con: ' + f.concordo + '.');
+    if (f.cruce) nota.push('Cruce por ' + f.cruce.toLowerCase() + '.');
+    if (f.obs) nota.push(f.obs);
+    if (nota.length) t.appendChild(el('p', 'obs', nota.join(' ')));
+    return t;
+  }
+
+  $('btnBuscar').addEventListener('click', buscar);
+  $('inputBusqueda').addEventListener('keydown', function (e) { if (e.key === 'Enter') buscar(); });
+
+  // ---------- Listado filtrado (al tocar una tarjeta) ----------
+  function visiblesLista() {
+    var q = norm(textoLista).trim(), def = FILTROS[filtroActivo];
+    return datos.filter(function (f) {
+      if (def && !def.f(f)) return false;
+      if (!q) return true;
+      return [f.cedula, f.clienteCons, f.clienteProtect, f.placa, f.contrato, ex(f).asesor].map(norm).join(' ').indexOf(q) !== -1;
+    });
+  }
+  function pintarListado() {
+    $('panelListado').style.display = 'block';
+    $('chipTexto').textContent = 'Mostrando: ' + FILTROS[filtroActivo].t;
+    var tb = $('tbodyListado'); tb.textContent = '';
+    var lista = visiblesLista();
+    if (!lista.length) { var tr0 = el('tr'), td0 = el('td', 'vacio', 'Sin resultados.'); td0.colSpan = 12; tr0.appendChild(td0); tb.appendChild(tr0); }
+    lista.forEach(function (f) {
+      var tr = el('tr', 'clic'), e = ex(f), td = el('td'); td.appendChild(semaforo(f.estado)); tr.appendChild(td);
+      [f.clienteProtect || f.clienteCons, f.cedula, f.placa, f.contrato, e.forma, e.estadoCliente].forEach(function (v) { tr.appendChild(el('td', '', v || '')); });
+      tr.appendChild(el('td', 'num', num(f.pagado))); tr.appendChild(el('td', 'num', num(f.c))); tr.appendChild(el('td', 'num', num(f.d)));
+      tr.appendChild(el('td', '', f.concordo));
+      tr.appendChild(el('td', 'num' + (f.dif > 0 ? ' pos' : f.dif < 0 ? ' neg' : ''), f.dif === null || f.dif === '' ? '' : signo(f.dif)));
+      tr.onclick = function () { $('inputBusqueda').value = f.contrato || f.cedula || f.placa || ''; buscar(); $('panelHistorial').scrollIntoView({ behavior: 'smooth' }); };
+      tb.appendChild(tr);
+    });
+    $('conteoListado').textContent = 'Mostrando ' + lista.length + ' de ' + datos.length + ' registros. Haz clic en una fila para ver su historial.';
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.tarjeta-contador'), function (c) {
+    c.addEventListener('click', function () {
+      if (!datos.length) return;
+      filtroActivo = c.getAttribute('data-filtro'); textoLista = ''; $('inputFiltroLista').value = '';
+      Array.prototype.forEach.call(document.querySelectorAll('.tarjeta-contador'), function (x) { x.classList.toggle('activo', x === c); });
+      pintarListado(); $('panelListado').scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+  $('btnQuitarFiltro').addEventListener('click', function () {
+    filtroActivo = null; $('panelListado').style.display = 'none';
+    Array.prototype.forEach.call(document.querySelectorAll('.tarjeta-contador'), function (x) { x.classList.remove('activo'); });
+  });
+  $('inputFiltroLista').addEventListener('input', function (e) { textoLista = e.target.value; pintarListado(); });
+
+  $('btnCsv').addEventListener('click', function () {
+    var cab = ['Conciliación', 'Cliente', 'Cédula', 'Placa', 'Contrato', 'Asesor', 'Fecha firma', 'Forma', 'Estado cliente', 'Celular',
+      'Protect!P', 'C', 'D', 'Concordó con', 'Diferencia', 'Diferencia C-P', 'Diferencia D-P', 'Cruce', 'Fila Consolidados', 'Fila Protect', 'Observación'];
+    var filas = visiblesLista().map(function (f) { var e = ex(f);
+      return [f.estado, f.clienteProtect || f.clienteCons, f.cedula, f.placa, f.contrato, e.asesor, e.fechaFirma, e.forma, e.estadoCliente, e.celular,
+        f.pagado, f.c, f.d, f.concordo, f.dif, f.difC, f.difD, f.cruce, f.filaCons, f.filaProtect, f.obs]; });
+    var csv = [cab].concat(filas).map(function (r) {
+      return r.map(function (v) { v = v === null || v === undefined ? '' : String(v); return '"' + v.replace(/"/g, '""') + '"'; }).join(';');
+    }).join('\r\n');
+    var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'conciliacion_dugo.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+  $('btnRecargar').addEventListener('click', cargar);
+
+  buscar();
+  try {
+    $('inputUrlConector').value = localStorage.getItem('conc_url') || '';
+    if ($('inputUrlConector').value) cargar(); // si ya está guardada la URL, carga todo al abrir
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>
