@@ -76,6 +76,7 @@ var CONC_ENCABEZADOS = [
 function CONC_conciliar() {
   var ss = SpreadsheetApp.openById(CONC_SHEET_ID);
   var out = CONC_procesar(ss, CONC_TOLERANCIA);
+  Logger.log('Columnas detectadas en Consolidados: ' + JSON.stringify(out.columnas));
   Logger.log('Conciliación lista: ' + JSON.stringify(out.res.resumen) + ' | seguimiento: ' + JSON.stringify(out.hist));
 }
 
@@ -86,12 +87,15 @@ function CONC_procesar(ss, tol) {
   try {
     var hojaProtect = CONC_buscarHoja(ss, CONC_HOJA_PROTECT);
     var hojaCons = CONC_buscarHoja(ss, CONC_HOJA_CONSOLIDADOS);
-    var res = CONC_calcular(CONC_leerProtect(hojaProtect), CONC_leerConsolidados(hojaCons), tol);
+    var protect = CONC_leerProtect(hojaProtect);
+    var lectura = CONC_leerConsolidados(hojaCons);
+    var columnas = CONC_detectarColumnas(lectura.filas, protect, lectura.encabezados);
+    var res = CONC_calcular(protect, lectura.filas, tol);
     var previos = CONC_leerHistorial(ss);
     var ah = CONC_aplicarHistorial(res.filas, previos, new Date());
     CONC_escribirResultado(ss, res);
     CONC_escribirHistorial(ss, ah.registros);
-    return { res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas) };
+    return { res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas), columnas: columnas };
   } finally {
     lock.releaseLock();
   }
@@ -150,9 +154,11 @@ function CONC_leerProtect(hoja) {
 
 function CONC_leerConsolidados(hoja) {
   var ultima = hoja.getLastRow();
-  if (ultima < CONC_CONS_FILA_INICIO) return [];
+  if (ultima < CONC_CONS_FILA_INICIO) return { filas: [], encabezados: [] };
   var n = ultima - CONC_CONS_FILA_INICIO + 1;
-  var datos = hoja.getRange(CONC_CONS_FILA_INICIO, 1, n, 4).getValues();
+  var ancho = Math.min(Math.max(4, hoja.getLastColumn()), 30);
+  var datos = hoja.getRange(CONC_CONS_FILA_INICIO, 1, n, ancho).getValues();
+  var encabezados = CONC_CONS_FILA_INICIO > 2 ? hoja.getRange(CONC_CONS_FILA_INICIO - 1, 1, 1, ancho).getValues()[0] : [];
   var filas = [];
   for (var i = 0; i < datos.length; i++) {
     var f = datos[i];
@@ -160,10 +166,55 @@ function CONC_leerConsolidados(hoja) {
     filas.push({
       fila: CONC_CONS_FILA_INICIO + i,
       cedula: f[0], cliente: f[1],
-      c: CONC_sinCero(CONC_aNumero(f[2])), d: CONC_sinCero(CONC_aNumero(f[3]))
+      c: CONC_sinCero(CONC_aNumero(f[2])), d: CONC_sinCero(CONC_aNumero(f[3])),
+      extra: f.slice(4)
     });
   }
-  return filas;
+  return { filas: filas, encabezados: encabezados };
+}
+
+// Busca en Consolidados (columnas E en adelante) cuál trae la placa y cuál el número de contrato.
+// 1) por el título de la columna ("placa", "contrato"); 2) si no hay título, por el contenido: la columna
+// cuyos valores coinciden con placas / contratos de Protect. Les pone r.placa y r.contrato a las filas.
+function CONC_detectarColumnas(cons, protect, encabezados) {
+  var info = { placa: -1, contrato: -1, origenPlaca: '', origenContrato: '' };
+  var ancho = 0;
+  cons.forEach(function (r) { if (r.extra.length > ancho) ancho = r.extra.length; });
+  if (!ancho) return info;
+  var i;
+  for (i = 4; i < 4 + ancho; i++) {
+    var h = CONC_normNombre(encabezados[i] || '');
+    if (!h) continue;
+    if (info.placa < 0 && /PLACA/.test(h)) { info.placa = i - 4; info.origenPlaca = 'título'; }
+    else if (info.contrato < 0 && /CONTRATO/.test(h)) { info.contrato = i - 4; info.origenContrato = 'título'; }
+  }
+  var setC = {}, setP = {};
+  protect.forEach(function (p) {
+    var kc = CONC_normClave(p.contrato), kp = CONC_normClave(p.placa);
+    if (kc) setC[kc] = true;
+    if (kp) setP[kp] = true;
+  });
+  var mejor = function (set, excluir) {
+    var idx = -1, top = 0;
+    for (var j = 0; j < ancho; j++) {
+      if (j === excluir) continue;
+      var no = 0, hit = 0;
+      cons.forEach(function (r) {
+        var k = CONC_normClave(r.extra[j]);
+        if (!k) return;
+        no++; if (set[k]) hit++;
+      });
+      if (hit >= 3 && no && hit / no >= 0.3 && hit > top) { top = hit; idx = j; }
+    }
+    return idx;
+  };
+  if (info.contrato < 0) { var ic = mejor(setC, info.placa); if (ic >= 0) { info.contrato = ic; info.origenContrato = 'contenido'; } }
+  if (info.placa < 0) { var ip = mejor(setP, info.contrato); if (ip >= 0) { info.placa = ip; info.origenPlaca = 'contenido'; } }
+  cons.forEach(function (r) {
+    r.placa = info.placa >= 0 ? CONC_texto(r.extra[info.placa]) : '';
+    r.contrato = info.contrato >= 0 ? CONC_texto(r.extra[info.contrato]) : '';
+  });
+  return info;
 }
 
 // ==================== LÓGICA (pura, sin acceso a hojas) ====================
@@ -173,11 +224,28 @@ function CONC_leerConsolidados(hoja) {
 //   2) las filas que sobran, por orden, a los contratos que quedaron sin pago ("Asignado por orden (revisar)");
 //   3) el contrato que se queda sin fila => "Falta por consolidar".
 function CONC_calcular(protect, cons, tol) {
+  // 0) Filas de Consolidados que traen número de contrato o placa: van directo a su contrato
+  var porContrato = {}, porPlaca = {};
+  protect.forEach(function (p) {
+    p.directRows = []; p.directMetodo = '';
+    var kc = CONC_normClave(p.contrato), kp = CONC_normClave(p.placa);
+    if (kc) (porContrato[kc] = porContrato[kc] || []).push(p);
+    if (kp) (porPlaca[kp] = porPlaca[kp] || []).push(p);
+  });
   var consPorCedula = {}, consPorNombre = {};
   cons.forEach(function (r) {
     r.kCed = CONC_normCedula(r.cedula);
     r.kNom = CONC_normNombre(r.cliente);
-    r.usada = false;
+    r.usada = false; r.directa = false;
+    var kc = CONC_normClave(r.contrato), kp = CONC_normClave(r.placa), destino = null, metodo = '';
+    if (kc && porContrato[kc] && porContrato[kc].length === 1) { destino = porContrato[kc][0]; metodo = 'contrato'; }
+    else if (kp && porPlaca[kp] && porPlaca[kp].length === 1) { destino = porPlaca[kp][0]; metodo = 'placa'; }
+    if (destino) {
+      r.directa = true; r.usada = true;
+      destino.directRows.push(r);
+      if (!destino.directMetodo || metodo === 'contrato') destino.directMetodo = metodo;
+      return;
+    }
     if (r.kCed) (consPorCedula[r.kCed] = consPorCedula[r.kCed] || []).push(r);
     if (r.kNom) (consPorNombre[r.kNom] = consPorNombre[r.kNom] || []).push(r);
   });
@@ -190,6 +258,7 @@ function CONC_calcular(protect, cons, tol) {
     var gk = null, cruce = '', filas = null;
     if (p.kCed && consPorCedula[p.kCed]) { gk = 'C:' + p.kCed; cruce = 'Cédula'; filas = consPorCedula[p.kCed]; }
     else if (p.kNom && consPorNombre[p.kNom]) { gk = 'N:' + p.kNom; cruce = 'Nombre (revisar)'; filas = consPorNombre[p.kNom]; }
+    if (!gk && p.directRows.length) { gk = 'D:' + p.fila; cruce = ''; filas = []; }
     if (!gk) { sinGrupo.push(p); return; }
     if (!grupos[gk]) { grupos[gk] = { cruce: cruce, filas: filas, contratos: [] }; orden.push(gk); }
     grupos[gk].contratos.push(p);
@@ -214,9 +283,18 @@ function CONC_calcular(protect, cons, tol) {
   orden.forEach(function (gk) {
     var g = grupos[gk], n = g.contratos.length;
     g.filas.forEach(function (r) { r.usada = true; });
-    var asig = CONC_asignar(g.contratos, g.filas, tol);
+    // Contratos que ya recibieron filas por contrato/placa no entran al reparto por valor/orden
+    var libres = g.contratos.filter(function (p) { return !p.directRows.length; });
+    var asigLibres = CONC_asignar(libres.length ? libres : g.contratos, g.filas, tol);
+    var asig = g.contratos.map(function (p) {
+      var extra = libres.length ? (libres.indexOf(p) >= 0 ? asigLibres[libres.indexOf(p)] : { filas: [], metodo: '' })
+                                : asigLibres[g.contratos.indexOf(p)];
+      var filasTot = p.directRows.concat(extra.filas);
+      return { filas: filasTot, metodo: p.directRows.length ? p.directMetodo : extra.metodo };
+    });
     g.contratos.forEach(function (p, i) {
       var f = base(p, g.cruce), a = asig[i];
+      if (p.directRows.length) f.cruce = p.directMetodo === 'contrato' ? 'Número de contrato' : 'Placa';
       f.varios = n > 1;
       if (!a.filas.length) {
         f.estado = CONC_ESTADO.FALTA;
@@ -226,13 +304,16 @@ function CONC_calcular(protect, cons, tol) {
         return;
       }
       var mejor = CONC_mejorValor(a.filas, p.pagado, tol);
-      f.estado = g.cruce === 'Cédula' ? CONC_ESTADO.CONCILIADO : CONC_ESTADO.POR_NOMBRE;
+      f.estado = (g.cruce === 'Cédula' || p.directRows.length) ? CONC_ESTADO.CONCILIADO : CONC_ESTADO.POR_NOMBRE;
       f.clienteCons = mejor.r.cliente; f.c = mejor.r.c; f.d = mejor.r.d; f.nCons = a.filas.length;
       f.concordo = mejor.concordo; f.valor = mejor.valor; f.dif = mejor.dif; f.difC = mejor.difC; f.difD = mejor.difD;
       f.filaCons = a.filas.map(function (r) { return r.fila; }).join(', ');
       var notas = ['Aparece en Consolidados (' + a.filas.length + (a.filas.length === 1 ? ' fila' : ' filas') + ': ' + f.filaCons + ').'];
-      if (g.cruce !== 'Cédula') notas.push('Se encontró solo por nombre; confirma que sea la misma persona.');
-      if (n > 1) {
+      if (g.cruce === 'Nombre (revisar)' && !p.directRows.length) notas.push('Se encontró solo por nombre; confirma que sea la misma persona.');
+      if (p.directRows.length) {
+        f.asignacion = p.directMetodo === 'contrato' ? 'Asignado por contrato' : 'Asignado por placa';
+        notas.push('Consolidados trae ' + (p.directMetodo === 'contrato' ? 'el número de contrato' : 'la placa') + ' de este pago: asignación segura.');
+      } else if (n > 1) {
         if (a.metodo === 'orden') {
           f.asignacion = 'Asignado por orden (revisar)'; f.porOrden = true;
           notas.push('Esta cédula tiene ' + n + ' contratos: la fila se asignó por orden porque el valor no coincidió con ninguno. Revisa que corresponda a este contrato.');
@@ -604,6 +685,12 @@ function CONC_normCedula(v) {
   if (CONC_vacio(v)) return '';
   var s = String(v).replace(/[^0-9A-Za-z]/g, '').toUpperCase();
   return s.replace(/^0+(?=\d)/, '');
+}
+
+// Placas y números de contrato: sin espacios, guiones ni puntos, en mayúsculas ("1342-R" = "1342 r" = "1342R")
+function CONC_normClave(v) {
+  if (CONC_vacio(v)) return '';
+  return String(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
 function CONC_normNombre(v) {

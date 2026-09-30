@@ -264,6 +264,11 @@
       var msg = 'Datos cargados: ' + datos.length + ' registros. Actualizado ' + r.generado + '.';
       if (hs.primeraCorrida) msg += ' Primera corrida: se guardó la línea base en «' + r.hojaHistorial + '». Desde hoy se registrará cuándo se concilia cada contrato.';
       else if (hs.ultimaCorridaAnterior) msg += ' Comparado con la corrida anterior (' + hs.ultimaCorridaAnterior + ').';
+      var cl = r.columnas || {}, letra = function (i) { return String.fromCharCode(69 + i); };
+      var det = [];
+      if (cl.contrato >= 0) det.push('número de contrato (columna ' + letra(cl.contrato) + ')');
+      if (cl.placa >= 0) det.push('placa (columna ' + letra(cl.placa) + ')');
+      msg += det.length ? ' En Consolidados se usa ' + det.join(' y ') + ' para asignar cada pago a su contrato.' : ' Consolidados no trae placa ni contrato: se cruza por cédula.';
       estadoConexion('ok', msg);
       histRes = hs; pintarContadores(r.resumen || {}); pintarAlarma(); buscar(); if (filtroActivo) pintarListado();
     }, function (msg) {
@@ -362,7 +367,7 @@
       t.appendChild(el('h4', '', 'Seguimiento del contrato')); t.appendChild(sg);
     }
     var h = el('h4', '', 'Consolidación '); h.appendChild(semaforo(f.estado));
-    if (f.asignacion) { var asg = el('span', 'semaforo ' + (f.porOrden ? 'naranja' : 'gris'), f.asignacion); h.appendChild(asg); }
+    if (f.asignacion) { var asg = el('span', 'semaforo ' + (f.porOrden ? 'naranja' : (/contrato|placa/.test(f.asignacion) ? 'verde' : 'gris')), f.asignacion); h.appendChild(asg); }
     t.appendChild(h);
     var nota = [];
     if (f.filaCons !== '' && f.filaCons !== undefined && f.estado !== 'Sin registro en Protect') nota.push('Filas en Consolidados: ' + f.filaCons + '.');
