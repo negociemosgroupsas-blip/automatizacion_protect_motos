@@ -124,6 +124,14 @@
     <div class="tarjeta-contador" data-filtro="todos"><div class="valor" id="cTodos">–</div><div class="etiqueta">Total contratos · ver todos</div></div>
   </div>
 
+  <div class="titulo-grupo">¿Pagó lo que era? <span style="text-transform:none;font-weight:400">(Protect!P contra Consolidados C y D, solo contratos consolidados)</span></div>
+  <div class="contadores" id="contadoresValor">
+    <div class="tarjeta-contador bueno" data-filtro="vOk"><div class="valor" id="cVOk">–</div><div class="etiqueta">Pagó lo correcto</div></div>
+    <div class="tarjeta-contador destacado" data-filtro="vMas"><div class="valor" id="cVMas">–</div><div class="etiqueta">Pagó de más</div></div>
+    <div class="tarjeta-contador alerta" data-filtro="vMenos"><div class="valor" id="cVMenos">–</div><div class="etiqueta">Pagó de menos</div></div>
+    <div class="tarjeta-contador" data-filtro="vSin"><div class="valor" id="cVSin">–</div><div class="etiqueta">Sin valor para comparar</div></div>
+  </div>
+
   <section class="panel" id="panelHistorial">
     <div class="cabecera">
       <h2>Historial del cliente</h2>
@@ -152,7 +160,7 @@
         <table>
           <thead><tr>
             <th>Estado</th><th>Cliente</th><th>Cédula</th><th>Placa</th><th>Contrato</th><th>Forma</th><th>Estado</th><th>Seguimiento</th>
-            <th class="num">Protect!P</th><th class="num">C</th><th class="num">D</th><th>Valor vs P (informativo)</th><th class="num">Diferencia</th>
+            <th class="num">Protect!P</th><th class="num">C</th><th class="num">D</th><th>¿Pagó lo que era?</th><th class="num">Diferencia</th>
           </tr></thead>
           <tbody id="tbodyListado"></tbody>
         </table>
@@ -174,6 +182,10 @@
     nombre: { t: 'Consolidados por nombre (revisar)', f: function (x) { return x.estado === 'Consolidado por nombre (revisar)'; } },
     varios: { t: 'Cédulas con varios contratos (verificar)', f: function (x) { return !!x.varios; } },
     sinProtect: { t: 'En Consolidados pero sin Protect', f: function (x) { return x.estado === 'Sin registro en Protect'; } },
+    vOk: { t: 'Pagó lo correcto', f: function (x) { return x.valor === 'Pagó lo correcto'; } },
+    vMas: { t: 'Pagó de más', f: function (x) { return x.valor === 'Pagó de más'; } },
+    vMenos: { t: 'Pagó de menos', f: function (x) { return x.valor === 'Pagó de menos'; } },
+    vSin: { t: 'Sin valor para comparar', f: function (x) { return x.valor === 'Sin valor para comparar'; } },
     concReciente: { t: 'Consolidados recientemente', f: function (x) { return !!(x.hist && x.hist.concReciente); } },
     nuevos: { t: 'Contratos nuevos', f: function (x) { return !!(x.hist && x.hist.nuevoReciente); } },
     cambios: { t: 'Cambiaron de estado', f: function (x) { return !!(x.hist && x.hist.cambioReciente); } }
@@ -181,6 +193,8 @@
   var SEMAFORO = {
     'Consolidado': 'verde', 'Consolidado por nombre (revisar)': 'naranja', 'Falta por consolidar': 'rojo', 'Sin registro en Protect': 'gris'
   };
+  var SEM_VALOR = { 'Pagó lo correcto': 'verde', 'Pagó de más': 'naranja', 'Pagó de menos': 'rojo', 'Sin valor para comparar': 'gris' };
+  function semValor(v) { if (!v) return document.createTextNode(''); var s = el('span', 'semaforo ' + (SEM_VALOR[v] || 'gris')); s.appendChild(el('span', 'punto')); s.appendChild(document.createTextNode(v)); return s; }
   var histRes = {}, datos = [], filtroActivo = null, textoLista = '';
   var $ = function (id) { return document.getElementById(id); };
   var fmt = new Intl.NumberFormat('es-CO');
@@ -250,6 +264,10 @@
     $('cVarios').textContent = varios;
     $('cSinProtect').textContent = res['Sin registro en Protect'] || 0;
     $('cTodos').textContent = datos.length;
+    var cv = { 'Pagó lo correcto': 0, 'Pagó de más': 0, 'Pagó de menos': 0, 'Sin valor para comparar': 0 };
+    datos.forEach(function (f) { if (f.valor && cv[f.valor] !== undefined) cv[f.valor]++; });
+    $('cVOk').textContent = cv['Pagó lo correcto']; $('cVMas').textContent = cv['Pagó de más'];
+    $('cVMenos').textContent = cv['Pagó de menos']; $('cVSin').textContent = cv['Sin valor para comparar'];
     var hs = histRes || {};
     $('lblSemana').textContent = '(últimos ' + (hs.diasReciente || 7) + ' días)';
     $('cConcRec').textContent = hs.concRecientes || 0; $('cNuevos').textContent = hs.nuevos || 0;
@@ -307,18 +325,20 @@
     if (f.obs) nota.push(f.obs);
     if (nota.length) t.appendChild(el('p', 'obs', nota.join(' ')));
     if (f.valor) {
-      t.appendChild(el('h4', '', 'Valor recibido frente a Protect!P (solo informativo, no decide el estado)'));
+      var h2 = el('h4', '', '¿Pagó lo que era? '); h2.appendChild(semValor(f.valor)); t.appendChild(h2);
       var tb = el('table'), th = el('thead'), trh = el('tr');
-      ['Fuente', 'Valor', 'Diferencia vs Protect!P'].forEach(function (x, i) { trh.appendChild(el('th', i ? 'num' : '', x)); });
+      ['Fuente', 'Valor', 'Diferencia vs Protect!P', 'Resultado'].forEach(function (x, i) { trh.appendChild(el('th', i === 1 || i === 2 ? 'num' : '', x)); });
       th.appendChild(trh); tb.appendChild(th);
       var body = el('tbody');
-      function fila(nombre, val, dif) {
+      function fila(nombre, val, dif, res) {
         var r = el('tr'); r.appendChild(el('td', '', nombre)); r.appendChild(el('td', 'num', money(val)));
-        r.appendChild(el('td', 'num' + (dif > 0 ? ' pos' : dif < 0 ? ' neg' : ''), signo(dif))); body.appendChild(r);
+        r.appendChild(el('td', 'num' + (dif > 0 ? ' pos' : dif < 0 ? ' neg' : ''), signo(dif))); r.appendChild(el('td', '', res)); body.appendChild(r);
       }
-      fila('Protect!P', f.pagado, null); fila('Consolidados C', f.c, f.difC); fila('Consolidados D', f.d, f.difD);
+      fila('Protect!P (valor pagado a Dugo Motos)', f.pagado, null, '');
+      fila('Consolidados C', f.c, f.difC, f.difC === 0 ? 'Concuerda ✔' : '');
+      fila('Consolidados D', f.d, f.difD, f.difD === 0 ? 'Concuerda ✔' : '');
       tb.appendChild(body); t.appendChild(tb);
-      t.appendChild(el('p', 'obs', 'Resultado de la comparación: ' + f.valor + '.'));
+      if (f.dif !== null && f.dif !== undefined && f.dif !== 0) t.appendChild(el('p', 'obs', 'Diferencia: ' + signo(f.dif) + ' pesos frente a Protect!P (se usó el valor más cercano' + (f.nCons > 1 ? ' entre las ' + f.nCons + ' filas de Consolidados' : '') + ').'));
     }
     return t;
   }
@@ -351,7 +371,7 @@
       [f.clienteProtect || f.clienteCons, f.cedula, f.placa, f.contrato, e.forma, e.estadoCliente].forEach(function (v) { tr.appendChild(el('td', '', v || '')); });
       var tdS = el('td'); tdS.appendChild(seguimiento(f)); tr.appendChild(tdS);
       tr.appendChild(el('td', 'num', num(f.pagado))); tr.appendChild(el('td', 'num', num(f.c))); tr.appendChild(el('td', 'num', num(f.d)));
-      tr.appendChild(el('td', '', f.valor || ''));
+      var tdV = el('td'); tdV.appendChild(semValor(f.valor)); tr.appendChild(tdV);
       tr.appendChild(el('td', 'num' + (f.dif > 0 ? ' pos' : f.dif < 0 ? ' neg' : ''), f.dif === null || f.dif === '' ? '' : signo(f.dif)));
       tr.onclick = function () { $('inputBusqueda').value = f.contrato || f.cedula || f.placa || ''; buscar(); $('panelHistorial').scrollIntoView({ behavior: 'smooth' }); };
       tb.appendChild(tr);

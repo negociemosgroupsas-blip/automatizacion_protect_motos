@@ -12,7 +12,9 @@
  *
  * Regla: PROTECT es la base (un registro por contrato). Un contrato está CONSOLIDADO cuando la persona
  * (cédula) aparece en la hoja "Consolidados". No se mira ningún valor para decidirlo.
- * Protect!P y Consolidados C/D solo se muestran como información ("Valor vs P"); no deciden el estado.
+ * Para los consolidados, segunda pregunta: ¿pagó lo que era? Se compara Protect!P (valor pagado a Dugo Motos)
+ * contra Consolidados C y D, cada una por separado (nunca se suman): "Pagó lo correcto", "Pagó de más" o "Pagó de menos".
+ * Eso NO cambia el estado de consolidación; es una verificación aparte.
  */
 
 // ==================== CONFIGURACIÓN ====================
@@ -43,9 +45,9 @@ var CONC_ESTADO = {
 };
 
 var CONC_VALOR = {
-  COINCIDE: 'Valor coincide',
-  MAS: 'Valor mayor a P',
-  MENOS: 'Valor menor a P',
+  COINCIDE: 'Pagó lo correcto',
+  MAS: 'Pagó de más',
+  MENOS: 'Pagó de menos',
   SIN_DATO: 'Sin valor para comparar'
 };
 
@@ -59,7 +61,7 @@ var CONC_COLORES = {
 var CONC_ENCABEZADOS = [
   'Estado', 'Cédula', 'Cliente (Consolidados)', 'Cliente (Protect)', 'Placa', 'Contrato',
   'Protect!P (pagado a Dugo Motos)', 'Consolidados C', 'Consolidados D',
-  'Comparación de valor', 'Diferencia (valor usado − P)', 'Diferencia C − P', 'Diferencia D − P',
+  '¿Pagó lo que era?', 'Diferencia (valor usado − P)', 'Diferencia C − P', 'Diferencia D − P',
   'Cruce', 'Fila Consolidados', 'Fila Protect', 'Observación'
 ];
 
@@ -236,7 +238,7 @@ function CONC_calcular(protect, cons, tol) {
   return { filas: salida, resumen: resumen };
 }
 
-// Solo INFORMATIVO: compara el valor de las filas de Consolidados contra Protect!P. No decide el estado.
+// ¿Pagó lo que era? Compara C y D de Consolidados contra Protect!P. No cambia el estado de consolidación.
 function CONC_mejorValor(filas, pagado, tol) {
   var vacio = function (r) { return r.c === null && r.d === null; };
   var conValor = filas.filter(function (r) { return !vacio(r); });
