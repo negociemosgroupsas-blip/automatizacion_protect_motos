@@ -6,74 +6,92 @@
 <title>Conciliación Dugo Motos</title>
 <style>
   :root {
-    --bg: #f5f6f8; --card: #ffffff; --ink: #1c2330; --muted: #667085; --line: #e3e6ec; --brand: #1f3864;
-    --ok: #d9ead3; --mas: #fff2cc; --menos: #f4cccc; --gris: #e6e6e6; --falta: #fce5cd; --amb: #d9d2e9;
+    --bg:#f5f6f8; --card:#fff; --ink:#1c2330; --muted:#667085; --line:#e3e6ec; --brand:#1f3864;
+    --ok:#d9ead3; --mas:#fff2cc; --menos:#f4cccc; --gris:#e6e6e6; --falta:#fce5cd; --amb:#d9d2e9;
   }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  header { background: var(--brand); color: #fff; padding: 16px 20px; }
-  header h1 { margin: 0; font-size: 18px; }
-  header p { margin: 2px 0 0; font-size: 12px; opacity: .8; }
-  main { max-width: 1400px; margin: 0 auto; padding: 16px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
-  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
-  label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
-  input, select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; color: var(--ink); background: #fff; }
-  button { padding: 9px 16px; border: 0; border-radius: 8px; background: var(--brand); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
-  button:disabled { opacity: .55; cursor: wait; }
-  button.sec { background: #fff; color: var(--brand); border: 1px solid var(--brand); }
-  .grow { flex: 1 1 200px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; background: #fff; font-size: 13px; }
-  .chip b { margin-left: 6px; }
-  .chip.on { outline: 2px solid var(--brand); }
-  .msg { padding: 10px 12px; border-radius: 8px; margin-top: 10px; font-size: 13px; }
-  .msg.err { background: #fde7e7; color: #8a1c1c; }
-  .msg.ok { background: #e6f4ea; color: #1e6b34; }
-  .tablewrap { overflow: auto; max-height: 68vh; border: 1px solid var(--line); border-radius: 8px; }
-  table { border-collapse: collapse; width: 100%; font-size: 13px; }
-  th { position: sticky; top: 0; background: var(--brand); color: #fff; text-align: left; padding: 8px 10px; white-space: nowrap; z-index: 1; }
-  td { padding: 7px 10px; border-top: 1px solid var(--line); white-space: nowrap; }
-  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-  td.obs { white-space: normal; min-width: 260px; max-width: 480px; color: var(--muted); }
-  .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-weight: 600; font-size: 12px; }
-  .pos { color: #8a6d00; } .neg { color: #a61b1b; }
-  .vacio { text-align: center; color: var(--muted); padding: 30px; }
-  .note { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{background:var(--brand);color:#fff;padding:16px 20px}
+  header h1{margin:0;font-size:18px} header p{margin:2px 0 0;font-size:12px;opacity:.8}
+  main{max-width:1500px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+  .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+  label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+  input,select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;color:var(--ink);background:#fff}
+  button{padding:9px 16px;border:0;border-radius:8px;background:var(--brand);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+  button:disabled{opacity:.55;cursor:wait} button.sec{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+  .grow{flex:1 1 200px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+  .kpi small{color:var(--muted);display:block;font-size:12px} .kpi b{font-size:20px;font-variant-numeric:tabular-nums}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer;background:#fff;font-size:13px}
+  .chip b{margin-left:6px} .chip.on{outline:2px solid var(--brand)}
+  .msg{padding:10px 12px;border-radius:8px;margin-top:10px;font-size:13px}
+  .msg.err{background:#fde7e7;color:#8a1c1c} .msg.ok{background:#e6f4ea;color:#1e6b34}
+  .tablewrap{overflow:auto;max-height:66vh;border:1px solid var(--line);border-radius:8px}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th{position:sticky;top:0;background:var(--brand);color:#fff;text-align:left;padding:8px 10px;white-space:nowrap;z-index:1}
+  td{padding:7px 10px;border-top:1px solid var(--line);white-space:nowrap}
+  tbody tr{cursor:pointer} tbody tr:hover{background:#f0f4fb}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .tag{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:600;font-size:12px}
+  .pos{color:#8a6d00} .neg{color:#a61b1b}
+  .vacio{text-align:center;color:var(--muted);padding:30px;cursor:default}
+  .note{font-size:12px;color:var(--muted);margin:8px 0 0}
+  #modal{position:fixed;inset:0;background:rgba(20,28,45,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+  #modal.on{display:flex}
+  .dlg{background:#fff;border-radius:12px;max-width:760px;width:100%;max-height:90vh;overflow:auto;padding:18px 20px}
+  .dlg h2{margin:0 0 4px;font-size:17px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 16px;margin:12px 0}
+  .grid div small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+  .cmp{width:100%;margin-top:8px} .cmp td,.cmp th{position:static;padding:6px 8px}
+  .cmp th{background:#eef1f7;color:var(--ink)}
+  h3{font-size:13px;margin:14px 0 4px;color:var(--brand)}
 </style>
 </head>
 <body>
 <header>
   <h1>Conciliación de pagos — Protect Motos vs Consolidados</h1>
-  <p>Compara Protect!P (valor pagado a Dugo Motos) con Consolidados C y D, por separado, sin sumarlos.</p>
+  <p>Historial de clientes de Protect con su estado de conciliación. Protect!P (pagado a Dugo Motos) se compara con Consolidados C y D por separado, sin sumarlos.</p>
 </header>
 
 <main>
   <section class="card">
     <div class="bar">
+      
       <label>Tolerancia (pesos)
-        <input id="tol" type="number" min="0" step="1" value="0" style="width:130px">
+        <input id="tol" type="number" min="0" step="1" value="0" style="width:120px">
       </label>
-      <button id="btnRun">Ejecutar conciliación</button>
+      <button id="btnRun">Actualizar conciliación</button>
       <button id="btnCsv" class="sec" disabled>Descargar CSV</button>
     </div>
     <div id="estado"></div>
-    <p class="note">Al ejecutar se reescribe solo la hoja «Conciliacion_Dugo». No se modifican Protect, Consolidados, Pagos ni Gestiones.</p>
+    <p class="note">Al actualizar solo se reescribe la hoja «Conciliacion_Dugo». No se modifican Protect, Consolidados, Pagos ni Gestiones.</p>
   </section>
+
+  <div class="kpis" id="kpis" hidden></div>
 
   <section class="card" id="panel" hidden>
     <div class="chips" id="chips"></div>
     <div class="bar" style="margin-top:12px">
-      <label class="grow">Buscar (cédula, cliente, placa o contrato)
+      <label class="grow">Buscar (cédula, cliente, placa, contrato, asesor)
         <input id="q" type="search" placeholder="Escribe para filtrar…">
+      </label>
+      <label>Estado del cliente
+        <select id="fEstCli"><option value="">Todos</option></select>
+      </label>
+      <label>Forma de pago
+        <select id="fForma"><option value="">Todas</option></select>
       </label>
     </div>
     <div class="tablewrap" style="margin-top:12px">
       <table>
         <thead><tr>
-          <th>Estado</th><th>Cédula</th><th>Cliente</th><th>Placa</th><th>Contrato</th>
+          <th>Conciliación</th><th>Cliente</th><th>Cédula</th><th>Placa</th><th>Contrato</th>
+          <th>Asesor</th><th>Fecha firma</th><th>Forma</th><th>Estado cliente</th>
           <th class="num">Protect!P</th><th class="num">C</th><th class="num">D</th>
-          <th>Concordó con</th><th class="num">Diferencia</th><th>Cruce</th><th>Observación</th>
+          <th>Concordó con</th><th class="num">Diferencia</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -82,59 +100,79 @@
   </section>
 </main>
 
+<div id="modal"><div class="dlg" id="dlg"></div></div>
+
 <script>
 (function () {
   var COLOR = {
-    'Conciliado': 'var(--ok)', 'Pagó de más': 'var(--mas)', 'Pagó de menos': 'var(--menos)',
-    'Sin valor de contabilidad': 'var(--gris)', 'Sin valor en Protect!P': 'var(--gris)',
-    'Sin registro en Consolidados': 'var(--falta)', 'Sin registro en Protect': 'var(--falta)',
-    'Ambiguo (revisar)': 'var(--amb)'
+    'Conciliado':'var(--ok)','Pagó de más':'var(--mas)','Pagó de menos':'var(--menos)',
+    'Sin valor de contabilidad':'var(--gris)','Sin valor en Protect!P':'var(--gris)',
+    'Sin registro en Consolidados':'var(--falta)','Sin registro en Protect':'var(--falta)',
+    'Ambiguo (revisar)':'var(--amb)'
   };
-  var datos = [], filtroEstado = '', busqueda = '';
+  var datos = [], resumenActual = {}, filtroEstado = '', busqueda = '', fEstCli = '', fForma = '';
   var $ = function (id) { return document.getElementById(id); };
   var fmt = new Intl.NumberFormat('es-CO');
-
   function num(v) { return v === null || v === undefined || v === '' ? '' : fmt.format(v); }
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; }
+  function ex(f) { return f.extra || {}; }
+  function mensaje(tipo, texto) { var b = $('estado'); b.textContent = ''; if (texto) b.appendChild(el('div', 'msg ' + tipo, texto)); }
+  function dineroSigno(d) { return d === null || d === '' || d === undefined ? '' : (d > 0 ? '+' : '') + fmt.format(d); }
 
-  function mensaje(tipo, texto) {
-    var box = $('estado'); box.textContent = '';
-    if (texto) box.appendChild(el('div', 'msg ' + tipo, texto));
+  function llamar(tol, ok, fail) {
+    google.script.run.withSuccessHandler(ok)
+      .withFailureHandler(function (err) { fail(err && err.message ? err.message : String(err)); })
+      .CONC_apiConciliar(tol);
   }
 
-  $('btnRun').addEventListener('click', function () {
+  function ejecutar() {
     var btn = $('btnRun');
     btn.disabled = true; btn.textContent = 'Conciliando…';
-    mensaje('ok', 'Procesando, esto puede tardar unos segundos…');
-    google.script.run
-      .withSuccessHandler(function (r) {
-        btn.disabled = false; btn.textContent = 'Ejecutar conciliación';
-        datos = r.filas || [];
-        filtroEstado = ''; busqueda = ''; $('q').value = '';
-        mensaje('ok', 'Listo: ' + datos.length + ' filas. Tolerancia usada: $' + fmt.format(r.tolerancia) +
-          '. Hoja «' + r.hoja + '» actualizada (' + r.generado + ').');
-        $('panel').hidden = false; $('btnCsv').disabled = !datos.length;
-        pintarChips(r.resumen); pintarTabla();
-      })
-      .withFailureHandler(function (err) {
-        btn.disabled = false; btn.textContent = 'Ejecutar conciliación';
-        mensaje('err', 'Error: ' + (err && err.message ? err.message : err));
-      })
-      .CONC_apiConciliar($('tol').value);
-  });
+    mensaje('ok', 'Leyendo la hoja y conciliando, esto puede tardar unos segundos…');
+    llamar($('tol').value, function (r) {
+      btn.disabled = false; btn.textContent = 'Actualizar conciliación';
+      datos = r.filas || []; resumenActual = r.resumen || {};
+      filtroEstado = ''; busqueda = ''; fEstCli = ''; fForma = ''; $('q').value = '';
+      mensaje('ok', 'Listo: ' + datos.length + ' filas. Tolerancia usada: $' + fmt.format(r.tolerancia) + '. Hoja «' + r.hoja + '» actualizada (' + r.generado + ').');
+      $('panel').hidden = false; $('kpis').hidden = false; $('btnCsv').disabled = !datos.length;
+      llenarSelect('fEstCli', 'estadoCliente', 'Todos'); llenarSelect('fForma', 'forma', 'Todas');
+      pintarKpis(); pintarChips(); pintarTabla();
+    }, function (msg) {
+      btn.disabled = false; btn.textContent = 'Actualizar conciliación';
+      mensaje('err', 'Error: ' + msg);
+    });
+  }
+  $('btnRun').addEventListener('click', ejecutar);
 
-  function pintarChips(resumen) {
+  function llenarSelect(id, campo, todas) {
+    var s = $(id), vals = {};
+    datos.forEach(function (f) { var v = ex(f)[campo]; if (v) vals[v] = 1; });
+    s.textContent = ''; var o = el('option', '', todas); o.value = ''; s.appendChild(o);
+    Object.keys(vals).sort().forEach(function (v) { var x = el('option', '', v); x.value = v; s.appendChild(x); });
+  }
+
+  function pintarKpis() {
+    var box = $('kpis'); box.textContent = '';
+    var r = resumenActual, conc = r['Conciliado'] || 0;
+    var dif = (r['Pagó de más'] || 0) + (r['Pagó de menos'] || 0);
+    var sinCons = r['Sin registro en Consolidados'] || 0;
+    var totalP = 0, totalConc = 0;
+    datos.forEach(function (f) { if (f.pagado) { totalP += f.pagado; if (f.estado === 'Conciliado') totalConc += f.pagado; } });
+    [['Registros', datos.length], ['Conciliados', conc], ['Con diferencia', dif], ['Pendientes (sin Consolidados)', sinCons],
+     ['Total pagado a Dugo (P)', '$ ' + fmt.format(totalP)], ['Valor ya conciliado', '$ ' + fmt.format(totalConc)]
+    ].forEach(function (k) {
+      var d = el('div', 'kpi'); d.appendChild(el('small', '', k[0])); d.appendChild(el('b', '', String(k[1]))); box.appendChild(d);
+    });
+  }
+
+  function pintarChips() {
     var box = $('chips'); box.textContent = '';
-    var total = datos.length;
-    var todos = el('span', 'chip' + (filtroEstado === '' ? ' on' : ''), 'Todos'); todos.appendChild(el('b', '', total));
-    todos.onclick = function () { filtroEstado = ''; pintarChips(resumen); pintarTabla(); };
-    box.appendChild(todos);
-    Object.keys(resumen).forEach(function (k) {
+    var todos = el('span', 'chip' + (filtroEstado === '' ? ' on' : ''), 'Todos'); todos.appendChild(el('b', '', datos.length));
+    todos.onclick = function () { filtroEstado = ''; pintarChips(); pintarTabla(); }; box.appendChild(todos);
+    Object.keys(resumenActual).forEach(function (k) {
       var c = el('span', 'chip' + (filtroEstado === k ? ' on' : ''), k);
-      c.style.background = COLOR[k] || '#fff';
-      c.appendChild(el('b', '', resumen[k]));
-      c.onclick = function () { filtroEstado = k; pintarChips(resumen); pintarTabla(); };
-      box.appendChild(c);
+      c.style.background = COLOR[k] || '#fff'; c.appendChild(el('b', '', resumenActual[k]));
+      c.onclick = function () { filtroEstado = k; pintarChips(); pintarTabla(); }; box.appendChild(c);
     });
   }
 
@@ -142,46 +180,73 @@
     var q = busqueda.trim().toLowerCase();
     return datos.filter(function (f) {
       if (filtroEstado && f.estado !== filtroEstado) return false;
+      if (fEstCli && ex(f).estadoCliente !== fEstCli) return false;
+      if (fForma && ex(f).forma !== fForma) return false;
       if (!q) return true;
-      return [f.cedula, f.clienteCons, f.clienteProtect, f.placa, f.contrato].join(' ').toLowerCase().indexOf(q) !== -1;
+      return [f.cedula, f.clienteCons, f.clienteProtect, f.placa, f.contrato, ex(f).asesor].join(' ').toLowerCase().indexOf(q) !== -1;
     });
   }
 
   function pintarTabla() {
     var tb = $('tbody'); tb.textContent = '';
     var lista = visibles();
-    if (!lista.length) {
-      var tr = el('tr'); var td = el('td', 'vacio', 'Sin resultados para este filtro.'); td.colSpan = 12; tr.appendChild(td); tb.appendChild(tr);
-    }
+    if (!lista.length) { var tr0 = el('tr'); var td0 = el('td', 'vacio', 'Sin resultados para este filtro.'); td0.colSpan = 14; tr0.appendChild(td0); tb.appendChild(tr0); }
     lista.forEach(function (f) {
-      var tr = el('tr');
+      var tr = el('tr'), e = ex(f);
       var tdE = el('td'); var tag = el('span', 'tag', f.estado); tag.style.background = COLOR[f.estado] || '#eee'; tdE.appendChild(tag); tr.appendChild(tdE);
-      tr.appendChild(el('td', '', f.cedula));
-      tr.appendChild(el('td', '', f.clienteCons || f.clienteProtect));
-      tr.appendChild(el('td', '', f.placa));
-      tr.appendChild(el('td', '', f.contrato));
-      tr.appendChild(el('td', 'num', num(f.pagado)));
-      tr.appendChild(el('td', 'num', num(f.c)));
-      tr.appendChild(el('td', 'num', num(f.d)));
+      tr.appendChild(el('td', '', f.clienteProtect || f.clienteCons));
+      tr.appendChild(el('td', '', f.cedula)); tr.appendChild(el('td', '', f.placa)); tr.appendChild(el('td', '', f.contrato));
+      tr.appendChild(el('td', '', e.asesor || '')); tr.appendChild(el('td', '', e.fechaFirma || ''));
+      tr.appendChild(el('td', '', e.forma || '')); tr.appendChild(el('td', '', e.estadoCliente || ''));
+      tr.appendChild(el('td', 'num', num(f.pagado))); tr.appendChild(el('td', 'num', num(f.c))); tr.appendChild(el('td', 'num', num(f.d)));
       tr.appendChild(el('td', '', f.concordo));
-      var dif = el('td', 'num' + (f.dif > 0 ? ' pos' : f.dif < 0 ? ' neg' : ''), f.dif === null || f.dif === '' ? '' : (f.dif > 0 ? '+' : '') + fmt.format(f.dif));
-      tr.appendChild(dif);
-      tr.appendChild(el('td', '', f.cruce));
-      tr.appendChild(el('td', 'obs', f.obs));
+      tr.appendChild(el('td', 'num' + (f.dif > 0 ? ' pos' : f.dif < 0 ? ' neg' : ''), dineroSigno(f.dif)));
+      tr.onclick = function () { detalle(f); };
       tb.appendChild(tr);
     });
-    $('conteo').textContent = 'Mostrando ' + lista.length + ' de ' + datos.length + ' filas.';
+    $('conteo').textContent = 'Mostrando ' + lista.length + ' de ' + datos.length + ' filas. Haz clic en una fila para ver el detalle.';
   }
 
+  function detalle(f) {
+    var e = ex(f), d = $('dlg'); d.textContent = '';
+    var h = el('h2', '', f.clienteProtect || f.clienteCons || '(sin nombre)'); d.appendChild(h);
+    var tag = el('span', 'tag', f.estado); tag.style.background = COLOR[f.estado] || '#eee'; d.appendChild(tag);
+    var g = el('div', 'grid');
+    [['Cédula', f.cedula], ['Placa', f.placa], ['Contrato', f.contrato], ['Asesor', e.asesor], ['Celular', e.celular],
+     ['Fecha de firma', e.fechaFirma], ['Vence', e.fin], ['Forma de pago', e.forma], ['Estado del cliente', e.estadoCliente],
+     ['Plazo (cuotas)', e.plazo], ['Valor cuota', num(e.cuota)], ['Cruce', f.cruce],
+     ['Fila en Protect', f.filaProtect], ['Fila en Consolidados', f.filaCons], ['Cliente (Consolidados)', f.clienteCons]
+    ].forEach(function (p) { var c = el('div'); c.appendChild(el('small', '', p[0])); c.appendChild(el('span', '', p[1] === undefined || p[1] === null || p[1] === '' ? '—' : String(p[1]))); g.appendChild(c); });
+    d.appendChild(g);
+    d.appendChild(el('h3', '', 'Conciliación'));
+    var t = el('table', 'cmp'), th = el('tr');
+    ['Fuente', 'Valor', 'Diferencia vs Protect!P', 'Resultado'].forEach(function (x) { th.appendChild(el('th', '', x)); }); t.appendChild(th);
+    function fila(nombre, val, dif, res) {
+      var r = el('tr'); r.appendChild(el('td', '', nombre)); r.appendChild(el('td', 'num', val === null || val === '' || val === undefined ? '—' : '$ ' + fmt.format(val)));
+      r.appendChild(el('td', 'num', dif === null || dif === undefined || dif === '' ? '—' : dineroSigno(dif))); r.appendChild(el('td', '', res)); t.appendChild(r);
+    }
+    fila('Protect!P (pagado a Dugo Motos)', f.pagado, null, '');
+    fila('Consolidados C', f.c, f.difC, f.difC === 0 ? 'Concuerda' : '');
+    fila('Consolidados D', f.d, f.difD, f.difD === 0 ? 'Concuerda' : '');
+    d.appendChild(t);
+    if (f.obs) { d.appendChild(el('h3', '', 'Observación')); d.appendChild(el('p', '', f.obs)); }
+    var b = el('button', 'sec', 'Cerrar'); b.style.marginTop = '12px'; b.onclick = cerrar; d.appendChild(b);
+    $('modal').className = 'on';
+  }
+  function cerrar() { $('modal').className = ''; }
+  $('modal').addEventListener('click', function (e) { if (e.target === $('modal')) cerrar(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrar(); });
+
   $('q').addEventListener('input', function (e) { busqueda = e.target.value; pintarTabla(); });
+  $('fEstCli').addEventListener('change', function (e) { fEstCli = e.target.value; pintarTabla(); });
+  $('fForma').addEventListener('change', function (e) { fForma = e.target.value; pintarTabla(); });
 
   $('btnCsv').addEventListener('click', function () {
-    var cab = ['Estado', 'Cédula', 'Cliente (Consolidados)', 'Cliente (Protect)', 'Placa', 'Contrato', 'Protect!P', 'C', 'D',
-      'Concordó con', 'Diferencia', 'Diferencia C-P', 'Diferencia D-P', 'Cruce', 'Fila Consolidados', 'Fila Protect', 'Observación'];
-    var filas = visibles().map(function (f) {
-      return [f.estado, f.cedula, f.clienteCons, f.clienteProtect, f.placa, f.contrato, f.pagado, f.c, f.d,
-        f.concordo, f.dif, f.difC, f.difD, f.cruce, f.filaCons, f.filaProtect, f.obs];
-    });
+    var cab = ['Conciliación', 'Cliente', 'Cédula', 'Placa', 'Contrato', 'Asesor', 'Fecha firma', 'Forma', 'Estado cliente', 'Celular',
+      'Protect!P', 'C', 'D', 'Concordó con', 'Diferencia', 'Diferencia C-P', 'Diferencia D-P', 'Cruce', 'Fila Consolidados', 'Fila Protect', 'Observación'];
+    var filas = visibles().map(function (f) { var e = ex(f);
+      return [f.estado, f.clienteProtect || f.clienteCons, f.cedula, f.placa, f.contrato, e.asesor, e.fechaFirma, e.forma, e.estadoCliente, e.celular,
+        f.pagado, f.c, f.d, f.concordo, f.dif, f.difC, f.difD, f.cruce, f.filaCons, f.filaProtect, f.obs]; });
     var csv = [cab].concat(filas).map(function (r) {
       return r.map(function (v) { v = v === null || v === undefined ? '' : String(v); return '"' + v.replace(/"/g, '""') + '"'; }).join(';');
     }).join('\r\n');
@@ -189,6 +254,8 @@
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'conciliacion_dugo.csv';
     document.body.appendChild(a); a.click(); a.remove();
   });
+
+  ejecutar(); // carga el historial al abrir
 })();
 </script>
 </body>

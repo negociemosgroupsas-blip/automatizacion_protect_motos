@@ -24,6 +24,8 @@ var CONC_TOLERANCIA = 0; // pesos de diferencia aceptados para considerar "Conci
 // Protect: fila 1 = encabezados. Columnas (base 1): E, H, M, N, P
 var CONC_PROTECT_FILA_INICIO = 2;
 var CONC_P = { CEDULA: 5, CLIENTE: 8, PLACA: 13, CONTRATO: 14, PAGADO_DUGO: 16 };
+// Columnas de Protect que solo se MUESTRAN como información del cliente (no intervienen en la conciliación)
+var CONC_P_INFO = { ASESOR: 2, FECHA_FIRMA: 11, FIN: 12, CUOTA: 17, PLAZO: 18, FORMA: 20, CELULAR: 31, ESTADO_CLIENTE: 44 };
 
 // Consolidados: fila 1 = fórmulas (se ignora), fila 2 = encabezados, datos desde la 3. A, B, C, D
 var CONC_CONS_FILA_INICIO = 3;
@@ -78,7 +80,8 @@ function CONC_leerProtect(hoja) {
   var ultima = hoja.getLastRow();
   if (ultima < CONC_PROTECT_FILA_INICIO) return [];
   var n = ultima - CONC_PROTECT_FILA_INICIO + 1;
-  var datos = hoja.getRange(CONC_PROTECT_FILA_INICIO, 1, n, CONC_P.PAGADO_DUGO).getValues();
+  var anchoLectura = Math.min(Math.max(CONC_P_INFO.ESTADO_CLIENTE, CONC_P.PAGADO_DUGO), hoja.getLastColumn());
+  var datos = hoja.getRange(CONC_PROTECT_FILA_INICIO, 1, n, anchoLectura).getValues();
   var filas = [];
   for (var i = 0; i < datos.length; i++) {
     var f = datos[i];
@@ -91,7 +94,17 @@ function CONC_leerProtect(hoja) {
     filas.push({
       fila: CONC_PROTECT_FILA_INICIO + i,
       cedula: cedula, cliente: cliente, placa: placa, contrato: contrato,
-      pagado: CONC_aNumero(pagado)
+      pagado: CONC_aNumero(pagado),
+      extra: {
+        asesor: CONC_texto(f[CONC_P_INFO.ASESOR - 1]),
+        fechaFirma: CONC_fechaTxt(f[CONC_P_INFO.FECHA_FIRMA - 1]),
+        fin: CONC_fechaTxt(f[CONC_P_INFO.FIN - 1]),
+        cuota: CONC_aNumero(f[CONC_P_INFO.CUOTA - 1]),
+        plazo: CONC_aNumero(f[CONC_P_INFO.PLAZO - 1]),
+        forma: CONC_texto(f[CONC_P_INFO.FORMA - 1]).toUpperCase(),
+        celular: CONC_texto(f[CONC_P_INFO.CELULAR - 1]),
+        estadoCliente: CONC_texto(f[CONC_P_INFO.ESTADO_CLIENTE - 1]).toUpperCase()
+      }
     });
   }
   return filas;
@@ -175,9 +188,18 @@ function CONC_calcular(protect, cons, tol) {
       estado: CONC_ESTADO.SIN_CONS, cedula: p.cedula, clienteCons: '', clienteProtect: p.cliente,
       placa: p.placa, contrato: p.contrato, pagado: p.pagado, c: null, d: null,
       concordo: '', dif: null, difC: null, difD: null, cruce: '', filaCons: '', filaProtect: p.fila,
-      obs: 'Está en Protect pero no en Consolidados.'
+      obs: 'Está en Protect pero no en Consolidados.', extra: p.extra || null
     });
   });
+
+  // Orden del historial: como están en Protect; lo que no está en Protect va al final
+  salida.forEach(function (x, i) { x._i = i; });
+  salida.sort(function (a, b) {
+    var fa = a.filaProtect === '' ? Infinity : a.filaProtect;
+    var fb = b.filaProtect === '' ? Infinity : b.filaProtect;
+    return fa === fb ? a._i - b._i : (fa < fb ? -1 : 1);
+  });
+  salida.forEach(function (x) { delete x._i; });
 
   var resumen = {};
   salida.forEach(function (s) { resumen[s.estado] = (resumen[s.estado] || 0) + 1; });
@@ -230,7 +252,8 @@ function CONC_filaSalida(estado, r, p, _reservado, cruce, obs) {
     cruce: cruce,
     filaCons: r.fila,
     filaProtect: p ? p.fila : '',
-    obs: obs || ''
+    obs: obs || '',
+    extra: p ? (p.extra || null) : null
   };
 }
 
@@ -283,6 +306,18 @@ function CONC_escribirResultado(ss, res) {
 
   hoja.autoResizeColumns(1, CONC_ENCABEZADOS.length);
   hoja.setColumnWidth(CONC_ENCABEZADOS.length, 420);
+}
+
+function CONC_texto(v) { return CONC_vacio(v) ? '' : String(v).trim(); }
+
+// Fechas a texto dd/MM/yyyy (las fechas de Sheets no viajan bien a la pantalla)
+function CONC_fechaTxt(v) {
+  if (CONC_vacio(v)) return '';
+  if (Object.prototype.toString.call(v) === '[object Date]' && !isNaN(v.getTime())) {
+    var z = function (n) { return (n < 10 ? '0' : '') + n; };
+    return z(v.getDate()) + '/' + z(v.getMonth() + 1) + '/' + v.getFullYear();
+  }
+  return String(v).trim();
 }
 
 function CONC_celda(v) { return v === null || v === undefined ? '' : v; }
