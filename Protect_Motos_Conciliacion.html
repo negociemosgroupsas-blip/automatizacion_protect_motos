@@ -80,6 +80,16 @@
   .seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:10px 0 0;padding:10px 14px;background:#f1f7ff;border-radius:10px;}
   .seg .campo .etiqueta{font-size:.66rem;text-transform:uppercase;color:var(--texto-suave);} .seg .campo .valor{font-size:.85rem;font-weight:600;}
   .tag-seg{font-size:.72rem;font-weight:600;white-space:nowrap;} .tag-seg.ok{color:var(--verde);} .tag-seg.mal{color:var(--rojo);} .tag-seg.gris{color:var(--texto-suave);}
+  .semaforo.azul{background:var(--azulinfo-bg);color:var(--azulinfo);}
+  .alarma{display:none;background:linear-gradient(135deg,#b91c1c,#dc2626);color:#fff;border-radius:14px;padding:14px 18px;margin-bottom:20px;box-shadow:0 4px 18px rgba(220,38,38,.35);animation:pulso 2s ease-in-out infinite;}
+  .alarma.on{display:block;}
+  @keyframes pulso{0%,100%{box-shadow:0 4px 18px rgba(220,38,38,.35);}50%{box-shadow:0 4px 26px rgba(220,38,38,.75);}}
+  .alarma-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .alarma h2{margin:0;font-size:1.05rem;} .alarma p{margin:2px 0 0;font-size:.82rem;opacity:.95;}
+  .alarma .btn{background:#fff;color:#b91c1c;}
+  .alarma ul{margin:10px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:4px 18px;font-size:.8rem;}
+  .alarma li{background:rgba(255,255,255,.14);border-radius:8px;padding:5px 10px;display:flex;justify-content:space-between;gap:10px;}
+  tr.fila-alarma td{background:#fff5f5;} tr.fila-alarma:hover td{background:#ffeaea;}
   footer{text-align:center;padding:20px;color:var(--texto-suave);font-size:.75rem;}
   @media (max-width:640px){ header{padding:14px 16px;} .barra-conector input[type=text]{width:100%;max-width:100%;} main{padding:12px;} }
 </style>
@@ -101,6 +111,14 @@
 
 <main>
   <div class="estado-conexion" id="estadoConexion"></div>
+
+  <div class="alarma" id="alarma">
+    <div class="alarma-top">
+      <div><h2 id="alarmaTitulo"></h2><p id="alarmaSub"></p></div>
+      <button class="btn" id="btnVerAlarma">Ver quiénes pagaron de menos</button>
+    </div>
+    <ul id="alarmaLista"></ul>
+  </div>
 
   <div class="avance" id="avance" hidden>
     <div class="avance-item"><div class="avance-top"><b>Contratos consolidados</b><span id="avPctCant">–</span></div><div class="barra"><div class="barra-ok" id="avBarCant"></div></div><small id="avTxtCant"></small></div>
@@ -127,7 +145,7 @@
   <div class="titulo-grupo">¿Pagó lo que era? <span style="text-transform:none;font-weight:400">(Protect!P contra Consolidados C y D, solo contratos consolidados)</span></div>
   <div class="contadores" id="contadoresValor">
     <div class="tarjeta-contador bueno" data-filtro="vOk"><div class="valor" id="cVOk">–</div><div class="etiqueta">Pagó lo correcto</div></div>
-    <div class="tarjeta-contador destacado" data-filtro="vMas"><div class="valor" id="cVMas">–</div><div class="etiqueta">Pagó de más</div></div>
+    <div class="tarjeta-contador" data-filtro="vMas"><div class="valor" id="cVMas">–</div><div class="etiqueta">Pagó de más</div></div>
     <div class="tarjeta-contador alerta" data-filtro="vMenos"><div class="valor" id="cVMenos">–</div><div class="etiqueta">Pagó de menos</div></div>
     <div class="tarjeta-contador" data-filtro="vSin"><div class="valor" id="cVSin">–</div><div class="etiqueta">Sin valor para comparar</div></div>
   </div>
@@ -193,7 +211,7 @@
   var SEMAFORO = {
     'Consolidado': 'verde', 'Consolidado por nombre (revisar)': 'naranja', 'Falta por consolidar': 'rojo', 'Sin registro en Protect': 'gris'
   };
-  var SEM_VALOR = { 'Pagó lo correcto': 'verde', 'Pagó de más': 'naranja', 'Pagó de menos': 'rojo', 'Sin valor para comparar': 'gris' };
+  var SEM_VALOR = { 'Pagó lo correcto': 'verde', 'Pagó de más': 'azul', 'Pagó de menos': 'rojo', 'Sin valor para comparar': 'gris' };
   function semValor(v) { if (!v) return document.createTextNode(''); var s = el('span', 'semaforo ' + (SEM_VALOR[v] || 'gris')); s.appendChild(el('span', 'punto')); s.appendChild(document.createTextNode(v)); return s; }
   var histRes = {}, datos = [], filtroActivo = null, textoLista = '';
   var $ = function (id) { return document.getElementById(id); };
@@ -247,12 +265,37 @@
       if (hs.primeraCorrida) msg += ' Primera corrida: se guardó la línea base en «' + r.hojaHistorial + '». Desde hoy se registrará cuándo se concilia cada contrato.';
       else if (hs.ultimaCorridaAnterior) msg += ' Comparado con la corrida anterior (' + hs.ultimaCorridaAnterior + ').';
       estadoConexion('ok', msg);
-      histRes = hs; pintarContadores(r.resumen || {}); buscar(); if (filtroActivo) pintarListado();
+      histRes = hs; pintarContadores(r.resumen || {}); pintarAlarma(); buscar(); if (filtroActivo) pintarListado();
     }, function (msg) {
       btn.disabled = false; btn.textContent = 'Actualizar datos';
       estadoConexion('error', 'Error: ' + msg);
     });
   }
+
+  var tituloBase = document.title;
+  function pintarAlarma() {
+    var menos = datos.filter(function (f) { return f.valor === 'Pagó de menos' && f.dif !== null; });
+    var box = $('alarma');
+    if (!menos.length) { box.classList.remove('on'); document.title = tituloBase; return; }
+    menos.sort(function (a, b) { return a.dif - b.dif; });
+    var falt = menos.reduce(function (s, f) { return s + Math.abs(f.dif); }, 0);
+    $('alarmaTitulo').textContent = '⚠ ALARMA: ' + menos.length + (menos.length === 1 ? ' cliente pagó de menos' : ' clientes pagaron de menos');
+    $('alarmaSub').textContent = 'Faltan en total ' + dinero(falt) + ' frente a Protect!P. Los que pagaron de más no generan alarma.';
+    var ul = $('alarmaLista'); ul.textContent = '';
+    menos.slice(0, 6).forEach(function (f) {
+      var li = el('li'); li.appendChild(el('span', '', (f.clienteProtect || f.clienteCons) + (f.contrato ? ' · ' + f.contrato : '')));
+      li.appendChild(el('b', '', signo(f.dif))); li.style.cursor = 'pointer';
+      li.onclick = function () { $('inputBusqueda').value = f.contrato || f.cedula; buscar(); $('panelHistorial').scrollIntoView({ behavior: 'smooth' }); };
+      ul.appendChild(li);
+    });
+    if (menos.length > 6) ul.appendChild(el('li', '', '… y ' + (menos.length - 6) + ' más'));
+    box.classList.add('on'); document.title = '(' + menos.length + ') ⚠ ' + tituloBase;
+  }
+  $('btnVerAlarma').addEventListener('click', function () {
+    filtroActivo = 'vMenos'; textoLista = ''; $('inputFiltroLista').value = '';
+    Array.prototype.forEach.call(document.querySelectorAll('.tarjeta-contador'), function (x) { x.classList.toggle('activo', x.getAttribute('data-filtro') === 'vMenos'); });
+    pintarListado(); $('panelListado').scrollIntoView({ behavior: 'smooth' });
+  });
 
   function pintarContadores(res) {
     var cons = (res['Consolidado'] || 0) + (res['Consolidado por nombre (revisar)'] || 0);
@@ -357,6 +400,7 @@
     if (['concReciente', 'nuevos', 'cambios'].indexOf(filtroActivo) !== -1) { // una fila por contrato
       var vistos = {}; lst = lst.filter(function (f) { var k = f.hist && f.hist.clave; if (!k) return true; if (vistos[k]) return false; vistos[k] = 1; return true; });
     }
+    if (filtroActivo === 'vMenos') lst.sort(function (a, b) { return (a.dif || 0) - (b.dif || 0); });
     if (filtroActivo === 'falta') lst.sort(function (a, b) { return ((b.hist && b.hist.diasPendiente) || 0) - ((a.hist && a.hist.diasPendiente) || 0); });
     return lst;
   }
@@ -367,7 +411,7 @@
     var lista = visiblesLista();
     if (!lista.length) { var tr0 = el('tr'), td0 = el('td', 'vacio', 'Sin resultados.'); td0.colSpan = 13; tr0.appendChild(td0); tb.appendChild(tr0); }
     lista.forEach(function (f) {
-      var tr = el('tr', 'clic'), e = ex(f), td = el('td'); td.appendChild(semaforo(f.estado)); tr.appendChild(td);
+      var tr = el('tr', 'clic' + (f.valor === 'Pagó de menos' ? ' fila-alarma' : '')), e = ex(f), td = el('td'); td.appendChild(semaforo(f.estado)); tr.appendChild(td);
       [f.clienteProtect || f.clienteCons, f.cedula, f.placa, f.contrato, e.forma, e.estadoCliente].forEach(function (v) { tr.appendChild(el('td', '', v || '')); });
       var tdS = el('td'); tdS.appendChild(seguimiento(f)); tr.appendChild(tdS);
       tr.appendChild(el('td', 'num', num(f.pagado))); tr.appendChild(el('td', 'num', num(f.c))); tr.appendChild(el('td', 'num', num(f.d)));

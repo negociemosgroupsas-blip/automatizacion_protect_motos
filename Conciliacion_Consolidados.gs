@@ -58,6 +58,13 @@ var CONC_COLORES = {
   'Sin registro en Protect': '#e6e6e6'
 };
 
+var CONC_COLORES_VALOR = {
+  'Pagó lo correcto': '#d9ead3',
+  'Pagó de más': '#cfe2f3',
+  'Pagó de menos': '#ea4335',
+  'Sin valor para comparar': '#e6e6e6'
+};
+
 var CONC_ENCABEZADOS = [
   'Estado', 'Cédula', 'Cliente (Consolidados)', 'Cliente (Protect)', 'Placa', 'Contrato',
   'Protect!P (pagado a Dugo Motos)', 'Consolidados C', 'Consolidados D',
@@ -454,6 +461,11 @@ function CONC_escribirResultado(ss, res) {
     hoja.getRange(2, 11, filas.length, 3).setNumberFormat('#,##0;-#,##0;0');
     var colores = filas.map(function (f) { return [CONC_COLORES[f[0]] || '#ffffff']; });
     hoja.getRange(2, 1, filas.length, 1).setBackgrounds(colores);
+    // Alarma: "Pagó de menos" en rojo fuerte (columna 10 = ¿Pagó lo que era?, 11 = diferencia)
+    var coloresV = filas.map(function (f) { return [CONC_COLORES_VALOR[f[9]] || '#ffffff']; });
+    hoja.getRange(2, 10, filas.length, 1).setBackgrounds(coloresV);
+    var fuentes = filas.map(function (f) { return [f[9] === 'Pagó de menos' ? '#ffffff' : '#000000']; });
+    hoja.getRange(2, 10, filas.length, 1).setFontColors(fuentes).setFontWeight('bold');
     hoja.getRange(1, 1, filas.length + 1, CONC_ENCABEZADOS.length).createFilter();
   }
 
