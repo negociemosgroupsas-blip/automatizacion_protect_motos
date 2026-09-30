@@ -67,6 +67,19 @@
   .tarjeta-poliza h3{margin:0 0 10px;font-size:1rem;color:var(--azul);}
   .tarjeta-poliza h4{margin:14px 0 6px;font-size:.85rem;color:var(--azul);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .obs{font-size:.8rem;color:var(--texto-suave);margin:8px 0 0;}
+  .titulo-grupo{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--texto-suave);margin:0 0 8px 2px;}
+  .contadores{margin-bottom:20px;}
+  .tarjeta-contador .valor{line-height:1.15;}
+  .avance{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-bottom:20px;}
+  .avance-item{background:var(--tarjeta);border:1px solid var(--borde);border-radius:12px;padding:12px 16px;}
+  .avance-top{display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:8px;} .avance-top span{font-weight:800;color:var(--verde);font-size:1.05rem;}
+  .barra{height:10px;background:#e8ebf0;border-radius:999px;overflow:hidden;} .barra-ok{height:100%;width:0;background:linear-gradient(90deg,#1f9d55,#3cc47c);border-radius:999px;transition:width .6s;}
+  .avance-item small{color:var(--texto-suave);font-size:.72rem;display:block;margin-top:6px;}
+  .aviso-datos{background:var(--naranja-bg);border:1px solid #f3cf9a;color:#8a4b00;border-radius:12px;padding:10px 14px;margin-bottom:20px;font-size:.8rem;}
+  .aviso-datos b{display:block;margin-bottom:4px;} .aviso-datos ul{margin:4px 0 0;padding-left:18px;}
+  .seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:10px 0 0;padding:10px 14px;background:#f1f7ff;border-radius:10px;}
+  .seg .campo .etiqueta{font-size:.66rem;text-transform:uppercase;color:var(--texto-suave);} .seg .campo .valor{font-size:.85rem;font-weight:600;}
+  .tag-seg{font-size:.72rem;font-weight:600;white-space:nowrap;} .tag-seg.ok{color:var(--verde);} .tag-seg.mal{color:var(--rojo);} .tag-seg.gris{color:var(--texto-suave);}
   footer{text-align:center;padding:20px;color:var(--texto-suave);font-size:.75rem;}
   @media (max-width:640px){ header{padding:14px 16px;} .barra-conector input[type=text]{width:100%;max-width:100%;} main{padding:12px;} }
 </style>
@@ -89,6 +102,22 @@
 <main>
   <div class="estado-conexion" id="estadoConexion"></div>
 
+  <div class="avance" id="avance" hidden>
+    <div class="avance-item"><div class="avance-top"><b>Conciliación por cantidad</b><span id="avPctCant">–</span></div><div class="barra"><div class="barra-ok" id="avBarCant"></div></div><small id="avTxtCant"></small></div>
+    <div class="avance-item"><div class="avance-top"><b>Conciliación por valor</b><span id="avPctVal">–</span></div><div class="barra"><div class="barra-ok" id="avBarVal"></div></div><small id="avTxtVal"></small></div>
+  </div>
+
+  <div class="aviso-datos" id="avisoAtipicos" hidden></div>
+
+  <div class="titulo-grupo">Esta semana <span id="lblSemana"></span></div>
+  <div class="contadores" id="contadoresSemana">
+    <div class="tarjeta-contador bueno" data-filtro="concReciente"><div class="valor" id="cConcRec">–</div><div class="etiqueta">Conciliados recientemente</div></div>
+    <div class="tarjeta-contador" data-filtro="nuevos"><div class="valor" id="cNuevos">–</div><div class="etiqueta">Contratos nuevos</div></div>
+    <div class="tarjeta-contador destacado" data-filtro="cambios"><div class="valor" id="cCambios">–</div><div class="etiqueta">Cambiaron de estado</div></div>
+    <div class="tarjeta-contador alerta" data-filtro="pendientes"><div class="valor" id="cPendientes">–</div><div class="etiqueta">Pendientes por conciliar</div></div>
+  </div>
+
+  <div class="titulo-grupo">Estado de la conciliación</div>
   <div class="contadores" id="contadores">
     <div class="tarjeta-contador bueno" data-filtro="conciliado"><div class="valor" id="cConciliado">–</div><div class="etiqueta">Conciliados</div></div>
     <div class="tarjeta-contador destacado" data-filtro="mas"><div class="valor" id="cMas">–</div><div class="etiqueta">Pagaron de más</div></div>
@@ -127,7 +156,7 @@
       <div class="tabla-wrap">
         <table>
           <thead><tr>
-            <th>Conciliación</th><th>Cliente</th><th>Cédula</th><th>Placa</th><th>Contrato</th><th>Forma</th><th>Estado</th>
+            <th>Conciliación</th><th>Cliente</th><th>Cédula</th><th>Placa</th><th>Contrato</th><th>Forma</th><th>Estado</th><th>Seguimiento</th>
             <th class="num">Protect!P</th><th class="num">C</th><th class="num">D</th><th>Concordó con</th><th class="num">Diferencia</th>
           </tr></thead>
           <tbody id="tbodyListado"></tbody>
@@ -138,7 +167,7 @@
   </section>
 </main>
 
-<footer>Al actualizar solo se reescribe la hoja «Conciliacion_Dugo». No se modifican Protect, Consolidados, Pagos ni Gestiones.</footer>
+<footer>Al actualizar solo se escriben las hojas «Conciliacion_Dugo» (foto actual) e «Historial_Conciliacion» (seguimiento). No se modifican Protect, Consolidados, Pagos ni Gestiones.</footer>
 
 <script>
 (function () {
@@ -150,17 +179,30 @@
     menos: { t: 'Pagaron de menos', f: function (x) { return x.estado === 'Pagó de menos'; } },
     sinCons: { t: 'Sin pago en Consolidados', f: function (x) { return x.estado === 'Sin registro en Consolidados'; } },
     sinProtect: { t: 'Sin registro en Protect', f: function (x) { return x.estado === 'Sin registro en Protect'; } },
+    pendientes: { t: 'Pendientes por conciliar (más antiguos primero)', f: function (x) { return x.estado !== 'Conciliado' && !(x.hist && x.hist.estadoContrato === 'Conciliado'); } },
+    concReciente: { t: 'Conciliados recientemente', f: function (x) { return !!(x.hist && x.hist.concReciente); } },
+    nuevos: { t: 'Contratos nuevos', f: function (x) { return !!(x.hist && x.hist.nuevoReciente); } },
+    cambios: { t: 'Cambiaron de estado', f: function (x) { return !!(x.hist && x.hist.cambioReciente); } },
     revisar: { t: 'Por revisar', f: function (x) { return x.estado === 'Ambiguo (revisar)' || x.estado === 'Sin valor de contabilidad' || x.estado === 'Sin valor en Protect!P'; } }
   };
   var SEMAFORO = {
     'Conciliado': 'verde', 'Pagó de más': 'naranja', 'Pagó de menos': 'rojo', 'Sin registro en Consolidados': 'naranja',
     'Sin registro en Protect': 'gris', 'Sin valor de contabilidad': 'gris', 'Sin valor en Protect!P': 'gris', 'Ambiguo (revisar)': 'morado'
   };
-  var datos = [], filtroActivo = null, textoLista = '';
+  var histRes = {}, datos = [], filtroActivo = null, textoLista = '';
   var $ = function (id) { return document.getElementById(id); };
   var fmt = new Intl.NumberFormat('es-CO');
   function num(v) { return v === null || v === undefined || v === '' ? '' : fmt.format(v); }
   function money(v) { return v === null || v === undefined || v === '' ? '—' : '$ ' + fmt.format(v); }
+  function dinero(v) { v = Number(v) || 0; return v >= 1e9 ? '$' + fmt.format(Math.round(v / 1e6)) + ' M' : '$' + fmt.format(Math.round(v)); }
+  function seguimiento(f) {
+    var h = f.hist; if (!h) return el('span', 'tag-seg gris', '');
+    var conc = f.estado === 'Conciliado' || h.estadoContrato === 'Conciliado';
+    if (conc && h.antesDelSeguimiento) return el('span', 'tag-seg gris', 'Conciliado antes del seguimiento');
+    if (conc) return el('span', 'tag-seg ok', 'Conciliado ' + h.fechaConc.slice(0, 10) + (h.diasEnConciliar !== null ? ' (' + h.diasEnConciliar + ' d)' : ''));
+    if (h.diasPendiente !== null && h.diasPendiente !== undefined) return el('span', 'tag-seg mal', 'Pendiente hace ' + h.diasPendiente + ' d' + (h.desdeBase ? '+' : ''));
+    return el('span', 'tag-seg gris', '');
+  }
   function signo(d) { return d === null || d === undefined || d === '' ? '—' : (d > 0 ? '+' : '') + fmt.format(d); }
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; }
   function ex(f) { return f.extra || {}; }
@@ -194,8 +236,12 @@
     llamar($('inputTol').value, function (r) {
       btn.disabled = false; btn.textContent = 'Actualizar datos';
       datos = r.filas || [];
-      estadoConexion('ok', 'Datos cargados: ' + datos.length + ' registros. Tolerancia: $' + fmt.format(r.tolerancia) + '. Hoja «' + r.hoja + '» actualizada (' + r.generado + ').');
-      pintarContadores(r.resumen || {}); buscar(); if (filtroActivo) pintarListado();
+      var hs = r.hist || {};
+      var msg = 'Datos cargados: ' + datos.length + ' registros. Tolerancia: $' + fmt.format(r.tolerancia) + '. Actualizado ' + r.generado + '.';
+      if (hs.primeraCorrida) msg += ' Primera corrida: se guardó la línea base en «' + r.hojaHistorial + '». Desde hoy se registrará cuándo se concilia cada contrato.';
+      else if (hs.ultimaCorridaAnterior) msg += ' Comparado con la corrida anterior (' + hs.ultimaCorridaAnterior + ').';
+      estadoConexion('ok', msg);
+      histRes = hs; pintarContadores(r.resumen || {}); pintarAtipicos(r.atipicos || []); buscar(); if (filtroActivo) pintarListado();
     }, function (msg) {
       btn.disabled = false; btn.textContent = 'Actualizar datos';
       estadoConexion('error', 'Error: ' + msg);
@@ -211,8 +257,28 @@
     $('cSinCons').textContent = res['Sin registro en Consolidados'] || 0;
     $('cSinProtect').textContent = res['Sin registro en Protect'] || 0;
     $('cRevisar').textContent = (res['Ambiguo (revisar)'] || 0) + (res['Sin valor de contabilidad'] || 0) + (res['Sin valor en Protect!P'] || 0);
-    $('cTotalP').textContent = '$' + fmt.format(totalP);
-    $('cValorConc').textContent = '$' + fmt.format(conc);
+    $('cTotalP').textContent = dinero(totalP);
+    $('cValorConc').textContent = dinero(conc);
+    var hs = histRes || {};
+    $('lblSemana').textContent = '(últimos ' + (hs.diasReciente || 7) + ' días)';
+    $('cConcRec').textContent = hs.concRecientes || 0; $('cNuevos').textContent = hs.nuevos || 0;
+    $('cCambios').textContent = hs.cambios || 0; $('cPendientes').textContent = hs.pendientes || 0;
+    var pc = datos.length ? (res['Conciliado'] || 0) / datos.length * 100 : 0, pv = totalP ? conc / totalP * 100 : 0;
+    $('avance').hidden = false;
+    $('avPctCant').textContent = pc.toFixed(1) + ' %'; $('avBarCant').style.width = pc + '%';
+    $('avTxtCant').textContent = fmt.format(res['Conciliado'] || 0) + ' de ' + fmt.format(datos.length) + ' registros conciliados';
+    $('avPctVal').textContent = pv.toFixed(1) + ' %'; $('avBarVal').style.width = Math.min(pv, 100) + '%';
+    $('avTxtVal').textContent = dinero(conc) + ' de ' + dinero(totalP) + ' (Protect!P)';
+  }
+  function pintarAtipicos(lista) {
+    var box = $('avisoAtipicos'); box.textContent = '';
+    if (!lista.length) { box.hidden = true; return; }
+    box.hidden = false;
+    box.appendChild(el('b', '', 'Revisa estos valores de Protect!P: son muy superiores al resto y distorsionan los totales'));
+    box.appendChild(document.createTextNode('Puede ser una fila de totales o un número mal escrito.'));
+    var ul = el('ul');
+    lista.slice(0, 6).forEach(function (a) { ul.appendChild(el('li', '', 'Fila ' + a.filaProtect + ' de Protect · ' + (a.cliente || '(sin nombre)') + (a.contrato ? ' · contrato ' + a.contrato : '') + ' · ' + dinero(a.pagado))); });
+    box.appendChild(ul);
   }
 
   // ---------- Historial del cliente ----------
@@ -245,6 +311,16 @@
     ].forEach(function (p) { g.appendChild(campo(p[0], p[1])); });
     t.appendChild(g);
 
+    if (f.hist) {
+      var hh = f.hist, sg = el('div', 'seg');
+      [['Primera vez visto', hh.primeraVez + (hh.desdeBase ? ' (inicio del seguimiento)' : '')],
+       ['Conciliado desde', hh.antesDelSeguimiento ? 'Antes del seguimiento' : (hh.fechaConc || '—')],
+       [hh.diasPendiente !== null && hh.diasPendiente !== undefined ? 'Días pendiente' : 'Días en conciliarse', hh.diasPendiente !== null && hh.diasPendiente !== undefined ? hh.diasPendiente : (hh.diasEnConciliar !== null ? hh.diasEnConciliar : '—')],
+       ['Estado anterior', hh.estadoAnterior ? hh.estadoAnterior + ' (' + hh.fechaEstado + ')' : '—'],
+       ['Veces revisado', hh.corridas]
+      ].forEach(function (p) { sg.appendChild(campo(p[0], p[1])); });
+      t.appendChild(el('h4', '', 'Seguimiento del contrato')); t.appendChild(sg);
+    }
     var h = el('h4', '', 'Conciliación con Consolidados '); h.appendChild(semaforo(f.estado)); t.appendChild(h);
     var tb = el('table'), th = el('thead'), trh = el('tr');
     ['Fuente', 'Valor', 'Diferencia vs Protect!P', 'Resultado'].forEach(function (x, i) { trh.appendChild(el('th', i === 1 || i === 2 ? 'num' : '', x)); });
@@ -272,21 +348,27 @@
   // ---------- Listado filtrado (al tocar una tarjeta) ----------
   function visiblesLista() {
     var q = norm(textoLista).trim(), def = FILTROS[filtroActivo];
-    return datos.filter(function (f) {
+    var lst = datos.filter(function (f) {
       if (def && !def.f(f)) return false;
       if (!q) return true;
       return [f.cedula, f.clienteCons, f.clienteProtect, f.placa, f.contrato, ex(f).asesor].map(norm).join(' ').indexOf(q) !== -1;
     });
+    if (['pendientes', 'concReciente', 'nuevos', 'cambios'].indexOf(filtroActivo) !== -1) { // una fila por contrato
+      var vistos = {}; lst = lst.filter(function (f) { var k = f.hist && f.hist.clave; if (!k) return true; if (vistos[k]) return false; vistos[k] = 1; return true; });
+    }
+    if (filtroActivo === 'pendientes') lst.sort(function (a, b) { return ((b.hist && b.hist.diasPendiente) || 0) - ((a.hist && a.hist.diasPendiente) || 0); });
+    return lst;
   }
   function pintarListado() {
     $('panelListado').style.display = 'block';
     $('chipTexto').textContent = 'Mostrando: ' + FILTROS[filtroActivo].t;
     var tb = $('tbodyListado'); tb.textContent = '';
     var lista = visiblesLista();
-    if (!lista.length) { var tr0 = el('tr'), td0 = el('td', 'vacio', 'Sin resultados.'); td0.colSpan = 12; tr0.appendChild(td0); tb.appendChild(tr0); }
+    if (!lista.length) { var tr0 = el('tr'), td0 = el('td', 'vacio', 'Sin resultados.'); td0.colSpan = 13; tr0.appendChild(td0); tb.appendChild(tr0); }
     lista.forEach(function (f) {
       var tr = el('tr', 'clic'), e = ex(f), td = el('td'); td.appendChild(semaforo(f.estado)); tr.appendChild(td);
       [f.clienteProtect || f.clienteCons, f.cedula, f.placa, f.contrato, e.forma, e.estadoCliente].forEach(function (v) { tr.appendChild(el('td', '', v || '')); });
+      var tdS = el('td'); tdS.appendChild(seguimiento(f)); tr.appendChild(tdS);
       tr.appendChild(el('td', 'num', num(f.pagado))); tr.appendChild(el('td', 'num', num(f.c))); tr.appendChild(el('td', 'num', num(f.d)));
       tr.appendChild(el('td', '', f.concordo));
       tr.appendChild(el('td', 'num' + (f.dif > 0 ? ' pos' : f.dif < 0 ? ' neg' : ''), f.dif === null || f.dif === '' ? '' : signo(f.dif)));
@@ -311,10 +393,12 @@
 
   $('btnCsv').addEventListener('click', function () {
     var cab = ['Conciliación', 'Cliente', 'Cédula', 'Placa', 'Contrato', 'Asesor', 'Fecha firma', 'Forma', 'Estado cliente', 'Celular',
-      'Protect!P', 'C', 'D', 'Concordó con', 'Diferencia', 'Diferencia C-P', 'Diferencia D-P', 'Cruce', 'Fila Consolidados', 'Fila Protect', 'Observación'];
+      'Protect!P', 'C', 'D', 'Concordó con', 'Diferencia', 'Diferencia C-P', 'Diferencia D-P', 'Cruce', 'Fila Consolidados', 'Fila Protect', 'Observación',
+      'Primera vez visto', 'Conciliado desde', 'Días pendiente', 'Estado anterior'];
     var filas = visiblesLista().map(function (f) { var e = ex(f);
       return [f.estado, f.clienteProtect || f.clienteCons, f.cedula, f.placa, f.contrato, e.asesor, e.fechaFirma, e.forma, e.estadoCliente, e.celular,
-        f.pagado, f.c, f.d, f.concordo, f.dif, f.difC, f.difD, f.cruce, f.filaCons, f.filaProtect, f.obs]; });
+        f.pagado, f.c, f.d, f.concordo, f.dif, f.difC, f.difD, f.cruce, f.filaCons, f.filaProtect, f.obs,
+        f.hist ? f.hist.primeraVez : '', f.hist ? f.hist.fechaConc : '', f.hist && f.hist.diasPendiente !== null ? f.hist.diasPendiente : '', f.hist ? f.hist.estadoAnterior : '']; });
     var csv = [cab].concat(filas).map(function (r) {
       return r.map(function (v) { v = v === null || v === undefined ? '' : String(v); return '"' + v.replace(/"/g, '""') + '"'; }).join(';');
     }).join('\r\n');

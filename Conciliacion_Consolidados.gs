@@ -6,7 +6,9 @@
  * No crea triggers. Se ejecuta a mano: elegir CONC_conciliar y pulsar "Ejecutar".
  *
  * Solo LEE las hojas "Protect" y "Consolidados".
- * Solo ESCRIBE en la hoja "Conciliacion_Dugo" (la crea si no existe y la reescribe en cada corrida).
+ * Solo ESCRIBE en dos hojas propias (las crea si no existen):
+ *   - "Conciliacion_Dugo": foto actual, se reescribe en cada corrida.
+ *   - "Historial_Conciliacion": seguimiento permanente (desde cuándo está conciliado cada pago, cuánto lleva pendiente).
  *
  * Regla: Protect!P (valor pagado a Dugo Motos) se compara por separado con
  * Consolidados!C y Consolidados!D. Nunca se suman. Si alguna concuerda => Conciliado.
@@ -18,6 +20,9 @@ var CONC_SHEET_ID = '1WMR0VhNg6apQa5BPg4bFoRbMqJNdQQ9f3UdlA2fKb04';
 var CONC_HOJA_PROTECT = 'Protect';
 var CONC_HOJA_CONSOLIDADOS = 'Consolidados';
 var CONC_HOJA_RESULTADO = 'Conciliacion_Dugo';
+
+var CONC_HOJA_HISTORIAL = 'Historial_Conciliacion';
+var CONC_DIAS_RECIENTE = 7; // ventana para "conciliados / nuevos / cambios de la semana"
 
 var CONC_TOLERANCIA = 0; // pesos de diferencia aceptados para considerar "Conciliado"
 
@@ -62,15 +67,26 @@ var CONC_ENCABEZADOS = [
 // ==================== PUNTO DE ENTRADA ====================
 function CONC_conciliar() {
   var ss = SpreadsheetApp.openById(CONC_SHEET_ID);
-  var hojaProtect = CONC_buscarHoja(ss, CONC_HOJA_PROTECT);
-  var hojaCons = CONC_buscarHoja(ss, CONC_HOJA_CONSOLIDADOS);
+  var out = CONC_procesar(ss, CONC_TOLERANCIA);
+  Logger.log('Conciliación lista: ' + JSON.stringify(out.res.resumen) + ' | seguimiento: ' + JSON.stringify(out.hist));
+}
 
-  var protect = CONC_leerProtect(hojaProtect);
-  var cons = CONC_leerConsolidados(hojaCons);
-  var res = CONC_calcular(protect, cons, CONC_TOLERANCIA);
-
-  CONC_escribirResultado(ss, res);
-  Logger.log('Conciliación lista: ' + JSON.stringify(res.resumen));
+// Lee, concilia, actualiza el historial y escribe las hojas propias. Lo usan la ejecución manual y la pantalla web.
+function CONC_procesar(ss, tol) {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) throw new Error('Hay otra conciliación en curso. Espera un minuto y vuelve a intentar.');
+  try {
+    var hojaProtect = CONC_buscarHoja(ss, CONC_HOJA_PROTECT);
+    var hojaCons = CONC_buscarHoja(ss, CONC_HOJA_CONSOLIDADOS);
+    var res = CONC_calcular(CONC_leerProtect(hojaProtect), CONC_leerConsolidados(hojaCons), tol);
+    var previos = CONC_leerHistorial(ss);
+    var ah = CONC_aplicarHistorial(res.filas, previos, new Date());
+    CONC_escribirResultado(ss, res);
+    CONC_escribirHistorial(ss, ah.registros);
+    return { res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas) };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // Busca la pestaña por nombre exacto; si no, sin importar mayúsculas, tildes, espacios ni una "s" final.
@@ -269,6 +285,168 @@ function CONC_filaSalida(estado, r, p, _reservado, cruce, obs) {
     obs: obs || '',
     extra: p ? (p.extra || null) : null
   };
+}
+
+
+// ==================== HISTORIAL / SEGUIMIENTO ====================
+var CONC_HIST_ENCABEZADOS = [
+  'Clave', 'Cédula', 'Cliente', 'Contrato', 'Placa', 'Estado actual', 'Estado anterior',
+  'Primera vez visto', 'Conciliado desde', 'Último cambio de estado', 'Última revisión', 'Corridas',
+  'En última corrida', 'Desde línea base', 'Protect!P', 'C', 'D', 'Diferencia'
+];
+
+// Clave del seguimiento: un registro por contrato de Protect (así, si contabilidad manda después una fila
+// con el valor correcto, es el MISMO contrato que pasa de pendiente a conciliado). Lo que no tiene contrato
+// (filas solo de Consolidados o ambiguas) se sigue por cédula + valores.
+function CONC_claveBase(f) {
+  if (f.contrato) return 'P:' + f.contrato + '|' + CONC_normCedula(f.cedula);
+  return 'X|' + CONC_normCedula(f.cedula) + '|' + (f.c === null || f.c === undefined ? '' : f.c) + '|' + (f.d === null || f.d === undefined ? '' : f.d);
+}
+
+// De varias filas del mismo contrato, la que representa su estado: conciliada > menor diferencia > resto
+function CONC_puntaje(f) {
+  if (f.estado === CONC_ESTADO.CONCILIADO) return 0;
+  if ((f.estado === CONC_ESTADO.MAS || f.estado === CONC_ESTADO.MENOS) && f.dif !== null) return 1 + Math.abs(f.dif) / 1e13;
+  return 2;
+}
+
+function CONC_aFecha(v) {
+  if (Object.prototype.toString.call(v) === '[object Date]') return isNaN(v.getTime()) ? null : v;
+  if (CONC_vacio(v)) return null;
+  var d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function CONC_fechaHoraTxt(d) {
+  if (!d) return '';
+  var z = function (n) { return (n < 10 ? '0' : '') + n; };
+  return z(d.getDate()) + '/' + z(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
+}
+
+function CONC_leerHistorial(ss) {
+  var hoja = ss.getSheetByName(CONC_HOJA_HISTORIAL);
+  if (!hoja || hoja.getLastRow() < 1) return [];
+  if (hoja.getRange(1, 1).getValue() !== CONC_HIST_ENCABEZADOS[0]) {
+    throw new Error('Ya existe una hoja "' + CONC_HOJA_HISTORIAL + '" con otro contenido. No se sobrescribe; renómbrala o cambia CONC_HOJA_HISTORIAL.');
+  }
+  if (hoja.getLastRow() < 2) return [];
+  var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, CONC_HIST_ENCABEZADOS.length).getValues();
+  return datos.filter(function (r) { return !CONC_vacio(r[0]); }).map(function (r) {
+    return {
+      clave: String(r[0]), cedula: r[1], cliente: r[2], contrato: r[3], placa: r[4],
+      estado: r[5], estadoAnterior: r[6],
+      primeraVez: CONC_aFecha(r[7]), fechaConc: CONC_aFecha(r[8]), fechaEstado: CONC_aFecha(r[9]), ultimaVista: CONC_aFecha(r[10]),
+      corridas: Number(r[11]) || 1, enUltima: r[12], desdeBase: r[13] === 'Sí',
+      pagado: CONC_aNumero(r[14]), c: CONC_aNumero(r[15]), d: CONC_aNumero(r[16]), dif: CONC_aNumero(r[17])
+    };
+  });
+}
+
+// Pura (sin hojas): cruza el resultado actual con el historial previo. Agrega f.hist a cada fila.
+function CONC_aplicarHistorial(filas, previos, ahora) {
+  var DIA = 86400000;
+  var corte = new Date(ahora.getTime() - CONC_DIAS_RECIENTE * DIA);
+  var primeraCorrida = previos.length === 0;
+  var prevMap = {}, registros = [], grupos = {}, orden = [];
+  previos.forEach(function (h) { prevMap[h.clave] = h; });
+  var ultimaAnterior = null;
+  previos.forEach(function (h) { if (h.ultimaVista && (!ultimaAnterior || h.ultimaVista > ultimaAnterior)) ultimaAnterior = h.ultimaVista; });
+
+  var resumen = { diasReciente: CONC_DIAS_RECIENTE, primeraCorrida: primeraCorrida, ultimaCorridaAnterior: CONC_fechaHoraTxt(ultimaAnterior),
+    nuevos: 0, concRecientes: 0, cambios: 0, noAparecen: 0, pendientes: 0 };
+
+  filas.forEach(function (f) {
+    var k = CONC_claveBase(f);
+    if (!grupos[k]) { grupos[k] = []; orden.push(k); }
+    grupos[k].push(f);
+  });
+
+  orden.forEach(function (clave) {
+    var fs = grupos[clave];
+    var rep = fs.reduce(function (m, f) { return CONC_puntaje(f) < CONC_puntaje(m) ? f : m; }, fs[0]);
+    var h = prevMap[clave], r;
+    if (!h) {
+      r = { clave: clave, estadoAnterior: '', primeraVez: ahora, fechaEstado: ahora, corridas: 1, desdeBase: primeraCorrida,
+        fechaConc: (rep.estado === CONC_ESTADO.CONCILIADO && !primeraCorrida) ? ahora : null };
+    } else {
+      r = h;
+      if (h.estado !== rep.estado) { r.estadoAnterior = h.estado; r.fechaEstado = ahora; }
+      r.fechaConc = rep.estado === CONC_ESTADO.CONCILIADO
+        ? (h.fechaConc || (h.desdeBase && h.estado === CONC_ESTADO.CONCILIADO ? null : ahora))
+        : null;
+      r.corridas = (h.corridas || 1) + 1;
+    }
+    r.cedula = rep.cedula; r.cliente = rep.clienteProtect || rep.clienteCons; r.contrato = rep.contrato; r.placa = rep.placa;
+    r.estado = rep.estado; r.ultimaVista = ahora; r.enUltima = 'Sí';
+    r.pagado = rep.pagado; r.c = rep.c; r.d = rep.d; r.dif = rep.dif;
+    registros.push(r);
+
+    var conc = rep.estado === CONC_ESTADO.CONCILIADO;
+    var nuevoReciente = !r.desdeBase && r.primeraVez >= corte;
+    var concReciente = !!(r.fechaConc && r.fechaConc >= corte);
+    var cambioReciente = !!(r.estadoAnterior && r.fechaEstado >= corte);
+    if (nuevoReciente) resumen.nuevos++;
+    if (concReciente) resumen.concRecientes++;
+    if (cambioReciente) resumen.cambios++;
+    if (!conc) resumen.pendientes++;
+    var hist = {
+      clave: clave, estadoContrato: rep.estado,
+      primeraVez: CONC_fechaHoraTxt(r.primeraVez), fechaConc: CONC_fechaHoraTxt(r.fechaConc), estadoAnterior: r.estadoAnterior || '',
+      fechaEstado: CONC_fechaHoraTxt(r.fechaEstado), desdeBase: r.desdeBase, corridas: r.corridas,
+      diasPendiente: conc ? null : Math.floor((ahora - r.primeraVez) / DIA),
+      diasEnConciliar: (conc && r.fechaConc) ? Math.floor((r.fechaConc - r.primeraVez) / DIA) : null,
+      antesDelSeguimiento: conc && !r.fechaConc,
+      nuevoReciente: nuevoReciente, concReciente: concReciente, cambioReciente: cambioReciente
+    };
+    fs.forEach(function (f) { f.hist = hist; });
+  });
+
+  // Registros del historial que ya no aparecen en esta corrida: se conservan
+  previos.forEach(function (h) {
+    if (grupos[h.clave]) return;
+    h.enUltima = 'No'; resumen.noAparecen++;
+    registros.push(h);
+  });
+  return { registros: registros, resumen: resumen };
+}
+
+function CONC_escribirHistorial(ss, registros) {
+  var hoja = ss.getSheetByName(CONC_HOJA_HISTORIAL);
+  if (!hoja) hoja = ss.insertSheet(CONC_HOJA_HISTORIAL);
+  hoja.clear();
+  hoja.getRange(1, 1, 1, CONC_HIST_ENCABEZADOS.length).setValues([CONC_HIST_ENCABEZADOS])
+    .setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff').setWrap(true);
+  hoja.setFrozenRows(1);
+  if (!registros.length) return;
+  var filas = registros.map(function (r) {
+    return [r.clave, r.cedula, r.cliente, r.contrato, r.placa, r.estado, r.estadoAnterior || '',
+      r.primeraVez || '', r.fechaConc || '', r.fechaEstado || '', r.ultimaVista || '', r.corridas,
+      r.enUltima, r.desdeBase ? 'Sí' : '', CONC_celda(r.pagado), CONC_celda(r.c), CONC_celda(r.d), CONC_celda(r.dif)];
+  });
+  var n = filas.length;
+  hoja.getRange(2, 1, n, 5).setNumberFormat('@');
+  hoja.getRange(2, 1, n, CONC_HIST_ENCABEZADOS.length).setValues(filas);
+  hoja.getRange(2, 8, n, 4).setNumberFormat('dd/mm/yyyy hh:mm');
+  hoja.getRange(2, 15, n, 4).setNumberFormat('#,##0;-#,##0;0');
+  hoja.autoResizeColumns(2, 17);
+  hoja.setColumnWidth(1, 160);
+  hoja.getRange(1, 1, n + 1, CONC_HIST_ENCABEZADOS.length).createFilter();
+}
+
+// Pagos de Protect!P muy por encima de lo normal (típico: una fila de totales o un número mal escrito)
+function CONC_atipicos(filas) {
+  var vals = filas.filter(function (f) { return f.pagado > 0; }).map(function (f) { return f.pagado; }).sort(function (a, b) { return a - b; });
+  if (vals.length < 10) return [];
+  var mediana = vals[Math.floor(vals.length / 2)];
+  var umbral = mediana * 20;
+  var vistos = {}, out = [];
+  filas.forEach(function (f) {
+    if (!(f.pagado > umbral) || vistos[f.filaProtect]) return;
+    vistos[f.filaProtect] = true;
+    out.push({ filaProtect: f.filaProtect, cliente: f.clienteProtect || f.clienteCons, contrato: f.contrato, placa: f.placa, pagado: f.pagado });
+  });
+  out.sort(function (a, b) { return b.pagado - a.pagado; });
+  return out.slice(0, 15);
 }
 
 // ==================== ESCRITURA (solo en la hoja "Conciliacion_Dugo") ====================

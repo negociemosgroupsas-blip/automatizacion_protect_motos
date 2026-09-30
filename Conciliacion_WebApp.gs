@@ -33,17 +33,16 @@ function CONC_apiConciliar(tolerancia) {
   }
 
   var ss = SpreadsheetApp.openById(CONC_SHEET_ID);
-  var hojaProtect = CONC_buscarHoja(ss, CONC_HOJA_PROTECT);
-  var hojaCons = CONC_buscarHoja(ss, CONC_HOJA_CONSOLIDADOS);
-
-  var res = CONC_calcular(CONC_leerProtect(hojaProtect), CONC_leerConsolidados(hojaCons), tol);
-  CONC_escribirResultado(ss, res);
+  var out = CONC_procesar(ss, tol);
 
   return {
     tolerancia: tol,
     hoja: CONC_HOJA_RESULTADO,
-    resumen: res.resumen,
-    filas: res.filas,
+    hojaHistorial: CONC_HOJA_HISTORIAL,
+    resumen: out.res.resumen,
+    filas: out.res.filas,
+    hist: out.hist,
+    atipicos: out.atipicos,
     generado: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
   };
 }
