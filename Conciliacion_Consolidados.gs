@@ -237,7 +237,12 @@ function CONC_filaSalida(estado, r, p, _reservado, cruce, obs) {
 // ==================== ESCRITURA (solo en la hoja "Conciliacion") ====================
 function CONC_escribirResultado(ss, res) {
   var hoja = ss.getSheetByName(CONC_HOJA_RESULTADO);
-  if (!hoja) hoja = ss.insertSheet(CONC_HOJA_RESULTADO);
+  if (!hoja) {
+    hoja = ss.insertSheet(CONC_HOJA_RESULTADO);
+  } else if (hoja.getLastRow() > 0 && hoja.getRange(1, 1).getValue() !== CONC_ENCABEZADOS[0]) {
+    // Seguridad: no pisar una hoja con ese nombre que no fue creada por esta automatización
+    throw new Error('Ya existe una hoja "' + CONC_HOJA_RESULTADO + '" con otro contenido. No se sobrescribe; renómbrala o cambia CONC_HOJA_RESULTADO.');
+  }
   hoja.clear();
   if (hoja.getFilter()) hoja.getFilter().remove();
 
