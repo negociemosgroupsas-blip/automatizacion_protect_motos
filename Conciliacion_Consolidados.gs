@@ -62,10 +62,8 @@ var CONC_ENCABEZADOS = [
 // ==================== PUNTO DE ENTRADA ====================
 function CONC_conciliar() {
   var ss = SpreadsheetApp.openById(CONC_SHEET_ID);
-  var hojaProtect = ss.getSheetByName(CONC_HOJA_PROTECT);
-  var hojaCons = ss.getSheetByName(CONC_HOJA_CONSOLIDADOS);
-  if (!hojaProtect) throw new Error('No se encontró la hoja "' + CONC_HOJA_PROTECT + '".');
-  if (!hojaCons) throw new Error('No se encontró la hoja "' + CONC_HOJA_CONSOLIDADOS + '".');
+  var hojaProtect = CONC_buscarHoja(ss, CONC_HOJA_PROTECT);
+  var hojaCons = CONC_buscarHoja(ss, CONC_HOJA_CONSOLIDADOS);
 
   var protect = CONC_leerProtect(hojaProtect);
   var cons = CONC_leerConsolidados(hojaCons);
@@ -73,6 +71,22 @@ function CONC_conciliar() {
 
   CONC_escribirResultado(ss, res);
   Logger.log('Conciliación lista: ' + JSON.stringify(res.resumen));
+}
+
+// Busca la pestaña por nombre exacto; si no, sin importar mayúsculas, tildes, espacios ni una "s" final.
+// Si no la encuentra, el error lista las pestañas que sí existen.
+function CONC_buscarHoja(ss, nombre) {
+  var exacta = ss.getSheetByName(nombre);
+  if (exacta) return exacta;
+  var clave = function (t) {
+    return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/s$/, '');
+  };
+  var hojas = ss.getSheets();
+  for (var i = 0; i < hojas.length; i++) {
+    if (clave(hojas[i].getName()) === clave(nombre)) return hojas[i];
+  }
+  throw new Error('No se encontró la hoja "' + nombre + '". Pestañas que veo: ' +
+    hojas.map(function (h) { return '"' + h.getName() + '"'; }).join(', '));
 }
 
 // ==================== LECTURA (solo lectura) ====================

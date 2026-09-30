@@ -33,10 +33,8 @@ function CONC_apiConciliar(tolerancia) {
   }
 
   var ss = SpreadsheetApp.openById(CONC_SHEET_ID);
-  var hojaProtect = ss.getSheetByName(CONC_HOJA_PROTECT);
-  var hojaCons = ss.getSheetByName(CONC_HOJA_CONSOLIDADOS);
-  if (!hojaProtect) throw new Error('No se encontró la hoja "' + CONC_HOJA_PROTECT + '".');
-  if (!hojaCons) throw new Error('No se encontró la hoja "' + CONC_HOJA_CONSOLIDADOS + '".');
+  var hojaProtect = CONC_buscarHoja(ss, CONC_HOJA_PROTECT);
+  var hojaCons = CONC_buscarHoja(ss, CONC_HOJA_CONSOLIDADOS);
 
   var res = CONC_calcular(CONC_leerProtect(hojaProtect), CONC_leerConsolidados(hojaCons), tol);
   CONC_escribirResultado(ss, res);
