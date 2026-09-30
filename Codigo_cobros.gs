@@ -8,7 +8,7 @@
 // ==================== CONFIGURACIÓN ====================
 var TOKEN = 'PM-COBROS-2026';
 var SHEET_ID = '1WMR0VhNg6apQa5BPg4bFoRbMqJNdQQ9f3UdlA2fKb04';
-var HOJA_SEGUIMIENTO = 'Protect';
+var HOJA_SEGUIMIENTO = 'consolidado';
 var HOJA_PAGOS = 'Pagos';
 var HOJA_GESTIONES = 'Gestiones';
 
