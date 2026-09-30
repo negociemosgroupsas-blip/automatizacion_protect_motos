@@ -147,14 +147,6 @@
     <div class="avance-item"><div class="avance-top"><b>Contratos consolidados</b><span id="avPctCant">–</span></div><div class="barra"><div class="barra-ok" id="avBarCant"></div></div><small id="avTxtCant"></small></div>
   </div>
 
-  <div class="titulo-grupo">Esta semana <span id="lblSemana"></span></div>
-  <div class="contadores" id="contadoresSemana">
-    <div class="tarjeta-contador bueno" data-filtro="concReciente"><div class="valor" id="cConcRec">–</div><div class="etiqueta">Consolidados recientemente</div></div>
-    <div class="tarjeta-contador" data-filtro="nuevos"><div class="valor" id="cNuevos">–</div><div class="etiqueta">Contratos nuevos</div></div>
-    <div class="tarjeta-contador destacado" data-filtro="cambios"><div class="valor" id="cCambios">–</div><div class="etiqueta">Cambiaron de estado</div></div>
-    <div class="tarjeta-contador alerta" data-filtro="falta"><div class="valor" id="cPendientes">–</div><div class="etiqueta">Faltan por consolidar</div></div>
-  </div>
-
   <div class="titulo-grupo">Estado de la consolidación</div>
   <div class="contadores" id="contadores">
     <div class="tarjeta-contador bueno" data-filtro="conciliado"><div class="valor" id="cConciliado">–</div><div class="etiqueta">Consolidados</div></div>
@@ -333,9 +325,6 @@
     $('bRevisar').textContent = datos.filter(function (f) { return !!f.porOrden || f.estado === 'Consolidado por nombre (revisar)' || f.estado === 'Sin registro en Protect'; }).length;
     $('btnTopMenos').classList.toggle('pulsa', cv['Pagó de menos'] > 0);
     var hs = histRes || {};
-    $('lblSemana').textContent = '(últimos ' + (hs.diasReciente || 7) + ' días)';
-    $('cConcRec').textContent = hs.concRecientes || 0; $('cNuevos').textContent = hs.nuevos || 0;
-    $('cCambios').textContent = hs.cambios || 0; $('cPendientes').textContent = falta;
     var pc = contratos ? cons / contratos * 100 : 0;
     $('avance').hidden = false;
     $('avPctCant').textContent = pc.toFixed(1) + ' %'; $('avBarCant').style.width = pc + '%';
