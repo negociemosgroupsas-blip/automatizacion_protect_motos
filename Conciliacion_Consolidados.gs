@@ -234,7 +234,7 @@ function CONC_filaSalida(estado, r, p, _reservado, cruce, obs) {
   };
 }
 
-// ==================== ESCRITURA (solo en la hoja "Conciliacion") ====================
+// ==================== ESCRITURA (solo en la hoja "Conciliacion_Dugo") ====================
 function CONC_escribirResultado(ss, res) {
   var hoja = ss.getSheetByName(CONC_HOJA_RESULTADO);
   if (!hoja) {
