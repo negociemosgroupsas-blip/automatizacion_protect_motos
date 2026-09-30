@@ -199,8 +199,8 @@ function CONC_calcular(protect, cons, tol) {
     var coinciden = cands.filter(function (p) {
       return p.pagado !== null && (CONC_iguales(r.c, p.pagado, tol) || CONC_iguales(r.d, p.pagado, tol));
     });
-    cands.forEach(function (p) { p.usada = true; });
     if (coinciden.length === 1) {
+      coinciden[0].usada = true; // solo se reclama el contrato al que realmente corresponde el pago
       salida.push(CONC_evaluar(r, coinciden[0], tol, cruce, 'Varias motos con este cliente; asignado por coincidencia exacta de valor.'));
     } else {
       var lista = cands.map(function (p) {
