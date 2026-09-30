@@ -6,7 +6,7 @@
  * No crea triggers. Se ejecuta a mano: elegir CONC_conciliar y pulsar "Ejecutar".
  *
  * Solo LEE las hojas "Protect" y "Consolidados".
- * Solo ESCRIBE en la hoja "Conciliacion" (la crea si no existe y la reescribe en cada corrida).
+ * Solo ESCRIBE en la hoja "Conciliacion_Dugo" (la crea si no existe y la reescribe en cada corrida).
  *
  * Regla: Protect!P (valor pagado a Dugo Motos) se compara por separado con
  * Consolidados!C y Consolidados!D. Nunca se suman. Si alguna concuerda => Conciliado.
@@ -17,7 +17,7 @@
 var CONC_SHEET_ID = '1WMR0VhNg6apQa5BPg4bFoRbMqJNdQQ9f3UdlA2fKb04';
 var CONC_HOJA_PROTECT = 'Protect';
 var CONC_HOJA_CONSOLIDADOS = 'Consolidados';
-var CONC_HOJA_RESULTADO = 'Conciliacion';
+var CONC_HOJA_RESULTADO = 'Conciliacion_Dugo';
 
 var CONC_TOLERANCIA = 0; // pesos de diferencia aceptados para considerar "Conciliado"
 
