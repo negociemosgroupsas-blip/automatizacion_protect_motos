@@ -11,7 +11,12 @@
  *   - Quién tiene acceso: Solo yo  (recomendado: la pantalla ve datos de pagos)
  */
 
-function doGet() {
+// Clave para usar la conciliación desde el HTML local (Conciliacion_Dugo_Local.html)
+var CONC_TOKEN = 'PM-CONC-3e97c3a8bb5298ef9d192391';
+
+function doGet(e) {
+  var params = (e && e.parameter) ? e.parameter : {};
+  if (params.action === 'conciliar') return CONC_respuestaJsonp(params);
   return HtmlService.createHtmlOutputFromFile('Conciliacion_Dugo')
     .setTitle('Conciliación Dugo Motos')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
@@ -43,4 +48,24 @@ function CONC_apiConciliar(tolerancia) {
     filas: res.filas,
     generado: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
   };
+}
+
+/** Respuesta JSONP para el HTML local. Exige el token. */
+function CONC_respuestaJsonp(params) {
+  var salida;
+  try {
+    if (params.token !== CONC_TOKEN) {
+      salida = { ok: false, error: 'Token inválido.' };
+    } else {
+      salida = { ok: true, data: CONC_apiConciliar(params.tolerancia) };
+    }
+  } catch (err) {
+    salida = { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+  var cb = params.callback;
+  if (cb && /^[A-Za-z_$][\w$.]*$/.test(cb)) {
+    return ContentService.createTextOutput(cb + '(' + JSON.stringify(salida) + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(JSON.stringify(salida)).setMimeType(ContentService.MimeType.JSON);
 }
