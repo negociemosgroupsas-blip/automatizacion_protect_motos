@@ -95,6 +95,9 @@
   .boton-top.morado{background:linear-gradient(135deg,#5b21b6,#8b5cf6);}
   .boton-top.pulsa{animation:pulsoBtn 1.8s ease-in-out infinite;}
   @keyframes pulsoBtn{0%,100%{box-shadow:0 4px 14px rgba(234,88,12,.35);}50%{box-shadow:0 4px 26px rgba(234,88,12,.85);}}
+  .col-top{display:flex;flex-direction:column;gap:8px;}
+  .descarga{border:2px solid var(--azul);background:#fff;color:var(--azul);border-radius:10px;padding:8px 12px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;}
+  .descarga:hover{background:var(--azul);color:#fff;} .descarga:disabled{opacity:.45;cursor:not-allowed;background:#fff;color:var(--azul);}
   .semaforo.azul{background:var(--azulinfo-bg);color:var(--azulinfo);}
   .alarma{display:none;background:linear-gradient(135deg,#b91c1c,#dc2626);color:#fff;border-radius:14px;padding:14px 18px;margin-bottom:20px;box-shadow:0 4px 18px rgba(220,38,38,.35);animation:pulso 2s ease-in-out infinite;}
   .alarma.on{display:block;}
@@ -131,9 +134,18 @@
   <div class="estado-conexion" id="estadoConexion"></div>
 
   <div class="botones-top" id="botonesTop">
-    <button class="boton-top rojo" data-filtro="falta" type="button"><span class="num" id="bFalta">–</span><span class="tit">Faltan por consolidar</span><span class="sub">Contratos de Protect que no aparecen en Consolidados</span></button>
-    <button class="boton-top naranja" data-filtro="vMenos" type="button" id="btnTopMenos"><span class="num" id="bMenos">–</span><span class="tit">Pagaron de menos</span><span class="sub">Consolidados con un valor menor a Protect!P</span></button>
-    <button class="boton-top morado" data-filtro="porRevisar" type="button"><span class="num" id="bRevisar">–</span><span class="tit">Por revisar</span><span class="sub">Asignados por orden, por nombre o sin registro en Protect</span></button>
+    <div class="col-top">
+      <button class="boton-top rojo" data-filtro="falta" type="button"><span class="num" id="bFalta">–</span><span class="tit">Faltan por consolidar</span><span class="sub">Contratos de Protect que no aparecen en Consolidados</span></button>
+      <button class="descarga" id="dlFalta" type="button" disabled>⬇ Descargar lista para contabilidad</button>
+    </div>
+    <div class="col-top">
+      <button class="boton-top naranja" data-filtro="vMenos" type="button" id="btnTopMenos"><span class="num" id="bMenos">–</span><span class="tit">Pagaron de menos</span><span class="sub">Consolidados con un valor menor a Protect!P</span></button>
+      <button class="descarga" id="dlMenos" type="button" disabled>⬇ Descargar pagaron de menos</button>
+    </div>
+    <div class="col-top">
+      <button class="boton-top morado" data-filtro="porRevisar" type="button"><span class="num" id="bRevisar">–</span><span class="tit">Por revisar</span><span class="sub">Asignados por orden, por nombre o sin registro en Protect</span></button>
+      <button class="descarga" id="dlRevisar" type="button" disabled>⬇ Descargar por revisar</button>
+    </div>
   </div>
 
   <div class="alarma" id="alarma">
@@ -337,6 +349,8 @@
     $('bMenos').textContent = cv['Pagó de menos'];
     $('bRevisar').textContent = datos.filter(function (f) { return !!f.porOrden || f.estado === 'Consolidado por nombre (revisar)' || f.estado === 'Sin registro en Protect'; }).length;
     $('btnTopMenos').classList.toggle('pulsa', cv['Pagó de menos'] > 0);
+    $('dlFalta').disabled = !falta; $('dlMenos').disabled = !cv['Pagó de menos'];
+    $('dlRevisar').disabled = !Number($('bRevisar').textContent);
     var hs = histRes || {};
     var pc = contratos ? cons / contratos * 100 : 0;
     $('avance').hidden = false;
@@ -463,6 +477,40 @@
     marcarActivo(null);
   });
   $('inputFiltroLista').addEventListener('input', function (e) { textoLista = e.target.value; pintarListado(); });
+
+  // ---------- Descargas para enviar a contabilidad (CSV que abre directo en Excel) ----------
+  function csvDescargar(nombre, cab, filas) {
+    var csv = [cab].concat(filas).map(function (r) {
+      return r.map(function (v) { v = v === null || v === undefined ? '' : String(v); return '"' + v.replace(/"/g, '""') + '"'; }).join(';');
+    }).join('\r\n');
+    var hoy = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
+    var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = nombre + '_' + hoy.getFullYear() + '-' + z(hoy.getMonth() + 1) + '-' + z(hoy.getDate()) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  $('dlFalta').addEventListener('click', function () {
+    var lista = datos.filter(FILTROS.falta.f).sort(function (a, b) { return ((b.hist && b.hist.diasPendiente) || 0) - ((a.hist && a.hist.diasPendiente) || 0); });
+    csvDescargar('clientes_faltan_por_consolidar',
+      ['Cédula', 'Cliente', 'Placa', 'Contrato', 'Asesor', 'Celular', 'Fecha firma', 'Forma de pago', 'Estado del cliente', 'Valor pagado a Dugo Motos (Protect!P)', 'Días pendiente', 'Observación'],
+      lista.map(function (f) { var e = ex(f);
+        return [f.cedula, f.clienteProtect || f.clienteCons, f.placa, f.contrato, e.asesor, e.celular, e.fechaFirma, e.forma, e.estadoCliente, f.pagado,
+          f.hist && f.hist.diasPendiente !== null && f.hist.diasPendiente !== undefined ? f.hist.diasPendiente : '', f.obs]; }));
+  });
+  $('dlMenos').addEventListener('click', function () {
+    var lista = datos.filter(FILTROS.vMenos.f).sort(function (a, b) { return (a.dif || 0) - (b.dif || 0); });
+    csvDescargar('clientes_pagaron_de_menos',
+      ['Cédula', 'Cliente', 'Placa', 'Contrato', 'Asesor', 'Celular', 'Valor pagado a Dugo Motos (Protect!P)', 'Consolidados C', 'Consolidados D', 'Diferencia (faltante)', 'Filas en Consolidados', 'Observación'],
+      lista.map(function (f) { var e = ex(f);
+        return [f.cedula, f.clienteProtect || f.clienteCons, f.placa, f.contrato, e.asesor, e.celular, f.pagado, f.c, f.d, f.dif, f.filaCons, f.obs]; }));
+  });
+  $('dlRevisar').addEventListener('click', function () {
+    var lista = datos.filter(FILTROS.porRevisar.f);
+    csvDescargar('clientes_por_revisar',
+      ['Estado', 'Asignación', 'Cédula', 'Cliente', 'Placa', 'Contrato', 'Asesor', 'Protect!P', 'Consolidados C', 'Consolidados D', 'Fila Consolidados', 'Fila Protect', 'Observación'],
+      lista.map(function (f) { var e = ex(f);
+        return [f.estado, f.asignacion, f.cedula, f.clienteProtect || f.clienteCons, f.placa, f.contrato, e.asesor, f.pagado, f.c, f.d, f.filaCons, f.filaProtect, f.obs]; }));
+  });
 
   $('btnCsv').addEventListener('click', function () {
     var cab = ['Estado', 'Cliente', 'Cédula', 'Placa', 'Contrato', 'Asesor', 'Fecha firma', 'Forma', 'Estado cliente', 'Celular',
