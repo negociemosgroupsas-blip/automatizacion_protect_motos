@@ -80,6 +80,18 @@
   .seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:10px 0 0;padding:10px 14px;background:#f1f7ff;border-radius:10px;}
   .seg .campo .etiqueta{font-size:.66rem;text-transform:uppercase;color:var(--texto-suave);} .seg .campo .valor{font-size:.85rem;font-weight:600;}
   .tag-seg{font-size:.72rem;font-weight:600;white-space:nowrap;} .tag-seg.ok{color:var(--verde);} .tag-seg.mal{color:var(--rojo);} .tag-seg.gris{color:var(--texto-suave);}
+  .botones-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:20px;}
+  .boton-top{border:none;border-radius:16px;padding:16px 20px;text-align:left;color:#fff;cursor:pointer;display:flex;flex-direction:column;gap:2px;font-family:inherit;box-shadow:0 4px 14px rgba(19,34,63,.18);transition:transform .12s,box-shadow .15s,outline-color .15s;outline:3px solid transparent;outline-offset:2px;}
+  .boton-top:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(19,34,63,.28);}
+  .boton-top.activo{outline-color:var(--azul);}
+  .boton-top .num{font-size:2.3rem;font-weight:800;line-height:1.05;}
+  .boton-top .tit{font-size:1rem;font-weight:700;}
+  .boton-top .sub{font-size:.75rem;opacity:.9;}
+  .boton-top.rojo{background:linear-gradient(135deg,#b91c1c,#ef4444);}
+  .boton-top.naranja{background:linear-gradient(135deg,#c2410c,#fb923c);}
+  .boton-top.morado{background:linear-gradient(135deg,#5b21b6,#8b5cf6);}
+  .boton-top.pulsa{animation:pulsoBtn 1.8s ease-in-out infinite;}
+  @keyframes pulsoBtn{0%,100%{box-shadow:0 4px 14px rgba(234,88,12,.35);}50%{box-shadow:0 4px 26px rgba(234,88,12,.85);}}
   .semaforo.azul{background:var(--azulinfo-bg);color:var(--azulinfo);}
   .alarma{display:none;background:linear-gradient(135deg,#b91c1c,#dc2626);color:#fff;border-radius:14px;padding:14px 18px;margin-bottom:20px;box-shadow:0 4px 18px rgba(220,38,38,.35);animation:pulso 2s ease-in-out infinite;}
   .alarma.on{display:block;}
@@ -111,6 +123,12 @@
 
 <main>
   <div class="estado-conexion" id="estadoConexion"></div>
+
+  <div class="botones-top" id="botonesTop">
+    <button class="boton-top rojo" data-filtro="falta" type="button"><span class="num" id="bFalta">–</span><span class="tit">Faltan por consolidar</span><span class="sub">Contratos de Protect que no aparecen en Consolidados</span></button>
+    <button class="boton-top naranja" data-filtro="vMenos" type="button" id="btnTopMenos"><span class="num" id="bMenos">–</span><span class="tit">Pagaron de menos</span><span class="sub">Consolidados con un valor menor a Protect!P</span></button>
+    <button class="boton-top morado" data-filtro="porRevisar" type="button"><span class="num" id="bRevisar">–</span><span class="tit">Por revisar</span><span class="sub">Asignados por orden, por nombre o sin registro en Protect</span></button>
+  </div>
 
   <div class="alarma" id="alarma">
     <div class="alarma-top">
@@ -198,6 +216,7 @@
     conciliado: { t: 'Consolidados', f: function (x) { return x.estado === 'Consolidado'; } },
     falta: { t: 'Faltan por consolidar (más antiguos primero)', f: function (x) { return x.estado === 'Falta por consolidar'; } },
     nombre: { t: 'Consolidados por nombre (revisar)', f: function (x) { return x.estado === 'Consolidado por nombre (revisar)'; } },
+    porRevisar: { t: 'Por revisar (por orden, por nombre o sin registro en Protect)', f: function (x) { return !!x.porOrden || x.estado === 'Consolidado por nombre (revisar)' || x.estado === 'Sin registro en Protect'; } },
     orden: { t: 'Asignados por orden (revisar)', f: function (x) { return !!x.porOrden; } },
     sinProtect: { t: 'En Consolidados pero sin Protect', f: function (x) { return x.estado === 'Sin registro en Protect'; } },
     vOk: { t: 'Pagó lo correcto', f: function (x) { return x.valor === 'Pagó lo correcto'; } },
@@ -298,7 +317,7 @@
   }
   $('btnVerAlarma').addEventListener('click', function () {
     filtroActivo = 'vMenos'; textoLista = ''; $('inputFiltroLista').value = '';
-    Array.prototype.forEach.call(document.querySelectorAll('.tarjeta-contador'), function (x) { x.classList.toggle('activo', x.getAttribute('data-filtro') === 'vMenos'); });
+    marcarActivo('vMenos');
     pintarListado(); $('panelListado').scrollIntoView({ behavior: 'smooth' });
   });
 
@@ -316,6 +335,10 @@
     datos.forEach(function (f) { if (f.valor && cv[f.valor] !== undefined) cv[f.valor]++; });
     $('cVOk').textContent = cv['Pagó lo correcto']; $('cVMas').textContent = cv['Pagó de más'];
     $('cVMenos').textContent = cv['Pagó de menos']; $('cVSin').textContent = cv['Sin valor para comparar'];
+    $('bFalta').textContent = falta;
+    $('bMenos').textContent = cv['Pagó de menos'];
+    $('bRevisar').textContent = datos.filter(function (f) { return !!f.porOrden || f.estado === 'Consolidado por nombre (revisar)' || f.estado === 'Sin registro en Protect'; }).length;
+    $('btnTopMenos').classList.toggle('pulsa', cv['Pagó de menos'] > 0);
     var hs = histRes || {};
     $('lblSemana').textContent = '(últimos ' + (hs.diasReciente || 7) + ' días)';
     $('cConcRec').textContent = hs.concRecientes || 0; $('cNuevos').textContent = hs.nuevos || 0;
@@ -429,17 +452,20 @@
     });
     $('conteoListado').textContent = 'Mostrando ' + lista.length + ' de ' + datos.length + ' registros. Haz clic en una fila para ver su historial.';
   }
-  Array.prototype.forEach.call(document.querySelectorAll('.tarjeta-contador'), function (c) {
+  function marcarActivo(clave) {
+    Array.prototype.forEach.call(document.querySelectorAll('.tarjeta-contador, .boton-top'), function (x) { x.classList.toggle('activo', !!clave && x.getAttribute('data-filtro') === clave); });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.tarjeta-contador, .boton-top'), function (c) {
     c.addEventListener('click', function () {
       if (!datos.length) return;
       filtroActivo = c.getAttribute('data-filtro'); textoLista = ''; $('inputFiltroLista').value = '';
-      Array.prototype.forEach.call(document.querySelectorAll('.tarjeta-contador'), function (x) { x.classList.toggle('activo', x === c); });
+      marcarActivo(filtroActivo);
       pintarListado(); $('panelListado').scrollIntoView({ behavior: 'smooth' });
     });
   });
   $('btnQuitarFiltro').addEventListener('click', function () {
     filtroActivo = null; $('panelListado').style.display = 'none';
-    Array.prototype.forEach.call(document.querySelectorAll('.tarjeta-contador'), function (x) { x.classList.remove('activo'); });
+    marcarActivo(null);
   });
   $('inputFiltroLista').addEventListener('input', function (e) { textoLista = e.target.value; pintarListado(); });
 
