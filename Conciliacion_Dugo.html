@@ -136,7 +136,7 @@
     <div class="tarjeta-contador bueno" data-filtro="conciliado"><div class="valor" id="cConciliado">–</div><div class="etiqueta">Consolidados</div></div>
     <div class="tarjeta-contador alerta" data-filtro="falta"><div class="valor" id="cFalta">–</div><div class="etiqueta">Faltan por consolidar</div></div>
     <div class="tarjeta-contador destacado" data-filtro="nombre"><div class="valor" id="cNombre">–</div><div class="etiqueta">Por nombre (revisar)</div></div>
-    <div class="tarjeta-contador destacado" data-filtro="varios"><div class="valor" id="cVarios">–</div><div class="etiqueta">Varios contratos (verificar)</div></div>
+    <div class="tarjeta-contador destacado" data-filtro="orden"><div class="valor" id="cVarios">–</div><div class="etiqueta">Asignados por orden (revisar)</div></div>
     <div class="tarjeta-contador" data-filtro="sinProtect"><div class="valor" id="cSinProtect">–</div><div class="etiqueta">En Consolidados, sin Protect</div></div>
     <div class="tarjeta-contador" data-filtro="todos"><div class="valor" id="cTodos">–</div><div class="etiqueta">Total contratos · ver todos</div></div>
   </div>
@@ -197,7 +197,7 @@
     conciliado: { t: 'Consolidados', f: function (x) { return x.estado === 'Consolidado'; } },
     falta: { t: 'Faltan por consolidar (más antiguos primero)', f: function (x) { return x.estado === 'Falta por consolidar'; } },
     nombre: { t: 'Consolidados por nombre (revisar)', f: function (x) { return x.estado === 'Consolidado por nombre (revisar)'; } },
-    varios: { t: 'Cédulas con varios contratos (verificar)', f: function (x) { return !!x.varios; } },
+    orden: { t: 'Asignados por orden (revisar)', f: function (x) { return !!x.porOrden; } },
     sinProtect: { t: 'En Consolidados pero sin Protect', f: function (x) { return x.estado === 'Sin registro en Protect'; } },
     vOk: { t: 'Pagó lo correcto', f: function (x) { return x.valor === 'Pagó lo correcto'; } },
     vMas: { t: 'Pagó de más', f: function (x) { return x.valor === 'Pagó de más'; } },
@@ -287,7 +287,7 @@
   function pintarContadores(res) {
     var cons = (res['Consolidado'] || 0) + (res['Consolidado por nombre (revisar)'] || 0);
     var falta = res['Falta por consolidar'] || 0, contratos = cons + falta;
-    var varios = datos.filter(function (f) { return !!f.varios; }).length;
+    var varios = datos.filter(function (f) { return !!f.porOrden; }).length;
     $('cConciliado').textContent = res['Consolidado'] || 0;
     $('cFalta').textContent = falta;
     $('cNombre').textContent = res['Consolidado por nombre (revisar)'] || 0;
@@ -348,7 +348,9 @@
       ].forEach(function (p) { sg.appendChild(campo(p[0], p[1])); });
       t.appendChild(el('h4', '', 'Seguimiento del contrato')); t.appendChild(sg);
     }
-    var h = el('h4', '', 'Consolidación '); h.appendChild(semaforo(f.estado)); t.appendChild(h);
+    var h = el('h4', '', 'Consolidación '); h.appendChild(semaforo(f.estado));
+    if (f.asignacion) { var asg = el('span', 'semaforo ' + (f.porOrden ? 'naranja' : 'gris'), f.asignacion); h.appendChild(asg); }
+    t.appendChild(h);
     var nota = [];
     if (f.filaCons !== '' && f.filaCons !== undefined && f.estado !== 'Sin registro en Protect') nota.push('Filas en Consolidados: ' + f.filaCons + '.');
     if (f.cruce && f.cruce !== 'Cédula' && f.cruce !== 'Sin cruce') nota.push('Cruce por ' + f.cruce.toLowerCase() + '.');
@@ -398,7 +400,7 @@
     var lista = visiblesLista();
     if (!lista.length) { var tr0 = el('tr'), td0 = el('td', 'vacio', 'Sin resultados.'); td0.colSpan = 13; tr0.appendChild(td0); tb.appendChild(tr0); }
     lista.forEach(function (f) {
-      var tr = el('tr', 'clic' + (f.valor === 'Pagó de menos' ? ' fila-alarma' : '')), e = ex(f), td = el('td'); td.appendChild(semaforo(f.estado)); tr.appendChild(td);
+      var tr = el('tr', 'clic' + (f.valor === 'Pagó de menos' ? ' fila-alarma' : '')), e = ex(f), td = el('td'); td.appendChild(semaforo(f.estado)); if (f.porOrden) { var ob = el('span', 'tag-seg mal', ' · por orden (revisar)'); td.appendChild(ob); } tr.appendChild(td);
       [f.clienteProtect || f.clienteCons, f.cedula, f.placa, f.contrato, e.forma, e.estadoCliente].forEach(function (v) { tr.appendChild(el('td', '', v || '')); });
       var tdS = el('td'); tdS.appendChild(seguimiento(f)); tr.appendChild(tdS);
       tr.appendChild(el('td', 'num', num(f.pagado))); tr.appendChild(el('td', 'num', num(f.c))); tr.appendChild(el('td', 'num', num(f.d)));
