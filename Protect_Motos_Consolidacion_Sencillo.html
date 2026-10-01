@@ -30,6 +30,9 @@
   .busqueda input{flex:1;padding:14px 16px;border:2px solid var(--azul);border-radius:14px;font-size:1rem;background:#fff;font-family:inherit}
   .busqueda input:focus{outline:3px solid #bfd0f5}
   .titulo-lista{padding:10px 16px;font-size:.88rem;font-weight:700;color:var(--azul);border-bottom:1px solid var(--borde);background:#f8f9fb}
+ .ficha-inline{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 10px rgba(19,34,63,.08)}
+  .fichas-titulo{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 2px 10px;font-size:.88rem;font-weight:700;color:var(--azul)}
+  .fichas-titulo button{background:none;border:none;color:var(--azulinfo);cursor:pointer;font-size:.8rem;font-weight:700;text-decoration:underline}
   .tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:12px}
   .tab{border:none;border-radius:16px;padding:16px 20px;text-align:left;color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(19,34,63,.18);outline:3px solid transparent;outline-offset:2px;transition:transform .12s}
   .tab:hover{transform:translateY(-2px)} .tab.activa{outline-color:var(--azul)}
@@ -92,6 +95,8 @@
     <button class="tab rojo" id="tabFalta" type="button"><span class="num" id="nFalta">–</span><span class="tit">❌ Faltan por consolidar</span><span class="sub">No aparecen en la lista de pagos</span></button>
   </div>
 
+  <div id="fichasBusqueda" style="display:none"></div>
+
   <section class="panel">
     <div class="barra">
       <button class="btn btn-azul" id="btnDescargar" disabled>⬇ Descargar esta lista</button>
@@ -115,7 +120,7 @@
   var TOKEN = 'PM-CONC-3e97c3a8bb5298ef9d192391';
   var $ = function (id) { return document.getElementById(id); };
   var fmt = new Intl.NumberFormat('es-CO');
-  var datos = [], lista = 'cons', soloMenos = false, abierta = null;
+  var datos = [], lista = 'cons', soloMenos = false, abierta = null, verTabla = false, ultimaConsulta = '';
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; }
   function money(v) { return v === null || v === undefined || v === '' ? '—' : '$ ' + fmt.format(v); }
   function norm(s) { return String(s === null || s === undefined ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
@@ -188,6 +193,7 @@
   }
   function actual() {
     var q = consulta();
+    if (q !== ultimaConsulta) { ultimaConsulta = q; verTabla = false; }
     if (q) return datos.filter(function (f) { return coincide(f, q); });
     return datos.filter(function (f) {
       if (lista === 'cons' ? !esCons(f) : !esFalta(f)) return false;
@@ -237,6 +243,14 @@
       tr.onclick = function () { ficha(f); };
       tb.appendChild(tr);
     });
+    var cont = $('fichasBusqueda'), panel = document.querySelector('section.panel');
+    cont.textContent = '';
+    if (q && rows.length >= 1 && rows.length <= 3 && !verTabla) {
+      var tit = el('div', 'fichas-titulo'); tit.appendChild(el('span', '', 'Resultado de la búsqueda «' + $('buscar').value.trim() + '»: ' + rows.length + (rows.length === 1 ? ' cliente' : ' clientes')));
+      var lt = el('button', '', 'Ver como tabla'); lt.type = 'button'; lt.onclick = function () { verTabla = true; pintar(); }; tit.appendChild(lt); cont.appendChild(tit);
+      rows.forEach(function (f) { var c = el('div', 'ficha-inline'); construirFicha(f, c, false); cont.appendChild(c); });
+      cont.style.display = 'block'; panel.style.display = 'none';
+    } else { cont.style.display = 'none'; panel.style.display = ''; }
     $('pie').textContent = rows.length + ' cliente' + (rows.length === 1 ? '' : 's') + (q ? (rows.length === 1 ? ' encontrado.' : ' encontrados.') : ' en esta lista.') + ' Toca uno para ver su ficha y corregir su estado.';
   }
   function elegir(l) { $('buscar').value = ''; lista = l; soloMenos = false; pintar(); }
@@ -252,6 +266,10 @@
   function ficha(f) {
     abierta = f.claveAjuste || null;
     var d = $('ficha'); d.textContent = '';
+    construirFicha(f, d, true);
+    $('modal').className = 'on';
+  }
+  function construirFicha(f, d, enModal) {
     d.appendChild(el('h2', '', nombre(f)));
     var gr = el('div', 'grande');
     if (esFalta(f)) { gr.className += ' g-rojo'; gr.textContent = 'FALTA POR CONSOLIDAR'; }
@@ -295,8 +313,7 @@
       if (aj) accion('Quitar ajuste / nota', 'btn-gris', 'Quitar', '¿Quitar el ajuste y la nota de este cliente?');
       d.appendChild(ac);
     }
-    var cb = el('button', 'btn btn-gris', 'Cerrar'); cb.type = 'button'; cb.style.marginTop = '12px'; cb.onclick = cerrar; d.appendChild(cb);
-    $('modal').className = 'on';
+    if (enModal) { var cb = el('button', 'btn btn-gris', 'Cerrar'); cb.type = 'button'; cb.style.marginTop = '12px'; cb.onclick = cerrar; d.appendChild(cb); }
   }
   function cerrar() { abierta = null; $('modal').className = ''; }
   $('modal').addEventListener('click', function (e) { if (e.target === $('modal')) cerrar(); });
