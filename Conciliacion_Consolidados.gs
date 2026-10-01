@@ -34,7 +34,7 @@ var CONC_ESCRIBIR_ESTADO_CONS = true;
 var CONC_COL_ESTADO_CONS = 6;
 var CONC_TITULO_ESTADO_CONS = 'Estado de consolidación';
 
-var CONC_TOLERANCIA = 0; // pesos de diferencia aceptados para considerar "Conciliado"
+var CONC_TOLERANCIA = 1000; // diferencias de hasta $1.000 (redondeos) se ignoran: cuenta como "Pagó lo correcto"
 
 // Protect: fila 1 = encabezados. Columnas (base 1): E, H, M, N, P
 var CONC_PROTECT_FILA_INICIO = 2;

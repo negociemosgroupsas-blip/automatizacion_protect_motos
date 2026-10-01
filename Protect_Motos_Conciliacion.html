@@ -125,7 +125,7 @@
   <div class="barra-conector">
     <input type="text" id="inputUrlConector" placeholder="Pega aquí la URL del conector (Apps Script)">
     <button class="btn btn-oro" id="btnGuardarUrl">Guardar</button>
-    <label>Tolerancia de valor $ <input type="number" id="inputTol" min="0" step="1" value="0"></label>
+    <label>Tolerancia de valor $ <input type="number" id="inputTol" min="0" step="1" value="1000"></label>
     <button class="btn btn-azul" id="btnRecargar">Actualizar datos</button>
   </div>
 </header>
@@ -286,7 +286,7 @@
   function cargar() {
     var btn = $('btnRecargar'); btn.disabled = true; btn.textContent = 'Conciliando…';
     estadoConexion('cargando', 'Leyendo la hoja y conciliando, esto puede tardar unos segundos…');
-    try { localStorage.setItem('conc_tol', $('inputTol').value); } catch (e) {}
+    try { localStorage.setItem('conc_tol2', $('inputTol').value); } catch (e) {}
     llamar($('inputTol').value, function (r) {
       btn.disabled = false; btn.textContent = 'Actualizar datos';
       datos = r.filas || [];
@@ -532,7 +532,7 @@
   $('btnRecargar').addEventListener('click', cargar);
 
   buscar();
-  try { var tg = localStorage.getItem('conc_tol'); if (tg !== null && tg !== '') $('inputTol').value = tg; } catch (e) {}
+  try { var tg = localStorage.getItem('conc_tol2'); if (tg !== null && tg !== '') $('inputTol').value = tg; } catch (e) {}
   try {
     $('inputUrlConector').value = localStorage.getItem('conc_url') || '';
     if ($('inputUrlConector').value) cargar(); // si ya está guardada la URL, carga todo al abrir

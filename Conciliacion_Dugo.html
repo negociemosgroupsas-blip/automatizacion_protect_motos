@@ -124,7 +124,7 @@
   </div>
   <div class="barra-conector">
     
-    <label>Tolerancia de valor $ <input type="number" id="inputTol" min="0" step="1" value="0"></label>
+    <label>Tolerancia de valor $ <input type="number" id="inputTol" min="0" step="1" value="1000"></label>
     <button class="btn btn-azul" id="btnRecargar">Actualizar datos</button>
   </div>
 </header>
@@ -273,7 +273,7 @@
   function cargar() {
     var btn = $('btnRecargar'); btn.disabled = true; btn.textContent = 'Conciliando…';
     estadoConexion('cargando', 'Leyendo la hoja y conciliando, esto puede tardar unos segundos…');
-    try { localStorage.setItem('conc_tol', $('inputTol').value); } catch (e) {}
+    try { localStorage.setItem('conc_tol2', $('inputTol').value); } catch (e) {}
     llamar($('inputTol').value, function (r) {
       btn.disabled = false; btn.textContent = 'Actualizar datos';
       datos = r.filas || [];
