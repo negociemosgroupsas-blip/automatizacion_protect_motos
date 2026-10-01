@@ -39,6 +39,9 @@ var CONC_TITULO_ESTADO_CONS = 'Estado de consolidación';
 var CONC_ESCRIBIR_CONTRATO_CONS = true;
 var CONC_COL_CONTRATO_CONS = 7;
 var CONC_TITULO_CONTRATO_CONS = 'N° contrato (Protect)';
+// Columna donde TÚ escribes el número de contrato de cada pago (8 = H). La automatización solo pone el título; nunca toca esas celdas.
+var CONC_COL_CONTRATO_MANUAL = 8;
+var CONC_TITULO_CONTRATO_MANUAL = 'Contrato manual (escribe aquí)';
 
 var CONC_TOLERANCIA = 1000; // diferencias de hasta $1.000 (redondeos) se ignoran: cuenta como "Pagó lo correcto"
 
@@ -274,6 +277,7 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
       }
     }
     var kc = CONC_normClave(r.contrato), kp = CONC_normClave(r.placa), destino = null, metodo = '';
+    if (kc && !porContrato[kc]) r.contratoInvalido = true; // escribiste un contrato que no existe en Protect
     if (kc && porContrato[kc] && porContrato[kc].length === 1) { destino = porContrato[kc][0]; metodo = 'contrato'; }
     else if (kp && porPlaca[kp] && porPlaca[kp].length === 1) { destino = porPlaca[kp][0]; metodo = 'placa'; }
     if (destino) {
@@ -371,11 +375,13 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
       f.estado = (g.cruce === 'Cédula' || p.directRows.length) ? CONC_ESTADO.CONCILIADO : CONC_ESTADO.POR_NOMBRE;
       f.clienteCons = mejor.r.cliente; f.c = mejor.r.c; f.d = mejor.r.d; f.nCons = a.filas.length;
       f.concordo = mejor.concordo; f.valor = mejor.valor; f.dif = mejor.dif; f.difC = mejor.difC; f.difD = mejor.difD;
+      if (mejor.suma) { f.sumaPagos = mejor.suma; f.c = mejor.suma.total; f.d = null; }
       if (p.pagado !== null && p.pagado > umbralP) {
         f.valor = CONC_VALOR.ATIPICO; f.dif = null; f.difC = null; f.difD = null; f.concordo = '';
       }
       f.filaCons = a.filas.map(function (r) { return r.fila; }).join(', ');
       var notas = ['Aparece en Consolidados (' + a.filas.length + (a.filas.length === 1 ? ' fila' : ' filas') + ': ' + f.filaCons + ').'];
+      if (mejor.suma) notas.push('Este contrato tiene ' + mejor.suma.n + ' pagos: se sumaron ($ ' + String(Math.round(mejor.suma.total)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ') para compararlos con el valor de Dugo Motos.');
       if (g.cruce === 'Nombre (revisar)' && !p.directRows.length) notas.push('Se encontró solo por nombre; confirma que sea la misma persona.');
       if (p.directRows.length) {
         if (p.directMetodo === 'manual') {
@@ -450,6 +456,10 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
     return fa === fb ? a._i - b._i : (fa < fb ? -1 : 1);
   });
   salida.forEach(function (x) { delete x._i; });
+
+  cons.forEach(function (r) {
+    if (r.contratoInvalido && r.estadoFila) r.estadoFila += ' · el contrato escrito no existe en Protect (revisar)';
+  });
 
   var resumen = {};
   salida.forEach(function (s) { resumen[s.estado] = (resumen[s.estado] || 0) + 1; });
@@ -752,7 +762,12 @@ function CONC_escribirEstadoEnConsolidados(hoja, filasCons) {
     rg.setNumberFormat('@'); // texto, para que "1342-R" o "0061" no cambien
     rg.setValues(contratos).setFontWeight('bold').setHorizontalAlignment('center');
   }
-  return { escrito: true, columna: colF, filas: Object.keys(estadoPorFila).length, contrato: escribirG };
+  // Título de la columna donde tú escribes el contrato (solo si está vacío; las celdas de abajo nunca se tocan)
+  var colH = CONC_COL_CONTRATO_MANUAL;
+  if (colH && CONC_vacio(hoja.getRange(ini - 1, colH).getValue())) {
+    hoja.getRange(ini - 1, colH).setValue(CONC_TITULO_CONTRATO_MANUAL).setFontWeight('bold').setBackground('#d6a417').setFontColor('#13223f');
+  }
+  return { escrito: true, columna: colF, filas: Object.keys(estadoPorFila).length, contrato: escribirG, columnaManual: colH };
 }
 
 // Diagnóstico del cruce: ayuda a ver por qué las cédulas de las dos hojas coinciden o no
@@ -808,6 +823,15 @@ function CONC_mejorValor(filas, pagado, tol) {
   });
   var valor = mejor.ok ? CONC_VALOR.COINCIDE : (mejor.dif > 0 ? CONC_VALOR.MAS : CONC_VALOR.MENOS);
   var concordo = mejor.ok ? (mejor.okC && mejor.okD ? 'C y D' : (mejor.okC ? 'C' : 'D')) : '';
+  // Varios pagos del mismo contrato (cuotas): si ninguno alcanza por sí solo, se SUMAN los pagos de las filas
+  // (en cada fila, C y D son el mismo pago visto dos veces: se toma el mayor, nunca se suman entre sí).
+  if (!mejor.ok && conValor.length >= 2) {
+    var total = 0;
+    conValor.forEach(function (r) { total += Math.max(r.c === null ? 0 : r.c, r.d === null ? 0 : r.d); });
+    var dif = total - pagado;
+    return { r: mejor.r, concordo: '', valor: Math.abs(dif) <= tol ? CONC_VALOR.COINCIDE : (dif > 0 ? CONC_VALOR.MAS : CONC_VALOR.MENOS),
+      dif: dif, difC: null, difD: null, suma: { n: conValor.length, total: total } };
+  }
   return { r: mejor.r, concordo: concordo, valor: valor, dif: mejor.dif, difC: mejor.difC, difD: mejor.difD };
 }
 

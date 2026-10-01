@@ -43,6 +43,7 @@
   .pago-botones button:hover{background:#e8edfb} .pago-botones button.actual{background:var(--azul);color:#fff}
   .pago-botones button.ninguno{border-color:#9ca3af;color:#4b5563} .pago-botones button.ninguno.actual{background:#6b7280;color:#fff;border-color:#6b7280}
   .pago-botones button.auto{border-style:dashed;border-color:var(--azulinfo);color:var(--azulinfo)}
+ .pago-escribe{border:2px solid var(--borde);border-radius:8px;padding:6px 9px;font-size:.8rem;width:170px;font-family:inherit}
   .tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:12px}
   .tab{border:none;border-radius:16px;padding:16px 20px;text-align:left;color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(19,34,63,.18);outline:3px solid transparent;outline-offset:2px;transition:transform .12s}
   .tab:hover{transform:translateY(-2px)} .tab.activa{outline-color:var(--azul)}
@@ -138,6 +139,7 @@
   function esCons(f) { return /^Consolidado/.test(f.estado); }
   function esFalta(f) { return f.estado === 'Falta por consolidar'; }
   function valorCons(f) {
+    if (f.sumaPagos) return money(f.c) + ' (suma de ' + f.sumaPagos.n + ' pagos)';
     if (f.c && f.d && f.c !== f.d) return 'C ' + money(f.c) + ' · D ' + money(f.d);
     var v = f.c || f.d; return v ? money(v) : '—';
   }
@@ -314,6 +316,19 @@
           '¿Asignar este pago al contrato ' + k.contrato + '?');
       });
       boton('No es un pago', 'ninguno', 'NINGUNO', p.contratoActual === 'NINGUNO', '¿Marcar este pago como «No es un pago»? No contará para ningún contrato.');
+      var escribe = el('input'); escribe.type = 'text'; escribe.placeholder = 'o escribe el # de contrato'; escribe.className = 'pago-escribe';
+      var ir = el('button', 'auto', 'Asignar'); ir.type = 'button';
+      ir.onclick = function () {
+        var valor = escribe.value.trim(); if (!valor) return;
+        var existe = f.contratosGrupo.some(function (k) { return mismo(k.contrato, valor); });
+        if (!existe) { window.alert('El contrato «' + valor + '» no es uno de los contratos de esta persona. Escríbelo como aparece en Protect o usa los botones.'); return; }
+        var real = f.contratosGrupo.filter(function (k) { return mismo(k.contrato, valor); })[0].contrato;
+        if (!window.confirm('¿Asignar este pago al contrato ' + real + '?')) return;
+        box.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
+        llamarAsignar({ clavePago: p.clavePago, contrato: real, cedula: f.cedula, cliente: nombre(f), c: p.c, d: p.d }, function () { cargar(); },
+          function (msg) { mensaje('error', 'No se pudo guardar la asignación: ' + msg); box.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
+      };
+      bs.appendChild(escribe); bs.appendChild(ir);
       if (p.manual) boton('Volver a automático', 'auto', 'AUTO', false, '¿Quitar la asignación manual y dejar que el sistema decida?');
       linea.appendChild(bs); box.appendChild(linea);
     });
