@@ -34,6 +34,10 @@ var CONC_DIAS_RECIENTE = 7; // ventana para "conciliados / nuevos / cambios de l
 var CONC_ESCRIBIR_ESTADO_CONS = true;
 var CONC_COL_ESTADO_CONS = 6;
 var CONC_TITULO_ESTADO_CONS = 'Estado de consolidación';
+// Número de contrato de Protect (columna N) escrito al frente de cada pago, en esta columna (7 = G)
+var CONC_ESCRIBIR_CONTRATO_CONS = true;
+var CONC_COL_CONTRATO_CONS = 7;
+var CONC_TITULO_CONTRATO_CONS = 'N° contrato (Protect)';
 
 var CONC_TOLERANCIA = 1000; // diferencias de hasta $1.000 (redondeos) se ignoran: cuenta como "Pagó lo correcto"
 
@@ -194,7 +198,10 @@ function CONC_detectarColumnas(cons, protect, encabezados) {
   cons.forEach(function (r) { if (r.extra.length > ancho) ancho = r.extra.length; });
   if (!ancho) return info;
   var i;
+  var propias = {};
+  propias[CONC_COL_ESTADO_CONS - 1] = true; propias[CONC_COL_CONTRATO_CONS - 1] = true; // columnas que escribe esta automatización
   for (i = 4; i < 4 + ancho; i++) {
+    if (propias[i]) continue;
     var h = CONC_normNombre(encabezados[i] || '');
     if (!h) continue;
     if (info.placa < 0 && /PLACA/.test(h)) { info.placa = i - 4; info.origenPlaca = 'título'; }
@@ -212,7 +219,7 @@ function CONC_detectarColumnas(cons, protect, encabezados) {
   var mejor = function (set, excluir) {
     var idx = -1, top = 0;
     for (var j = 0; j < ancho; j++) {
-      if (j === excluir) continue;
+      if (j === excluir || propias[j + 4]) continue;
       var no = 0, hit = 0, forma = 0;
       cons.forEach(function (r) {
         var k = CONC_normClave(r.extra[j]);
@@ -369,6 +376,7 @@ function CONC_calcular(protect, cons, tol, ajustes) {
       }
       f.obs = notas.join(' ');
       CONC_aplicarAjusteManual(f, p, ajustes, a.filas);
+      a.filas.forEach(function (r) { r.contratoAsig = CONC_texto(p.contrato); });
       salida.push(f);
       if (!(f.ajuste && f.ajuste.decision === 'Falta')) {
         var txtFila = CONC_textoFila(f);
@@ -585,38 +593,61 @@ function CONC_esEstadoPropio(v) {
   return /^(Consolidado|Pagó de menos|Sin registro en Protect|No es un pago)/.test(String(v));
 }
 
-// Escribe SOLO la columna F de Consolidados (estado de cada fila). No sobrescribe datos ajenos.
+// Escribe SOLO las columnas F (estado) y G (# contrato de Protect) de Consolidado. No sobrescribe datos ajenos.
 function CONC_escribirEstadoEnConsolidados(hoja, filasCons) {
   if (!CONC_ESCRIBIR_ESTADO_CONS || !filasCons.length) return { escrito: false };
-  var col = CONC_COL_ESTADO_CONS;
-  var ultima = hoja.getLastRow();
-  var ini = CONC_CONS_FILA_INICIO;
-  var n = ultima - ini + 1;
-  var actual = hoja.getRange(ini, col, n, 1).getValues();
-  for (var i = 0; i < actual.length; i++) {
-    var v = actual[i][0];
+  var ini = CONC_CONS_FILA_INICIO, n = hoja.getLastRow() - ini + 1;
+  var colF = CONC_COL_ESTADO_CONS, colG = CONC_COL_CONTRATO_CONS, escribirG = CONC_ESCRIBIR_CONTRATO_CONS;
+
+  // ---- Guardas (antes de escribir nada) ----
+  var actualF = hoja.getRange(ini, colF, n, 1).getValues();
+  for (var i = 0; i < actualF.length; i++) {
+    var v = actualF[i][0];
     if (!CONC_vacio(v) && !CONC_esEstadoPropio(v)) {
       throw new Error('La columna F de "' + hoja.getName() + '" ya tiene datos que no son de esta automatización (fila ' + (ini + i) +
         ': "' + v + '"). No se sobrescribe. Muévelos o cambia CONC_COL_ESTADO_CONS.');
     }
   }
-  var titulo = hoja.getRange(ini - 1, col).getValue();
-  if (!CONC_vacio(titulo) && titulo !== CONC_TITULO_ESTADO_CONS) {
-    throw new Error('El título de la columna F de "' + hoja.getName() + '" (fila ' + (ini - 1) + ') es "' + titulo + '". No se sobrescribe.');
+  var tituloF = hoja.getRange(ini - 1, colF).getValue();
+  if (!CONC_vacio(tituloF) && tituloF !== CONC_TITULO_ESTADO_CONS) {
+    throw new Error('El título de la columna F de "' + hoja.getName() + '" (fila ' + (ini - 1) + ') es "' + tituloF + '". No se sobrescribe.');
   }
-  var porFila = {};
-  filasCons.forEach(function (r) { porFila[r.fila] = r.estadoFila || ''; });
-  var textos = [], colores = [], fuentes = [];
-  for (var k = 0; k < n; k++) {
-    var t = porFila[ini + k] || '';
+  if (escribirG) {
+    var tituloG = hoja.getRange(ini - 1, colG).getValue();
+    if (!CONC_vacio(tituloG) && tituloG !== CONC_TITULO_CONTRATO_CONS) {
+      throw new Error('El título de la columna G de "' + hoja.getName() + '" (fila ' + (ini - 1) + ') es "' + tituloG + '". No se sobrescribe.');
+    }
+    if (CONC_vacio(tituloG)) {
+      var actualG = hoja.getRange(ini, colG, n, 1).getValues();
+      for (var k = 0; k < actualG.length; k++) {
+        if (!CONC_vacio(actualG[k][0])) {
+          throw new Error('La columna G de "' + hoja.getName() + '" ya tiene datos (fila ' + (ini + k) + ': "' + actualG[k][0] +
+            '"). No se sobrescribe. Vacíala o cambia CONC_COL_CONTRATO_CONS.');
+        }
+      }
+    }
+  }
+
+  // ---- Escritura ----
+  var estadoPorFila = {}, contratoPorFila = {};
+  filasCons.forEach(function (r) { estadoPorFila[r.fila] = r.estadoFila || ''; contratoPorFila[r.fila] = r.contratoAsig || ''; });
+  var textos = [], colores = [], fuentes = [], contratos = [];
+  for (var m = 0; m < n; m++) {
+    var t = estadoPorFila[ini + m] || '';
     textos.push([t]);
     colores.push([t ? CONC_colorFila(t) : null]);
     fuentes.push([/^Pagó de menos/.test(t) ? '#ffffff' : '#000000']);
+    contratos.push([contratoPorFila[ini + m] || '']);
   }
-  hoja.getRange(ini - 1, col).setValue(CONC_TITULO_ESTADO_CONS).setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');
-  var rango = hoja.getRange(ini, col, n, 1);
-  rango.setValues(textos).setBackgrounds(colores).setFontColors(fuentes).setFontWeight('bold');
-  return { escrito: true, columna: col, filas: Object.keys(porFila).length };
+  hoja.getRange(ini - 1, colF).setValue(CONC_TITULO_ESTADO_CONS).setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');
+  hoja.getRange(ini, colF, n, 1).setValues(textos).setBackgrounds(colores).setFontColors(fuentes).setFontWeight('bold');
+  if (escribirG) {
+    hoja.getRange(ini - 1, colG).setValue(CONC_TITULO_CONTRATO_CONS).setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');
+    var rg = hoja.getRange(ini, colG, n, 1);
+    rg.setNumberFormat('@'); // texto, para que "1342-R" o "0061" no cambien
+    rg.setValues(contratos).setFontWeight('bold').setHorizontalAlignment('center');
+  }
+  return { escrito: true, columna: colF, filas: Object.keys(estadoPorFila).length, contrato: escribirG };
 }
 
 // Diagnóstico del cruce: ayuda a ver por qué las cédulas de las dos hojas coinciden o no

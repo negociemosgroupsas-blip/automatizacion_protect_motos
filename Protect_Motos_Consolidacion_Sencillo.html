@@ -173,7 +173,7 @@
     llamar(tol, function (r) {
       btn.disabled = false; btn.textContent = 'Actualizar datos';
       datos = r.filas || [];
-      mensaje('ok', 'Datos al día (' + r.generado + '). Columna F de la hoja Consolidado actualizada' + (r.estadoEnHoja && r.estadoEnHoja.escrito ? ' (' + r.estadoEnHoja.filas + ' filas).' : '.'));
+      mensaje('ok', 'Datos al día (' + r.generado + '). ' + (r.estadoEnHoja && r.estadoEnHoja.escrito ? 'Hoja Consolidado actualizada: columna F (estado)' + (r.estadoEnHoja.contrato ? ' y columna G (# contrato)' : '') + ' en ' + r.estadoEnHoja.filas + ' filas.' : ''));
       pintar();
       if (abierta) { var f = datos.filter(function (x) { return x.claveAjuste === abierta; })[0]; if (f) ficha(f); else cerrar(); }
     }, function (msg) { btn.disabled = false; btn.textContent = 'Actualizar datos'; mensaje('error', 'Error: ' + msg); });

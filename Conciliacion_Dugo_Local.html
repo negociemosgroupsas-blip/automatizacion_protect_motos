@@ -328,7 +328,7 @@
       if (cl.contrato >= 0) det.push('número de contrato (columna ' + letra(cl.contrato) + ')');
       if (cl.placa >= 0) det.push('placa (columna ' + letra(cl.placa) + ')');
       msg += det.length ? ' En Consolidados se usa ' + det.join(' y ') + ' para asignar cada pago a su contrato.' : ' Consolidados no trae placa ni contrato: se cruza por cédula.';
-      if (r.estadoEnHoja && r.estadoEnHoja.escrito) msg += ' Columna F de la hoja Consolidado actualizada (' + r.estadoEnHoja.filas + ' filas).';
+      if (r.estadoEnHoja && r.estadoEnHoja.escrito) msg += ' Hoja Consolidado actualizada: columna F (estado)' + (r.estadoEnHoja.contrato ? ' y columna G (# contrato)' : '') + ' en ' + r.estadoEnHoja.filas + ' filas.';
       estadoConexion('ok', msg);
       diagDatos = r.diag || null; pintarDiag(); pintarAtipicos(r.atipicos || []); histRes = hs; pintarContadores(r.resumen || {}); pintarAlarma(); buscar(); if (filtroActivo) pintarListado();
     }, function (msg) {
