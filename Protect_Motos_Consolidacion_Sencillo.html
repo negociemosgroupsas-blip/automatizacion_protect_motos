@@ -33,6 +33,16 @@
  .ficha-inline{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 10px rgba(19,34,63,.08)}
   .fichas-titulo{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 2px 10px;font-size:.88rem;font-weight:700;color:var(--azul)}
   .fichas-titulo button{background:none;border:none;color:var(--azulinfo);cursor:pointer;font-size:.8rem;font-weight:700;text-decoration:underline}
+ .pagos{margin:14px 0;padding:12px 14px;border:2px solid #c7d2fe;border-radius:12px;background:#f5f7ff}
+  .pagos h3{margin:0 0 4px;font-size:.95rem;color:var(--azul)} .pagos p.obs{margin:0 0 8px}
+  .pago{padding:10px 0;border-top:1px solid #dbe2fb} .pago:first-of-type{border-top:none}
+  .pago-info{font-size:.85rem;font-weight:700;margin-bottom:6px}
+  .pago-info .tag{font-weight:600;color:#7c3aed;margin-left:6px;font-size:.75rem}
+  .pago-botones{display:flex;gap:6px;flex-wrap:wrap}
+  .pago-botones button{border:2px solid var(--azul);background:#fff;color:var(--azul);border-radius:8px;padding:6px 10px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit}
+  .pago-botones button:hover{background:#e8edfb} .pago-botones button.actual{background:var(--azul);color:#fff}
+  .pago-botones button.ninguno{border-color:#9ca3af;color:#4b5563} .pago-botones button.ninguno.actual{background:#6b7280;color:#fff;border-color:#6b7280}
+  .pago-botones button.auto{border-style:dashed;border-color:var(--azulinfo);color:var(--azulinfo)}
   .tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:12px}
   .tab{border:none;border-radius:16px;padding:16px 20px;text-align:left;color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(19,34,63,.18);outline:3px solid transparent;outline-offset:2px;transition:transform .12s}
   .tab:hover{transform:translateY(-2px)} .tab.activa{outline-color:var(--azul)}
@@ -165,6 +175,20 @@
       '&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(s);
   }
+  function llamarAsignar(d, ok, fail) {
+    var url = $('inputUrlConector').value.trim();
+    if (!/^https:\/\/script\.google\.com\//.test(url)) { fail('Pega la URL del conector y pulsa Guardar.'); return; }
+    var cb = 'conc_as_' + Date.now(), s = document.createElement('script'), listo = false;
+    var limpiar = function () { delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); clearTimeout(t); };
+    var t = setTimeout(function () { if (!listo) { limpiar(); fail('Sin respuesta al guardar la asignación.'); } }, 60000);
+    window[cb] = function (r) { listo = true; limpiar(); r && r.ok ? ok(r.data) : fail(r && r.error ? r.error : 'Respuesta inválida.'); };
+    s.onerror = function () { if (!listo) { limpiar(); fail('No se pudo conectar para guardar la asignación.'); } };
+    s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=asignar&token=' + encodeURIComponent(TOKEN) +
+      '&clavePago=' + encodeURIComponent(d.clavePago) + '&contrato=' + encodeURIComponent(d.contrato) + '&cedula=' + encodeURIComponent(d.cedula || '') +
+      '&cliente=' + encodeURIComponent(d.cliente || '') + '&c=' + encodeURIComponent(d.c === null || d.c === undefined ? '' : d.c) +
+      '&d=' + encodeURIComponent(d.d === null || d.d === undefined ? '' : d.d) + '&callback=' + cb + '&_=' + Date.now();
+    document.head.appendChild(s);
+  }
 
   function cargar() {
     var btn = $('btnRecargar'); btn.disabled = true; btn.textContent = 'Actualizando…';
@@ -262,6 +286,40 @@
 
   // ---------- Ficha del cliente ----------
   function campo(etq, val) { var c = el('div', 'c'); c.appendChild(el('small', '', etq)); c.appendChild(el('b', '', val === undefined || val === null || val === '' ? '—' : String(val))); return c; }
+  // Personas con varios contratos: botones para asignar cada pago al contrato correcto
+  function mismo(a, b) { return String(a === undefined || a === null ? '' : a).replace(/[^0-9A-Za-z]/g, '').toUpperCase() === String(b === undefined || b === null ? '' : b).replace(/[^0-9A-Za-z]/g, '').toUpperCase(); }
+  function panelPagos(f, d) {
+    var box = el('div', 'pagos');
+    box.appendChild(el('h3', '', 'Esta persona tiene ' + f.contratosGrupo.length + ' contratos: asigna cada pago al contrato correcto'));
+    box.appendChild(el('p', 'obs', 'Toca el botón del contrato al que pertenece cada pago. Se guarda y se mantiene en cada actualización.'));
+    f.pagosGrupo.forEach(function (p) {
+      var linea = el('div', 'pago'), info = el('div', 'pago-info');
+      info.appendChild(document.createTextNode('Pago de la fila ' + p.fila + ': ' + (p.c ? 'C ' + money(p.c) : '') + (p.c && p.d ? ' · ' : '') + (p.d ? 'D ' + money(p.d) : '')));
+      if (p.manual) info.appendChild(el('span', 'tag', p.contratoActual === 'NINGUNO' ? ' · marcado: no es un pago' : ' · asignado manualmente'));
+      linea.appendChild(info);
+      var bs = el('div', 'pago-botones');
+      function boton(txt, cls, contrato, activo, pregunta) {
+        var b = el('button', cls + (activo ? ' actual' : ''), txt); b.type = 'button'; b.title = pregunta;
+        b.onclick = function () {
+          if (activo) return;
+          if (!window.confirm(pregunta)) return;
+          box.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
+          llamarAsignar({ clavePago: p.clavePago, contrato: contrato, cedula: f.cedula, cliente: nombre(f), c: p.c, d: p.d }, function () { cargar(); },
+            function (msg) { mensaje('error', 'No se pudo guardar la asignación: ' + msg); box.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
+        };
+        bs.appendChild(b);
+      }
+      f.contratosGrupo.forEach(function (k) {
+        boton('Contrato ' + k.contrato + (k.placa ? ' · ' + k.placa : '') + ' ($ ' + fmt.format(k.pagado || 0) + ')', '', k.contrato, mismo(p.contratoActual, k.contrato),
+          '¿Asignar este pago al contrato ' + k.contrato + '?');
+      });
+      boton('No es un pago', 'ninguno', 'NINGUNO', p.contratoActual === 'NINGUNO', '¿Marcar este pago como «No es un pago»? No contará para ningún contrato.');
+      if (p.manual) boton('Volver a automático', 'auto', 'AUTO', false, '¿Quitar la asignación manual y dejar que el sistema decida?');
+      linea.appendChild(bs); box.appendChild(linea);
+    });
+    d.appendChild(box);
+  }
+
   function ficha(f) {
     abierta = f.claveAjuste || null;
     var d = $('ficha'); d.textContent = '';
@@ -290,6 +348,7 @@
     if (!f.obs && f.filaCons !== '' && f.filaCons !== undefined) d.appendChild(el('p', 'obs', 'Fila(s) en la hoja Consolidado: ' + f.filaCons + '.'));
     if (f.obs) d.appendChild(el('p', 'obs', f.obs));
 
+    if (f.contratosGrupo && f.contratosGrupo.length > 1 && f.pagosGrupo && f.pagosGrupo.length) panelPagos(f, d);
     if (f.claveAjuste) {
       var aj = f.ajuste;
       if (aj && aj.decision !== 'Nota') d.appendChild(el('p', 'ajuste-actual', 'Ajuste manual activo' + (aj.fecha ? ' (' + aj.fecha + ')' : '') + '.'));

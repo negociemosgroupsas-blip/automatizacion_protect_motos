@@ -18,6 +18,7 @@ function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
   if (params.action === 'conciliar') return CONC_respuestaJsonp(params);
   if (params.action === 'ajustar') return CONC_respuestaAjuste(params);
+  if (params.action === 'asignar') return CONC_respuestaAsignar(params);
   return HtmlService.createHtmlOutputFromFile('Conciliacion_Dugo')
     .setTitle('Conciliación Dugo Motos')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
@@ -96,4 +97,30 @@ function CONC_respuestaAjuste(params) {
 function CONC_apiAjustar(clave, decision, nota, cedula, cliente, contrato) {
   var ss = SpreadsheetApp.openById(CONC_SHEET_ID);
   return CONC_guardarAjuste(ss, { clave: clave, decision: decision, nota: nota, cedula: cedula, cliente: cliente, contrato: contrato });
+}
+
+/** Asignación manual de un pago a un contrato (personas con varios contratos). Exige el token. */
+function CONC_respuestaAsignar(params) {
+  var salida;
+  try {
+    if (params.token !== CONC_TOKEN) {
+      salida = { ok: false, error: 'Token inválido.' };
+    } else {
+      salida = { ok: true, data: CONC_apiAsignar(params.clavePago, params.contrato, params.cedula, params.cliente, params.c, params.d) };
+    }
+  } catch (err) {
+    salida = { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+  var cb = params.callback;
+  if (cb && /^[A-Za-z_$][\w$.]*$/.test(cb)) {
+    return ContentService.createTextOutput(cb + '(' + JSON.stringify(salida) + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(JSON.stringify(salida)).setMimeType(ContentService.MimeType.JSON);
+}
+
+/** contrato: número de contrato, 'NINGUNO' (no es un pago) o 'AUTO' (volver a la asignación automática). */
+function CONC_apiAsignar(clavePago, contrato, cedula, cliente, c, d) {
+  var ss = SpreadsheetApp.openById(CONC_SHEET_ID);
+  return CONC_guardarAsignacion(ss, { clavePago: clavePago, contrato: contrato, cedula: cedula, cliente: cliente, c: c, d: d });
 }

@@ -27,6 +27,7 @@ var CONC_HOJA_CONSOLIDADOS = 'Consolidado';
 var CONC_HOJA_RESULTADO = 'Conciliacion_Dugo';
 
 var CONC_HOJA_HISTORIAL = 'Historial_Consolidacion';
+var CONC_HOJA_ASIGNACIONES = 'Asignaciones_Pagos'; // a qué contrato pertenece cada pago, decidido a mano (varios contratos)
 var CONC_HOJA_AJUSTES = 'Ajustes_Manuales'; // correcciones hechas a mano desde el HTML (se conservan entre corridas)
 var CONC_DIAS_RECIENTE = 7; // ventana para "conciliados / nuevos / cambios de la semana"
 
@@ -105,7 +106,8 @@ function CONC_procesar(ss, tol) {
     var lectura = CONC_leerConsolidados(hojaCons);
     var columnas = CONC_detectarColumnas(lectura.filas, protect, lectura.encabezados);
     var ajustes = CONC_leerAjustes(ss);
-    var res = CONC_calcular(protect, lectura.filas, tol, ajustes);
+    var asignaciones = CONC_leerAsignaciones(ss);
+    var res = CONC_calcular(protect, lectura.filas, tol, ajustes, asignaciones);
     var previos = CONC_leerHistorial(ss);
     var ah = CONC_aplicarHistorial(res.filas, previos, new Date());
     CONC_escribirResultado(ss, res);
@@ -244,7 +246,7 @@ function CONC_detectarColumnas(cons, protect, encabezados) {
 //   1) por valor exacto (la fila cuyo C o D es igual a Protect!P de ese contrato);
 //   2) las filas que sobran, por orden, a los contratos que quedaron sin pago ("Asignado por orden (revisar)");
 //   3) el contrato que se queda sin fila => "Falta por consolidar".
-function CONC_calcular(protect, cons, tol, ajustes) {
+function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
   // 0) Filas de Consolidados que traen número de contrato o placa: van directo a su contrato
   var porContrato = {}, porPlaca = {};
   protect.forEach(function (p) {
@@ -253,18 +255,31 @@ function CONC_calcular(protect, cons, tol, ajustes) {
     if (kc) (porContrato[kc] = porContrato[kc] || []).push(p);
     if (kp) (porPlaca[kp] = porPlaca[kp] || []).push(p);
   });
-  var consPorCedula = {}, consPorNombre = {};
+  var consPorCedula = {}, consPorNombre = {}, vecesPago = {};
   cons.forEach(function (r) {
     r.kCed = CONC_normCedula(r.cedula);
     r.kNom = CONC_normNombre(r.cliente);
     r.usada = false; r.directa = false;
+    r.clavePago = CONC_clavePago(r, vecesPago);
+    // Asignación MANUAL (hecha desde el HTML): manda sobre cualquier regla automática
+    var am = asignaciones && asignaciones[r.clavePago];
+    if (am) {
+      if (am.contrato === 'NINGUNO') { r.usada = true; r.ignorada = true; r.estadoFila = 'No es un pago · ajuste manual'; return; }
+      var cands = porContrato[CONC_normClave(am.contrato)] || [];
+      var dest = cands.filter(function (x) { return CONC_normCedula(x.cedula) === r.kCed; })[0] || cands[0];
+      if (dest) {
+        r.directa = true; r.usada = true; r.manual = true;
+        dest.directRows.push(r); dest.directMetodo = 'manual';
+        return;
+      }
+    }
     var kc = CONC_normClave(r.contrato), kp = CONC_normClave(r.placa), destino = null, metodo = '';
     if (kc && porContrato[kc] && porContrato[kc].length === 1) { destino = porContrato[kc][0]; metodo = 'contrato'; }
     else if (kp && porPlaca[kp] && porPlaca[kp].length === 1) { destino = porPlaca[kp][0]; metodo = 'placa'; }
     if (destino) {
       r.directa = true; r.usada = true;
       destino.directRows.push(r);
-      if (!destino.directMetodo || metodo === 'contrato') destino.directMetodo = metodo;
+      if (destino.directMetodo !== 'manual' && (!destino.directMetodo || metodo === 'contrato')) destino.directMetodo = metodo;
       return;
     }
     if (r.kCed) (consPorCedula[r.kCed] = consPorCedula[r.kCed] || []).push(r);
@@ -342,7 +357,7 @@ function CONC_calcular(protect, cons, tol, ajustes) {
     });
     g.contratos.forEach(function (p, i) {
       var f = base(p, g.cruce), a = asig[i];
-      if (p.directRows.length) f.cruce = p.directMetodo === 'contrato' ? 'Número de contrato' : 'Placa';
+      if (p.directRows.length) f.cruce = p.directMetodo === 'manual' ? 'Asignación manual' : (p.directMetodo === 'contrato' ? 'Número de contrato' : 'Placa');
       f.varios = n > 1;
       if (!a.filas.length) {
         f.estado = CONC_ESTADO.FALTA;
@@ -363,8 +378,13 @@ function CONC_calcular(protect, cons, tol, ajustes) {
       var notas = ['Aparece en Consolidados (' + a.filas.length + (a.filas.length === 1 ? ' fila' : ' filas') + ': ' + f.filaCons + ').'];
       if (g.cruce === 'Nombre (revisar)' && !p.directRows.length) notas.push('Se encontró solo por nombre; confirma que sea la misma persona.');
       if (p.directRows.length) {
-        f.asignacion = p.directMetodo === 'contrato' ? 'Asignado por contrato' : 'Asignado por placa';
-        notas.push('Consolidados trae ' + (p.directMetodo === 'contrato' ? 'el número de contrato' : 'la placa') + ' de este pago: asignación segura.');
+        if (p.directMetodo === 'manual') {
+          f.asignacion = 'Asignado manualmente';
+          notas.push('Asignación manual: tú indicaste que este pago pertenece a este contrato.');
+        } else {
+          f.asignacion = p.directMetodo === 'contrato' ? 'Asignado por contrato' : 'Asignado por placa';
+          notas.push('Consolidados trae ' + (p.directMetodo === 'contrato' ? 'el número de contrato' : 'la placa') + ' de este pago: asignación segura.');
+        }
       } else if (n > 1) {
         if (a.metodo === 'orden') {
           f.asignacion = 'Asignado por orden (revisar)'; f.porOrden = true;
@@ -395,6 +415,31 @@ function CONC_calcular(protect, cons, tol, ajustes) {
       filaCons: r.fila, filaProtect: '', obs: 'Está en Consolidados pero no en Protect (ni por cédula ni por nombre).', extra: null,
       nCons: 1, varios: false, asignacion: '', porOrden: false
     });
+  });
+
+  // Para las personas con varios contratos: lista de sus contratos y de sus pagos (para reasignar a mano desde el HTML)
+  var porPersona = {}, duenoContrato = {};
+  salida.forEach(function (f) {
+    if (f.estado === CONC_ESTADO.SIN_PROTECT || !f.claveAjuste) return;
+    var kp = CONC_normCedula(f.cedula);
+    if (!kp) return;
+    (porPersona[kp] = porPersona[kp] || { contratos: [], pagos: [], filas: [] }).contratos.push(f);
+    var kc = CONC_normClave(f.contrato);
+    if (kc) duenoContrato[kc] = kp;
+  });
+  var yaPago = {};
+  cons.forEach(function (r) {
+    var kp = r.kCed;
+    if (r.contratoAsig && duenoContrato[CONC_normClave(r.contratoAsig)]) kp = duenoContrato[CONC_normClave(r.contratoAsig)];
+    if (!kp || !porPersona[kp] || yaPago[r.clavePago]) return;
+    yaPago[r.clavePago] = true;
+    porPersona[kp].pagos.push({ clavePago: r.clavePago, fila: r.fila, c: r.c, d: r.d, contratoActual: r.ignorada ? 'NINGUNO' : (r.contratoAsig || ''), manual: !!(r.manual || r.ignorada) });
+  });
+  Object.keys(porPersona).forEach(function (kp) {
+    var g = porPersona[kp];
+    if (g.contratos.length < 2) return;
+    var lista = g.contratos.map(function (f) { return { contrato: CONC_texto(f.contrato), placa: f.placa || '', pagado: f.pagado }; });
+    g.contratos.forEach(function (f) { f.contratosGrupo = lista; f.pagosGrupo = g.pagos; });
   });
 
   // Orden del historial: como están en Protect; lo que no está en Protect va al final
@@ -443,6 +488,66 @@ function CONC_buscarPorNombre(tok, indice) {
   });
   if (!res.length || Object.keys(cedulas).length > 1) return null;
   return { filas: res, exacto: exacto };
+}
+
+// ----- Asignación manual de pagos a contratos (hoja "Asignaciones_Pagos") -----
+var CONC_ASIG_ENCABEZADOS = ['ClavePago', 'Contrato asignado', 'Cédula', 'Cliente', 'Valor C', 'Valor D', 'Fecha'];
+
+// Identidad de un pago aunque cambie de fila: cédula + C + D (+ n° de repetición si hay filas idénticas)
+function CONC_clavePago(r, veces) {
+  var base = 'R:' + CONC_normCedula(r.cedula) + '|' + (r.c === null || r.c === undefined ? '' : r.c) + '|' + (r.d === null || r.d === undefined ? '' : r.d);
+  veces[base] = (veces[base] || 0) + 1;
+  return base + '|#' + veces[base];
+}
+
+function CONC_leerAsignaciones(ss) {
+  var hoja = ss.getSheetByName(CONC_HOJA_ASIGNACIONES);
+  if (!hoja || hoja.getLastRow() < 1) return {};
+  if (hoja.getRange(1, 1).getValue() !== CONC_ASIG_ENCABEZADOS[0]) {
+    throw new Error('Ya existe una hoja "' + CONC_HOJA_ASIGNACIONES + '" con otro contenido. No se usa; renómbrala o cambia CONC_HOJA_ASIGNACIONES.');
+  }
+  if (hoja.getLastRow() < 2) return {};
+  var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, CONC_ASIG_ENCABEZADOS.length).getValues(), out = {};
+  datos.forEach(function (r) { if (!CONC_vacio(r[0]) && !CONC_vacio(r[1])) out[String(r[0])] = { contrato: String(r[1]) }; });
+  return out;
+}
+
+// d: { clavePago, contrato ('NINGUNO' = no es un pago, 'AUTO' = volver a la asignación automática), cedula, cliente, c, d }
+function CONC_guardarAsignacion(ss, d) {
+  var clave = String(d.clavePago || '');
+  if (clave.indexOf('R:') !== 0) throw new Error('Falta la clave del pago.');
+  var contrato = String(d.contrato === undefined || d.contrato === null ? '' : d.contrato).trim();
+  if (!contrato) throw new Error('Falta el contrato.');
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) throw new Error('Hay otra operación en curso. Intenta de nuevo en un momento.');
+  try {
+    var hoja = ss.getSheetByName(CONC_HOJA_ASIGNACIONES);
+    if (!hoja) hoja = ss.insertSheet(CONC_HOJA_ASIGNACIONES);
+    if (hoja.getLastRow() < 1) {
+      hoja.getRange(1, 1, 1, CONC_ASIG_ENCABEZADOS.length).setValues([CONC_ASIG_ENCABEZADOS])
+        .setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');
+      hoja.setFrozenRows(1);
+    } else if (hoja.getRange(1, 1).getValue() !== CONC_ASIG_ENCABEZADOS[0]) {
+      throw new Error('Ya existe una hoja "' + CONC_HOJA_ASIGNACIONES + '" con otro contenido. No se sobrescribe.');
+    }
+    var ultima = hoja.getLastRow(), fila = -1;
+    if (ultima >= 2) {
+      var claves = hoja.getRange(2, 1, ultima - 1, 1).getValues();
+      for (var i = 0; i < claves.length; i++) if (String(claves[i][0]) === clave) { fila = i + 2; break; }
+    }
+    if (contrato === 'AUTO') {
+      if (fila > 0) hoja.deleteRow(fila);
+      return { ok: true, accion: 'automatico' };
+    }
+    if (fila < 0) fila = ultima + 1;
+    hoja.getRange(fila, 1, 1, 6).setNumberFormat('@');
+    hoja.getRange(fila, 1, 1, CONC_ASIG_ENCABEZADOS.length).setValues([[clave, contrato, String(d.cedula || ''), String(d.cliente || ''),
+      d.c === undefined || d.c === null ? '' : d.c, d.d === undefined || d.d === null ? '' : d.d, new Date()]]);
+    hoja.getRange(fila, 7).setNumberFormat('dd/mm/yyyy hh:mm');
+    return { ok: true, accion: 'guardado' };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // ----- Ajustes manuales (se guardan en la hoja "Ajustes_Manuales") -----
