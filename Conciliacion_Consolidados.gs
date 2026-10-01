@@ -607,6 +607,7 @@ function CONC_aplicarHistorial(filas, previos, ahora) {
 function CONC_escribirHistorial(ss, registros) {
   var hoja = ss.getSheetByName(CONC_HOJA_HISTORIAL);
   if (!hoja) hoja = ss.insertSheet(CONC_HOJA_HISTORIAL);
+  CONC_quitarFiltro(hoja);
   hoja.clear();
   hoja.getRange(1, 1, 1, CONC_HIST_ENCABEZADOS.length).setValues([CONC_HIST_ENCABEZADOS])
     .setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff').setWrap(true);
@@ -653,7 +654,7 @@ function CONC_escribirResultado(ss, res) {
     throw new Error('Ya existe una hoja "' + CONC_HOJA_RESULTADO + '" con otro contenido. No se sobrescribe; renómbrala o cambia CONC_HOJA_RESULTADO.');
   }
   hoja.clear();
-  if (hoja.getFilter()) hoja.getFilter().remove();
+  CONC_quitarFiltro(hoja);
 
   var filas = res.filas.map(function (s) {
     return [s.estado, s.cedula, s.clienteCons, s.clienteProtect, s.placa, s.contrato,
@@ -701,6 +702,12 @@ function CONC_escribirResultado(ss, res) {
 
 // Una celda en 0 (vacía o con fórmula que da 0) no es un pago
 function CONC_sinCero(n) { return n === 0 ? null : n; }
+
+// Quita el filtro existente de una hoja propia (Google no deja crear un segundo filtro)
+function CONC_quitarFiltro(hoja) {
+  var f = hoja.getFilter();
+  if (f) f.remove();
+}
 
 function CONC_texto(v) { return CONC_vacio(v) ? '' : String(v).trim(); }
 
