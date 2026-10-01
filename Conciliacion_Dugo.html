@@ -273,6 +273,7 @@
   function cargar() {
     var btn = $('btnRecargar'); btn.disabled = true; btn.textContent = 'Conciliando…';
     estadoConexion('cargando', 'Leyendo la hoja y conciliando, esto puede tardar unos segundos…');
+    try { localStorage.setItem('conc_tol', $('inputTol').value); } catch (e) {}
     llamar($('inputTol').value, function (r) {
       btn.disabled = false; btn.textContent = 'Actualizar datos';
       datos = r.filas || [];

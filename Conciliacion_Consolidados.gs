@@ -407,8 +407,11 @@ function CONC_asignar(contratos, filas, tol) {
 // Texto del estado para la fila de Consolidados, según el contrato al que se asignó
 function CONC_textoFila(f) {
   if (f.estado === CONC_ESTADO.POR_NOMBRE) return CONC_ESTADO.POR_NOMBRE;
-  var t = f.valor === CONC_VALOR.MENOS ? CONC_VALOR.MENOS : CONC_ESTADO.CONCILIADO;
-  if (f.valor === CONC_VALOR.MAS) t += ' · pagó de más';
+  var t = CONC_ESTADO.CONCILIADO; // pagar de más no importa: solo "Consolidado"
+  if (f.valor === CONC_VALOR.MENOS) {
+    var falta = Math.abs(Math.round(f.dif || 0));
+    t = CONC_VALOR.MENOS + ' · faltan $' + String(falta).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
   if (f.porOrden) t += ' · por orden (revisar)';
   return t;
 }
