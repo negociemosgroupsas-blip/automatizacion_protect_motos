@@ -276,10 +276,48 @@
       return texto.indexOf(t) !== -1 || (td && (texto.indexOf(td) !== -1 || (td.length >= 4 && solo.indexOf(td) !== -1)));
     });
   }
+  // Búsqueda "parecida": tolera una letra distinta (Gamarra/Gamara), tildes o nombres incompletos.
+  function unaLetra(a, b) {
+    if (a === b) return true;
+    if (Math.abs(a.length - b.length) > 1 || a.length < 5 || b.length < 5) return false;
+    var i = 0, j = 0, dif = 0;
+    while (i < a.length && j < b.length) {
+      if (a[i] === b[j]) { i++; j++; continue; }
+      if (++dif > 1) return false;
+      if (a.length > b.length) i++; else if (a.length < b.length) j++; else { i++; j++; }
+    }
+    return dif + (a.length - i) + (b.length - j) <= 1;
+  }
+  function puntaje(f, q) {
+    var palabras = [f.clienteProtect, f.clienteCons].map(norm).join(' ').split(/[^a-z0-9]+/).filter(Boolean);
+    var base = [f.cedula, f.contrato, f.placa].map(norm).join(' ');
+    var toks = q.split(/\s+/).filter(Boolean), n = 0;
+    toks.forEach(function (t) {
+      if (base.indexOf(t.replace(/[.,]/g, '')) !== -1 && t.length >= 4) { n++; return; }
+      if (palabras.some(function (w) { return w === t || unaLetra(w, t) || (t.length >= 4 && w.length >= 4 && (w.indexOf(t) === 0 || t.indexOf(w) === 0)); })) n++;
+    });
+    return n;
+  }
+  var parecidos = false;
   function actual() {
     var q = consulta();
     if (q !== ultimaConsulta) { ultimaConsulta = q; verTabla = false; }
-    if (q) return datos.filter(function (f) { return coincide(f, q); });
+    parecidos = false;
+    if (q) {
+      var exactos = datos.filter(function (f) { return coincide(f, q); });
+      if (exactos.length) return exactos;
+      var nt = q.split(/\s+/).filter(Boolean).length, minimo = Math.max(1, Math.ceil(nt / 2));
+      var cand = datos.map(function (f) { return { f: f, p: puntaje(f, q) }; }).filter(function (x) { return x.p >= minimo; });
+      cand.sort(function (a, b) { return b.p - a.p; });
+      // Si hay una cédula con mejor coincidencia, muestra todos los contratos de esa persona
+      if (cand.length) {
+        parecidos = true;
+        var ceds = {}; cand.slice(0, 40).forEach(function (x) { if (x.f.cedula) ceds[normCed(x.f.cedula)] = true; });
+        var top = cand.slice(0, 40).map(function (x) { return x.f; });
+        return datos.filter(function (f) { return (f.cedula && ceds[normCed(f.cedula)]) || top.indexOf(f) !== -1; }).slice(0, 60);
+      }
+      return [];
+    }
     return datos.filter(function (f) {
       if (!(lista === 'cons' ? esCons(f) : lista === 'directo' ? esDirecto(f) : esFalta(f))) return false;
       if (lista === 'cons' && soloMenos && f.valor !== 'Pagó de menos') return false;
@@ -316,7 +354,7 @@
     var tl = $('tituloLista');
     if (q) {
       var nc = rows.filter(esCons).length, nf = rows.filter(esFalta).length, ns = rows.length - nc - nf;
-      tl.textContent = 'Resultados de la búsqueda «' + $('buscar').value.trim() + '»: ' + rows.length + (rows.length === 1 ? ' cliente' : ' clientes') +
+      tl.textContent = (parecidos ? 'No hay coincidencia exacta; estos se parecen a «' + $('buscar').value.trim() + '»: ' + rows.length + (rows.length === 1 ? ' cliente' : ' clientes') : '') || 'Resultados de la búsqueda «' + $('buscar').value.trim() + '»: ' + rows.length + (rows.length === 1 ? ' cliente' : ' clientes') +
         ' (' + nc + ' consolidado' + (nc === 1 ? '' : 's') + ', ' + nf + ' que falta' + (nf === 1 ? '' : 'n') + (ns ? ', ' + ns + ' sin registro en Protect' : '') + ')';
     } else { tl.textContent = lista === 'cons' ? 'Clientes ya consolidados' : lista === 'directo' ? 'Clientes que pagaron directo a Protect (no aparecen en Consolidado)' : 'Clientes que faltan por consolidar'; }
     if (!rows.length) { var tr0 = el('tr'), td0 = el('td', 'vacio', !datos.length ? 'Pulsa «Actualizar datos» para cargar la información.' : (q ? 'No se encontró ningún cliente con «' + $('buscar').value.trim() + '». Prueba con menos palabras o solo el apellido.' : 'No hay clientes en esta lista.')); td0.colSpan = 7; tr0.appendChild(td0); tb.appendChild(tr0); }
