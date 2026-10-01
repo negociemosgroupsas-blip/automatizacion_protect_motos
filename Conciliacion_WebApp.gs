@@ -92,7 +92,7 @@ function CONC_respuestaAjuste(params) {
   return ContentService.createTextOutput(JSON.stringify(salida)).setMimeType(ContentService.MimeType.JSON);
 }
 
-/** Guarda la decisión en la hoja "Ajustes_Manuales". decision: 'Consolidado' | 'Falta' | 'Quitar'. */
+/** Guarda la decisión en la hoja "Ajustes_Manuales". decision: 'Consolidado' | 'Falta' | 'Nota' | 'Quitar'. */
 function CONC_apiAjustar(clave, decision, nota, cedula, cliente, contrato) {
   var ss = SpreadsheetApp.openById(CONC_SHEET_ID);
   return CONC_guardarAjuste(ss, { clave: clave, decision: decision, nota: nota, cedula: cedula, cliente: cliente, contrato: contrato });

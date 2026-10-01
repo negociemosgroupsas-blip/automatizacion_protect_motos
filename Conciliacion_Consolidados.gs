@@ -448,7 +448,9 @@ function CONC_aplicarAjusteManual(f, p, ajustes, filasAsignadas) {
   if (!aj) return;
   f.ajuste = { decision: aj.decision, nota: aj.nota || '', fecha: aj.fecha || '' };
   var nota = aj.nota ? ' Nota: ' + aj.nota : '';
-  if (aj.decision === 'Falta') {
+  if (aj.decision === 'Nota') {
+    f.obs = (f.obs ? f.obs + ' ' : '') + 'Nota: ' + (aj.nota || '(vacía)');
+  } else if (aj.decision === 'Falta') {
     f.estado = CONC_ESTADO.FALTA; f.valor = ''; f.dif = null; f.difC = null; f.difD = null; f.concordo = '';
     f.asignacion = ''; f.porOrden = false;
     f.obs = 'Ajuste manual: marcado como "Falta por consolidar" (lo que aparece en Consolidado no es un pago).' + nota;
@@ -471,16 +473,16 @@ function CONC_leerAjustes(ss) {
   var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, CONC_AJ_ENCABEZADOS.length).getValues();
   var out = {};
   datos.forEach(function (r) {
-    if (CONC_vacio(r[0]) || (r[1] !== 'Consolidado' && r[1] !== 'Falta')) return;
+    if (CONC_vacio(r[0]) || (r[1] !== 'Consolidado' && r[1] !== 'Falta' && r[1] !== 'Nota')) return;
     out[String(r[0])] = { decision: r[1], nota: CONC_texto(r[5]), fecha: CONC_fechaHoraTxt(CONC_aFecha(r[6])) };
   });
   return out;
 }
 
-// d: { clave, decision: 'Consolidado' | 'Falta' | 'Quitar', cedula, cliente, contrato, nota }
+// d: { clave, decision: 'Consolidado' | 'Falta' | 'Nota' (solo nota, no cambia el estado) | 'Quitar', cedula, cliente, contrato, nota }
 function CONC_guardarAjuste(ss, d) {
   var decision = String(d.decision || '');
-  if (['Consolidado', 'Falta', 'Quitar'].indexOf(decision) < 0) throw new Error('Decisión no válida.');
+  if (['Consolidado', 'Falta', 'Nota', 'Quitar'].indexOf(decision) < 0) throw new Error('Decisión no válida.');
   var clave = String(d.clave || '');
   if (!clave || clave.indexOf('P:') !== 0) throw new Error('Falta la clave del contrato.');
   var lock = LockService.getScriptLock();
