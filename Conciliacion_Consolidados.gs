@@ -58,7 +58,8 @@ var CONC_ESTADO = {
   CONCILIADO: 'Consolidado',
   POR_NOMBRE: 'Consolidado por nombre (revisar)',
   FALTA: 'Falta por consolidar',
-  SIN_PROTECT: 'Sin registro en Protect'
+  SIN_PROTECT: 'Sin registro en Protect',
+  DIRECTO: 'Pagó directo a Protect'   // el cliente paga directo a la cuenta: no aparece en Consolidado, se marca a mano
 };
 
 var CONC_VALOR = {
@@ -99,9 +100,14 @@ function CONC_conciliar() {
 }
 
 // Lee, concilia, actualiza el historial y escribe las hojas propias. Lo usan la ejecución manual y la pantalla web.
-function CONC_procesar(ss, tol) {
-  var lock = LockService.getScriptLock();
-  if (!lock.tryLock(30000)) throw new Error('Hay otra conciliación en curso. Espera un minuto y vuelve a intentar.');
+function CONC_procesar(ss, tol, rapido) {
+  // rapido = true: solo LEE y calcula (sin escribir en ninguna hoja y sin bloquear). Es lo que usa la pantalla para mostrar
+  // resultados en pocos segundos; la escritura de las hojas se hace aparte (rapido = false), en segundo plano.
+  var lock = null;
+  if (!rapido) {
+    lock = LockService.getScriptLock();
+    if (!lock.tryLock(30000)) throw new Error('Hay otra actualización de la hoja en curso. Espera unos segundos y vuelve a intentar.');
+  }
   try {
     var hojaProtect = CONC_buscarHoja(ss, CONC_HOJA_PROTECT);
     var hojaCons = CONC_buscarHoja(ss, CONC_HOJA_CONSOLIDADOS);
@@ -113,12 +119,15 @@ function CONC_procesar(ss, tol) {
     var res = CONC_calcular(protect, lectura.filas, tol, ajustes, asignaciones);
     var previos = CONC_leerHistorial(ss);
     var ah = CONC_aplicarHistorial(res.filas, previos, new Date());
-    CONC_escribirResultado(ss, res);
-    CONC_escribirHistorial(ss, ah.registros);
-    var estadoEnHoja = CONC_escribirEstadoEnConsolidados(hojaCons, lectura.filas);
+    var estadoEnHoja = { escrito: false, rapido: true };
+    if (!rapido) {
+      CONC_escribirResultado(ss, res);
+      CONC_escribirHistorial(ss, ah.registros);
+      estadoEnHoja = CONC_escribirEstadoEnConsolidados(hojaCons, lectura.filas);
+    }
     return { diag: CONC_diagnostico(protect, lectura.filas, res.filas), estadoEnHoja: estadoEnHoja, res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas), columnas: columnas };
   } finally {
-    lock.releaseLock();
+    if (lock) lock.releaseLock();
   }
 }
 
@@ -587,6 +596,10 @@ function CONC_aplicarAjusteManual(f, p, ajustes, filasAsignadas) {
     f.asignacion = ''; f.porOrden = false;
     f.obs = 'Ajuste manual: marcado como "Falta por consolidar" (lo que aparece en Consolidado no es un pago).' + nota;
     (filasAsignadas || []).forEach(function (r) { r.estadoFila = 'No es un pago · ajuste manual'; });
+  } else if (aj.decision === 'Directo') {
+    f.estado = CONC_ESTADO.DIRECTO; f.valor = ''; f.dif = null; f.difC = null; f.difD = null; f.concordo = '';
+    f.asignacion = ''; f.porOrden = false;
+    f.obs = 'Ajuste manual: el dinero entró directo a Protect (no aparece en Consolidado).' + nota;
   } else if (aj.decision === 'Consolidado') {
     f.estado = CONC_ESTADO.CONCILIADO;
     if (!f.valor) f.valor = CONC_VALOR.SIN_DATO;
@@ -605,7 +618,7 @@ function CONC_leerAjustes(ss) {
   var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, CONC_AJ_ENCABEZADOS.length).getValues();
   var out = {};
   datos.forEach(function (r) {
-    if (CONC_vacio(r[0]) || (r[1] !== 'Consolidado' && r[1] !== 'Falta' && r[1] !== 'Nota')) return;
+    if (CONC_vacio(r[0]) || (r[1] !== 'Consolidado' && r[1] !== 'Falta' && r[1] !== 'Nota' && r[1] !== 'Directo')) return;
     out[String(r[0])] = { decision: r[1], nota: CONC_texto(r[5]), fecha: CONC_fechaHoraTxt(CONC_aFecha(r[6])) };
   });
   return out;
@@ -614,7 +627,7 @@ function CONC_leerAjustes(ss) {
 // d: { clave, decision: 'Consolidado' | 'Falta' | 'Nota' (solo nota, no cambia el estado) | 'Quitar', cedula, cliente, contrato, nota }
 function CONC_guardarAjuste(ss, d) {
   var decision = String(d.decision || '');
-  if (['Consolidado', 'Falta', 'Nota', 'Quitar'].indexOf(decision) < 0) throw new Error('Decisión no válida.');
+  if (['Consolidado', 'Falta', 'Directo', 'Nota', 'Quitar'].indexOf(decision) < 0) throw new Error('Decisión no válida.');
   var clave = String(d.clave || '');
   if (!clave || clave.indexOf('P:') !== 0) throw new Error('Falta la clave del contrato.');
   var lock = LockService.getScriptLock();
@@ -693,6 +706,7 @@ function CONC_asignar(contratos, filas, tol) {
 // Texto del estado para la fila de Consolidados, según el contrato al que se asignó
 function CONC_textoFila(f) {
   if (f.estado === CONC_ESTADO.POR_NOMBRE) return CONC_ESTADO.POR_NOMBRE;
+  if (f.estado === CONC_ESTADO.DIRECTO) return CONC_ESTADO.DIRECTO;
   if (f.valor === CONC_VALOR.ATIPICO) return CONC_ESTADO.CONCILIADO + ' · Protect!P atípico (revisar)';
   var t = CONC_ESTADO.CONCILIADO; // pagar de más no importa: solo "Consolidado"
   if (f.valor === CONC_VALOR.MENOS) {
@@ -706,6 +720,7 @@ function CONC_textoFila(f) {
 
 function CONC_colorFila(t) {
   if (/^No es un pago/.test(t)) return '#e6e6e6';
+  if (/^Pagó directo/.test(t)) return '#cfe2f3';
   if (/^Pagó de menos/.test(t)) return '#ea4335';
   if (/revisar|nombre/i.test(t)) return '#fce5cd';
   if (/^Sin registro/.test(t)) return '#e6e6e6';
@@ -714,7 +729,7 @@ function CONC_colorFila(t) {
 }
 
 function CONC_esEstadoPropio(v) {
-  return /^(Consolidado|Pagó de menos|Sin registro en Protect|No es un pago)/.test(String(v));
+  return /^(Consolidado|Pagó de menos|Pagó directo|Sin registro en Protect|No es un pago)/.test(String(v));
 }
 
 // Escribe SOLO las columnas F (estado) y G (# contrato de Protect) de Consolidado. No sobrescribe datos ajenos.
@@ -945,7 +960,7 @@ function CONC_aplicarHistorial(filas, previos, ahora) {
     if (nuevoReciente) resumen.nuevos++;
     if (concReciente) resumen.concRecientes++;
     if (cambioReciente) resumen.cambios++;
-    if (!conc) resumen.pendientes++;
+    if (!conc && rep.estado !== CONC_ESTADO.DIRECTO) resumen.pendientes++;
     var hist = {
       clave: clave, estadoContrato: rep.estado,
       primeraVez: CONC_fechaHoraTxt(r.primeraVez), fechaConc: CONC_fechaHoraTxt(r.fechaConc), estadoAnterior: r.estadoAnterior || '',
@@ -986,7 +1001,7 @@ function CONC_escribirHistorial(ss, registros) {
   hoja.getRange(2, 1, n, CONC_HIST_ENCABEZADOS.length).setValues(filas);
   hoja.getRange(2, 8, n, 4).setNumberFormat('dd/mm/yyyy hh:mm');
   hoja.getRange(2, 15, n, 4).setNumberFormat('#,##0;-#,##0;0');
-  hoja.autoResizeColumns(2, 17);
+  hoja.setColumnWidths(2, 17, 120);
   hoja.setColumnWidth(1, 160);
   hoja.getRange(1, 1, n + 1, CONC_HIST_ENCABEZADOS.length).createFilter();
 }
@@ -1055,7 +1070,8 @@ function CONC_escribirResultado(ss, res) {
   hoja.getRange(1, colResumen, 1, 2).setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');
   hoja.getRange(resumen.length, colResumen + 1).setNumberFormat('dd/mm/yyyy hh:mm');
 
-  hoja.autoResizeColumns(1, CONC_ENCABEZADOS.length);
+  hoja.setColumnWidths(1, CONC_ENCABEZADOS.length, 120);
+  hoja.setColumnWidth(3, 220); hoja.setColumnWidth(4, 220);
   hoja.setColumnWidth(CONC_ENCABEZADOS.length, 420);
 }
 

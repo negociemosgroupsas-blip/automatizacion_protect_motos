@@ -74,6 +74,7 @@
   tbody tr{cursor:pointer} tbody tr:hover{background:#f0f4fb} tbody tr.menos td{background:#fff5f5}
   td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
   .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.74rem;font-weight:700}
+  .tab.azul{background:linear-gradient(135deg,#1d4ed8,#60a5fa)} .b-azul{background:var(--azulinfo-bg);color:var(--azulinfo)}
   .b-verde{background:var(--verde-bg);color:var(--verde)} .b-rojo{background:var(--rojo-bg);color:var(--rojo)}
   .b-naranja{background:var(--naranja-bg);color:var(--naranja)} .b-gris{background:#e9e9ef;color:#4b4f5a}
   .vacio{padding:28px;text-align:center;color:var(--suave)} .pie{font-size:.75rem;color:var(--suave);padding:8px 16px}
@@ -103,6 +104,7 @@
     <input type="text" id="inputUrlConector" placeholder="Pega aquí la URL del conector (Apps Script)">
     <button class="btn btn-oro" id="btnGuardarUrl">Guardar</button>
     <button class="btn btn-azul" id="btnRecargar" style="background:#0e1a33">Actualizar datos</button>
+    <span id="notaSync" style="font-size:12px;opacity:.8"></span>
   </div>
 </header>
 
@@ -117,6 +119,7 @@
 
   <div class="tabs">
     <button class="tab verde activa" id="tabCons" type="button"><span class="num" id="nCons">–</span><span class="tit">✅ Ya consolidados</span><span class="sub">Aparecen en la lista de pagos</span></button>
+    <button class="tab azul" id="tabDirecto" type="button"><span class="num" id="nDirecto">–</span><span class="tit">💵 Pagaron directo a Protect</span><span class="sub">Marcados a mano</span></button>
     <button class="tab rojo" id="tabFalta" type="button"><span class="num" id="nFalta">–</span><span class="tit">❌ Faltan por consolidar</span><span class="sub">No aparecen en la lista de pagos</span></button>
   </div>
 
@@ -151,6 +154,7 @@
   function norm(s) { return String(s === null || s === undefined ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
   function nombre(f) { return f.clienteProtect || f.clienteCons || '(sin nombre)'; }
   function esCons(f) { return /^Consolidado/.test(f.estado); }
+  function esDirecto(f) { return f.estado === 'Pagó directo a Protect'; }
   function esFalta(f) { return f.estado === 'Falta por consolidar'; }
   function valorCons(f) {
     if (f.sumaPagos) return money(f.c) + ' (suma de ' + f.sumaPagos.n + ' pagos)';
@@ -167,16 +171,16 @@
   function nota(f) { return f.ajuste && f.ajuste.nota ? f.ajuste.nota : ''; }
 
   // Conexión por JSONP (igual que el HTML de cobros). Funciona abriendo el archivo desde el computador.
-  function llamar(tol, ok, fail) {
+  function llamar(tol, ok, fail, lento) {
     var url = $('inputUrlConector').value.trim();
     if (!/^https:\/\/script\.google\.com\//.test(url)) { fail('Pega la URL del conector (termina en /exec) y pulsa Guardar.'); return; }
     var cb = 'conc_cb_' + Date.now(), s = document.createElement('script'), listo = false;
     var limpiar = function () { delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); clearTimeout(t); };
-    var t = setTimeout(function () { if (!listo) { limpiar(); fail('Sin respuesta. Revisa la URL y que la implementación tenga acceso "Cualquier usuario".'); } }, 120000);
+    var t = setTimeout(function () { if (!listo) { limpiar(); fail('Sin respuesta. Revisa la URL y que la implementación tenga acceso "Cualquier usuario".'); } }, 180000);
     window[cb] = function (r) { listo = true; limpiar(); r && r.ok ? ok(r.data) : fail(r && r.error ? r.error : 'Respuesta inválida.'); };
     s.onerror = function () { if (!listo) { limpiar(); fail('No se pudo conectar. Revisa la URL y que el acceso sea "Cualquier usuario".'); } };
     s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=conciliar&token=' + encodeURIComponent(TOKEN) +
-      '&tolerancia=' + encodeURIComponent(tol) + '&callback=' + cb + '&_=' + Date.now();
+      '&tolerancia=' + encodeURIComponent(tol) + (lento ? '' : '&rapido=1') + '&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(s);
   }
   $('btnGuardarUrl').addEventListener('click', function () {
@@ -194,7 +198,7 @@
     s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=ajustar&token=' + encodeURIComponent(TOKEN) +
       '&clave=' + encodeURIComponent(d.clave) + '&decision=' + encodeURIComponent(d.decision) + '&nota=' + encodeURIComponent(d.nota || '') +
       '&cedula=' + encodeURIComponent(d.cedula || '') + '&cliente=' + encodeURIComponent(d.cliente || '') + '&contrato=' + encodeURIComponent(d.contrato || '') +
-      '&callback=' + cb + '&_=' + Date.now();
+      '&rapido=1&tolerancia=' + encodeURIComponent(tolActual()) + '&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(s);
   }
   function llamarAsignar(d, ok, fail) {
@@ -208,7 +212,7 @@
     s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=asignar&token=' + encodeURIComponent(TOKEN) +
       '&clavePago=' + encodeURIComponent(d.clavePago) + '&contrato=' + encodeURIComponent(d.contrato) + '&cedula=' + encodeURIComponent(d.cedula || '') +
       '&cliente=' + encodeURIComponent(d.cliente || '') + '&c=' + encodeURIComponent(d.c === null || d.c === undefined ? '' : d.c) +
-      '&d=' + encodeURIComponent(d.d === null || d.d === undefined ? '' : d.d) + '&callback=' + cb + '&_=' + Date.now();
+      '&d=' + encodeURIComponent(d.d === null || d.d === undefined ? '' : d.d) + '&rapido=1&tolerancia=' + encodeURIComponent(tolActual()) + '&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(s);
   }
   function llamarLote(lista, ok, fail) {
@@ -220,22 +224,43 @@
     window[cb] = function (r) { listo = true; limpiar(); r && r.ok ? ok(r.data) : fail(r && r.error ? r.error : 'Respuesta inválida.'); };
     s.onerror = function () { if (!listo) { limpiar(); fail('No se pudo conectar para guardar.'); } };
     s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=asignarlote&token=' + encodeURIComponent(TOKEN) +
-      '&lote=' + encodeURIComponent(JSON.stringify(lista)) + '&callback=' + cb + '&_=' + Date.now();
+      '&lote=' + encodeURIComponent(JSON.stringify(lista)) + '&rapido=1&tolerancia=' + encodeURIComponent(tolActual()) + '&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(s);
   }
 
+  function tolActual() { var tol = 1000; try { var g = localStorage.getItem('conc_tol2'); if (g !== null && g !== '') tol = g; } catch (e) {} return tol; }
+  var timerSync = null, sincronizando = false;
+  function recibir(r, textoEstado) {
+    datos = r.filas || [];
+    var viejo = !r.acciones || r.acciones.indexOf('asignarlote') < 0 || r.acciones.indexOf('ajustar') < 0;
+    mensaje('ok', textoEstado || ('Datos al día (' + r.generado + ').'));
+    var av = $('avisoVersion'); av.style.display = viejo ? 'block' : 'none';
+    pintar();
+    if (abierta) { var f = datos.filter(function (x) { return x.claveAjuste === abierta; })[0]; if (f) { if (vistaModal === 'contrato' && !esMulti(f)) fichaContrato(f); else if (vistaModal === 'contrato') fichaContrato(f, function () { ficha(f); }); else ficha(f); } else cerrar(); }
+  }
+  // Segundo plano: escribe las columnas F/G de la hoja Consolidado y el historial. No bloquea la pantalla.
+  function sincronizar() {
+    if (sincronizando) { programarSync(6000); return; }
+    sincronizando = true;
+    var nota = $('notaSync'); if (nota) nota.textContent = 'Actualizando la hoja de Google en segundo plano…';
+    llamar(tolActual(), function (r) {
+      sincronizando = false;
+      if (nota) nota.textContent = r.estadoEnHoja && r.estadoEnHoja.escrito ? 'Hoja Consolidado actualizada ✔ (' + r.generado + ')' : '';
+    }, function (msg) { sincronizando = false; if (nota) nota.textContent = 'La hoja de Google no pudo actualizarse sola (' + msg + '). Pulsa «Actualizar datos».'; }, true);
+  }
+  function programarSync(ms) { clearTimeout(timerSync); timerSync = setTimeout(sincronizar, ms || 4000); }
+  // Después de guardar: la respuesta ya trae los datos recalculados, se muestran al instante.
+  function trasGuardar(cont, res) {
+    if (res && res.datos) { recibir(res.datos, 'Guardado ✔ ' + res.datos.generado + '. La hoja de Google se actualiza sola en unos segundos.'); programarSync(4000); }
+    else { avisoLocal(cont, 'ok', 'Guardado ✔ Actualizando los datos…'); cargar(); }
+  }
   function cargar() {
     var btn = $('btnRecargar'); btn.disabled = true; btn.textContent = 'Actualizando…';
-    mensaje('cargando', 'Leyendo las hojas y consolidando, puede tardar unos segundos…');
-    var tol = 1000; try { var g = localStorage.getItem('conc_tol2'); if (g !== null && g !== '') tol = g; } catch (e) {}
-    llamar(tol, function (r) {
+    mensaje('cargando', 'Leyendo las hojas…');
+    llamar(tolActual(), function (r) {
       btn.disabled = false; btn.textContent = 'Actualizar datos';
-      datos = r.filas || [];
-      var viejo = !r.acciones || r.acciones.indexOf('asignarlote') < 0 || r.acciones.indexOf('ajustar') < 0;
-      mensaje('ok', 'Datos al día (' + r.generado + '). ' + (r.estadoEnHoja && r.estadoEnHoja.escrito ? 'Hoja Consolidado actualizada: columna F (estado)' + (r.estadoEnHoja.contrato ? ' y columna G (# contrato)' : '') + ' en ' + r.estadoEnHoja.filas + ' filas.' : ''));
-      var av = $('avisoVersion'); av.style.display = viejo ? 'block' : 'none';
-      pintar();
-      if (abierta) { var f = datos.filter(function (x) { return x.claveAjuste === abierta; })[0]; if (f) { if (vistaModal === 'contrato' && !esMulti(f)) fichaContrato(f); else if (vistaModal === 'contrato') fichaContrato(f, function () { ficha(f); }); else ficha(f); } else cerrar(); }
+      recibir(r);
+      programarSync(1500);
     }, function (msg) { btn.disabled = false; btn.textContent = 'Actualizar datos'; mensaje('error', 'Error: ' + msg); });
   }
   $('btnRecargar').addEventListener('click', cargar);
@@ -256,7 +281,7 @@
     if (q !== ultimaConsulta) { ultimaConsulta = q; verTabla = false; }
     if (q) return datos.filter(function (f) { return coincide(f, q); });
     return datos.filter(function (f) {
-      if (lista === 'cons' ? !esCons(f) : !esFalta(f)) return false;
+      if (!(lista === 'cons' ? esCons(f) : lista === 'directo' ? esDirecto(f) : esFalta(f))) return false;
       if (lista === 'cons' && soloMenos && f.valor !== 'Pagó de menos') return false;
       return true;
     });
@@ -264,7 +289,8 @@
 
   function badge(f) {
     var b = el('span', 'badge');
-    if (esFalta(f)) { b.className += ' b-rojo'; b.textContent = 'Falta por consolidar'; }
+    if (esDirecto(f)) { b.className += ' b-azul'; b.textContent = '💵 Dinero entró directo a Protect'; }
+    else if (esFalta(f)) { b.className += ' b-rojo'; b.textContent = 'Falta por consolidar'; }
     else if (f.estado === 'Sin registro en Protect') { b.className += ' b-gris'; b.textContent = 'Está en Consolidado, no en Protect'; }
     else if (f.estado === 'Consolidado por nombre (revisar)') { b.className += ' b-naranja'; b.textContent = 'Consolidado por nombre (revisar)'; }
     else if (f.valor === 'Pagó de menos') { b.className += ' b-rojo'; b.textContent = '⚠ Consolidado · pagó de menos'; }
@@ -274,9 +300,9 @@
 
   function pintar() {
     var nc = datos.filter(esCons).length, nf = datos.filter(esFalta).length;
-    $('nCons').textContent = fmt.format(nc); $('nFalta').textContent = fmt.format(nf);
+    $('nDirecto').textContent = fmt.format(datos.filter(esDirecto).length); $('nCons').textContent = fmt.format(nc); $('nFalta').textContent = fmt.format(nf);
     var q = consulta();
-    $('tabCons').classList.toggle('activa', !q && lista === 'cons'); $('tabFalta').classList.toggle('activa', !q && lista === 'falta');
+    $('tabCons').classList.toggle('activa', !q && lista === 'cons'); $('tabFalta').classList.toggle('activa', !q && lista === 'falta'); $('tabDirecto').classList.toggle('activa', !q && lista === 'directo');
     var menos = datos.filter(function (f) { return esCons(f) && f.valor === 'Pagó de menos'; });
     var al = $('alerta');
     if (!q && lista === 'cons' && menos.length) {
@@ -286,13 +312,13 @@
     var tb = $('tbody'); tb.textContent = '';
     var rows = actual();
     $('btnDescargar').disabled = !rows.length;
-    $('btnDescargar').textContent = q ? '⬇ Descargar estos resultados' : (lista === 'cons' ? '⬇ Descargar lista de consolidados' : '⬇ Descargar lista de los que faltan');
+    $('btnDescargar').textContent = q ? '⬇ Descargar estos resultados' : (lista === 'cons' ? '⬇ Descargar lista de consolidados' : lista === 'directo' ? '⬇ Descargar lista de pagos directos' : '⬇ Descargar lista de los que faltan');
     var tl = $('tituloLista');
     if (q) {
       var nc = rows.filter(esCons).length, nf = rows.filter(esFalta).length, ns = rows.length - nc - nf;
       tl.textContent = 'Resultados de la búsqueda «' + $('buscar').value.trim() + '»: ' + rows.length + (rows.length === 1 ? ' cliente' : ' clientes') +
         ' (' + nc + ' consolidado' + (nc === 1 ? '' : 's') + ', ' + nf + ' que falta' + (nf === 1 ? '' : 'n') + (ns ? ', ' + ns + ' sin registro en Protect' : '') + ')';
-    } else { tl.textContent = lista === 'cons' ? 'Clientes ya consolidados' : 'Clientes que faltan por consolidar'; }
+    } else { tl.textContent = lista === 'cons' ? 'Clientes ya consolidados' : lista === 'directo' ? 'Clientes que pagaron directo a Protect (no aparecen en Consolidado)' : 'Clientes que faltan por consolidar'; }
     if (!rows.length) { var tr0 = el('tr'), td0 = el('td', 'vacio', !datos.length ? 'Pulsa «Actualizar datos» para cargar la información.' : (q ? 'No se encontró ningún cliente con «' + $('buscar').value.trim() + '». Prueba con menos palabras o solo el apellido.' : 'No hay clientes en esta lista.')); td0.colSpan = 7; tr0.appendChild(td0); tb.appendChild(tr0); }
     rows.forEach(function (f) {
       var tr = el('tr', f.valor === 'Pagó de menos' && esCons(f) ? 'menos' : '');
@@ -324,6 +350,7 @@
   function elegir(l) { $('buscar').value = ''; lista = l; soloMenos = false; pintar(); }
   $('tabCons').addEventListener('click', function () { elegir('cons'); });
   $('tabFalta').addEventListener('click', function () { elegir('falta'); });
+  $('tabDirecto').addEventListener('click', function () { elegir('directo'); });
   $('alerta').addEventListener('click', function () { soloMenos = !soloMenos; pintar(); });
   $('buscar').addEventListener('input', pintar);
   $('btnLimpiar').addEventListener('click', function () { $('buscar').value = ''; pintar(); $('buscar').focus(); });
@@ -350,7 +377,7 @@
           box.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
           avisoLocal(box, 'cargando', 'Guardando la asignación… espera unos segundos.');
           llamarAsignar({ clavePago: p.clavePago, contrato: contrato, cedula: f.cedula, cliente: nombre(f), c: p.c, d: p.d },
-            function () { avisoLocal(box, 'ok', 'Guardado ✔ Actualizando los datos…'); cargar(); },
+            function (res) { trasGuardar(box, res); },
             function (msg) { avisoLocal(box, 'error', 'No se pudo guardar: ' + msg); box.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
         };
         bs.appendChild(b);
@@ -371,7 +398,7 @@
         box.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
         avisoLocal(box, 'cargando', 'Guardando la asignación… espera unos segundos.');
         llamarAsignar({ clavePago: p.clavePago, contrato: real, cedula: f.cedula, cliente: nombre(f), c: p.c, d: p.d },
-          function () { avisoLocal(box, 'ok', 'Guardado ✔ Actualizando los datos…'); cargar(); },
+          function (res) { trasGuardar(box, res); },
           function (msg) { avisoLocal(box, 'error', 'No se pudo guardar: ' + msg); box.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
       };
       bs.appendChild(escribe); bs.appendChild(ir);
@@ -469,7 +496,7 @@
         if (!lote.length) { avisoLocal(d, 'info', 'No hay cambios para guardar.'); return; }
         d.querySelectorAll('button, input').forEach(function (x) { x.disabled = true; });
         avisoLocal(d, 'cargando', 'Guardando ' + lote.length + (lote.length === 1 ? ' cambio' : ' cambios') + '… espera unos segundos.');
-        llamarLote(lote, function () { avisoLocal(d, 'ok', 'Guardado ✔ Actualizando los estados…'); cargar(); },
+        llamarLote(lote, function (res) { trasGuardar(d, res); },
           function (msg) { avisoLocal(d, 'error', 'No se pudo guardar: ' + msg); d.querySelectorAll('button, input').forEach(function (x) { x.disabled = false; }); });
       };
       barra.appendChild(gb);
@@ -512,13 +539,14 @@
           ac.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
           avisoLocal(d, 'cargando', 'Guardando… espera unos segundos.');
           llamarAjuste({ clave: f.claveAjuste, decision: decision, nota: nt.value, cedula: f.cedula, cliente: nombre(f), contrato: f.contrato },
-            function () { avisoLocal(d, 'ok', 'Guardado ✔ Actualizando los datos…'); cargar(); },
+            function (res) { trasGuardar(d, res); },
             function (msg) { avisoLocal(d, 'error', 'No se pudo guardar: ' + msg); ac.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
         };
         ac.appendChild(bt);
       }
       if (esCons(f)) accion('Corregir: marcar como FALTA POR CONSOLIDAR', 'btn-rojo', 'Falta', '¿Marcar a ' + nombre(f) + ' como FALTA POR CONSOLIDAR?');
-      else accion('Marcar como YA CONSOLIDADO', 'btn-verde', 'Consolidado', '¿Marcar a ' + nombre(f) + ' como YA CONSOLIDADO?');
+      else if (!esDirecto(f)) accion('Marcar como YA CONSOLIDADO', 'btn-verde', 'Consolidado', '¿Marcar a ' + nombre(f) + ' como YA CONSOLIDADO?');
+      if (!esDirecto(f)) accion('💵 Dinero entró directo a Protect', 'btn-azul', 'Directo', '¿Marcar a ' + nombre(f) + ' como «Dinero entró directo a Protect»? Pasará a la lista de pagos directos y dejará de aparecer como faltante.');
       accion('Guardar solo la nota', 'btn-info', 'Nota', null);
       if (aj) accion('Quitar ajuste / nota', 'btn-gris', 'Quitar', '¿Quitar el ajuste y la nota de este cliente?');
       d.appendChild(ac);
@@ -533,7 +561,7 @@
   // ---------- Descarga ----------
   $('btnDescargar').addEventListener('click', function () {
     var q = consulta();
-    var rows = q ? actual() : datos.filter(lista === 'cons' ? esCons : esFalta);
+    var rows = q ? actual() : datos.filter(lista === 'cons' ? esCons : lista === 'directo' ? esDirecto : esFalta);
     var cab = ['Cédula', 'Nombre completo', '# Contrato', 'Placa', 'Valor pagado a Dugo Motos', 'Valor pagado en Consolidado (C)', 'Valor pagado en Consolidado (D)', 'Diferencia', 'Estado', 'Nota', 'Asesor', 'Celular'];
     var filas = rows.map(function (f) { var e = f.extra || {};
       return [f.cedula, nombre(f), f.contrato, f.placa, f.pagado, f.c, f.d, f.dif, f.estado + (f.valor === 'Pagó de menos' ? ' · pagó de menos' : ''), nota(f), e.asesor, e.celular]; });
@@ -541,7 +569,7 @@
     var h = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
     var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = (q ? 'busqueda_clientes_' : (lista === 'cons' ? 'clientes_consolidados_' : 'clientes_faltan_por_consolidar_')) + h.getFullYear() + '-' + z(h.getMonth() + 1) + '-' + z(h.getDate()) + '.csv';
+    a.download = (q ? 'busqueda_clientes_' : (lista === 'cons' ? 'clientes_consolidados_' : lista === 'directo' ? 'clientes_pagaron_directo_' : 'clientes_faltan_por_consolidar_')) + h.getFullYear() + '-' + z(h.getMonth() + 1) + '-' + z(h.getDate()) + '.csv';
     document.body.appendChild(a); a.click(); a.remove();
   });
 

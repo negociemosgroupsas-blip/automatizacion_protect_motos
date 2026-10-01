@@ -29,14 +29,14 @@ function doGet(e) {
  * Llamada desde la pantalla. Calcula, escribe la hoja "Conciliacion_Dugo" y devuelve los resultados.
  * @param {number|string} tolerancia pesos de diferencia aceptados (por defecto CONC_TOLERANCIA)
  */
-function CONC_apiConciliar(tolerancia) {
+function CONC_apiConciliar(tolerancia, rapido) {
   var tol = Number(tolerancia);
   if (tolerancia === '' || tolerancia === null || tolerancia === undefined || isNaN(tol) || tol < 0) {
     tol = CONC_TOLERANCIA;
   }
 
   var ss = SpreadsheetApp.openById(CONC_SHEET_ID);
-  var out = CONC_procesar(ss, tol);
+  var out = CONC_procesar(ss, tol, !!rapido);
 
   return {
     tolerancia: tol,
@@ -48,7 +48,8 @@ function CONC_apiConciliar(tolerancia) {
     atipicos: out.atipicos,
     columnas: out.columnas,
     estadoEnHoja: out.estadoEnHoja,
-    version: 'v9',
+    version: 'v10',
+    rapido: !!rapido,
     acciones: ['conciliar', 'ajustar', 'asignar', 'asignarlote'], // la pantalla usa esto para avisar si el código publicado está desactualizado
     diag: out.diag,
     generado: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
@@ -62,7 +63,7 @@ function CONC_respuestaJsonp(params) {
     if (params.token !== CONC_TOKEN) {
       salida = { ok: false, error: 'Token inválido.' };
     } else {
-      salida = { ok: true, data: CONC_apiConciliar(params.tolerancia) };
+      salida = { ok: true, data: CONC_apiConciliar(params.tolerancia, params.rapido === '1') };
     }
   } catch (err) {
     salida = { ok: false, error: String(err && err.message ? err.message : err) };
@@ -83,7 +84,7 @@ function CONC_respuestaAjuste(params) {
       salida = { ok: false, error: 'Token inválido.' };
     } else {
       var r = CONC_apiAjustar(params.clave, params.decision, params.nota, params.cedula, params.cliente, params.contrato);
-      salida = { ok: true, data: r };
+      salida = { ok: true, data: { guardado: r, datos: params.rapido === '1' ? CONC_apiConciliar(params.tolerancia, true) : null } };
     }
   } catch (err) {
     salida = { ok: false, error: String(err && err.message ? err.message : err) };
@@ -109,7 +110,8 @@ function CONC_respuestaAsignar(params) {
     if (params.token !== CONC_TOKEN) {
       salida = { ok: false, error: 'Token inválido.' };
     } else {
-      salida = { ok: true, data: CONC_apiAsignar(params.clavePago, params.contrato, params.cedula, params.cliente, params.c, params.d) };
+      var ra = CONC_apiAsignar(params.clavePago, params.contrato, params.cedula, params.cliente, params.c, params.d);
+      salida = { ok: true, data: { guardado: ra, datos: params.rapido === '1' ? CONC_apiConciliar(params.tolerancia, true) : null } };
     }
   } catch (err) {
     salida = { ok: false, error: String(err && err.message ? err.message : err) };
@@ -136,7 +138,8 @@ function CONC_respuestaAsignarLote(params) {
       salida = { ok: false, error: 'Token inválido.' };
     } else {
       var lista = JSON.parse(params.lote || '[]');
-      salida = { ok: true, data: CONC_guardarAsignaciones(SpreadsheetApp.openById(CONC_SHEET_ID), lista) };
+      var rl = CONC_guardarAsignaciones(SpreadsheetApp.openById(CONC_SHEET_ID), lista);
+      salida = { ok: true, data: { guardado: rl, datos: params.rapido === '1' ? CONC_apiConciliar(params.tolerancia, true) : null } };
     }
   } catch (err) {
     salida = { ok: false, error: String(err && err.message ? err.message : err) };
