@@ -44,6 +44,7 @@ function CONC_apiConciliar(tolerancia) {
     hist: out.hist,
     atipicos: out.atipicos,
     columnas: out.columnas,
+    estadoEnHoja: out.estadoEnHoja,
     generado: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
   };
 }

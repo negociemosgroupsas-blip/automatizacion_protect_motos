@@ -6,7 +6,10 @@
  * No crea triggers. Se ejecuta a mano: elegir CONC_conciliar y pulsar "Ejecutar".
  *
  * Solo LEE las hojas "Protect" y "Consolidados".
- * Solo ESCRIBE en dos hojas propias (las crea si no existen):
+ * ÚNICA escritura en una hoja tuya: la columna F de "Consolidados" (estado de cada fila: "Consolidado",
+ * "Pagó de menos", "Sin registro en Protect"...). Si la columna F ya tiene datos que no son de esta
+ * automatización, NO la sobrescribe. Se desactiva con CONC_ESCRIBIR_ESTADO_CONS = false.
+ * Además escribe en dos hojas propias (las crea si no existen):
  *   - "Conciliacion_Dugo": foto actual, se reescribe en cada corrida.
  *   - "Historial_Consolidacion": seguimiento permanente (desde cuándo está consolidado cada contrato, cuánto lleva pendiente).
  *
@@ -25,6 +28,11 @@ var CONC_HOJA_RESULTADO = 'Conciliacion_Dugo';
 
 var CONC_HOJA_HISTORIAL = 'Historial_Consolidacion';
 var CONC_DIAS_RECIENTE = 7; // ventana para "conciliados / nuevos / cambios de la semana"
+
+// Estado de cada fila de Consolidados, escrito en esta columna (6 = F) con el título de la fila 2
+var CONC_ESCRIBIR_ESTADO_CONS = true;
+var CONC_COL_ESTADO_CONS = 6;
+var CONC_TITULO_ESTADO_CONS = 'Estado de consolidación';
 
 var CONC_TOLERANCIA = 0; // pesos de diferencia aceptados para considerar "Conciliado"
 
@@ -95,7 +103,8 @@ function CONC_procesar(ss, tol) {
     var ah = CONC_aplicarHistorial(res.filas, previos, new Date());
     CONC_escribirResultado(ss, res);
     CONC_escribirHistorial(ss, ah.registros);
-    return { res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas), columnas: columnas };
+    var estadoEnHoja = CONC_escribirEstadoEnConsolidados(hojaCons, lectura.filas);
+    return { estadoEnHoja: estadoEnHoja, res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas), columnas: columnas };
   } finally {
     lock.releaseLock();
   }
@@ -324,12 +333,15 @@ function CONC_calcular(protect, cons, tol) {
       }
       f.obs = notas.join(' ');
       salida.push(f);
+      var txtFila = CONC_textoFila(f);
+      a.filas.forEach(function (r) { r.estadoFila = txtFila; });
     });
   });
 
   // Personas que están en Consolidados pero no en Protect
   cons.forEach(function (r) {
-    if (r.usada) return;
+    if (r.usada) { if (!r.estadoFila) r.estadoFila = CONC_ESTADO.CONCILIADO; return; }
+    r.estadoFila = CONC_ESTADO.SIN_PROTECT;
     salida.push({
       estado: CONC_ESTADO.SIN_PROTECT, cedula: r.cedula, clienteCons: r.cliente, clienteProtect: '', placa: '', contrato: '',
       pagado: null, c: r.c, d: r.d, concordo: '', valor: '', dif: null, difC: null, difD: null, cruce: 'Sin cruce',
@@ -390,6 +402,61 @@ function CONC_asignar(contratos, filas, tol) {
     res[mejor].filas.push(filas[j]); if (!res[mejor].metodo) res[mejor].metodo = 'orden'; usada[j] = true;
   });
   return res;
+}
+
+// Texto del estado para la fila de Consolidados, según el contrato al que se asignó
+function CONC_textoFila(f) {
+  if (f.estado === CONC_ESTADO.POR_NOMBRE) return CONC_ESTADO.POR_NOMBRE;
+  var t = f.valor === CONC_VALOR.MENOS ? CONC_VALOR.MENOS : CONC_ESTADO.CONCILIADO;
+  if (f.valor === CONC_VALOR.MAS) t += ' · pagó de más';
+  if (f.porOrden) t += ' · por orden (revisar)';
+  return t;
+}
+
+function CONC_colorFila(t) {
+  if (/^Pagó de menos/.test(t)) return '#ea4335';
+  if (/revisar|nombre/i.test(t)) return '#fce5cd';
+  if (/^Sin registro/.test(t)) return '#e6e6e6';
+  if (/más/.test(t)) return '#cfe2f3';
+  return '#d9ead3';
+}
+
+function CONC_esEstadoPropio(v) {
+  return /^(Consolidado|Pagó de menos|Sin registro en Protect)/.test(String(v));
+}
+
+// Escribe SOLO la columna F de Consolidados (estado de cada fila). No sobrescribe datos ajenos.
+function CONC_escribirEstadoEnConsolidados(hoja, filasCons) {
+  if (!CONC_ESCRIBIR_ESTADO_CONS || !filasCons.length) return { escrito: false };
+  var col = CONC_COL_ESTADO_CONS;
+  var ultima = hoja.getLastRow();
+  var ini = CONC_CONS_FILA_INICIO;
+  var n = ultima - ini + 1;
+  var actual = hoja.getRange(ini, col, n, 1).getValues();
+  for (var i = 0; i < actual.length; i++) {
+    var v = actual[i][0];
+    if (!CONC_vacio(v) && !CONC_esEstadoPropio(v)) {
+      throw new Error('La columna F de "' + hoja.getName() + '" ya tiene datos que no son de esta automatización (fila ' + (ini + i) +
+        ': "' + v + '"). No se sobrescribe. Muévelos o cambia CONC_COL_ESTADO_CONS.');
+    }
+  }
+  var titulo = hoja.getRange(ini - 1, col).getValue();
+  if (!CONC_vacio(titulo) && titulo !== CONC_TITULO_ESTADO_CONS) {
+    throw new Error('El título de la columna F de "' + hoja.getName() + '" (fila ' + (ini - 1) + ') es "' + titulo + '". No se sobrescribe.');
+  }
+  var porFila = {};
+  filasCons.forEach(function (r) { porFila[r.fila] = r.estadoFila || ''; });
+  var textos = [], colores = [], fuentes = [];
+  for (var k = 0; k < n; k++) {
+    var t = porFila[ini + k] || '';
+    textos.push([t]);
+    colores.push([t ? CONC_colorFila(t) : null]);
+    fuentes.push([/^Pagó de menos/.test(t) ? '#ffffff' : '#000000']);
+  }
+  hoja.getRange(ini - 1, col).setValue(CONC_TITULO_ESTADO_CONS).setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');
+  var rango = hoja.getRange(ini, col, n, 1);
+  rango.setValues(textos).setBackgrounds(colores).setFontColors(fuentes).setFontWeight('bold');
+  return { escrito: true, columna: col, filas: Object.keys(porFila).length };
 }
 
 // ¿Pagó lo que era? Compara C y D de Consolidados contra Protect!P. No cambia el estado de consolidación.
