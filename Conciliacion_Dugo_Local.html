@@ -98,6 +98,12 @@
   .col-top{display:flex;flex-direction:column;gap:8px;}
   .descarga{border:2px solid var(--azul);background:#fff;color:var(--azul);border-radius:10px;padding:8px 12px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;}
   .descarga:hover{background:var(--azul);color:#fff;} .descarga:disabled{opacity:.45;cursor:not-allowed;background:#fff;color:var(--azul);}
+  .diag{display:none;background:#fff;border:1px solid var(--borde);border-radius:14px;padding:14px 18px;margin-bottom:20px;font-size:.82rem;}
+  .diag.on{display:block;} .diag h3{margin:0 0 8px;font-size:.95rem;color:var(--azul);}
+  .diag .resumen{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:6px 18px;margin-bottom:10px;}
+  .diag .resumen div{background:#f8f9fb;border-radius:8px;padding:6px 10px;} .diag .resumen b{font-size:1rem;}
+  .diag table{font-size:.78rem;} .diag .dos{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px;}
+  .linkdiag{background:none;border:none;color:var(--azulinfo);cursor:pointer;font-size:.8rem;font-weight:600;padding:0;margin:0 0 14px;text-decoration:underline;display:block;}
   .semaforo.azul{background:var(--azulinfo-bg);color:var(--azulinfo);}
   .alarma{display:none;background:linear-gradient(135deg,#b91c1c,#dc2626);color:#fff;border-radius:14px;padding:14px 18px;margin-bottom:20px;box-shadow:0 4px 18px rgba(220,38,38,.35);animation:pulso 2s ease-in-out infinite;}
   .alarma.on{display:block;}
@@ -132,6 +138,9 @@
 
 <main>
   <div class="estado-conexion" id="estadoConexion"></div>
+
+  <button class="linkdiag" id="btnDiag" type="button">🔍 Ver diagnóstico del cruce entre las dos hojas</button>
+  <div class="diag" id="diag"></div>
 
   <div class="botones-top" id="botonesTop">
     <div class="col-top">
@@ -242,7 +251,7 @@
   };
   var SEM_VALOR = { 'Pagó lo correcto': 'verde', 'Pagó de más': 'azul', 'Pagó de menos': 'rojo', 'Sin valor para comparar': 'gris' };
   function semValor(v) { if (!v) return document.createTextNode(''); var s = el('span', 'semaforo ' + (SEM_VALOR[v] || 'gris')); s.appendChild(el('span', 'punto')); s.appendChild(document.createTextNode(v)); return s; }
-  var histRes = {}, datos = [], filtroActivo = null, textoLista = '';
+  var diagDatos = null, histRes = {}, datos = [], filtroActivo = null, textoLista = '';
   var $ = function (id) { return document.getElementById(id); };
   var fmt = new Intl.NumberFormat('es-CO');
   function num(v) { return v === null || v === undefined || v === '' ? '' : fmt.format(v); }
@@ -301,12 +310,39 @@
       msg += det.length ? ' En Consolidados se usa ' + det.join(' y ') + ' para asignar cada pago a su contrato.' : ' Consolidados no trae placa ni contrato: se cruza por cédula.';
       if (r.estadoEnHoja && r.estadoEnHoja.escrito) msg += ' Columna F de la hoja Consolidado actualizada (' + r.estadoEnHoja.filas + ' filas).';
       estadoConexion('ok', msg);
-      histRes = hs; pintarContadores(r.resumen || {}); pintarAlarma(); buscar(); if (filtroActivo) pintarListado();
+      diagDatos = r.diag || null; pintarDiag(); histRes = hs; pintarContadores(r.resumen || {}); pintarAlarma(); buscar(); if (filtroActivo) pintarListado();
     }, function (msg) {
       btn.disabled = false; btn.textContent = 'Actualizar datos';
       estadoConexion('error', 'Error: ' + msg);
     });
   }
+
+  function pintarDiag() {
+    var box = $('diag'); box.textContent = '';
+    var d = diagDatos; if (!d) return;
+    box.appendChild(el('h3', '', 'Diagnóstico del cruce por cédula'));
+    var res = el('div', 'resumen');
+    [['Filas leídas de Protect', d.protectFilas], ['Filas leídas de Consolidado', d.consFilas],
+     ['Cédulas distintas en Protect', d.protectCedulas], ['Cédulas distintas en Consolidado', d.consCedulas],
+     ['Cédulas que coinciden en ambas', d.cedulasQueCoinciden], ['Protect sin cédula', d.protectSinCedula], ['Consolidado sin cédula', d.consSinCedula]
+    ].forEach(function (p) { var c = el('div'); c.appendChild(document.createTextNode(p[0] + ': ')); c.appendChild(el('b', '', fmt.format(p[1]))); res.appendChild(c); });
+    box.appendChild(res);
+    box.appendChild(el('p', 'obs', 'Si «Cédulas que coinciden» es muy bajo frente a «Cédulas distintas en Consolidado», las cédulas están escritas distinto en cada hoja. Compara abajo los ejemplos que no cruzaron.'));
+    var dos = el('div', 'dos');
+    function tabla(titulo, lista) {
+      var w = el('div'); w.appendChild(el('b', '', titulo));
+      var t = el('table'), th = el('thead'), tr = el('tr');
+      ['Fila', 'Cédula tal como está', 'Cédula que entiende el sistema', 'Cliente'].forEach(function (x) { tr.appendChild(el('th', '', x)); }); th.appendChild(tr); t.appendChild(th);
+      var tb = el('tbody');
+      if (!lista.length) { var r0 = el('tr'), c0 = el('td', 'vacio', 'Ninguno'); c0.colSpan = 4; r0.appendChild(c0); tb.appendChild(r0); }
+      lista.forEach(function (x) { var r1 = el('tr'); [x.fila, x.original, x.normalizada, x.cliente].forEach(function (v) { r1.appendChild(el('td', '', v === undefined || v === null ? '' : String(v))); }); tb.appendChild(r1); });
+      t.appendChild(tb); w.appendChild(t); return w;
+    }
+    dos.appendChild(tabla('Ejemplos de Consolidado que NO aparecen en Protect', d.muestraConsSinCruce || []));
+    dos.appendChild(tabla('Ejemplos de Protect que NO aparecen en Consolidado', d.muestraProtectSinCruce || []));
+    box.appendChild(dos);
+  }
+  $('btnDiag').addEventListener('click', function () { $('diag').classList.toggle('on'); });
 
   var tituloBase = document.title;
   function pintarAlarma() {

@@ -104,7 +104,7 @@ function CONC_procesar(ss, tol) {
     CONC_escribirResultado(ss, res);
     CONC_escribirHistorial(ss, ah.registros);
     var estadoEnHoja = CONC_escribirEstadoEnConsolidados(hojaCons, lectura.filas);
-    return { estadoEnHoja: estadoEnHoja, res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas), columnas: columnas };
+    return { diag: CONC_diagnostico(protect, lectura.filas, res.filas), estadoEnHoja: estadoEnHoja, res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas), columnas: columnas };
   } finally {
     lock.releaseLock();
   }
@@ -462,6 +462,30 @@ function CONC_escribirEstadoEnConsolidados(hoja, filasCons) {
   return { escrito: true, columna: col, filas: Object.keys(porFila).length };
 }
 
+// Diagnóstico del cruce: ayuda a ver por qué las cédulas de las dos hojas coinciden o no
+function CONC_diagnostico(protect, cons, filas) {
+  var kp = {}, kc = {}, vacP = 0, vacC = 0;
+  protect.forEach(function (p) { var k = CONC_normCedula(p.cedula); if (!k) vacP++; else kp[k] = true; });
+  cons.forEach(function (r) { var k = CONC_normCedula(r.cedula); if (!k) vacC++; else kc[k] = true; });
+  var coinc = 0, kcLista = Object.keys(kc);
+  kcLista.forEach(function (k) { if (kp[k]) coinc++; });
+  var muestraCons = [], muestraProt = [];
+  filas.forEach(function (f) {
+    if (f.estado === CONC_ESTADO.SIN_PROTECT && muestraCons.length < 12) {
+      muestraCons.push({ fila: f.filaCons, original: String(f.cedula), normalizada: CONC_normCedula(f.cedula), cliente: f.clienteCons });
+    }
+    if (f.estado === CONC_ESTADO.FALTA && muestraProt.length < 12) {
+      muestraProt.push({ fila: f.filaProtect, original: String(f.cedula), normalizada: CONC_normCedula(f.cedula), cliente: f.clienteProtect });
+    }
+  });
+  return {
+    protectFilas: protect.length, consFilas: cons.length,
+    protectCedulas: Object.keys(kp).length, consCedulas: kcLista.length,
+    protectSinCedula: vacP, consSinCedula: vacC, cedulasQueCoinciden: coinc,
+    muestraConsSinCruce: muestraCons, muestraProtectSinCruce: muestraProt
+  };
+}
+
 // ¿Pagó lo que era? Compara C y D de Consolidados contra Protect!P. No cambia el estado de consolidación.
 function CONC_mejorValor(filas, pagado, tol) {
   filas.forEach(function (r) { r.c = CONC_sinCero(r.c); r.d = CONC_sinCero(r.d); });
@@ -760,7 +784,8 @@ function CONC_aNumero(v) {
 
 function CONC_normCedula(v) {
   if (CONC_vacio(v)) return '';
-  var s = String(v).replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+  var s = String(v).replace(/\.0+$/, '').replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+  s = s.replace(/^(CC|CE|TI|NIT|NI|PA|PP|PEP|DNI)(?=\d)/, ''); // "CC 1033256529" => "1033256529"
   return s.replace(/^0+(?=\d)/, '');
 }
 
