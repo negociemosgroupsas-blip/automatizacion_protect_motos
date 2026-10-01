@@ -17,6 +17,7 @@ var CONC_TOKEN = 'PM-CONC-3e97c3a8bb5298ef9d192391';
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
   if (params.action === 'conciliar') return CONC_respuestaJsonp(params);
+  if (params.action === 'ajustar') return CONC_respuestaAjuste(params);
   return HtmlService.createHtmlOutputFromFile('Conciliacion_Dugo')
     .setTitle('Conciliación Dugo Motos')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
@@ -68,4 +69,31 @@ function CONC_respuestaJsonp(params) {
       .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
   return ContentService.createTextOutput(JSON.stringify(salida)).setMimeType(ContentService.MimeType.JSON);
+}
+
+/** Ajuste manual (Consolidado / Falta / Quitar) desde el HTML local. Exige el token. */
+function CONC_respuestaAjuste(params) {
+  var salida;
+  try {
+    if (params.token !== CONC_TOKEN) {
+      salida = { ok: false, error: 'Token inválido.' };
+    } else {
+      var r = CONC_apiAjustar(params.clave, params.decision, params.nota, params.cedula, params.cliente, params.contrato);
+      salida = { ok: true, data: r };
+    }
+  } catch (err) {
+    salida = { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+  var cb = params.callback;
+  if (cb && /^[A-Za-z_$][\w$.]*$/.test(cb)) {
+    return ContentService.createTextOutput(cb + '(' + JSON.stringify(salida) + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(JSON.stringify(salida)).setMimeType(ContentService.MimeType.JSON);
+}
+
+/** Guarda la decisión en la hoja "Ajustes_Manuales". decision: 'Consolidado' | 'Falta' | 'Quitar'. */
+function CONC_apiAjustar(clave, decision, nota, cedula, cliente, contrato) {
+  var ss = SpreadsheetApp.openById(CONC_SHEET_ID);
+  return CONC_guardarAjuste(ss, { clave: clave, decision: decision, nota: nota, cedula: cedula, cliente: cliente, contrato: contrato });
 }

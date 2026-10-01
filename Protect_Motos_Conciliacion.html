@@ -104,6 +104,10 @@
   .diag .resumen div{background:#f8f9fb;border-radius:8px;padding:6px 10px;} .diag .resumen b{font-size:1rem;}
   .diag table{font-size:.78rem;} .diag .dos{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px;}
   .linkdiag{background:none;border:none;color:var(--azulinfo);cursor:pointer;font-size:.8rem;font-weight:600;padding:0;margin:0 0 14px;text-decoration:underline;display:block;}
+  .ajuste{margin:12px 0 4px;padding:12px 14px;border:2px dashed #cbd5e1;border-radius:12px;background:#f8fafc;}
+  .ajuste h4{margin:0 0 6px;} .ajuste input{width:100%;padding:8px 10px;border:1px solid var(--borde);border-radius:8px;font-size:.82rem;margin:6px 0 8px;font-family:inherit;}
+  .ajuste-botones{display:flex;gap:8px;flex-wrap:wrap;} .ajuste-actual{font-size:.82rem;font-weight:700;color:#7c3aed;margin:4px 0;}
+  .btn-verde{background:var(--verde);color:#fff;} .btn-rojo{background:var(--rojo);color:#fff;}
   .semaforo.azul{background:var(--azulinfo-bg);color:var(--azulinfo);}
   .alarma{display:none;background:linear-gradient(135deg,#b91c1c,#dc2626);color:#fff;border-radius:14px;padding:14px 18px;margin-bottom:20px;box-shadow:0 4px 18px rgba(220,38,38,.35);animation:pulso 2s ease-in-out infinite;}
   .alarma.on{display:block;}
@@ -293,6 +297,20 @@
     try { localStorage.setItem('conc_url', $('inputUrlConector').value.trim()); } catch (e) {}
     cargar();
   });
+  function llamarAjuste(d, ok, fail) {
+    var url = $('inputUrlConector').value.trim();
+    if (!/^https:\/\/script\.google\.com\//.test(url)) { fail('Pega la URL del conector y pulsa Guardar.'); return; }
+    var cb = 'conc_aj_' + Date.now(), s = document.createElement('script'), listo = false;
+    var limpiar = function () { delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); clearTimeout(t); };
+    var t = setTimeout(function () { if (!listo) { limpiar(); fail('Sin respuesta al guardar el ajuste.'); } }, 60000);
+    window[cb] = function (r) { listo = true; limpiar(); r && r.ok ? ok(r.data) : fail(r && r.error ? r.error : 'Respuesta inválida.'); };
+    s.onerror = function () { if (!listo) { limpiar(); fail('No se pudo conectar para guardar el ajuste.'); } };
+    s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=ajustar&token=' + encodeURIComponent(TOKEN) +
+      '&clave=' + encodeURIComponent(d.clave) + '&decision=' + encodeURIComponent(d.decision) + '&nota=' + encodeURIComponent(d.nota || '') +
+      '&cedula=' + encodeURIComponent(d.cedula || '') + '&cliente=' + encodeURIComponent(d.cliente || '') + '&contrato=' + encodeURIComponent(d.contrato || '') +
+      '&callback=' + cb + '&_=' + Date.now();
+    document.head.appendChild(s);
+  }
 
   function cargar() {
     var btn = $('btnRecargar'); btn.disabled = true; btn.textContent = 'Conciliando…';
@@ -426,6 +444,39 @@
 
   function campo(etq, val) { var c = el('div', 'campo'); c.appendChild(el('div', 'etiqueta', etq)); c.appendChild(el('div', 'valor', val === undefined || val === null || val === '' ? '—' : String(val))); return c; }
 
+  function panelAjuste(f) {
+    var box = el('div', 'ajuste'), aj = f.ajuste;
+    box.appendChild(el('h4', '', 'Ajuste manual del estado'));
+    if (aj) {
+      var cur = el('p', 'ajuste-actual', 'Ajuste activo: ' + (aj.decision === 'Falta' ? 'Falta por consolidar (no es un pago)' : 'Consolidado') +
+        (aj.fecha ? ' · ' + aj.fecha : '') + (aj.nota ? ' · Nota: ' + aj.nota : ''));
+      box.appendChild(cur);
+    } else {
+      box.appendChild(el('p', 'obs', 'Si lo que aparece en Consolidado no es un pago real, o si el pago llegó por otro lado, corrige el estado aquí. Se guarda y se mantiene en cada actualización.'));
+    }
+    var nota = el('input'); nota.type = 'text'; nota.placeholder = 'Nota (opcional): por qué lo cambias'; nota.maxLength = 300;
+    if (aj && aj.nota) nota.value = aj.nota;
+    box.appendChild(nota);
+    var fila = el('div', 'ajuste-botones');
+    function boton(txt, cls, decision) {
+      var b = el('button', 'btn btn-sm ' + cls, txt); b.type = 'button';
+      b.onclick = function () {
+        var que = decision === 'Quitar' ? 'quitar el ajuste manual' : ('marcar como ' + (decision === 'Falta' ? '«Falta por consolidar»' : '«Consolidado»'));
+        if (!window.confirm('¿Seguro que quieres ' + que + ' del contrato ' + (f.contrato || '') + ' de ' + (f.clienteProtect || f.clienteCons || '') + '?')) return;
+        fila.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
+        llamarAjuste({ clave: f.claveAjuste, decision: decision, nota: nota.value, cedula: f.cedula, cliente: f.clienteProtect || f.clienteCons, contrato: f.contrato }, function () {
+          cargar();
+        }, function (msg) { estadoConexion('error', 'No se pudo guardar el ajuste: ' + msg); fila.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
+      };
+      return b;
+    }
+    if (/^Consolidado/.test(f.estado)) fila.appendChild(boton('Marcar como Falta por consolidar (no es un pago)', 'btn-rojo', 'Falta'));
+    else fila.appendChild(boton('Marcar como Consolidado', 'btn-verde', 'Consolidado'));
+    if (aj) fila.appendChild(boton('Quitar ajuste manual', 'btn-gris', 'Quitar'));
+    box.appendChild(fila);
+    return box;
+  }
+
   function poliza(f) {
     var e = ex(f), t = el('div', 'tarjeta-poliza');
     var enProtect = f.filaProtect !== '' && f.filaProtect !== null && f.filaProtect !== undefined;
@@ -448,6 +499,7 @@
       ].forEach(function (p) { sg.appendChild(campo(p[0], p[1])); });
       t.appendChild(el('h4', '', 'Seguimiento del contrato')); t.appendChild(sg);
     }
+    if (f.claveAjuste) t.appendChild(panelAjuste(f));
     var h = el('h4', '', 'Consolidación '); h.appendChild(semaforo(f.estado));
     if (f.asignacion) { var asg = el('span', 'semaforo ' + (f.porOrden ? 'naranja' : (/contrato|placa/.test(f.asignacion) ? 'verde' : 'gris')), f.asignacion); h.appendChild(asg); }
     t.appendChild(h);
@@ -500,7 +552,7 @@
     var lista = visiblesLista();
     if (!lista.length) { var tr0 = el('tr'), td0 = el('td', 'vacio', 'Sin resultados.'); td0.colSpan = 13; tr0.appendChild(td0); tb.appendChild(tr0); }
     lista.forEach(function (f) {
-      var tr = el('tr', 'clic' + (f.valor === 'Pagó de menos' ? ' fila-alarma' : '')), e = ex(f), td = el('td'); td.appendChild(semaforo(f.estado)); if (f.porOrden) { var ob = el('span', 'tag-seg mal', ' · por orden (revisar)'); td.appendChild(ob); } tr.appendChild(td);
+      var tr = el('tr', 'clic' + (f.valor === 'Pagó de menos' ? ' fila-alarma' : '')), e = ex(f), td = el('td'); td.appendChild(semaforo(f.estado)); if (f.porOrden) { var ob = el('span', 'tag-seg mal', ' · por orden (revisar)'); td.appendChild(ob); } if (f.ajuste) { td.appendChild(el('span', 'tag-seg', ' · ajuste manual')); } tr.appendChild(td);
       [f.clienteProtect || f.clienteCons, f.cedula, f.placa, f.contrato, e.forma, e.estadoCliente].forEach(function (v) { tr.appendChild(el('td', '', v || '')); });
       var tdS = el('td'); tdS.appendChild(seguimiento(f)); tr.appendChild(tdS);
       tr.appendChild(el('td', 'num', num(f.pagado))); tr.appendChild(el('td', 'num', num(f.c))); tr.appendChild(el('td', 'num', num(f.d)));

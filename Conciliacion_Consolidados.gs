@@ -27,6 +27,7 @@ var CONC_HOJA_CONSOLIDADOS = 'Consolidado';
 var CONC_HOJA_RESULTADO = 'Conciliacion_Dugo';
 
 var CONC_HOJA_HISTORIAL = 'Historial_Consolidacion';
+var CONC_HOJA_AJUSTES = 'Ajustes_Manuales'; // correcciones hechas a mano desde el HTML (se conservan entre corridas)
 var CONC_DIAS_RECIENTE = 7; // ventana para "conciliados / nuevos / cambios de la semana"
 
 // Estado de cada fila de Consolidados, escrito en esta columna (6 = F) con el título de la fila 2
@@ -99,7 +100,8 @@ function CONC_procesar(ss, tol) {
     var protect = CONC_leerProtect(hojaProtect);
     var lectura = CONC_leerConsolidados(hojaCons);
     var columnas = CONC_detectarColumnas(lectura.filas, protect, lectura.encabezados);
-    var res = CONC_calcular(protect, lectura.filas, tol);
+    var ajustes = CONC_leerAjustes(ss);
+    var res = CONC_calcular(protect, lectura.filas, tol, ajustes);
     var previos = CONC_leerHistorial(ss);
     var ah = CONC_aplicarHistorial(res.filas, previos, new Date());
     CONC_escribirResultado(ss, res);
@@ -235,7 +237,7 @@ function CONC_detectarColumnas(cons, protect, encabezados) {
 //   1) por valor exacto (la fila cuyo C o D es igual a Protect!P de ese contrato);
 //   2) las filas que sobran, por orden, a los contratos que quedaron sin pago ("Asignado por orden (revisar)");
 //   3) el contrato que se queda sin fila => "Falta por consolidar".
-function CONC_calcular(protect, cons, tol) {
+function CONC_calcular(protect, cons, tol, ajustes) {
   // 0) Filas de Consolidados que traen número de contrato o placa: van directo a su contrato
   var porContrato = {}, porPlaca = {};
   protect.forEach(function (p) {
@@ -262,14 +264,39 @@ function CONC_calcular(protect, cons, tol) {
     if (r.kNom) (consPorNombre[r.kNom] = consPorNombre[r.kNom] || []).push(r);
   });
 
-  // Agrupar contratos de Protect por persona (cédula; si no, nombre)
-  var grupos = {}, orden = [], sinGrupo = [];
+  // Agrupar contratos de Protect por persona. 1) por cédula; 2) los que no cruzan por cédula, por nombre
+  // (exacto o aproximado) entre las filas de Consolidado que todavía no tienen dueño.
+  var grupos = {}, orden = [], sinGrupo = [], pendientesNombre = [];
   protect.forEach(function (p) {
     p.kCed = CONC_normCedula(p.cedula);
     p.kNom = CONC_normNombre(p.cliente);
+    p.tokNom = CONC_tokensNombre(p.cliente);
+    if (p.kCed && consPorCedula[p.kCed]) {
+      var gk = 'C:' + p.kCed;
+      if (!grupos[gk]) { grupos[gk] = { cruce: 'Cédula', filas: consPorCedula[p.kCed], contratos: [] }; orden.push(gk); }
+      grupos[gk].contratos.push(p);
+    } else {
+      pendientesNombre.push(p);
+    }
+  });
+  orden.forEach(function (gk) { grupos[gk].filas.forEach(function (r) { r.usada = true; }); });
+
+  var libresPorToken = {};
+  cons.forEach(function (r) {
+    if (r.usada || r.directa) return;
+    r.tokNom = CONC_tokensNombre(r.cliente);
+    r.tokNom.forEach(function (t) { (libresPorToken[t] = libresPorToken[t] || []).push(r); });
+  });
+  var cacheNombre = {};
+  pendientesNombre.forEach(function (p) {
     var gk = null, cruce = '', filas = null;
-    if (p.kCed && consPorCedula[p.kCed]) { gk = 'C:' + p.kCed; cruce = 'Cédula'; filas = consPorCedula[p.kCed]; }
-    else if (p.kNom && consPorNombre[p.kNom]) { gk = 'N:' + p.kNom; cruce = 'Nombre (revisar)'; filas = consPorNombre[p.kNom]; }
+    if (p.tokNom.length >= 2) {
+      var m = cacheNombre[p.kNom] !== undefined ? cacheNombre[p.kNom] : (cacheNombre[p.kNom] = CONC_buscarPorNombre(p.tokNom, libresPorToken));
+      if (m) {
+        gk = 'N:' + p.kNom; cruce = m.exacto ? 'Nombre (revisar)' : 'Nombre aproximado (revisar)'; filas = m.filas;
+        filas.forEach(function (r) { r.usada = true; });
+      }
+    }
     if (!gk && p.directRows.length) { gk = 'D:' + p.fila; cruce = ''; filas = []; }
     if (!gk) { sinGrupo.push(p); return; }
     if (!grupos[gk]) { grupos[gk] = { cruce: cruce, filas: filas, contratos: [] }; orden.push(gk); }
@@ -289,7 +316,8 @@ function CONC_calcular(protect, cons, tol) {
   sinGrupo.forEach(function (p) {
     var f = base(p, '');
     f.estado = CONC_ESTADO.FALTA;
-    f.obs = 'No aparece en la hoja Consolidados (ni por cédula ni por nombre).';
+    f.obs = 'No aparece en la hoja Consolidado (ni por cédula ni por nombre).';
+    CONC_aplicarAjusteManual(f, p, ajustes, []);
     salida.push(f);
   });
 
@@ -313,6 +341,7 @@ function CONC_calcular(protect, cons, tol) {
         f.estado = CONC_ESTADO.FALTA;
         f.obs = 'Esta cédula tiene ' + n + ' contratos en Protect pero solo ' + g.filas.length + (g.filas.length === 1 ? ' fila' : ' filas') +
           ' en Consolidados: a este contrato no se le asignó ningún pago.';
+        CONC_aplicarAjusteManual(f, p, ajustes, []);
         salida.push(f);
         return;
       }
@@ -339,9 +368,12 @@ function CONC_calcular(protect, cons, tol) {
         }
       }
       f.obs = notas.join(' ');
+      CONC_aplicarAjusteManual(f, p, ajustes, a.filas);
       salida.push(f);
-      var txtFila = CONC_textoFila(f);
-      a.filas.forEach(function (r) { r.estadoFila = txtFila; });
+      if (!(f.ajuste && f.ajuste.decision === 'Falta')) {
+        var txtFila = CONC_textoFila(f);
+        a.filas.forEach(function (r) { r.estadoFila = txtFila; });
+      }
     });
   });
 
@@ -369,6 +401,119 @@ function CONC_calcular(protect, cons, tol) {
   var resumen = {};
   salida.forEach(function (s) { resumen[s.estado] = (resumen[s.estado] || 0) + 1; });
   return { filas: salida, resumen: resumen };
+}
+
+// ----- Búsqueda por nombre (cuando la cédula está mal escrita) -----
+function CONC_tokensNombre(v) {
+  if (CONC_vacio(v)) return [];
+  var s = String(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9 ]/g, ' ');
+  var stop = { DE: 1, DEL: 1, LA: 1, LAS: 1, LOS: 1, Y: 1 };
+  var visto = {}, out = [];
+  s.split(/\s+/).forEach(function (t) { if (t.length >= 2 && !stop[t] && !visto[t]) { visto[t] = 1; out.push(t); } });
+  return out;
+}
+
+// Filas libres de Consolidado cuyo nombre coincide (aunque falten o sobren nombres o estén en otro orden).
+// Si hay dos personas distintas con nombre parecido (cédulas distintas) no adivina.
+function CONC_buscarPorNombre(tok, indice) {
+  var ordenados = tok.slice().sort(function (a, b) { return (indice[a] ? indice[a].length : 0) - (indice[b] ? indice[b].length : 0); });
+  var cand = [], visto = {};
+  ordenados.slice(0, 2).forEach(function (t) {
+    (indice[t] || []).forEach(function (r) { if (!visto[r.fila] && !r.usada) { visto[r.fila] = 1; cand.push(r); } });
+  });
+  var res = [], exacto = true, cedulas = {};
+  cand.forEach(function (r) {
+    var set = {}, inter = 0;
+    r.tokNom.forEach(function (t) { set[t] = 1; });
+    tok.forEach(function (t) { if (set[t]) inter++; });
+    var mn = Math.min(tok.length, r.tokNom.length), mx = Math.max(tok.length, r.tokNom.length);
+    if (inter >= 2 && inter / mn >= 0.75 && inter / mx >= 0.5) {
+      res.push(r);
+      if (!(tok.length === r.tokNom.length && inter === tok.length)) exacto = false;
+      if (r.kCed) cedulas[r.kCed] = true;
+    }
+  });
+  if (!res.length || Object.keys(cedulas).length > 1) return null;
+  return { filas: res, exacto: exacto };
+}
+
+// ----- Ajustes manuales (se guardan en la hoja "Ajustes_Manuales") -----
+function CONC_claveAjuste(p) {
+  return 'P:' + (CONC_normClave(p.contrato) || ('F' + p.fila)) + '|' + CONC_normCedula(p.cedula);
+}
+
+function CONC_aplicarAjusteManual(f, p, ajustes, filasAsignadas) {
+  f.claveAjuste = CONC_claveAjuste(p);
+  var aj = ajustes && ajustes[f.claveAjuste];
+  if (!aj) return;
+  f.ajuste = { decision: aj.decision, nota: aj.nota || '', fecha: aj.fecha || '' };
+  var nota = aj.nota ? ' Nota: ' + aj.nota : '';
+  if (aj.decision === 'Falta') {
+    f.estado = CONC_ESTADO.FALTA; f.valor = ''; f.dif = null; f.difC = null; f.difD = null; f.concordo = '';
+    f.asignacion = ''; f.porOrden = false;
+    f.obs = 'Ajuste manual: marcado como "Falta por consolidar" (lo que aparece en Consolidado no es un pago).' + nota;
+    (filasAsignadas || []).forEach(function (r) { r.estadoFila = 'No es un pago · ajuste manual'; });
+  } else if (aj.decision === 'Consolidado') {
+    f.estado = CONC_ESTADO.CONCILIADO;
+    if (!f.valor) f.valor = CONC_VALOR.SIN_DATO;
+    f.porOrden = false;
+    f.obs = 'Ajuste manual: marcado como "Consolidado".' + nota + (f.obs ? ' ' + f.obs : '');
+  }
+}
+
+function CONC_leerAjustes(ss) {
+  var hoja = ss.getSheetByName(CONC_HOJA_AJUSTES);
+  if (!hoja || hoja.getLastRow() < 1) return {};
+  if (hoja.getRange(1, 1).getValue() !== CONC_AJ_ENCABEZADOS[0]) {
+    throw new Error('Ya existe una hoja "' + CONC_HOJA_AJUSTES + '" con otro contenido. No se usa; renómbrala o cambia CONC_HOJA_AJUSTES.');
+  }
+  if (hoja.getLastRow() < 2) return {};
+  var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, CONC_AJ_ENCABEZADOS.length).getValues();
+  var out = {};
+  datos.forEach(function (r) {
+    if (CONC_vacio(r[0]) || (r[1] !== 'Consolidado' && r[1] !== 'Falta')) return;
+    out[String(r[0])] = { decision: r[1], nota: CONC_texto(r[5]), fecha: CONC_fechaHoraTxt(CONC_aFecha(r[6])) };
+  });
+  return out;
+}
+
+// d: { clave, decision: 'Consolidado' | 'Falta' | 'Quitar', cedula, cliente, contrato, nota }
+function CONC_guardarAjuste(ss, d) {
+  var decision = String(d.decision || '');
+  if (['Consolidado', 'Falta', 'Quitar'].indexOf(decision) < 0) throw new Error('Decisión no válida.');
+  var clave = String(d.clave || '');
+  if (!clave || clave.indexOf('P:') !== 0) throw new Error('Falta la clave del contrato.');
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) throw new Error('Hay otra operación en curso. Intenta de nuevo en un momento.');
+  try {
+    var hoja = ss.getSheetByName(CONC_HOJA_AJUSTES);
+    if (!hoja) hoja = ss.insertSheet(CONC_HOJA_AJUSTES);
+    if (hoja.getLastRow() < 1) {
+      hoja.getRange(1, 1, 1, CONC_AJ_ENCABEZADOS.length).setValues([CONC_AJ_ENCABEZADOS])
+        .setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');
+      hoja.setFrozenRows(1);
+    } else if (hoja.getRange(1, 1).getValue() !== CONC_AJ_ENCABEZADOS[0]) {
+      throw new Error('Ya existe una hoja "' + CONC_HOJA_AJUSTES + '" con otro contenido. No se sobrescribe.');
+    }
+    var ultima = hoja.getLastRow(), fila = -1;
+    if (ultima >= 2) {
+      var claves = hoja.getRange(2, 1, ultima - 1, 1).getValues();
+      for (var i = 0; i < claves.length; i++) if (String(claves[i][0]) === clave) { fila = i + 2; break; }
+    }
+    if (decision === 'Quitar') {
+      if (fila > 0) hoja.deleteRow(fila);
+      return { ok: true, accion: 'quitado' };
+    }
+    var registro = [[clave, decision, String(d.cedula || ''), String(d.cliente || ''), String(d.contrato || ''),
+      String(d.nota || '').slice(0, 300), new Date()]];
+    if (fila < 0) fila = ultima + 1;
+    hoja.getRange(fila, 1, 1, 5).setNumberFormat('@');
+    hoja.getRange(fila, 1, 1, CONC_AJ_ENCABEZADOS.length).setValues(registro);
+    hoja.getRange(fila, 7).setNumberFormat('dd/mm/yyyy hh:mm');
+    return { ok: true, accion: 'guardado' };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // Reparte las filas de Consolidados entre los contratos de una misma persona (un pago = un contrato).
@@ -421,10 +566,12 @@ function CONC_textoFila(f) {
     t = CONC_VALOR.MENOS + ' · faltan $' + String(falta).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
   if (f.porOrden) t += ' · por orden (revisar)';
+  if (f.ajuste && f.ajuste.decision === 'Consolidado') t += ' · ajuste manual';
   return t;
 }
 
 function CONC_colorFila(t) {
+  if (/^No es un pago/.test(t)) return '#e6e6e6';
   if (/^Pagó de menos/.test(t)) return '#ea4335';
   if (/revisar|nombre/i.test(t)) return '#fce5cd';
   if (/^Sin registro/.test(t)) return '#e6e6e6';
@@ -433,7 +580,7 @@ function CONC_colorFila(t) {
 }
 
 function CONC_esEstadoPropio(v) {
-  return /^(Consolidado|Pagó de menos|Sin registro en Protect)/.test(String(v));
+  return /^(Consolidado|Pagó de menos|Sin registro en Protect|No es un pago)/.test(String(v));
 }
 
 // Escribe SOLO la columna F de Consolidados (estado de cada fila). No sobrescribe datos ajenos.
@@ -527,6 +674,8 @@ function CONC_mejorValor(filas, pagado, tol) {
 }
 
 // ==================== HISTORIAL / SEGUIMIENTO ====================
+var CONC_AJ_ENCABEZADOS = ['Clave', 'Decisión', 'Cédula', 'Cliente', 'Contrato', 'Nota', 'Fecha'];
+
 var CONC_HIST_ENCABEZADOS = [
   'Clave', 'Cédula', 'Cliente', 'Contrato', 'Placa', 'Estado actual', 'Estado anterior',
   'Primera vez visto', 'Consolidado desde', 'Último cambio de estado', 'Última revisión', 'Corridas',
