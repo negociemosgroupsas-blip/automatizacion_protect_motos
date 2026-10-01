@@ -5,7 +5,7 @@
  * Todas las funciones y constantes llevan el prefijo CONC_ para no chocar con las existentes.
  * No crea triggers. Se ejecuta a mano: elegir CONC_conciliar y pulsar "Ejecutar".
  *
- * Solo LEE las hojas "Protect" y "Consolidados".
+ * Solo LEE las hojas "Protect" y "Consolidado".
  * ÚNICA escritura en una hoja tuya: la columna F de "Consolidados" (estado de cada fila: "Consolidado",
  * "Pagó de menos", "Sin registro en Protect"...). Si la columna F ya tiene datos que no son de esta
  * automatización, NO la sobrescribe. Se desactiva con CONC_ESCRIBIR_ESTADO_CONS = false.
@@ -23,7 +23,7 @@
 // ==================== CONFIGURACIÓN ====================
 var CONC_SHEET_ID = '1WMR0VhNg6apQa5BPg4bFoRbMqJNdQQ9f3UdlA2fKb04';
 var CONC_HOJA_PROTECT = 'Protect';
-var CONC_HOJA_CONSOLIDADOS = 'Consolidados';
+var CONC_HOJA_CONSOLIDADOS = 'Consolidado';
 var CONC_HOJA_RESULTADO = 'Conciliacion_Dugo';
 
 var CONC_HOJA_HISTORIAL = 'Historial_Consolidacion';
