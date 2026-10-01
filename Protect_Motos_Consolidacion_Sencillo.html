@@ -43,7 +43,9 @@
   .pago-botones button:hover{background:#e8edfb} .pago-botones button.actual{background:var(--azul);color:#fff}
   .pago-botones button.ninguno{border-color:#9ca3af;color:#4b5563} .pago-botones button.ninguno.actual{background:#6b7280;color:#fff;border-color:#6b7280}
   .pago-botones button.auto{border-style:dashed;border-color:var(--azulinfo);color:var(--azulinfo)}
- .pago-escribe{border:2px solid var(--borde);border-radius:8px;padding:6px 9px;font-size:.8rem;width:170px;font-family:inherit}
+ .pago-escribe{border:2px solid var(--borde);border-radius:8px;padding:6px 9px;font-size:.8rem;width:210px;font-family:inherit}
+ .aviso-local{padding:9px 12px;border-radius:8px;font-size:.82rem;font-weight:700;margin:8px 0}
+  .aviso-local.cargando{background:var(--azulinfo-bg);color:var(--azulinfo)} .aviso-local.error{background:var(--rojo-bg);color:var(--rojo)} .aviso-local.ok{background:var(--verde-bg);color:var(--verde)} .aviso-local.info{background:var(--naranja-bg);color:var(--naranja)}
   .tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:12px}
   .tab{border:none;border-radius:16px;padding:16px 20px;text-align:left;color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(19,34,63,.18);outline:3px solid transparent;outline-offset:2px;transition:transform .12s}
   .tab:hover{transform:translateY(-2px)} .tab.activa{outline-color:var(--azul)}
@@ -95,6 +97,7 @@
 
 <main>
   <div class="estado" id="estado"></div>
+  <div class="estado error" id="avisoVersion" style="display:none;font-weight:700">⚠ El código de Apps Script publicado es una versión vieja: los botones de corregir, asignar y notas no van a funcionar. Pega los códigos <b>PASO_1</b> y <b>PASO_2</b> en Apps Script y haz <b>Implementar → Administrar implementaciones → lápiz → Nueva versión → Implementar</b>.</div>
 
   <div class="busqueda">
     <input type="search" id="buscar" placeholder="🔍 Buscar un cliente: nombre, cédula, # contrato o placa…" autocomplete="off">
@@ -143,6 +146,12 @@
     if (f.c && f.d && f.c !== f.d) return 'C ' + money(f.c) + ' · D ' + money(f.d);
     var v = f.c || f.d; return v ? money(v) : '—';
   }
+  // Aviso DENTRO de la ficha o panel (el mensaje de arriba queda tapado por la ventana)
+  function avisoLocal(cont, tipo, txt) {
+    var a = cont.querySelector(':scope > .aviso-local');
+    if (!a) { a = el('div', 'aviso-local'); cont.insertBefore(a, cont.firstChild); }
+    a.className = 'aviso-local ' + tipo; a.textContent = txt;
+  }
   function mensaje(tipo, txt) { var b = $('estado'); b.className = 'estado' + (tipo ? ' ' + tipo : ''); b.textContent = txt || ''; }
   function nota(f) { return f.ajuste && f.ajuste.nota ? f.ajuste.nota : ''; }
 
@@ -168,7 +177,7 @@
     if (!/^https:\/\/script\.google\.com\//.test(url)) { fail('Pega la URL del conector y pulsa Guardar.'); return; }
     var cb = 'conc_aj_' + Date.now(), s = document.createElement('script'), listo = false;
     var limpiar = function () { delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); clearTimeout(t); };
-    var t = setTimeout(function () { if (!listo) { limpiar(); fail('Sin respuesta al guardar el ajuste.'); } }, 60000);
+    var t = setTimeout(function () { if (!listo) { limpiar(); fail('No hubo respuesta en 25 segundos. Lo más probable: el código de Apps Script no está actualizado o falta publicar la «Nueva versión».'); } }, 25000);
     window[cb] = function (r) { listo = true; limpiar(); r && r.ok ? ok(r.data) : fail(r && r.error ? r.error : 'Respuesta inválida.'); };
     s.onerror = function () { if (!listo) { limpiar(); fail('No se pudo conectar para guardar el ajuste.'); } };
     s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=ajustar&token=' + encodeURIComponent(TOKEN) +
@@ -182,7 +191,7 @@
     if (!/^https:\/\/script\.google\.com\//.test(url)) { fail('Pega la URL del conector y pulsa Guardar.'); return; }
     var cb = 'conc_as_' + Date.now(), s = document.createElement('script'), listo = false;
     var limpiar = function () { delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); clearTimeout(t); };
-    var t = setTimeout(function () { if (!listo) { limpiar(); fail('Sin respuesta al guardar la asignación.'); } }, 60000);
+    var t = setTimeout(function () { if (!listo) { limpiar(); fail('No hubo respuesta en 25 segundos. Lo más probable: el código de Apps Script no está actualizado o falta publicar la «Nueva versión».'); } }, 25000);
     window[cb] = function (r) { listo = true; limpiar(); r && r.ok ? ok(r.data) : fail(r && r.error ? r.error : 'Respuesta inválida.'); };
     s.onerror = function () { if (!listo) { limpiar(); fail('No se pudo conectar para guardar la asignación.'); } };
     s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=asignar&token=' + encodeURIComponent(TOKEN) +
@@ -199,7 +208,9 @@
     llamar(tol, function (r) {
       btn.disabled = false; btn.textContent = 'Actualizar datos';
       datos = r.filas || [];
+      var viejo = !r.acciones || r.acciones.indexOf('asignar') < 0 || r.acciones.indexOf('ajustar') < 0;
       mensaje('ok', 'Datos al día (' + r.generado + '). ' + (r.estadoEnHoja && r.estadoEnHoja.escrito ? 'Hoja Consolidado actualizada: columna F (estado)' + (r.estadoEnHoja.contrato ? ' y columna G (# contrato)' : '') + ' en ' + r.estadoEnHoja.filas + ' filas.' : ''));
+      var av = $('avisoVersion'); av.style.display = viejo ? 'block' : 'none';
       pintar();
       if (abierta) { var f = datos.filter(function (x) { return x.claveAjuste === abierta; })[0]; if (f) ficha(f); else cerrar(); }
     }, function (msg) { btn.disabled = false; btn.textContent = 'Actualizar datos'; mensaje('error', 'Error: ' + msg); });
@@ -303,11 +314,13 @@
       function boton(txt, cls, contrato, activo, pregunta) {
         var b = el('button', cls + (activo ? ' actual' : ''), txt); b.type = 'button'; b.title = pregunta;
         b.onclick = function () {
-          if (activo) return;
+          if (activo) { avisoLocal(box, 'info', 'Este pago ya está asignado a esa opción. Toca otro contrato si quieres cambiarlo.'); return; }
           if (!window.confirm(pregunta)) return;
           box.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
-          llamarAsignar({ clavePago: p.clavePago, contrato: contrato, cedula: f.cedula, cliente: nombre(f), c: p.c, d: p.d }, function () { cargar(); },
-            function (msg) { mensaje('error', 'No se pudo guardar la asignación: ' + msg); box.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
+          avisoLocal(box, 'cargando', 'Guardando la asignación… espera unos segundos.');
+          llamarAsignar({ clavePago: p.clavePago, contrato: contrato, cedula: f.cedula, cliente: nombre(f), c: p.c, d: p.d },
+            function () { avisoLocal(box, 'ok', 'Guardado ✔ Actualizando los datos…'); cargar(); },
+            function (msg) { avisoLocal(box, 'error', 'No se pudo guardar: ' + msg); box.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
         };
         bs.appendChild(b);
       }
@@ -321,12 +334,14 @@
       ir.onclick = function () {
         var valor = escribe.value.trim(); if (!valor) return;
         var existe = f.contratosGrupo.some(function (k) { return mismo(k.contrato, valor); });
-        if (!existe) { window.alert('El contrato «' + valor + '» no es uno de los contratos de esta persona. Escríbelo como aparece en Protect o usa los botones.'); return; }
+        if (!existe) { avisoLocal(box, 'error', 'El contrato «' + valor + '» no es uno de los contratos de esta persona. Escríbelo como aparece en Protect o usa los botones.'); return; }
         var real = f.contratosGrupo.filter(function (k) { return mismo(k.contrato, valor); })[0].contrato;
         if (!window.confirm('¿Asignar este pago al contrato ' + real + '?')) return;
         box.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
-        llamarAsignar({ clavePago: p.clavePago, contrato: real, cedula: f.cedula, cliente: nombre(f), c: p.c, d: p.d }, function () { cargar(); },
-          function (msg) { mensaje('error', 'No se pudo guardar la asignación: ' + msg); box.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
+        avisoLocal(box, 'cargando', 'Guardando la asignación… espera unos segundos.');
+        llamarAsignar({ clavePago: p.clavePago, contrato: real, cedula: f.cedula, cliente: nombre(f), c: p.c, d: p.d },
+          function () { avisoLocal(box, 'ok', 'Guardado ✔ Actualizando los datos…'); cargar(); },
+          function (msg) { avisoLocal(box, 'error', 'No se pudo guardar: ' + msg); box.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
       };
       bs.appendChild(escribe); bs.appendChild(ir);
       if (p.manual) boton('Volver a automático', 'auto', 'AUTO', false, '¿Quitar la asignación manual y dejar que el sistema decida?');
@@ -375,8 +390,10 @@
         bt.onclick = function () {
           if (pregunta && !window.confirm(pregunta)) return;
           ac.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
-          llamarAjuste({ clave: f.claveAjuste, decision: decision, nota: nt.value, cedula: f.cedula, cliente: nombre(f), contrato: f.contrato }, function () { cargar(); },
-            function (msg) { mensaje('error', 'No se pudo guardar: ' + msg); ac.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
+          avisoLocal(d, 'cargando', 'Guardando… espera unos segundos.');
+          llamarAjuste({ clave: f.claveAjuste, decision: decision, nota: nt.value, cedula: f.cedula, cliente: nombre(f), contrato: f.contrato },
+            function () { avisoLocal(d, 'ok', 'Guardado ✔ Actualizando los datos…'); cargar(); },
+            function (msg) { avisoLocal(d, 'error', 'No se pudo guardar: ' + msg); ac.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
         };
         ac.appendChild(bt);
       }

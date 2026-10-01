@@ -302,7 +302,7 @@
     if (!/^https:\/\/script\.google\.com\//.test(url)) { fail('Pega la URL del conector y pulsa Guardar.'); return; }
     var cb = 'conc_aj_' + Date.now(), s = document.createElement('script'), listo = false;
     var limpiar = function () { delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); clearTimeout(t); };
-    var t = setTimeout(function () { if (!listo) { limpiar(); fail('Sin respuesta al guardar el ajuste.'); } }, 60000);
+    var t = setTimeout(function () { if (!listo) { limpiar(); fail('No hubo respuesta en 25 segundos. Lo más probable: el código de Apps Script no está actualizado o falta publicar la «Nueva versión».'); } }, 25000);
     window[cb] = function (r) { listo = true; limpiar(); r && r.ok ? ok(r.data) : fail(r && r.error ? r.error : 'Respuesta inválida.'); };
     s.onerror = function () { if (!listo) { limpiar(); fail('No se pudo conectar para guardar el ajuste.'); } };
     s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=ajustar&token=' + encodeURIComponent(TOKEN) +

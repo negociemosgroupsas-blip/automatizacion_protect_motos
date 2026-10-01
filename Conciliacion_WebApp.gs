@@ -47,6 +47,8 @@ function CONC_apiConciliar(tolerancia) {
     atipicos: out.atipicos,
     columnas: out.columnas,
     estadoEnHoja: out.estadoEnHoja,
+    version: 'v8',
+    acciones: ['conciliar', 'ajustar', 'asignar'], // la pantalla usa esto para avisar si el código publicado está desactualizado
     diag: out.diag,
     generado: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
   };
