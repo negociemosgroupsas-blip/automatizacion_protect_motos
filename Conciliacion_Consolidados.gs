@@ -53,6 +53,7 @@ var CONC_ESTADO = {
 };
 
 var CONC_VALOR = {
+  ATIPICO: 'Protect!P atípico (revisar)',
   COINCIDE: 'Pagó lo correcto',
   MAS: 'Pagó de más',
   MENOS: 'Pagó de menos',
@@ -203,21 +204,23 @@ function CONC_detectarColumnas(cons, protect, encabezados) {
     if (kc) setC[kc] = true;
     if (kp) setP[kp] = true;
   });
+  // Las placas tienen una forma muy reconocible (ERN58H, ABC123). Los contratos son números cortos que se confunden
+  // fácil con cualquier otra columna, así que el contrato SOLO se toma si la columna se titula "contrato".
+  var formaPlaca = /^[A-Z]{3}[0-9]{2}[A-Z0-9]$/;
   var mejor = function (set, excluir) {
     var idx = -1, top = 0;
     for (var j = 0; j < ancho; j++) {
       if (j === excluir) continue;
-      var no = 0, hit = 0;
+      var no = 0, hit = 0, forma = 0;
       cons.forEach(function (r) {
         var k = CONC_normClave(r.extra[j]);
         if (!k) return;
-        no++; if (set[k]) hit++;
+        no++; if (formaPlaca.test(k)) forma++; if (set[k]) hit++;
       });
-      if (hit >= 3 && no && hit / no >= 0.3 && hit > top) { top = hit; idx = j; }
+      if (hit >= 3 && no && hit / no >= 0.3 && forma / no >= 0.7 && hit > top) { top = hit; idx = j; }
     }
     return idx;
   };
-  if (info.contrato < 0) { var ic = mejor(setC, info.placa); if (ic >= 0) { info.contrato = ic; info.origenContrato = 'contenido'; } }
   if (info.placa < 0) { var ip = mejor(setP, info.contrato); if (ip >= 0) { info.placa = ip; info.origenPlaca = 'contenido'; } }
   cons.forEach(function (r) {
     r.placa = info.placa >= 0 ? CONC_texto(r.extra[info.placa]) : '';
@@ -273,6 +276,7 @@ function CONC_calcular(protect, cons, tol) {
     grupos[gk].contratos.push(p);
   });
 
+  var umbralP = CONC_umbralAtipico(protect.map(function (p) { return p.pagado; }));
   var salida = [];
   var base = function (p, cruce) {
     return {
@@ -316,6 +320,9 @@ function CONC_calcular(protect, cons, tol) {
       f.estado = (g.cruce === 'Cédula' || p.directRows.length) ? CONC_ESTADO.CONCILIADO : CONC_ESTADO.POR_NOMBRE;
       f.clienteCons = mejor.r.cliente; f.c = mejor.r.c; f.d = mejor.r.d; f.nCons = a.filas.length;
       f.concordo = mejor.concordo; f.valor = mejor.valor; f.dif = mejor.dif; f.difC = mejor.difC; f.difD = mejor.difD;
+      if (p.pagado !== null && p.pagado > umbralP) {
+        f.valor = CONC_VALOR.ATIPICO; f.dif = null; f.difC = null; f.difD = null; f.concordo = '';
+      }
       f.filaCons = a.filas.map(function (r) { return r.fila; }).join(', ');
       var notas = ['Aparece en Consolidados (' + a.filas.length + (a.filas.length === 1 ? ' fila' : ' filas') + ': ' + f.filaCons + ').'];
       if (g.cruce === 'Nombre (revisar)' && !p.directRows.length) notas.push('Se encontró solo por nombre; confirma que sea la misma persona.');
@@ -407,6 +414,7 @@ function CONC_asignar(contratos, filas, tol) {
 // Texto del estado para la fila de Consolidados, según el contrato al que se asignó
 function CONC_textoFila(f) {
   if (f.estado === CONC_ESTADO.POR_NOMBRE) return CONC_ESTADO.POR_NOMBRE;
+  if (f.valor === CONC_VALOR.ATIPICO) return CONC_ESTADO.CONCILIADO + ' · Protect!P atípico (revisar)';
   var t = CONC_ESTADO.CONCILIADO; // pagar de más no importa: solo "Consolidado"
   if (f.valor === CONC_VALOR.MENOS) {
     var falta = Math.abs(Math.round(f.dif || 0));
@@ -484,6 +492,14 @@ function CONC_diagnostico(protect, cons, filas) {
     protectSinCedula: vacP, consSinCedula: vacC, cedulasQueCoinciden: coinc,
     muestraConsSinCruce: muestraCons, muestraProtectSinCruce: muestraProt
   };
+}
+
+// Un Protect!P mucho mayor que el resto (unas 20 veces la mediana y más de $20 millones) es casi seguro un error
+// de digitación o una fila de totales: no se compara contra el pago ni dispara la alarma de "pagó de menos".
+function CONC_umbralAtipico(valores) {
+  var v = valores.filter(function (x) { return x !== null && x > 0; }).sort(function (a, b) { return a - b; });
+  if (v.length < 10) return Infinity;
+  return Math.max(v[Math.floor(v.length / 2)] * 20, 20000000);
 }
 
 // ¿Pagó lo que era? Compara C y D de Consolidados contra Protect!P. No cambia el estado de consolidación.
@@ -657,15 +673,11 @@ function CONC_escribirHistorial(ss, registros) {
 
 // Pagos de Protect!P muy por encima de lo normal (típico: una fila de totales o un número mal escrito)
 function CONC_atipicos(filas) {
-  var vals = filas.filter(function (f) { return f.pagado > 0; }).map(function (f) { return f.pagado; }).sort(function (a, b) { return a - b; });
-  if (vals.length < 10) return [];
-  var mediana = vals[Math.floor(vals.length / 2)];
-  var umbral = mediana * 20;
-  var vistos = {}, out = [];
-  filas.forEach(function (f) {
-    if (!(f.pagado > umbral) || vistos[f.filaProtect]) return;
-    vistos[f.filaProtect] = true;
-    out.push({ filaProtect: f.filaProtect, cliente: f.clienteProtect || f.clienteCons, contrato: f.contrato, placa: f.placa, pagado: f.pagado });
+  var vistos = {}, unicos = [];
+  filas.forEach(function (f) { if (f.filaProtect === '' || vistos[f.filaProtect]) return; vistos[f.filaProtect] = true; unicos.push(f); });
+  var umbral = CONC_umbralAtipico(unicos.map(function (f) { return f.pagado; }));
+  var out = unicos.filter(function (f) { return f.pagado !== null && f.pagado > umbral; }).map(function (f) {
+    return { filaProtect: f.filaProtect, cliente: f.clienteProtect || f.clienteCons, contrato: f.contrato, placa: f.placa, pagado: f.pagado };
   });
   out.sort(function (a, b) { return b.pagado - a.pagado; });
   return out.slice(0, 15);

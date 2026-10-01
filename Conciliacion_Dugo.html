@@ -141,6 +141,8 @@
   <button class="linkdiag" id="btnDiag" type="button">🔍 Ver diagnóstico del cruce entre las dos hojas</button>
   <div class="diag" id="diag"></div>
 
+  <div class="aviso-datos" id="avisoAtipicos" hidden></div>
+
   <div class="botones-top" id="botonesTop">
     <div class="col-top">
       <button class="boton-top rojo" data-filtro="falta" type="button"><span class="num" id="bFalta">–</span><span class="tit">Faltan por consolidar</span><span class="sub">Contratos de Protect que no aparecen en Consolidados</span></button>
@@ -234,7 +236,7 @@
     conciliado: { t: 'Consolidados', f: function (x) { return x.estado === 'Consolidado'; } },
     falta: { t: 'Faltan por consolidar (más antiguos primero)', f: function (x) { return x.estado === 'Falta por consolidar'; } },
     nombre: { t: 'Consolidados por nombre (revisar)', f: function (x) { return x.estado === 'Consolidado por nombre (revisar)'; } },
-    porRevisar: { t: 'Por revisar (por orden, por nombre o sin registro en Protect)', f: function (x) { return !!x.porOrden || x.estado === 'Consolidado por nombre (revisar)' || x.estado === 'Sin registro en Protect'; } },
+    porRevisar: { t: 'Por revisar (por orden, por nombre, sin registro en Protect o Protect!P atípico)', f: function (x) { return !!x.porOrden || x.estado === 'Consolidado por nombre (revisar)' || x.estado === 'Sin registro en Protect' || x.valor === 'Protect!P atípico (revisar)'; } },
     orden: { t: 'Asignados por orden (revisar)', f: function (x) { return !!x.porOrden; } },
     sinProtect: { t: 'En Consolidados pero sin Protect', f: function (x) { return x.estado === 'Sin registro en Protect'; } },
     vOk: { t: 'Pagó lo correcto', f: function (x) { return x.valor === 'Pagó lo correcto'; } },
@@ -248,7 +250,7 @@
   var SEMAFORO = {
     'Consolidado': 'verde', 'Consolidado por nombre (revisar)': 'naranja', 'Falta por consolidar': 'rojo', 'Sin registro en Protect': 'gris'
   };
-  var SEM_VALOR = { 'Pagó lo correcto': 'verde', 'Pagó de más': 'azul', 'Pagó de menos': 'rojo', 'Sin valor para comparar': 'gris' };
+  var SEM_VALOR = { 'Pagó lo correcto': 'verde', 'Pagó de más': 'azul', 'Pagó de menos': 'rojo', 'Sin valor para comparar': 'gris', 'Protect!P atípico (revisar)': 'naranja' };
   function semValor(v) { if (!v) return document.createTextNode(''); var s = el('span', 'semaforo ' + (SEM_VALOR[v] || 'gris')); s.appendChild(el('span', 'punto')); s.appendChild(document.createTextNode(v)); return s; }
   var diagDatos = null, histRes = {}, datos = [], filtroActivo = null, textoLista = '';
   var $ = function (id) { return document.getElementById(id); };
@@ -297,7 +299,7 @@
       msg += det.length ? ' En Consolidados se usa ' + det.join(' y ') + ' para asignar cada pago a su contrato.' : ' Consolidados no trae placa ni contrato: se cruza por cédula.';
       if (r.estadoEnHoja && r.estadoEnHoja.escrito) msg += ' Columna F de la hoja Consolidado actualizada (' + r.estadoEnHoja.filas + ' filas).';
       estadoConexion('ok', msg);
-      diagDatos = r.diag || null; pintarDiag(); histRes = hs; pintarContadores(r.resumen || {}); pintarAlarma(); buscar(); if (filtroActivo) pintarListado();
+      diagDatos = r.diag || null; pintarDiag(); pintarAtipicos(r.atipicos || []); histRes = hs; pintarContadores(r.resumen || {}); pintarAlarma(); buscar(); if (filtroActivo) pintarListado();
     }, function (msg) {
       btn.disabled = false; btn.textContent = 'Actualizar datos';
       estadoConexion('error', 'Error: ' + msg);
@@ -331,6 +333,16 @@
   }
   $('btnDiag').addEventListener('click', function () { $('diag').classList.toggle('on'); });
 
+  function pintarAtipicos(lista) {
+    var box = $('avisoAtipicos'); box.textContent = '';
+    if (!lista || !lista.length) { box.hidden = true; return; }
+    box.hidden = false;
+    box.appendChild(el('b', '', 'Revisa estos valores de Protect!P: son muy superiores al resto y no se comparan contra el pago (están en «Por revisar»)'));
+    box.appendChild(document.createTextNode('Puede ser un error de digitación o una fila de totales.'));
+    var ul = el('ul');
+    lista.slice(0, 8).forEach(function (a) { ul.appendChild(el('li', '', 'Fila ' + a.filaProtect + ' de Protect · ' + (a.cliente || '(sin nombre)') + (a.contrato ? ' · contrato ' + a.contrato : '') + ' · ' + dinero(a.pagado))); });
+    box.appendChild(ul);
+  }
   var tituloBase = document.title;
   function pintarAlarma() {
     var menos = datos.filter(function (f) { return f.valor === 'Pagó de menos' && f.dif !== null; });
@@ -372,7 +384,7 @@
     $('cVMenos').textContent = cv['Pagó de menos']; $('cVSin').textContent = cv['Sin valor para comparar'];
     $('bFalta').textContent = falta;
     $('bMenos').textContent = cv['Pagó de menos'];
-    $('bRevisar').textContent = datos.filter(function (f) { return !!f.porOrden || f.estado === 'Consolidado por nombre (revisar)' || f.estado === 'Sin registro en Protect'; }).length;
+    $('bRevisar').textContent = datos.filter(FILTROS.porRevisar.f).length;
     $('btnTopMenos').classList.toggle('pulsa', cv['Pagó de menos'] > 0);
     $('dlFalta').disabled = !falta; $('dlMenos').disabled = !cv['Pagó de menos'];
     $('dlRevisar').disabled = !Number($('bRevisar').textContent);
