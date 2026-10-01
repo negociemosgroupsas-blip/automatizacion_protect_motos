@@ -26,6 +26,10 @@
   .estado{font-size:.8rem;padding:8px 12px;border-radius:8px;margin-bottom:14px;display:none}
   .estado.ok{display:block;background:var(--verde-bg);color:var(--verde)} .estado.error{display:block;background:var(--rojo-bg);color:var(--rojo)}
   .estado.cargando{display:block;background:var(--azulinfo-bg);color:var(--azulinfo)}
+  .busqueda{display:flex;gap:10px;margin-bottom:14px}
+  .busqueda input{flex:1;padding:14px 16px;border:2px solid var(--azul);border-radius:14px;font-size:1rem;background:#fff;font-family:inherit}
+  .busqueda input:focus{outline:3px solid #bfd0f5}
+  .titulo-lista{padding:10px 16px;font-size:.88rem;font-weight:700;color:var(--azul);border-bottom:1px solid var(--borde);background:#f8f9fb}
   .tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:12px}
   .tab{border:none;border-radius:16px;padding:16px 20px;text-align:left;color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(19,34,63,.18);outline:3px solid transparent;outline-offset:2px;transition:transform .12s}
   .tab:hover{transform:translateY(-2px)} .tab.activa{outline-color:var(--azul)}
@@ -78,6 +82,11 @@
 <main>
   <div class="estado" id="estado"></div>
 
+  <div class="busqueda">
+    <input type="search" id="buscar" placeholder="🔍 Buscar un cliente: nombre, cédula, # contrato o placa…" autocomplete="off">
+    <button class="btn btn-gris" id="btnLimpiar" type="button">✕ Limpiar</button>
+  </div>
+
   <div class="tabs">
     <button class="tab verde activa" id="tabCons" type="button"><span class="num" id="nCons">–</span><span class="tit">✅ Ya consolidados</span><span class="sub">Aparecen en la lista de pagos</span></button>
     <button class="tab rojo" id="tabFalta" type="button"><span class="num" id="nFalta">–</span><span class="tit">❌ Faltan por consolidar</span><span class="sub">No aparecen en la lista de pagos</span></button>
@@ -85,9 +94,9 @@
 
   <section class="panel">
     <div class="barra">
-      <input type="search" id="buscar" placeholder="Buscar por nombre, cédula o contrato...">
       <button class="btn btn-azul" id="btnDescargar" disabled>⬇ Descargar esta lista</button>
     </div>
+    <div class="titulo-lista" id="tituloLista"></div>
     <div class="alerta" id="alerta"></div>
     <div class="tabla-wrap">
       <table>
@@ -166,19 +175,31 @@
   }
   $('btnRecargar').addEventListener('click', cargar);
 
+  // Búsqueda: recorre TODOS los clientes (consolidados, que faltan y sin registro en Protect).
+  // Acepta palabras sueltas en cualquier orden y cédulas con puntos.
+  function consulta() { return norm($('buscar').value).trim(); }
+  function coincide(f, q) {
+    var texto = [f.cedula, f.clienteProtect, f.clienteCons, f.contrato, f.placa].map(norm).join(' ');
+    var solo = String(f.cedula === undefined || f.cedula === null ? '' : f.cedula).replace(/\D/g, '');
+    return q.split(/\s+/).every(function (t) {
+      var td = t.replace(/[.,]/g, '');
+      return texto.indexOf(t) !== -1 || (td && (texto.indexOf(td) !== -1 || (td.length >= 4 && solo.indexOf(td) !== -1)));
+    });
+  }
   function actual() {
-    var q = norm($('buscar').value).trim();
+    var q = consulta();
+    if (q) return datos.filter(function (f) { return coincide(f, q); });
     return datos.filter(function (f) {
       if (lista === 'cons' ? !esCons(f) : !esFalta(f)) return false;
       if (lista === 'cons' && soloMenos && f.valor !== 'Pagó de menos') return false;
-      if (!q) return true;
-      return [f.cedula, f.clienteProtect, f.clienteCons, f.contrato, f.placa].map(norm).join(' ').indexOf(q) !== -1;
+      return true;
     });
   }
 
   function badge(f) {
     var b = el('span', 'badge');
     if (esFalta(f)) { b.className += ' b-rojo'; b.textContent = 'Falta por consolidar'; }
+    else if (f.estado === 'Sin registro en Protect') { b.className += ' b-gris'; b.textContent = 'Está en Consolidado, no en Protect'; }
     else if (f.estado === 'Consolidado por nombre (revisar)') { b.className += ' b-naranja'; b.textContent = 'Consolidado por nombre (revisar)'; }
     else if (f.valor === 'Pagó de menos') { b.className += ' b-rojo'; b.textContent = '⚠ Consolidado · pagó de menos'; }
     else { b.className += ' b-verde'; b.textContent = '✔ Consolidado'; }
@@ -188,33 +209,43 @@
   function pintar() {
     var nc = datos.filter(esCons).length, nf = datos.filter(esFalta).length;
     $('nCons').textContent = fmt.format(nc); $('nFalta').textContent = fmt.format(nf);
-    $('tabCons').classList.toggle('activa', lista === 'cons'); $('tabFalta').classList.toggle('activa', lista === 'falta');
+    var q = consulta();
+    $('tabCons').classList.toggle('activa', !q && lista === 'cons'); $('tabFalta').classList.toggle('activa', !q && lista === 'falta');
     var menos = datos.filter(function (f) { return esCons(f) && f.valor === 'Pagó de menos'; });
     var al = $('alerta');
-    if (lista === 'cons' && menos.length) {
+    if (!q && lista === 'cons' && menos.length) {
       al.classList.add('on');
       al.textContent = soloMenos ? '⚠ Mostrando solo los ' + menos.length + ' que pagaron de menos. Toca aquí para ver todos los consolidados.' : '⚠ ' + menos.length + (menos.length === 1 ? ' cliente pagó' : ' clientes pagaron') + ' de menos. Toca aquí para verlos.';
     } else { al.classList.remove('on'); }
     var tb = $('tbody'); tb.textContent = '';
     var rows = actual();
     $('btnDescargar').disabled = !rows.length;
-    $('btnDescargar').textContent = lista === 'cons' ? '⬇ Descargar lista de consolidados' : '⬇ Descargar lista de los que faltan';
-    if (!rows.length) { var tr0 = el('tr'), td0 = el('td', 'vacio', datos.length ? 'No hay clientes en esta lista.' : 'Pulsa «Actualizar datos» para cargar la información.'); td0.colSpan = 7; tr0.appendChild(td0); tb.appendChild(tr0); }
+    $('btnDescargar').textContent = q ? '⬇ Descargar estos resultados' : (lista === 'cons' ? '⬇ Descargar lista de consolidados' : '⬇ Descargar lista de los que faltan');
+    var tl = $('tituloLista');
+    if (q) {
+      var nc = rows.filter(esCons).length, nf = rows.filter(esFalta).length, ns = rows.length - nc - nf;
+      tl.textContent = 'Resultados de la búsqueda «' + $('buscar').value.trim() + '»: ' + rows.length + (rows.length === 1 ? ' cliente' : ' clientes') +
+        ' (' + nc + ' consolidado' + (nc === 1 ? '' : 's') + ', ' + nf + ' que falta' + (nf === 1 ? '' : 'n') + (ns ? ', ' + ns + ' sin registro en Protect' : '') + ')';
+    } else { tl.textContent = lista === 'cons' ? 'Clientes ya consolidados' : 'Clientes que faltan por consolidar'; }
+    if (!rows.length) { var tr0 = el('tr'), td0 = el('td', 'vacio', !datos.length ? 'Pulsa «Actualizar datos» para cargar la información.' : (q ? 'No se encontró ningún cliente con «' + $('buscar').value.trim() + '». Prueba con menos palabras o solo el apellido.' : 'No hay clientes en esta lista.')); td0.colSpan = 7; tr0.appendChild(td0); tb.appendChild(tr0); }
     rows.forEach(function (f) {
       var tr = el('tr', f.valor === 'Pagó de menos' && esCons(f) ? 'menos' : '');
       tr.appendChild(el('td', '', nombre(f))); tr.appendChild(el('td', '', f.cedula)); tr.appendChild(el('td', '', f.contrato));
-      tr.appendChild(el('td', 'num', money(f.pagado))); tr.appendChild(el('td', 'num', esCons(f) ? valorCons(f) : '—'));
+      tr.appendChild(el('td', 'num', money(f.pagado))); tr.appendChild(el('td', 'num', esCons(f) || f.estado === 'Sin registro en Protect' ? valorCons(f) : '—'));
       var td = el('td'); td.appendChild(badge(f)); if (f.ajuste && f.ajuste.decision !== 'Nota') td.appendChild(el('span', '', ' · ajuste manual')); tr.appendChild(td);
       tr.appendChild(el('td', '', nota(f)));
       tr.onclick = function () { ficha(f); };
       tb.appendChild(tr);
     });
-    $('pie').textContent = rows.length + ' cliente' + (rows.length === 1 ? '' : 's') + ' en esta lista. Toca uno para ver su ficha y corregir su estado.';
+    $('pie').textContent = rows.length + ' cliente' + (rows.length === 1 ? '' : 's') + (q ? (rows.length === 1 ? ' encontrado.' : ' encontrados.') : ' en esta lista.') + ' Toca uno para ver su ficha y corregir su estado.';
   }
-  $('tabCons').addEventListener('click', function () { lista = 'cons'; soloMenos = false; pintar(); });
-  $('tabFalta').addEventListener('click', function () { lista = 'falta'; soloMenos = false; pintar(); });
+  function elegir(l) { $('buscar').value = ''; lista = l; soloMenos = false; pintar(); }
+  $('tabCons').addEventListener('click', function () { elegir('cons'); });
+  $('tabFalta').addEventListener('click', function () { elegir('falta'); });
   $('alerta').addEventListener('click', function () { soloMenos = !soloMenos; pintar(); });
   $('buscar').addEventListener('input', pintar);
+  $('buscar').addEventListener('keydown', function (e) { if (e.key === 'Enter') { var rs = actual(); if (consulta() && rs.length === 1) ficha(rs[0]); } });
+  $('btnLimpiar').addEventListener('click', function () { $('buscar').value = ''; pintar(); $('buscar').focus(); });
 
   // ---------- Ficha del cliente ----------
   function campo(etq, val) { var c = el('div', 'c'); c.appendChild(el('small', '', etq)); c.appendChild(el('b', '', val === undefined || val === null || val === '' ? '—' : String(val))); return c; }
@@ -269,11 +300,12 @@
   }
   function cerrar() { abierta = null; $('modal').className = ''; }
   $('modal').addEventListener('click', function (e) { if (e.target === $('modal')) cerrar(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrar(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('modal').className === 'on') { e.preventDefault(); cerrar(); } });
 
   // ---------- Descarga ----------
   $('btnDescargar').addEventListener('click', function () {
-    var rows = datos.filter(lista === 'cons' ? esCons : esFalta);
+    var q = consulta();
+    var rows = q ? actual() : datos.filter(lista === 'cons' ? esCons : esFalta);
     var cab = ['Cédula', 'Nombre completo', '# Contrato', 'Placa', 'Valor pagado a Dugo Motos', 'Valor pagado en Consolidado (C)', 'Valor pagado en Consolidado (D)', 'Diferencia', 'Estado', 'Nota', 'Asesor', 'Celular'];
     var filas = rows.map(function (f) { var e = f.extra || {};
       return [f.cedula, nombre(f), f.contrato, f.placa, f.pagado, f.c, f.d, f.dif, f.estado + (f.valor === 'Pagó de menos' ? ' · pagó de menos' : ''), nota(f), e.asesor, e.celular]; });
@@ -281,7 +313,7 @@
     var h = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
     var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = (lista === 'cons' ? 'clientes_consolidados_' : 'clientes_faltan_por_consolidar_') + h.getFullYear() + '-' + z(h.getMonth() + 1) + '-' + z(h.getDate()) + '.csv';
+    a.download = (q ? 'busqueda_clientes_' : (lista === 'cons' ? 'clientes_consolidados_' : 'clientes_faltan_por_consolidar_')) + h.getFullYear() + '-' + z(h.getMonth() + 1) + '-' + z(h.getDate()) + '.csv';
     document.body.appendChild(a); a.click(); a.remove();
   });
 
