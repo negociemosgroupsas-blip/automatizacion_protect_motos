@@ -258,7 +258,6 @@
   $('tabFalta').addEventListener('click', function () { elegir('falta'); });
   $('alerta').addEventListener('click', function () { soloMenos = !soloMenos; pintar(); });
   $('buscar').addEventListener('input', pintar);
-  $('buscar').addEventListener('keydown', function (e) { if (e.key === 'Enter') { var rs = actual(); if (consulta() && rs.length === 1) ficha(rs[0]); } });
   $('btnLimpiar').addEventListener('click', function () { $('buscar').value = ''; pintar(); $('buscar').focus(); });
 
   // ---------- Ficha del cliente ----------
