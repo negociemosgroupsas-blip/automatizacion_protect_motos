@@ -19,6 +19,7 @@ function doGet(e) {
   if (params.action === 'conciliar') return CONC_respuestaJsonp(params);
   if (params.action === 'ajustar') return CONC_respuestaAjuste(params);
   if (params.action === 'asignar') return CONC_respuestaAsignar(params);
+  if (params.action === 'asignarlote') return CONC_respuestaAsignarLote(params);
   return HtmlService.createHtmlOutputFromFile('Conciliacion_Dugo')
     .setTitle('Conciliación Dugo Motos')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
@@ -47,8 +48,8 @@ function CONC_apiConciliar(tolerancia) {
     atipicos: out.atipicos,
     columnas: out.columnas,
     estadoEnHoja: out.estadoEnHoja,
-    version: 'v8',
-    acciones: ['conciliar', 'ajustar', 'asignar'], // la pantalla usa esto para avisar si el código publicado está desactualizado
+    version: 'v9',
+    acciones: ['conciliar', 'ajustar', 'asignar', 'asignarlote'], // la pantalla usa esto para avisar si el código publicado está desactualizado
     diag: out.diag,
     generado: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
   };
@@ -125,4 +126,25 @@ function CONC_respuestaAsignar(params) {
 function CONC_apiAsignar(clavePago, contrato, cedula, cliente, c, d) {
   var ss = SpreadsheetApp.openById(CONC_SHEET_ID);
   return CONC_guardarAsignacion(ss, { clavePago: clavePago, contrato: contrato, cedula: cedula, cliente: cliente, c: c, d: d });
+}
+
+/** Varias asignaciones de pagos a contratos en una sola llamada (tarjeta de persona con varios contratos). Exige el token. */
+function CONC_respuestaAsignarLote(params) {
+  var salida;
+  try {
+    if (params.token !== CONC_TOKEN) {
+      salida = { ok: false, error: 'Token inválido.' };
+    } else {
+      var lista = JSON.parse(params.lote || '[]');
+      salida = { ok: true, data: CONC_guardarAsignaciones(SpreadsheetApp.openById(CONC_SHEET_ID), lista) };
+    }
+  } catch (err) {
+    salida = { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+  var cb = params.callback;
+  if (cb && /^[A-Za-z_$][\w$.]*$/.test(cb)) {
+    return ContentService.createTextOutput(cb + '(' + JSON.stringify(salida) + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(JSON.stringify(salida)).setMimeType(ContentService.MimeType.JSON);
 }

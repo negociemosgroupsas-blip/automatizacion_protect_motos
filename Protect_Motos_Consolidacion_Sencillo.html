@@ -46,6 +46,17 @@
  .pago-escribe{border:2px solid var(--borde);border-radius:8px;padding:6px 9px;font-size:.8rem;width:210px;font-family:inherit}
  .aviso-local{padding:9px 12px;border-radius:8px;font-size:.82rem;font-weight:700;margin:8px 0}
   .aviso-local.cargando{background:var(--azulinfo-bg);color:var(--azulinfo)} .aviso-local.error{background:var(--rojo-bg);color:var(--rojo)} .aviso-local.ok{background:var(--verde-bg);color:var(--verde)} .aviso-local.info{background:var(--naranja-bg);color:var(--naranja)}
+ .persona{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 10px rgba(19,34,63,.08)}
+  .persona h2{margin:0;font-size:1.25rem;color:var(--azul)} .persona .sub{font-size:.85rem;color:var(--suave);margin:2px 0 12px}
+  .persona h3{margin:16px 0 6px;font-size:.95rem;color:var(--azul)}
+  .persona table{width:100%;border-collapse:collapse;font-size:.88rem} .persona th{position:static;background:#f8f9fb;font-size:.7rem}
+  .persona td{padding:9px 10px;border-bottom:1px solid var(--borde);white-space:normal}
+  .persona td.num,.persona th.num{text-align:right}
+  .persona input.contrato{width:150px;padding:8px 10px;border:2px solid #c7d2fe;border-radius:8px;font-size:.9rem;font-weight:700;font-family:inherit}
+  .persona input.contrato:focus{outline:3px solid #bfd0f5}
+  .persona .barra-guardar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .btn-grande{font-size:1rem;padding:12px 20px}
+  .link-chico{background:none;border:none;color:var(--azulinfo);cursor:pointer;font-size:.78rem;font-weight:700;text-decoration:underline;padding:0;font-family:inherit}
   .tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:12px}
   .tab{border:none;border-radius:16px;padding:16px 20px;text-align:left;color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(19,34,63,.18);outline:3px solid transparent;outline-offset:2px;transition:transform .12s}
   .tab:hover{transform:translateY(-2px)} .tab.activa{outline-color:var(--azul)}
@@ -200,6 +211,18 @@
       '&d=' + encodeURIComponent(d.d === null || d.d === undefined ? '' : d.d) + '&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(s);
   }
+  function llamarLote(lista, ok, fail) {
+    var url = $('inputUrlConector').value.trim();
+    if (!/^https:\/\/script\.google\.com\//.test(url)) { fail('Pega la URL del conector y pulsa Guardar.'); return; }
+    var cb = 'conc_lt_' + Date.now(), s = document.createElement('script'), listo = false;
+    var limpiar = function () { delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); clearTimeout(t); };
+    var t = setTimeout(function () { if (!listo) { limpiar(); fail('No hubo respuesta en 40 segundos. Lo más probable: el código de Apps Script no está actualizado o falta publicar la «Nueva versión».'); } }, 40000);
+    window[cb] = function (r) { listo = true; limpiar(); r && r.ok ? ok(r.data) : fail(r && r.error ? r.error : 'Respuesta inválida.'); };
+    s.onerror = function () { if (!listo) { limpiar(); fail('No se pudo conectar para guardar.'); } };
+    s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=asignarlote&token=' + encodeURIComponent(TOKEN) +
+      '&lote=' + encodeURIComponent(JSON.stringify(lista)) + '&callback=' + cb + '&_=' + Date.now();
+    document.head.appendChild(s);
+  }
 
   function cargar() {
     var btn = $('btnRecargar'); btn.disabled = true; btn.textContent = 'Actualizando…';
@@ -208,11 +231,11 @@
     llamar(tol, function (r) {
       btn.disabled = false; btn.textContent = 'Actualizar datos';
       datos = r.filas || [];
-      var viejo = !r.acciones || r.acciones.indexOf('asignar') < 0 || r.acciones.indexOf('ajustar') < 0;
+      var viejo = !r.acciones || r.acciones.indexOf('asignarlote') < 0 || r.acciones.indexOf('ajustar') < 0;
       mensaje('ok', 'Datos al día (' + r.generado + '). ' + (r.estadoEnHoja && r.estadoEnHoja.escrito ? 'Hoja Consolidado actualizada: columna F (estado)' + (r.estadoEnHoja.contrato ? ' y columna G (# contrato)' : '') + ' en ' + r.estadoEnHoja.filas + ' filas.' : ''));
       var av = $('avisoVersion'); av.style.display = viejo ? 'block' : 'none';
       pintar();
-      if (abierta) { var f = datos.filter(function (x) { return x.claveAjuste === abierta; })[0]; if (f) ficha(f); else cerrar(); }
+      if (abierta) { var f = datos.filter(function (x) { return x.claveAjuste === abierta; })[0]; if (f) { if (vistaModal === 'contrato' && !esMulti(f)) fichaContrato(f); else if (vistaModal === 'contrato') fichaContrato(f, function () { ficha(f); }); else ficha(f); } else cerrar(); }
     }, function (msg) { btn.disabled = false; btn.textContent = 'Actualizar datos'; mensaje('error', 'Error: ' + msg); });
   }
   $('btnRecargar').addEventListener('click', cargar);
@@ -282,10 +305,18 @@
     });
     var cont = $('fichasBusqueda'), panel = document.querySelector('section.panel');
     cont.textContent = '';
-    if (q && rows.length >= 1 && rows.length <= 3 && !verTabla) {
-      var tit = el('div', 'fichas-titulo'); tit.appendChild(el('span', '', 'Resultado de la búsqueda «' + $('buscar').value.trim() + '»: ' + rows.length + (rows.length === 1 ? ' cliente' : ' clientes')));
+    var unidades = [], vistas = {};
+    rows.forEach(function (f) {
+      var k = f.claveAjuste ? 'P' + normCed(f.cedula) : 'F' + f.filaCons + '|' + f.cedula;
+      if (!k || vistas[k]) return; vistas[k] = true; unidades.push(f);
+    });
+    if (q && unidades.length >= 1 && unidades.length <= 3 && !verTabla) {
+      var tit = el('div', 'fichas-titulo'); tit.appendChild(el('span', '', 'Resultado de la búsqueda «' + $('buscar').value.trim() + '»: ' + unidades.length + (unidades.length === 1 ? ' cliente' : ' clientes')));
       var lt = el('button', '', 'Ver como tabla'); lt.type = 'button'; lt.onclick = function () { verTabla = true; pintar(); }; tit.appendChild(lt); cont.appendChild(tit);
-      rows.forEach(function (f) { var c = el('div', 'ficha-inline'); construirFicha(f, c, false); cont.appendChild(c); });
+      unidades.forEach(function (f) {
+        if (esMulti(f)) { var pc = el('div', 'persona'); personaCard(contratosDe(f), pc, false); cont.appendChild(pc); }
+        else { var c = el('div', 'ficha-inline'); construirFicha(f, c, false); cont.appendChild(c); }
+      });
       cont.style.display = 'block'; panel.style.display = 'none';
     } else { cont.style.display = 'none'; panel.style.display = ''; }
     $('pie').textContent = rows.length + ' cliente' + (rows.length === 1 ? '' : 's') + (q ? (rows.length === 1 ? ' encontrado.' : ' encontrados.') : ' en esta lista.') + ' Toca uno para ver su ficha y corregir su estado.';
@@ -350,13 +381,103 @@
     d.appendChild(box);
   }
 
+  var vistaModal = 'persona';
+  function normCed(v) { return String(v === undefined || v === null ? '' : v).replace(/\D/g, ''); }
+  function contratosDe(f) {
+    var k = normCed(f.cedula);
+    return datos.filter(function (x) { return x.claveAjuste && k && normCed(x.cedula) === k; });
+  }
+  function esMulti(f) { return !!(f.claveAjuste && f.contratosGrupo && f.contratosGrupo.length > 1); }
   function ficha(f) {
     abierta = f.claveAjuste || null;
     var d = $('ficha'); d.textContent = '';
-    construirFicha(f, d, true);
+    if (esMulti(f)) { vistaModal = 'persona'; personaCard(contratosDe(f), d, true); }
+    else { vistaModal = 'contrato'; construirFicha(f, d, true); }
     $('modal').className = 'on';
   }
-  function construirFicha(f, d, enModal) {
+  function fichaContrato(f, volver) {   // detalle de UN contrato (nota / corregir estado)
+    abierta = f.claveAjuste || null; vistaModal = 'contrato';
+    var d = $('ficha'); d.textContent = '';
+    construirFicha(f, d, true, volver);
+    $('modal').className = 'on';
+  }
+
+  // Tarjeta sencilla de una persona con VARIOS contratos
+  function personaCard(cs, d, enModal) {
+    var f0 = cs[0], pagos = f0.pagosGrupo || [];
+    d.appendChild(el('h2', '', nombre(f0)));
+    d.appendChild(el('div', 'sub', 'Cédula ' + f0.cedula + ' · ' + cs.length + ' contratos'));
+    // 1) Contratos
+    d.appendChild(el('h3', '', '1. Contratos de esta persona'));
+    var t1 = el('table'), h1 = el('tr');
+    ['Contrato', 'Placa', 'Valor a pagar a Dugo Motos', 'Valor que aparece en Consolidado', 'Estado', ''].forEach(function (x, i) { var th = el('th', i === 2 || i === 3 ? 'num' : '', x); h1.appendChild(th); });
+    var hd = el('thead'); hd.appendChild(h1); t1.appendChild(hd);
+    var tb1 = el('tbody');
+    cs.forEach(function (f) {
+      var tr = el('tr');
+      tr.appendChild(el('td', '', f.contrato)); tr.appendChild(el('td', '', f.placa || ''));
+      tr.appendChild(el('td', 'num', money(f.pagado))); tr.appendChild(el('td', 'num', esCons(f) ? valorCons(f) : '—'));
+      var te = el('td'); te.appendChild(badge(f));
+      if (f.valor === 'Pagó de menos' && esCons(f) && f.dif !== null) te.appendChild(el('div', 'ajuste-actual', 'faltan $ ' + fmt.format(Math.abs(f.dif))));
+      if (f.ajuste && f.ajuste.decision !== 'Nota') te.appendChild(el('div', 'obs', 'ajuste manual'));
+      tr.appendChild(te);
+      var ta = el('td'); var bt = el('button', 'link-chico', 'Nota / corregir'); bt.type = 'button';
+      bt.onclick = function () { fichaContrato(f, function () { ficha(f0); }); }; ta.appendChild(bt); tr.appendChild(ta);
+      tb1.appendChild(tr);
+    });
+    t1.appendChild(tb1); d.appendChild(t1);
+    // 2) Pagos de Consolidado: escribir el contrato de cada uno
+    d.appendChild(el('h3', '', '2. Pagos que aparecen en Consolidado: escribe el # de contrato de cada uno'));
+    var inputs = [];
+    if (!pagos.length) d.appendChild(el('p', 'obs', 'No hay pagos de esta persona en la hoja Consolidado.'));
+    else {
+      var lid = 'lc' + Math.floor(Math.random() * 1e9), dl = el('datalist'); dl.id = lid;
+      cs.forEach(function (f) { var o = el('option'); o.value = f.contrato; dl.appendChild(o); }); d.appendChild(dl);
+      var t2 = el('table'), h2 = el('tr');
+      ['Pago en Consolidado', '¿De qué contrato es?'].forEach(function (x, i) { h2.appendChild(el('th', i === 0 ? '' : '', x)); });
+      var hd2 = el('thead'); hd2.appendChild(h2); t2.appendChild(hd2);
+      var tb2 = el('tbody');
+      pagos.forEach(function (p) {
+        var tr = el('tr'), valor = (p.c && p.d && p.c !== p.d) ? 'C ' + money(p.c) + ' · D ' + money(p.d) : money(p.c || p.d);
+        var t0 = el('td'); t0.appendChild(el('b', '', valor)); t0.appendChild(el('div', 'obs', 'fila ' + p.fila + (p.manual ? ' · asignado por ti' : ''))); tr.appendChild(t0);
+        var ti = el('td'); var inp = el('input', 'contrato'); inp.type = 'text'; inp.setAttribute('list', lid); inp.placeholder = '# contrato';
+        inp.value = p.contratoActual === 'NINGUNO' ? 'NO ES UN PAGO' : (p.contratoActual || '');
+        ti.appendChild(inp);
+        var nb = el('button', 'link-chico', ' no es un pago'); nb.type = 'button'; nb.onclick = function () { inp.value = 'NO ES UN PAGO'; }; ti.appendChild(document.createTextNode(' ')); ti.appendChild(nb);
+        tr.appendChild(ti); tb2.appendChild(tr);
+        inputs.push({ p: p, inp: inp });
+      });
+      t2.appendChild(tb2); d.appendChild(t2);
+      d.appendChild(el('p', 'obs', 'Escribe o elige el número de contrato (el mismo de Protect). Al guardar, cada contrato se actualiza solo: queda Consolidado si tiene pago, o Falta si no.'));
+    }
+    var barra = el('div', 'barra-guardar');
+    if (pagos.length) {
+      var gb = el('button', 'btn btn-verde btn-grande', 'Guardar y actualizar'); gb.type = 'button';
+      gb.onclick = function () {
+        var lote = [], errores = [];
+        inputs.forEach(function (x) {
+          var txt = x.inp.value.trim(), actual = x.p.contratoActual === 'NINGUNO' ? 'NO ES UN PAGO' : (x.p.contratoActual || '');
+          if (txt.toUpperCase() === actual.toUpperCase() || (mismo(txt, actual) && txt !== '')) return;   // sin cambios
+          var item = { clavePago: x.p.clavePago, cedula: f0.cedula, cliente: nombre(f0), c: x.p.c, d: x.p.d };
+          if (!txt) { if (x.p.manual) { item.contrato = 'AUTO'; lote.push(item); } return; }
+          if (/^no\s*es\s*un\s*pago$/i.test(txt)) { item.contrato = 'NINGUNO'; lote.push(item); return; }
+          var hit = cs.filter(function (c) { return mismo(c.contrato, txt); })[0];
+          if (!hit) { errores.push('«' + txt + '» no es un contrato de esta persona (' + cs.map(function (c) { return c.contrato; }).join(', ') + ')'); return; }
+          item.contrato = hit.contrato; lote.push(item);
+        });
+        if (errores.length) { avisoLocal(d, 'error', 'Revisa: ' + errores.join(' · ')); return; }
+        if (!lote.length) { avisoLocal(d, 'info', 'No hay cambios para guardar.'); return; }
+        d.querySelectorAll('button, input').forEach(function (x) { x.disabled = true; });
+        avisoLocal(d, 'cargando', 'Guardando ' + lote.length + (lote.length === 1 ? ' cambio' : ' cambios') + '… espera unos segundos.');
+        llamarLote(lote, function () { avisoLocal(d, 'ok', 'Guardado ✔ Actualizando los estados…'); cargar(); },
+          function (msg) { avisoLocal(d, 'error', 'No se pudo guardar: ' + msg); d.querySelectorAll('button, input').forEach(function (x) { x.disabled = false; }); });
+      };
+      barra.appendChild(gb);
+    }
+    if (enModal) { var cb = el('button', 'btn btn-gris', 'Cerrar'); cb.type = 'button'; cb.onclick = cerrar; barra.appendChild(cb); }
+    d.appendChild(barra);
+  }
+  function construirFicha(f, d, enModal, volver) {
     d.appendChild(el('h2', '', nombre(f)));
     var gr = el('div', 'grande');
     if (esFalta(f)) { gr.className += ' g-rojo'; gr.textContent = 'FALTA POR CONSOLIDAR'; }
@@ -378,7 +499,6 @@
     if (!f.obs && f.filaCons !== '' && f.filaCons !== undefined) d.appendChild(el('p', 'obs', 'Fila(s) en la hoja Consolidado: ' + f.filaCons + '.'));
     if (f.obs) d.appendChild(el('p', 'obs', f.obs));
 
-    if (f.contratosGrupo && f.contratosGrupo.length > 1 && f.pagosGrupo && f.pagosGrupo.length) panelPagos(f, d);
     if (f.claveAjuste) {
       var aj = f.ajuste;
       if (aj && aj.decision !== 'Nota') d.appendChild(el('p', 'ajuste-actual', 'Ajuste manual activo' + (aj.fecha ? ' (' + aj.fecha + ')' : '') + '.'));
@@ -403,6 +523,7 @@
       if (aj) accion('Quitar ajuste / nota', 'btn-gris', 'Quitar', '¿Quitar el ajuste y la nota de este cliente?');
       d.appendChild(ac);
     }
+    if (volver) { var vb = el('button', 'btn btn-azul', '← Volver a los contratos de la persona'); vb.type = 'button'; vb.style.marginTop = '12px'; vb.style.marginRight = '8px'; vb.onclick = volver; d.appendChild(vb); }
     if (enModal) { var cb = el('button', 'btn btn-gris', 'Cerrar'); cb.type = 'button'; cb.style.marginTop = '12px'; cb.onclick = cerrar; d.appendChild(cb); }
   }
   function cerrar() { abierta = null; $('modal').className = ''; }

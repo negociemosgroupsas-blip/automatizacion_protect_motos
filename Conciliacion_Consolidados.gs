@@ -560,6 +560,15 @@ function CONC_guardarAsignacion(ss, d) {
   }
 }
 
+// Guarda varias asignaciones de una vez. lista: [{ clavePago, contrato, cedula, cliente, c, d }, ...]
+function CONC_guardarAsignaciones(ss, lista) {
+  if (!lista || !lista.length) return { ok: true, guardados: 0 };
+  if (lista.length > 40) throw new Error('Demasiadas asignaciones a la vez (máximo 40).');
+  var n = 0;
+  lista.forEach(function (d) { CONC_guardarAsignacion(ss, d); n++; });
+  return { ok: true, guardados: n };
+}
+
 // ----- Ajustes manuales (se guardan en la hoja "Ajustes_Manuales") -----
 function CONC_claveAjuste(p) {
   return 'P:' + (CONC_normClave(p.contrato) || ('F' + p.fila)) + '|' + CONC_normCedula(p.cedula);
