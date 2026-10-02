@@ -340,7 +340,7 @@
     if (esNoAplica(f)) { b.className += ' b-gris2'; b.textContent = '🚫 ' + f.estado.replace('No aplica · ', ''); }
     else if (esDirecto(f)) { b.className += ' b-azul'; b.textContent = '💵 Dinero entró directo a Protect'; }
     else if (esFalta(f)) { b.className += ' b-rojo'; b.textContent = 'Falta por consolidar'; }
-    else if (f.estado === 'Sin registro en Protect') { b.className += ' b-gris'; b.textContent = 'Está en Consolidado, no en Protect'; }
+    else if (f.estado === 'Sin registro en Protect') { b.className += ' b-gris'; b.textContent = 'Está en Consolidado, no en Protect' + (f.revisado ? ' · revisado ✔' : ''); }
     else if (f.estado === 'Consolidado por nombre (revisar)') { b.className += ' b-naranja'; b.textContent = 'Consolidado por nombre (revisar)'; }
     else if (f.valor === 'Pagó de menos') { b.className += ' b-rojo'; b.textContent = '⚠ Consolidado · pagó de menos'; }
     else if (f.anuladoConPago) { b.className += ' b-naranja'; b.textContent = '🔎 Consolidado · contrato anulado (revisar)'; }
@@ -584,7 +584,7 @@
     if (esNoAplica(f)) { gr.className += ' g-gris'; gr.textContent = 'NO APLICA — contrato ' + (f.estado.indexOf('Anul') >= 0 ? 'ANULADO' : '') + ' en Protect'; }
     else if (esFalta(f)) { gr.className += ' g-rojo'; gr.textContent = 'FALTA POR CONSOLIDAR'; }
     else if (f.estado === 'Consolidado por nombre (revisar)') { gr.className += ' g-naranja'; gr.textContent = 'CONSOLIDADO POR NOMBRE — confirma que sea la misma persona'; }
-    else if (f.estado === 'Sin registro en Protect') { gr.className += ' g-gris'; gr.textContent = 'ESTÁ EN CONSOLIDADO PERO NO EN PROTECT'; }
+    else if (f.estado === 'Sin registro en Protect') { gr.className += ' g-gris'; gr.textContent = 'ESTÁ EN CONSOLIDADO PERO NO EN PROTECT' + (f.revisado ? ' · REVISADO ✔' : ''); }
     else { gr.className += ' g-verde'; gr.textContent = 'YA CONSOLIDADO'; }
     d.appendChild(gr);
     var g = el('div', 'grid');
@@ -606,7 +606,7 @@
     if (f.claveAjuste) {
       var aj = f.ajuste;
       if (aj && aj.decision !== 'Nota') d.appendChild(el('p', 'ajuste-actual', 'Ajuste manual activo' + (aj.fecha ? ' (' + aj.fecha + ')' : '') + '.'));
-      d.appendChild(el('small', '', 'Nota (opcional)'));
+      d.appendChild(el('small', '', 'Nota (opcional) — también se escribe en la hoja Consolidado, columna F, al frente de este pago'));
       var nt = el('textarea', 'nota'); nt.rows = 2; nt.maxLength = 300; nt.placeholder = 'Escribe una nota si lo necesitas…'; if (aj && aj.nota) nt.value = aj.nota; d.appendChild(nt);
       var ac = el('div', 'acciones');
       function accion(txt, cls, decision, pregunta) {
@@ -621,9 +621,11 @@
         };
         ac.appendChild(bt);
       }
-      if (esCons(f)) accion('Corregir: marcar como FALTA POR CONSOLIDAR', 'btn-rojo', 'Falta', '¿Marcar a ' + nombre(f) + ' como FALTA POR CONSOLIDAR?');
+      if (f.estado === 'Sin registro en Protect') {
+        if (!(aj && aj.decision === 'Revisado')) accion('✔ Marcar como REVISADO', 'btn-verde', 'Revisado', '¿Marcar a ' + nombre(f) + ' como REVISADO? Quedará escrito en la hoja Consolidado.');
+      } else if (esCons(f)) accion('Corregir: marcar como FALTA POR CONSOLIDAR', 'btn-rojo', 'Falta', '¿Marcar a ' + nombre(f) + ' como FALTA POR CONSOLIDAR?');
       else if (!esDirecto(f)) accion('Marcar como YA CONSOLIDADO', 'btn-verde', 'Consolidado', '¿Marcar a ' + nombre(f) + ' como YA CONSOLIDADO?');
-      if (!esDirecto(f)) accion('💵 Dinero entró directo a Protect', 'btn-azul', 'Directo', '¿Marcar a ' + nombre(f) + ' como «Dinero entró directo a Protect»? Pasará a la lista de pagos directos y dejará de aparecer como faltante.');
+      if (f.estado !== 'Sin registro en Protect' && !esDirecto(f)) accion('💵 Dinero entró directo a Protect', 'btn-azul', 'Directo', '¿Marcar a ' + nombre(f) + ' como «Dinero entró directo a Protect»? Pasará a la lista de pagos directos y dejará de aparecer como faltante.');
       accion('Guardar solo la nota', 'btn-info', 'Nota', null);
       if (aj) accion('Quitar ajuste / nota', 'btn-gris', 'Quitar', '¿Quitar el ajuste y la nota de este cliente?');
       d.appendChild(ac);

@@ -476,10 +476,18 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
   cons.forEach(function (r) {
     if (r.usada) { if (!r.estadoFila) r.estadoFila = CONC_ESTADO.CONCILIADO; return; }
     r.estadoFila = CONC_ESTADO.SIN_PROTECT;
+    var claveS = 'S:' + String(r.clavePago || '').replace(/^R:/, '');
+    var ajS = ajustes && ajustes[claveS];
+    var obsS = 'Está en Consolidados pero no en Protect (ni por cédula ni por nombre).';
+    if (ajS) {
+      if (ajS.decision === 'Revisado') { r.estadoFila += ' · revisado'; obsS += ' Marcado como revisado.'; }
+      if (ajS.nota) { r.estadoFila += ' · Nota: ' + String(ajS.nota).slice(0, 150); obsS += ' Nota: ' + ajS.nota; }
+    }
     salida.push({
+      claveAjuste: claveS, ajuste: ajS ? { decision: ajS.decision, nota: ajS.nota || '', fecha: ajS.fecha || '' } : null, revisado: !!(ajS && ajS.decision === 'Revisado'),
       estado: CONC_ESTADO.SIN_PROTECT, cedula: r.cedula, clienteCons: r.cliente, clienteProtect: '', placa: '', contrato: '',
       pagado: null, c: r.c, d: r.d, concordo: '', valor: '', dif: null, difC: null, difD: null, cruce: 'Sin cruce',
-      filaCons: r.fila, filaProtect: '', obs: 'Está en Consolidados pero no en Protect (ni por cédula ni por nombre).', extra: null,
+      filaCons: r.fila, filaProtect: '', obs: obsS, extra: null,
       nCons: 1, varios: false, asignacion: '', porOrden: false
     });
   });
@@ -670,7 +678,7 @@ function CONC_leerAjustes(ss) {
   var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, CONC_AJ_ENCABEZADOS.length).getValues();
   var out = {};
   datos.forEach(function (r) {
-    if (CONC_vacio(r[0]) || (r[1] !== 'Consolidado' && r[1] !== 'Falta' && r[1] !== 'Nota' && r[1] !== 'Directo')) return;
+    if (CONC_vacio(r[0]) || (r[1] !== 'Consolidado' && r[1] !== 'Falta' && r[1] !== 'Nota' && r[1] !== 'Directo' && r[1] !== 'Revisado')) return;
     out[String(r[0])] = { decision: r[1], nota: CONC_texto(r[5]), fecha: CONC_fechaHoraTxt(CONC_aFecha(r[6])) };
   });
   return out;
@@ -679,9 +687,9 @@ function CONC_leerAjustes(ss) {
 // d: { clave, decision: 'Consolidado' | 'Falta' | 'Nota' (solo nota, no cambia el estado) | 'Quitar', cedula, cliente, contrato, nota }
 function CONC_guardarAjuste(ss, d) {
   var decision = String(d.decision || '');
-  if (['Consolidado', 'Falta', 'Directo', 'Nota', 'Quitar'].indexOf(decision) < 0) throw new Error('Decisión no válida.');
+  if (['Consolidado', 'Falta', 'Directo', 'Revisado', 'Nota', 'Quitar'].indexOf(decision) < 0) throw new Error('Decisión no válida.');
   var clave = String(d.clave || '');
-  if (!clave || clave.indexOf('P:') !== 0) throw new Error('Falta la clave del contrato.');
+  if (!clave || (clave.indexOf('P:') !== 0 && clave.indexOf('S:') !== 0)) throw new Error('Falta la clave del contrato.');
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(30000)) throw new Error('Hay otra operación en curso. Intenta de nuevo en un momento.');
   try {
@@ -790,11 +798,13 @@ function CONC_textoFila(f) {
   }
   if (f.porOrden) t += ' · por orden (revisar)';
   if (f.anuladoConPago) t += ' · contrato anulado (revisar)';
+  if (f.ajuste && f.ajuste.nota) t += ' · Nota: ' + String(f.ajuste.nota).slice(0, 150);
   if (f.ajuste && f.ajuste.decision === 'Consolidado') t += ' · ajuste manual';
   return t;
 }
 
 function CONC_colorFila(t) {
+  t = String(t).split(' · Nota:')[0];   // la nota escrita por ti no cambia el color
   if (/^No es un pago/.test(t)) return '#e6e6e6';
   if (/^Pagó directo/.test(t)) return '#cfe2f3';
   if (/^Contrato anulado/.test(t)) return '#e6e6e6';
