@@ -154,7 +154,7 @@
 (function () {
   var TOKEN = 'PM-CONC-3e97c3a8bb5298ef9d192391';
   var $ = function (id) { return document.getElementById(id); };
-  var fmt = new Intl.NumberFormat('es-CO');
+  var fmt = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });   // pesos colombianos: sin centavos
   var datos = [], estadosAR = null, lista = 'cons', soloMenos = false, soloRevisar = false, abierta = null, verTabla = false, ultimaConsulta = '';
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; }
   function money(v) { return v === null || v === undefined || v === '' ? '—' : '$ ' + fmt.format(v); }

@@ -209,7 +209,7 @@ function CONC_leerConsolidados(hoja) {
     filas.push({
       fila: CONC_CONS_FILA_INICIO + i,
       cedula: f[0], cliente: f[1],
-      c: CONC_sinCero(CONC_aNumero(f[2])), d: CONC_sinCero(CONC_aNumero(f[3])),
+      c: CONC_sinCero(CONC_corregirMiles(CONC_aNumero(f[2]))), d: CONC_sinCero(CONC_corregirMiles(CONC_aNumero(f[3]))),
       extra: f.slice(4)
     });
   }
