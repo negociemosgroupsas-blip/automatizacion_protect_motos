@@ -48,6 +48,7 @@ function CONC_apiConciliar(tolerancia, rapido) {
     atipicos: out.atipicos,
     columnas: out.columnas,
     estadoEnHoja: out.estadoEnHoja,
+    estadosAR: out.estadosAR,
     version: 'v10',
     rapido: !!rapido,
     acciones: ['conciliar', 'ajustar', 'asignar', 'asignarlote'], // la pantalla usa esto para avisar si el código publicado está desactualizado

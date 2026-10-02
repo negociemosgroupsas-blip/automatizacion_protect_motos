@@ -136,7 +136,9 @@ function CONC_procesar(ss, tol, rapido) {
       CONC_escribirHistorial(ss, ah.registros);
       estadoEnHoja = CONC_escribirEstadoEnConsolidados(hojaCons, lectura.filas);
     }
-    return { diag: CONC_diagnostico(protect, lectura.filas, res.filas), estadoEnHoja: estadoEnHoja, res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas), columnas: columnas };
+    var estadosAR = {};
+    protect.forEach(function (p) { var v = String((p.extra && p.extra.estadoCliente) || '').trim() || '(vacío)'; estadosAR[v] = (estadosAR[v] || 0) + 1; });
+    return { estadosAR: estadosAR, diag: CONC_diagnostico(protect, lectura.filas, res.filas), estadoEnHoja: estadoEnHoja, res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas), columnas: columnas };
   } finally {
     if (lock) lock.releaseLock();
   }
@@ -315,14 +317,14 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
   var grupos = {}, orden = [], sinGrupo = [], pendientesNombre = [];
   var anulados = [], activasPorCed = {};
   protect.forEach(function (p) {
-    if (!(p.extra && /ANULAD|CANCELAD/i.test(String(p.extra.estadoCliente || '')))) activasPorCed[CONC_normCedula(p.cedula)] = true;
+    if (!(p.extra && CONC_esAnulado(p.extra.estadoCliente))) activasPorCed[CONC_normCedula(p.cedula)] = true;
   });
   protect.forEach(function (p) {
     p.kCed = CONC_normCedula(p.cedula);
     p.kNom = CONC_normNombre(p.cliente);
     p.tokNom = CONC_tokensNombre(p.cliente);
     // Contratos Anulados o Cancelados (Protect columna AR): no se consolidan y no entran al reparto de pagos
-    if (p.extra && /ANULAD|CANCELAD/i.test(String(p.extra.estadoCliente || ''))) {
+    if (p.extra && CONC_esAnulado(p.extra.estadoCliente)) {
       // Si la persona NO tiene otros contratos activos y SÍ aparece en Consolidado con un pago, no se esconde: se consolida normal y se marca para revisar
       if (p.kCed && consPorCedula[p.kCed] && !activasPorCed[p.kCed]) { p.anuladoConPago = true; }
       else { p.noAplica = true; anulados.push(p); return; }
@@ -711,6 +713,12 @@ function CONC_guardarAjuste(ss, d) {
   } finally {
     lock.releaseLock();
   }
+}
+
+// Solo cuenta si la celda de Protect (columna AR) dice EXACTAMENTE Anulado o Cancelado (cualquier otro texto no cuenta)
+function CONC_esAnulado(v) {
+  var t = String(v === undefined || v === null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z]/g, '');
+  return t === 'ANULADO' || t === 'ANULADA' || t === 'CANCELADO' || t === 'CANCELADA';
 }
 
 // Contratos a los que apunta una asignación manual: uno, varios ("130, 141" / "130 + 141") o 'TODOS' (todos los de la cédula)

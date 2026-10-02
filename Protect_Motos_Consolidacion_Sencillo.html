@@ -155,7 +155,7 @@
   var TOKEN = 'PM-CONC-3e97c3a8bb5298ef9d192391';
   var $ = function (id) { return document.getElementById(id); };
   var fmt = new Intl.NumberFormat('es-CO');
-  var datos = [], lista = 'cons', soloMenos = false, soloRevisar = false, abierta = null, verTabla = false, ultimaConsulta = '';
+  var datos = [], estadosAR = null, lista = 'cons', soloMenos = false, soloRevisar = false, abierta = null, verTabla = false, ultimaConsulta = '';
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; }
   function money(v) { return v === null || v === undefined || v === '' ? '—' : '$ ' + fmt.format(v); }
   function norm(s) { return String(s === null || s === undefined ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
@@ -240,6 +240,7 @@
   var timerSync = null, sincronizando = false;
   function recibir(r, textoEstado) {
     datos = r.filas || [];
+    estadosAR = r.estadosAR || null;
     var viejo = !r.acciones || r.acciones.indexOf('asignarlote') < 0 || r.acciones.indexOf('ajustar') < 0;
     mensaje('ok', textoEstado || ('Datos al día (' + r.generado + ').'));
     var av = $('avisoVersion'); av.style.display = viejo ? 'block' : 'none';
@@ -372,6 +373,10 @@
       tl.textContent = (parecidos ? 'No hay coincidencia exacta; estos se parecen a «' + $('buscar').value.trim() + '»: ' + rows.length + (rows.length === 1 ? ' cliente' : ' clientes') : '') || 'Resultados de la búsqueda «' + $('buscar').value.trim() + '»: ' + rows.length + (rows.length === 1 ? ' cliente' : ' clientes') +
         ' (' + nc + ' consolidado' + (nc === 1 ? '' : 's') + ', ' + nf + ' que falta' + (nf === 1 ? '' : 'n') + (ns ? ', ' + ns + ' sin registro en Protect' : '') + ')';
     } else { tl.textContent = lista === 'cons' ? 'Clientes ya consolidados' : lista === 'directo' ? 'Clientes que pagaron directo a Protect (no aparecen en Consolidado)' : lista === 'noaplica' ? 'Contratos Anulados o Cancelados en Protect (no se consolidan)' : 'Clientes que faltan por consolidar'; }
+    if (!q && estadosAR) {
+      var partes = Object.keys(estadosAR).sort(function (a, b) { return estadosAR[b] - estadosAR[a]; }).slice(0, 12).map(function (k) { return k + ': ' + fmt.format(estadosAR[k]); });
+      if (lista === 'noaplica') tl.textContent += ' · Valores que hay en la columna AR de Protect → ' + partes.join(' · ');
+    }
     if (!rows.length) { var tr0 = el('tr'), td0 = el('td', 'vacio', !datos.length ? 'Pulsa «Actualizar datos» para cargar la información.' : (q ? 'No se encontró ningún cliente con «' + $('buscar').value.trim() + '». Prueba con menos palabras o solo el apellido.' : 'No hay clientes en esta lista.')); td0.colSpan = 7; tr0.appendChild(td0); tb.appendChild(tr0); }
     rows.forEach(function (f) {
       var tr = el('tr', f.valor === 'Pagó de menos' && esCons(f) ? 'menos' : '');
