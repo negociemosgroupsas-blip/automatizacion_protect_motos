@@ -63,10 +63,16 @@ var CONC_ESTADO = {
   DIRECTO: 'Pagó directo a Protect'   // el cliente paga directo a la cuenta: no aparece en Consolidado, se marca a mano
 };
 
+// "Pagó de más" no es problema, pero si la diferencia es grande suele ser que Protect!P está mal: se avisa para revisarlo.
+// Avisa cuando lo pagado supera lo de Protect en MÁS de este porcentaje Y en MÁS de este monto (pesos).
+var CONC_REVISAR_MAS_PORC = 0.25;
+var CONC_REVISAR_MAS_MIN = 50000;
+
 var CONC_VALOR = {
   ATIPICO: 'Protect!P atípico (revisar)',
   COINCIDE: 'Pagó lo correcto',
   MAS: 'Pagó de más',
+  MAS_REVISAR: 'Pagó de más (revisar valor)',
   MENOS: 'Pagó de menos',
   SIN_DATO: 'Sin valor para comparar'
 };
@@ -416,6 +422,7 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
       if (p.pagado !== null && p.pagado > umbralP) {
         f.valor = CONC_VALOR.ATIPICO; f.dif = null; f.difC = null; f.difD = null; f.concordo = '';
       }
+      if (f.valor === CONC_VALOR.MAS && pagadoEval && f.dif > Math.max(CONC_REVISAR_MAS_MIN, CONC_REVISAR_MAS_PORC * pagadoEval)) f.valor = CONC_VALOR.MAS_REVISAR;
       f.filaCons = a.filas.map(function (r) { return r.fila; }).join(', ');
       var notas = ['Aparece en Consolidados (' + a.filas.length + (a.filas.length === 1 ? ' fila' : ' filas') + ': ' + f.filaCons + ').'];
       if (comp) notas.push('Un solo pago de Consolidado cubre los contratos ' + f.compartidoCon.join(' + ') + ': se compara con la suma de Dugo Motos ($ ' + String(Math.round(pagadoEval || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ').');
@@ -754,6 +761,7 @@ function CONC_textoFila(f) {
   if (f.estado === CONC_ESTADO.DIRECTO) return CONC_ESTADO.DIRECTO;
   if (f.valor === CONC_VALOR.ATIPICO) return CONC_ESTADO.CONCILIADO + ' · Protect!P atípico (revisar)';
   var t = CONC_ESTADO.CONCILIADO; // pagar de más no importa: solo "Consolidado"
+  if (f.valor === CONC_VALOR.MAS_REVISAR) t += ' · pagó de más $' + String(Math.round(f.dif || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' (revisar Protect!P)';
   if (f.valor === CONC_VALOR.MENOS) {
     var falta = Math.abs(Math.round(f.dif || 0));
     t = CONC_VALOR.MENOS + ' · faltan $' + String(falta).replace(/\B(?=(\d{3})+(?!\d))/g, '.');

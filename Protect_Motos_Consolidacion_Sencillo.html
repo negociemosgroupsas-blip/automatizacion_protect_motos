@@ -67,6 +67,8 @@
   .barra input[type=search]{flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--borde);border-radius:8px;font-size:.88rem}
   .alerta{display:none;background:var(--rojo);color:#fff;padding:9px 16px;font-size:.85rem;font-weight:700;cursor:pointer}
   .alerta.on{display:block}
+  .alerta2{display:none;background:#d97706;color:#fff;padding:9px 16px;font-size:.85rem;font-weight:700;cursor:pointer}
+  .alerta2.on{display:block}
   .tabla-wrap{overflow:auto;max-height:68vh}
   table{width:100%;border-collapse:collapse;font-size:.85rem}
   th{position:sticky;top:0;background:#f8f9fb;text-align:left;padding:9px 10px;font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;color:var(--suave);border-bottom:2px solid var(--borde);white-space:nowrap}
@@ -135,6 +137,7 @@
     </div>
     <div class="titulo-lista" id="tituloLista"></div>
     <div class="alerta" id="alerta"></div>
+    <div class="alerta2" id="alerta2"></div>
     <div class="tabla-wrap">
       <table>
         <thead><tr><th>Cliente</th><th>Cédula</th><th>Contrato</th><th class="num">Valor pagado a Dugo Motos</th><th class="num">Valor pagado en Consolidado</th><th>Estado</th><th>Nota</th></tr></thead>
@@ -152,7 +155,7 @@
   var TOKEN = 'PM-CONC-3e97c3a8bb5298ef9d192391';
   var $ = function (id) { return document.getElementById(id); };
   var fmt = new Intl.NumberFormat('es-CO');
-  var datos = [], lista = 'cons', soloMenos = false, abierta = null, verTabla = false, ultimaConsulta = '';
+  var datos = [], lista = 'cons', soloMenos = false, soloRevisar = false, abierta = null, verTabla = false, ultimaConsulta = '';
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; }
   function money(v) { return v === null || v === undefined || v === '' ? '—' : '$ ' + fmt.format(v); }
   function norm(s) { return String(s === null || s === undefined ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
@@ -326,6 +329,7 @@
     return datos.filter(function (f) {
       if (!(lista === 'cons' ? esCons(f) : lista === 'directo' ? esDirecto(f) : lista === 'noaplica' ? esNoAplica(f) : esFalta(f))) return false;
       if (lista === 'cons' && soloMenos && f.valor !== 'Pagó de menos') return false;
+      if (lista === 'cons' && soloRevisar && f.valor !== 'Pagó de más (revisar valor)') return false;
       return true;
     });
   }
@@ -338,6 +342,7 @@
     else if (f.estado === 'Sin registro en Protect') { b.className += ' b-gris'; b.textContent = 'Está en Consolidado, no en Protect'; }
     else if (f.estado === 'Consolidado por nombre (revisar)') { b.className += ' b-naranja'; b.textContent = 'Consolidado por nombre (revisar)'; }
     else if (f.valor === 'Pagó de menos') { b.className += ' b-rojo'; b.textContent = '⚠ Consolidado · pagó de menos'; }
+    else if (f.valor === 'Pagó de más (revisar valor)') { b.className += ' b-naranja'; b.textContent = '🔎 Consolidado · revisar valor en Protect'; }
     else { b.className += ' b-verde'; b.textContent = '✔ Consolidado'; }
     return b;
   }
@@ -348,6 +353,9 @@
     var q = consulta();
     $('tabCons').classList.toggle('activa', !q && lista === 'cons'); $('tabFalta').classList.toggle('activa', !q && lista === 'falta'); $('tabDirecto').classList.toggle('activa', !q && lista === 'directo'); $('tabNoAplica').classList.toggle('activa', !q && lista === 'noaplica');
     var menos = datos.filter(function (f) { return esCons(f) && f.valor === 'Pagó de menos'; });
+    var revisar = datos.filter(function (f) { return esCons(f) && f.valor === 'Pagó de más (revisar valor)'; });
+    var al2 = $('alerta2');
+    if (!q && lista === 'cons' && revisar.length) { al2.classList.add('on'); al2.textContent = soloRevisar ? '🔎 Mostrando solo los ' + revisar.length + ' con valor por revisar en Protect. Toca aquí para ver todos.' : '🔎 ' + revisar.length + (revisar.length === 1 ? ' cliente pagó' : ' clientes pagaron') + ' bastante de más: revisa si el valor en Protect está mal. Toca aquí para verlos.'; } else { al2.classList.remove('on'); }
     var al = $('alerta');
     if (!q && lista === 'cons' && menos.length) {
       al.classList.add('on');
@@ -391,12 +399,13 @@
     } else { cont.style.display = 'none'; panel.style.display = ''; }
     $('pie').textContent = rows.length + ' cliente' + (rows.length === 1 ? '' : 's') + (q ? (rows.length === 1 ? ' encontrado.' : ' encontrados.') : ' en esta lista.') + ' Toca uno para ver su ficha y corregir su estado.';
   }
-  function elegir(l) { $('buscar').value = ''; lista = l; soloMenos = false; pintar(); }
+  function elegir(l) { $('buscar').value = ''; lista = l; soloMenos = false; soloRevisar = false; pintar(); }
   $('tabCons').addEventListener('click', function () { elegir('cons'); });
   $('tabFalta').addEventListener('click', function () { elegir('falta'); });
   $('tabDirecto').addEventListener('click', function () { elegir('directo'); });
   $('tabNoAplica').addEventListener('click', function () { elegir('noaplica'); });
-  $('alerta').addEventListener('click', function () { soloMenos = !soloMenos; pintar(); });
+  $('alerta').addEventListener('click', function () { soloMenos = !soloMenos; soloRevisar = false; pintar(); });
+  $('alerta2').addEventListener('click', function () { soloRevisar = !soloRevisar; soloMenos = false; pintar(); });
   $('buscar').addEventListener('input', pintar);
   $('btnLimpiar').addEventListener('click', function () { $('buscar').value = ''; pintar(); $('buscar').focus(); });
 
@@ -583,6 +592,7 @@
     b.appendChild(el('b', '', esCons(f) || f.estado === 'Sin registro en Protect' ? valorCons(f) : '—')); v.appendChild(b);
     d.appendChild(v);
     if (esCons(f) && f.valor === 'Pagó de menos' && f.dif !== null) d.appendChild(el('p', 'ajuste-actual', '⚠ Pagó de menos: faltan $ ' + fmt.format(Math.abs(f.dif)) + ' frente al valor de Dugo Motos.'));
+    if (esCons(f) && f.valor === 'Pagó de más (revisar valor)' && f.dif !== null) d.appendChild(el('p', 'ajuste-actual', '🔎 Pagó $ ' + fmt.format(f.dif) + ' de más: es mucho. Revisa si el valor de Protect (columna P) está bien.'));
     if (esCons(f) && f.valor === 'Pagó de más' && f.dif !== null) d.appendChild(el('p', 'obs', 'Pagó $ ' + fmt.format(f.dif) + ' de más (no es problema).'));
     if (!f.obs && f.filaCons !== '' && f.filaCons !== undefined) d.appendChild(el('p', 'obs', 'Fila(s) en la hoja Consolidado: ' + f.filaCons + '.'));
     if (f.obs) d.appendChild(el('p', 'obs', f.obs));
