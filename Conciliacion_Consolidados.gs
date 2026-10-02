@@ -313,13 +313,20 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
   // Agrupar contratos de Protect por persona. 1) por cédula; 2) los que no cruzan por cédula, por nombre
   // (exacto o aproximado) entre las filas de Consolidado que todavía no tienen dueño.
   var grupos = {}, orden = [], sinGrupo = [], pendientesNombre = [];
-  var anulados = [];
+  var anulados = [], activasPorCed = {};
+  protect.forEach(function (p) {
+    if (!(p.extra && /ANULAD|CANCELAD/i.test(String(p.extra.estadoCliente || '')))) activasPorCed[CONC_normCedula(p.cedula)] = true;
+  });
   protect.forEach(function (p) {
     p.kCed = CONC_normCedula(p.cedula);
     p.kNom = CONC_normNombre(p.cliente);
     p.tokNom = CONC_tokensNombre(p.cliente);
     // Contratos Anulados o Cancelados (Protect columna AR): no se consolidan y no entran al reparto de pagos
-    if (p.extra && /ANULAD|CANCELAD/i.test(String(p.extra.estadoCliente || ''))) { p.noAplica = true; anulados.push(p); return; }
+    if (p.extra && /ANULAD|CANCELAD/i.test(String(p.extra.estadoCliente || ''))) {
+      // Si la persona NO tiene otros contratos activos y SÍ aparece en Consolidado con un pago, no se esconde: se consolida normal y se marca para revisar
+      if (p.kCed && consPorCedula[p.kCed] && !activasPorCed[p.kCed]) { p.anuladoConPago = true; }
+      else { p.noAplica = true; anulados.push(p); return; }
+    }
     if (p.kCed && consPorCedula[p.kCed]) {
       var gk = 'C:' + p.kCed;
       if (!grupos[gk]) { grupos[gk] = { cruce: 'Cédula', filas: consPorCedula[p.kCed], contratos: [] }; orden.push(gk); }
@@ -400,6 +407,7 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
     });
     g.contratos.forEach(function (p, i) {
       var f = base(p, g.cruce), a = asig[i];
+      if (p.anuladoConPago) f.anuladoConPago = true;
       if (p.directRows.length) f.cruce = p.directMetodo === 'manual' ? 'Asignación manual' : (p.directMetodo === 'contrato' ? 'Número de contrato' : 'Placa');
       f.varios = n > 1;
       if (!a.filas.length) {
@@ -449,6 +457,7 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
           notas.push('Esta cédula tiene ' + n + ' contratos: la fila se asignó por coincidir el valor con Protect!P.');
         }
       }
+      if (p.anuladoConPago) notas.push('OJO: en Protect (columna AR) este contrato figura como "' + p.extra.estadoCliente + '" pero la cédula aparece pagando en Consolidado. Revisa si de verdad no llevó la póliza.');
       f.obs = notas.join(' ');
       CONC_aplicarAjusteManual(f, p, ajustes, a.filas);
       a.filas.forEach(function (r) { r.valorDugo = r.compartida ? pagadoEval : p.pagado; });
@@ -772,6 +781,7 @@ function CONC_textoFila(f) {
     t = CONC_VALOR.MENOS + ' · faltan $' + String(falta).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
   if (f.porOrden) t += ' · por orden (revisar)';
+  if (f.anuladoConPago) t += ' · contrato anulado/cancelado (revisar)';
   if (f.ajuste && f.ajuste.decision === 'Consolidado') t += ' · ajuste manual';
   return t;
 }
@@ -884,7 +894,9 @@ function CONC_escribirEstadoEnConsolidados(hoja, filasCons) {
   if (colH && CONC_vacio(hoja.getRange(ini - 1, colH).getValue())) {
     hoja.getRange(ini - 1, colH).setValue(CONC_TITULO_CONTRATO_MANUAL).setFontWeight('bold').setBackground('#d6a417').setFontColor('#13223f');
   }
-  return { escrito: true, columna: colF, filas: Object.keys(estadoPorFila).length, contrato: escribirG, columnaManual: colH };
+  var nValores = valoresDugo.filter(function (x) { return x[0] !== ''; }).length;
+  try { SpreadsheetApp.flush(); } catch (e) {}
+  return { escrito: true, columna: colF, filas: Object.keys(estadoPorFila).length, contrato: escribirG, columnaManual: colH, valorDugo: escribirV, valoresDugo: nValores };
 }
 
 // Diagnóstico del cruce: ayuda a ver por qué las cédulas de las dos hojas coinciden o no
