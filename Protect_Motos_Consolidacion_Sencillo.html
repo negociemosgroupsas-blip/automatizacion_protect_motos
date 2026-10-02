@@ -485,6 +485,7 @@
       var te = el('td'); te.appendChild(badge(f));
       if (f.valor === 'Pagó de menos' && esCons(f) && f.dif !== null) te.appendChild(el('div', 'ajuste-actual', 'faltan $ ' + fmt.format(Math.abs(f.dif))));
       if (f.ajuste && f.ajuste.decision !== 'Nota') te.appendChild(el('div', 'obs', 'ajuste manual'));
+      if (f.compartidoCon) te.appendChild(el('div', 'obs', 'un solo pago cubre ' + f.compartidoCon.join(' + ') + ' (suma Dugo $ ' + fmt.format(f.pagadoCompartido || 0) + ')'));
       tr.appendChild(te);
       var ta = el('td'); var bt = el('button', 'link-chico', 'Nota / corregir'); bt.type = 'button';
       bt.onclick = function () { fichaContrato(f, function () { ficha(f0); }); }; ta.appendChild(bt); tr.appendChild(ta);
@@ -509,11 +510,16 @@
         inp.value = p.contratoActual === 'NINGUNO' ? 'NO ES UN PAGO' : (p.contratoActual || '');
         ti.appendChild(inp);
         var nb = el('button', 'link-chico', ' no es un pago'); nb.type = 'button'; nb.onclick = function () { inp.value = 'NO ES UN PAGO'; }; ti.appendChild(document.createTextNode(' ')); ti.appendChild(nb);
+        if (cs.length > 1) {
+          var tb_ = el('button', 'link-chico', ' ✔ cubre todos los contratos'); tb_.type = 'button'; tb_.title = 'Un solo pago que pagó todos los contratos de esta persona';
+          tb_.onclick = function () { inp.value = cs.map(function (c) { return c.contrato; }).join(' + '); };
+          ti.appendChild(document.createTextNode(' ')); ti.appendChild(tb_);
+        }
         tr.appendChild(ti); tb2.appendChild(tr);
         inputs.push({ p: p, inp: inp });
       });
       t2.appendChild(tb2); d.appendChild(t2);
-      d.appendChild(el('p', 'obs', 'Escribe o elige el número de contrato (el mismo de Protect). Al guardar, cada contrato se actualiza solo: queda Consolidado si tiene pago, o Falta si no.'));
+      d.appendChild(el('p', 'obs', 'Escribe o elige el número de contrato (el mismo de Protect). Si un solo pago cubre varios contratos, pulsa «✔ cubre todos los contratos» o escribe los números separados por + (ejemplo: 130 + 141). Al guardar, cada contrato se actualiza solo: queda Consolidado si tiene pago, o Falta si no.'));
     }
     var barra = el('div', 'barra-guardar');
     if (pagos.length) {
@@ -526,6 +532,13 @@
           var item = { clavePago: x.p.clavePago, cedula: f0.cedula, cliente: nombre(f0), c: x.p.c, d: x.p.d };
           if (!txt) { if (x.p.manual) { item.contrato = 'AUTO'; lote.push(item); } return; }
           if (/^no\s*es\s*un\s*pago$/i.test(txt)) { item.contrato = 'NINGUNO'; lote.push(item); return; }
+          if (/^todos/i.test(txt) || /[,;+]|\s+y\s+/i.test(txt)) {
+            var partes = /^todos/i.test(txt) ? cs.map(function (c) { return c.contrato; }) : txt.split(/[,;+]|\s+y\s+/i).map(function (z) { return z.trim(); }).filter(Boolean);
+            var reales = [], malos = [];
+            partes.forEach(function (z) { var h = cs.filter(function (c) { return mismo(c.contrato, z); })[0]; if (h) { if (reales.indexOf(h.contrato) < 0) reales.push(h.contrato); } else malos.push(z); });
+            if (malos.length) { errores.push('«' + malos.join(', ') + '» no es un contrato de esta persona (' + cs.map(function (c) { return c.contrato; }).join(', ') + ')'); return; }
+            item.contrato = reales.length === cs.length ? 'TODOS' : reales.join(','); lote.push(item); return;
+          }
           var hit = cs.filter(function (c) { return mismo(c.contrato, txt); })[0];
           if (!hit) { errores.push('«' + txt + '» no es un contrato de esta persona (' + cs.map(function (c) { return c.contrato; }).join(', ') + ')'); return; }
           item.contrato = hit.contrato; lote.push(item);

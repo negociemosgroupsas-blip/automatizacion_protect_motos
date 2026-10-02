@@ -277,11 +277,11 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
     var am = asignaciones && asignaciones[r.clavePago];
     if (am) {
       if (am.contrato === 'NINGUNO') { r.usada = true; r.ignorada = true; r.estadoFila = 'No es un pago · ajuste manual'; return; }
-      var cands = porContrato[CONC_normClave(am.contrato)] || [];
-      var dest = cands.filter(function (x) { return CONC_normCedula(x.cedula) === r.kCed; })[0] || cands[0];
-      if (dest) {
+      var dests = CONC_destinosManual(am.contrato, r.kCed, porContrato, protect);
+      if (dests.length) {
         r.directa = true; r.usada = true; r.manual = true;
-        dest.directRows.push(r); dest.directMetodo = 'manual';
+        if (dests.length > 1) r.compartida = dests;   // un solo pago que cubre varios contratos
+        dests.forEach(function (dest) { dest.directRows.push(r); dest.directMetodo = 'manual'; });
         return;
       }
     }
@@ -380,7 +380,15 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
         salida.push(f);
         return;
       }
-      var mejor = CONC_mejorValor(a.filas, p.pagado, tol);
+      // Un solo pago que cubre varios contratos: se compara contra la SUMA de lo que Dugo Motos cobra por esos contratos
+      var pagadoEval = p.pagado, comp = null;
+      if (a.filas.length === 1 && a.filas[0].compartida) {
+        comp = a.filas[0].compartida; var totC = 0, hayC = false;
+        comp.forEach(function (q) { if (q.pagado !== null) { totC += q.pagado; hayC = true; } });
+        pagadoEval = hayC ? totC : null;
+      }
+      var mejor = CONC_mejorValor(a.filas, pagadoEval, tol);
+      if (comp) { f.compartidoCon = comp.map(function (q) { return CONC_texto(q.contrato); }); f.pagadoCompartido = pagadoEval; }
       f.estado = (g.cruce === 'Cédula' || p.directRows.length) ? CONC_ESTADO.CONCILIADO : CONC_ESTADO.POR_NOMBRE;
       f.clienteCons = mejor.r.cliente; f.c = mejor.r.c; f.d = mejor.r.d; f.nCons = a.filas.length;
       f.concordo = mejor.concordo; f.valor = mejor.valor; f.dif = mejor.dif; f.difC = mejor.difC; f.difD = mejor.difD;
@@ -390,6 +398,7 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
       }
       f.filaCons = a.filas.map(function (r) { return r.fila; }).join(', ');
       var notas = ['Aparece en Consolidados (' + a.filas.length + (a.filas.length === 1 ? ' fila' : ' filas') + ': ' + f.filaCons + ').'];
+      if (comp) notas.push('Un solo pago de Consolidado cubre los contratos ' + f.compartidoCon.join(' + ') + ': se compara con la suma de Dugo Motos ($ ' + String(Math.round(pagadoEval || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ').');
       if (mejor.suma) notas.push('Este contrato tiene ' + mejor.suma.n + ' pagos: se sumaron ($ ' + String(Math.round(mejor.suma.total)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ') para compararlos con el valor de Dugo Motos.');
       if (g.cruce === 'Nombre (revisar)' && !p.directRows.length) notas.push('Se encontró solo por nombre; confirma que sea la misma persona.');
       if (p.directRows.length) {
@@ -411,7 +420,7 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
       }
       f.obs = notas.join(' ');
       CONC_aplicarAjusteManual(f, p, ajustes, a.filas);
-      a.filas.forEach(function (r) { r.contratoAsig = CONC_texto(p.contrato); });
+      a.filas.forEach(function (r) { r.contratoAsig = r.compartida ? r.compartida.map(function (q) { return CONC_texto(q.contrato); }).join(' + ') : CONC_texto(p.contrato); });
       salida.push(f);
       if (!(f.ajuste && f.ajuste.decision === 'Falta')) {
         var txtFila = CONC_textoFila(f);
@@ -661,6 +670,22 @@ function CONC_guardarAjuste(ss, d) {
   } finally {
     lock.releaseLock();
   }
+}
+
+// Contratos a los que apunta una asignación manual: uno, varios ("130, 141" / "130 + 141") o 'TODOS' (todos los de la cédula)
+function CONC_destinosManual(txt, kCed, porContrato, protect) {
+  var t = String(txt === undefined || txt === null ? '' : txt).trim(), dests = [];
+  if (/^todos$/i.test(t)) {
+    protect.forEach(function (p) { if (CONC_normCedula(p.cedula) === kCed) dests.push(p); });
+    return dests;
+  }
+  t.split(/[,;+]|\s+y\s+/i).forEach(function (x) {
+    var k = CONC_normClave(x); if (!k) return;
+    var cands = porContrato[k] || [];
+    var d = cands.filter(function (c) { return CONC_normCedula(c.cedula) === kCed; })[0] || cands[0];
+    if (d && dests.indexOf(d) < 0) dests.push(d);
+  });
+  return dests;
 }
 
 // Reparte las filas de Consolidados entre los contratos de una misma persona (un pago = un contrato).
