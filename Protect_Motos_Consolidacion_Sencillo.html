@@ -108,8 +108,12 @@
     <input type="text" id="inputUrlConector" placeholder="Pega aquí la URL del conector (Apps Script)">
     <button class="btn btn-oro" id="btnGuardarUrl">Guardar</button>
     <button class="btn btn-azul" id="btnRecargar" style="background:#0e1a33">Actualizar datos</button>
+    <label style="font-size:12px;opacity:.9;display:inline-flex;align-items:center;gap:4px" title="El HTML se actualiza solo con este intervalo mientras esté abierto">🔄 Actualizar solo cada
+      <select id="autoAct" style="padding:4px 6px;border-radius:6px;border:1px solid #3b4a6b;background:#0e1a33;color:#fff;font-size:12px">
+        <option value="0">Nunca</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
+      </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-02.6</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-02.7</span>
   </div>
 </header>
 
@@ -274,6 +278,28 @@
     }, function (msg) { btn.disabled = false; btn.textContent = 'Actualizar datos'; mensaje('error', 'Error: ' + msg); });
   }
   $('btnRecargar').addEventListener('click', cargar);
+
+  // Actualización automática: vuelve a leer las hojas cada cierto tiempo (si no estás escribiendo ni tienes una ficha abierta)
+  var timerAuto = null;
+  function cargarAuto() {
+    if (abierta || sincronizando) return;
+    var u = $('inputUrlConector').value.trim(); if (!/^https:\/\/script\.google\.com\//.test(u)) return;
+    var ae = document.activeElement;
+    if (ae && (ae.tagName === 'TEXTAREA' || (ae.tagName === 'INPUT' && ae.id !== 'buscar' && ae.id !== 'inputUrlConector'))) return;
+    llamar(tolActual(), function (r) {
+      recibir(r, 'Actualizado automáticamente (' + r.generado + ').');
+      programarSync(1500);
+    }, function (msg) { mensaje('error', 'La actualización automática falló: ' + msg); });
+  }
+  function programarAuto() {
+    clearInterval(timerAuto); timerAuto = null;
+    var m = Number($('autoAct').value);
+    try { localStorage.setItem('conc_auto', String(m)); } catch (e) {}
+    if (m > 0) timerAuto = setInterval(cargarAuto, m * 60000);
+  }
+  try { var ga = localStorage.getItem('conc_auto'); $('autoAct').value = ga === null ? '10' : ga; if ($('autoAct').value === '') $('autoAct').value = '10'; } catch (e) { $('autoAct').value = '10'; }
+  $('autoAct').addEventListener('change', programarAuto);
+  programarAuto();
 
   // Búsqueda: recorre TODOS los clientes (consolidados, que faltan y sin registro en Protect).
   // Acepta palabras sueltas en cualquier orden y cédulas con puntos.
