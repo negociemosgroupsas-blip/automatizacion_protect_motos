@@ -254,7 +254,7 @@
     var nota = $('notaSync'); if (nota) nota.textContent = 'Actualizando la hoja de Google en segundo plano…';
     llamar(tolActual(), function (r) {
       sincronizando = false;
-      if (nota) nota.textContent = r.estadoEnHoja && r.estadoEnHoja.escrito ? 'Hoja Consolidado actualizada ✔ (' + r.generado + ')' + (r.estadoEnHoja.valorDugo ? ' · valor Dugo escrito en ' + r.estadoEnHoja.valoresDugo + ' filas (columna H)' : ' · el código de Apps Script aún no es el último (falta Nueva versión)') : '';
+      if (nota) nota.textContent = r.estadoEnHoja && r.estadoEnHoja.escrito ? 'Hoja Consolidado actualizada ✔ (' + r.generado + ')' + (r.estadoEnHoja.valorDugo ? ' · valor Dugo escrito en ' + r.estadoEnHoja.valoresDugo + ' filas (columna H)' + (r.estadoEnHoja.muestraH ? ' · comprobado: ' + r.estadoEnHoja.muestraH : '') : ' · el código de Apps Script aún no es el último (falta Nueva versión)') : '';
     }, function (msg) { sincronizando = false; if (nota) nota.textContent = 'La hoja de Google no pudo actualizarse sola (' + msg + '). Pulsa «Actualizar datos».'; }, true);
   }
   function programarSync(ms) { clearTimeout(timerSync); timerSync = setTimeout(sincronizar, ms || 4000); }

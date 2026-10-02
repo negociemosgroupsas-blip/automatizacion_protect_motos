@@ -895,7 +895,9 @@ function CONC_escribirEstadoEnConsolidados(hoja, filasCons) {
   }
   if (escribirV) {
     hoja.getRange(ini - 1, colV).setValue(CONC_TITULO_VALOR_DUGO_CONS).setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');
-    hoja.getRange(ini, colV, n, 1).setNumberFormat('$#,##0').setValues(valoresDugo).setFontWeight('bold').setHorizontalAlignment('right');
+    var rv = hoja.getRange(ini, colV, n, 1);
+    rv.setNumberFormat('$#,##0').setValues(valoresDugo).setFontWeight('bold').setFontColor('#13223f').setBackground(null).setHorizontalAlignment('right');
+    try { hoja.showColumns(colV); hoja.setColumnWidth(colV, 190); } catch (e) {}
   }
   // Título de la columna donde tú escribes el contrato (solo si está vacío; las celdas de abajo nunca se tocan)
   var colH = CONC_COL_CONTRATO_MANUAL;
@@ -903,8 +905,15 @@ function CONC_escribirEstadoEnConsolidados(hoja, filasCons) {
     hoja.getRange(ini - 1, colH).setValue(CONC_TITULO_CONTRATO_MANUAL).setFontWeight('bold').setBackground('#d6a417').setFontColor('#13223f');
   }
   var nValores = valoresDugo.filter(function (x) { return x[0] !== ''; }).length;
-  try { SpreadsheetApp.flush(); } catch (e) {}
-  return { escrito: true, columna: colF, filas: Object.keys(estadoPorFila).length, contrato: escribirG, columnaManual: colH, valorDugo: escribirV, valoresDugo: nValores };
+  var muestraH = '';
+  if (escribirV) {
+    try {
+      SpreadsheetApp.flush();
+      var primero = valoresDugo.findIndex ? valoresDugo.findIndex(function (x) { return x[0] !== ''; }) : -1;
+      if (primero >= 0) muestraH = 'fila ' + (ini + primero) + ' = ' + hoja.getRange(ini + primero, colV).getDisplayValue() + ' (hoja "' + hoja.getName() + '")';
+    } catch (e) { muestraH = 'no se pudo leer: ' + e.message; }
+  }
+  return { escrito: true, columna: colF, filas: Object.keys(estadoPorFila).length, contrato: escribirG, columnaManual: colH, valorDugo: escribirV, valoresDugo: nValores, muestraH: muestraH };
 }
 
 // Diagnóstico del cruce: ayuda a ver por qué las cédulas de las dos hojas coinciden o no
