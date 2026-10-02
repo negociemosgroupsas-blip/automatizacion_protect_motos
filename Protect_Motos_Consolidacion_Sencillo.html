@@ -475,12 +475,12 @@
     // 1) Contratos
     d.appendChild(el('h3', '', '1. Contratos de esta persona'));
     var t1 = el('table'), h1 = el('tr');
-    ['Contrato', 'Placa', 'Valor a pagar a Dugo Motos', 'Valor que aparece en Consolidado', 'Estado', ''].forEach(function (x, i) { var th = el('th', i === 2 || i === 3 ? 'num' : '', x); h1.appendChild(th); });
+    ['Contrato', 'Placa', 'Fila en Consolidado', 'Valor a pagar a Dugo Motos', 'Valor que aparece en Consolidado', 'Estado', ''].forEach(function (x, i) { var th = el('th', i === 3 || i === 4 ? 'num' : '', x); h1.appendChild(th); });
     var hd = el('thead'); hd.appendChild(h1); t1.appendChild(hd);
     var tb1 = el('tbody');
     cs.forEach(function (f) {
       var tr = el('tr');
-      tr.appendChild(el('td', '', f.contrato)); tr.appendChild(el('td', '', f.placa || ''));
+      tr.appendChild(el('td', '', f.contrato)); tr.appendChild(el('td', '', f.placa || '')); tr.appendChild(el('td', '', f.filaCons ? 'Fila ' + f.filaCons : '—'));
       tr.appendChild(el('td', 'num', money(f.pagado))); tr.appendChild(el('td', 'num', esCons(f) ? valorCons(f) : '—'));
       var te = el('td'); te.appendChild(badge(f));
       if (f.valor === 'Pagó de menos' && esCons(f) && f.dif !== null) te.appendChild(el('div', 'ajuste-actual', 'faltan $ ' + fmt.format(Math.abs(f.dif))));
@@ -553,6 +553,7 @@
     var g = el('div', 'grid');
     g.appendChild(campo('Nombre completo', nombre(f))); g.appendChild(campo('Número de cédula', f.cedula)); g.appendChild(campo('# Contrato', f.contrato));
     if (f.placa) g.appendChild(campo('Placa', f.placa));
+    if (f.filaCons) g.appendChild(campo('Fila en Consolidado', 'Fila ' + f.filaCons));
     d.appendChild(g);
     var v = el('div', 'valores');
     var a = el('div', 'valor-caja'); a.appendChild(el('small', '', 'Valor pagado a Dugo Motos')); a.appendChild(el('b', '', money(f.pagado))); v.appendChild(a);
@@ -600,9 +601,9 @@
   $('btnDescargar').addEventListener('click', function () {
     var q = consulta();
     var rows = q ? actual() : datos.filter(lista === 'cons' ? esCons : lista === 'directo' ? esDirecto : esFalta);
-    var cab = ['Cédula', 'Nombre completo', '# Contrato', 'Placa', 'Valor pagado a Dugo Motos', 'Valor pagado en Consolidado (C)', 'Valor pagado en Consolidado (D)', 'Diferencia', 'Estado', 'Nota', 'Asesor', 'Celular'];
+    var cab = ['Cédula', 'Nombre completo', '# Contrato', 'Placa', 'Fila en Consolidado', 'Valor pagado a Dugo Motos', 'Valor pagado en Consolidado (C)', 'Valor pagado en Consolidado (D)', 'Diferencia', 'Estado', 'Nota', 'Asesor', 'Celular'];
     var filas = rows.map(function (f) { var e = f.extra || {};
-      return [f.cedula, nombre(f), f.contrato, f.placa, f.pagado, f.c, f.d, f.dif, f.estado + (f.valor === 'Pagó de menos' ? ' · pagó de menos' : ''), nota(f), e.asesor, e.celular]; });
+      return [f.cedula, nombre(f), f.contrato, f.placa, f.filaCons, f.pagado, f.c, f.d, f.dif, f.estado + (f.valor === 'Pagó de menos' ? ' · pagó de menos' : ''), nota(f), e.asesor, e.celular]; });
     var csv = [cab].concat(filas).map(function (r) { return r.map(function (v) { v = v === null || v === undefined ? '' : String(v); return '"' + v.replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
     var h = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
     var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
