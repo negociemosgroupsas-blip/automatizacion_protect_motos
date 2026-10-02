@@ -64,9 +64,9 @@ var CONC_ESTADO = {
 };
 
 // "Pagó de más" no es problema, pero si la diferencia es grande suele ser que Protect!P está mal: se avisa para revisarlo.
-// Avisa cuando lo pagado supera lo de Protect en MÁS de este porcentaje Y en MÁS de este monto (pesos).
-var CONC_REVISAR_MAS_PORC = 0.25;
-var CONC_REVISAR_MAS_MIN = 50000;
+// Avisa cuando lo pagado supera lo de Protect en MÁS de este monto (pesos). Opcional: PORC > 0 exige además ese porcentaje (0.25 = 25 %).
+var CONC_REVISAR_MAS_PORC = 0;
+var CONC_REVISAR_MAS_MIN = 5000;
 
 var CONC_VALOR = {
   ATIPICO: 'Protect!P atípico (revisar)',
