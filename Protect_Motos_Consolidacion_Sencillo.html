@@ -89,6 +89,7 @@
   .valores{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
   .valor-caja{border:2px solid var(--borde);border-radius:12px;padding:10px 14px} .valor-caja small{display:block;font-size:.68rem;text-transform:uppercase;color:var(--suave)} .valor-caja b{font-size:1.25rem}
   .nota{width:100%;padding:9px 11px;border:1px solid var(--borde);border-radius:8px;font-size:.88rem;font-family:inherit;margin:4px 0 10px}
+  .nota-visible{margin-top:6px;padding:6px 8px;background:#fff8e1;border-left:3px solid var(--dorado);border-radius:4px;font-size:.82rem;color:#4b3b00;max-width:320px;white-space:normal}
   .acciones{display:flex;gap:8px;flex-wrap:wrap} .ajuste-actual{font-size:.8rem;font-weight:700;color:#7c3aed;margin:6px 0}
   .obs{font-size:.78rem;color:var(--suave);margin:8px 0}
   @media(max-width:640px){.valores{grid-template-columns:1fr} header .logo{height:46px}}
@@ -485,6 +486,7 @@
       var te = el('td'); te.appendChild(badge(f));
       if (f.valor === 'Pagó de menos' && esCons(f) && f.dif !== null) te.appendChild(el('div', 'ajuste-actual', 'faltan $ ' + fmt.format(Math.abs(f.dif))));
       if (f.ajuste && f.ajuste.decision !== 'Nota') te.appendChild(el('div', 'obs', 'ajuste manual'));
+      if (nota(f)) { var nn = el('div', 'nota-visible', '📝 ' + nota(f)); te.appendChild(nn); }
       if (f.compartidoCon) te.appendChild(el('div', 'obs', 'un solo pago cubre ' + f.compartidoCon.join(' + ') + ' (suma Dugo $ ' + fmt.format(f.pagadoCompartido || 0) + ')'));
       tr.appendChild(te);
       var ta = el('td'); var bt = el('button', 'link-chico', 'Nota / corregir'); bt.type = 'button';
