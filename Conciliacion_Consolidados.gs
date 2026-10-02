@@ -179,7 +179,7 @@ function CONC_leerProtect(hoja) {
     filas.push({
       fila: CONC_PROTECT_FILA_INICIO + i,
       cedula: cedula, cliente: cliente, placa: placa, contrato: contrato,
-      pagado: CONC_aNumero(pagado),
+      pagado: CONC_corregirMiles(CONC_aNumero(pagado)), pagadoOriginal: CONC_aNumero(pagado),
       extra: {
         asesor: CONC_texto(f[CONC_P_INFO.ASESOR - 1]),
         fechaFirma: CONC_fechaTxt(f[CONC_P_INFO.FECHA_FIRMA - 1]),
@@ -374,7 +374,7 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
     return {
       estado: '', cedula: p.cedula, clienteCons: '', clienteProtect: p.cliente, placa: p.placa, contrato: p.contrato,
       pagado: p.pagado, c: null, d: null, concordo: '', valor: '', dif: null, difC: null, difD: null,
-      cruce: cruce, filaCons: '', filaProtect: p.fila, obs: '', extra: p.extra || null, nCons: 0, varios: false, asignacion: '', porOrden: false
+      cruce: cruce, filaCons: '', filaProtect: p.fila, obs: (p.pagadoOriginal !== undefined && p.pagadoOriginal !== null && p.pagadoOriginal !== p.pagado) ? 'Protect!P trae ' + p.pagadoOriginal + ' (con punto de miles): se leyó como $' + String(p.pagado).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '. Corrige la celda en Protect. ' : '', extra: p.extra || null, nCons: 0, varios: false, asignacion: '', porOrden: false
     };
   };
 
@@ -460,7 +460,7 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
         }
       }
       if (p.anuladoConPago) notas.push('OJO: en Protect (columna AR) este contrato figura como "' + p.extra.estadoCliente + '" pero la cédula aparece pagando en Consolidado. Revisa si de verdad no llevó la póliza.');
-      f.obs = notas.join(' ');
+      f.obs = (f.obs ? f.obs : '') + notas.join(' ');
       CONC_aplicarAjusteManual(f, p, ajustes, a.filas);
       a.filas.forEach(function (r) { r.valorDugo = r.compartida ? pagadoEval : p.pagado; });
       a.filas.forEach(function (r) { r.contratoAsig = r.compartida ? r.compartida.map(function (q) { return CONC_texto(q.contrato); }).join(' + ') : CONC_texto(p.contrato); });
@@ -656,6 +656,9 @@ function CONC_aplicarAjusteManual(f, p, ajustes, filasAsignadas) {
     f.asignacion = ''; f.porOrden = false;
     f.obs = 'Ajuste manual: marcado como "Falta por consolidar" (lo que aparece en Consolidado no es un pago).' + nota;
     (filasAsignadas || []).forEach(function (r) { r.estadoFila = 'No es un pago · ajuste manual'; });
+  } else if (aj.decision === 'Revisado') {
+    f.revisado = true;
+    f.obs = 'Revisado por ti: confirmaste que el consolidado está bien.' + nota + (f.obs ? ' ' + f.obs : '');
   } else if (aj.decision === 'Directo') {
     f.estado = CONC_ESTADO.DIRECTO; f.valor = ''; f.dif = null; f.difC = null; f.difD = null; f.concordo = '';
     f.asignacion = ''; f.porOrden = false;
@@ -787,6 +790,9 @@ function CONC_asignar(contratos, filas, tol) {
 
 // Texto del estado para la fila de Consolidados, según el contrato al que se asignó
 function CONC_textoFila(f) {
+  if (f.revisado && (f.estado === CONC_ESTADO.CONCILIADO || f.estado === CONC_ESTADO.POR_NOMBRE)) {
+    return 'Consolidado · revisado ✔' + (f.ajuste && f.ajuste.nota ? ' · Nota: ' + String(f.ajuste.nota).slice(0, 150) : '');
+  }
   if (f.estado === CONC_ESTADO.POR_NOMBRE) return CONC_ESTADO.POR_NOMBRE;
   if (f.estado === CONC_ESTADO.DIRECTO) return CONC_ESTADO.DIRECTO;
   if (f.valor === CONC_VALOR.ATIPICO) return CONC_ESTADO.CONCILIADO + ' · Protect!P atípico (revisar)';
@@ -1260,6 +1266,13 @@ function CONC_aNumero(v) {
   var n = parseFloat(s);
   if (isNaN(n)) return null;
   return neg ? -n : n;
+}
+
+// Un valor como 292.565 (tres decimales) en la columna P casi seguro es 292.565 pesos con el punto de miles mal leído: se toma como 292565
+function CONC_corregirMiles(n) {
+  if (n === null || n === undefined || isNaN(n)) return n;
+  if (n > 0 && n < 10000 && Math.abs(n * 1000 - Math.round(n * 1000)) < 1e-6 && Math.abs(n * 100 - Math.round(n * 100)) > 1e-6) return Math.round(n * 1000);
+  return n;
 }
 
 function CONC_normCedula(v) {
