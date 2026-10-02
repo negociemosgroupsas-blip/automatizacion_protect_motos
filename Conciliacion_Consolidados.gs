@@ -59,6 +59,7 @@ var CONC_ESTADO = {
   POR_NOMBRE: 'Consolidado por nombre (revisar)',
   FALTA: 'Falta por consolidar',
   SIN_PROTECT: 'Sin registro en Protect',
+  NO_APLICA: 'No aplica · Anulado/Cancelado',   // Protect columna AR = Anulado o Cancelado: el cliente no llevó la póliza, no hay que consolidar
   DIRECTO: 'Pagó directo a Protect'   // el cliente paga directo a la cuenta: no aparece en Consolidado, se marca a mano
 };
 
@@ -302,10 +303,13 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
   // Agrupar contratos de Protect por persona. 1) por cédula; 2) los que no cruzan por cédula, por nombre
   // (exacto o aproximado) entre las filas de Consolidado que todavía no tienen dueño.
   var grupos = {}, orden = [], sinGrupo = [], pendientesNombre = [];
+  var anulados = [];
   protect.forEach(function (p) {
     p.kCed = CONC_normCedula(p.cedula);
     p.kNom = CONC_normNombre(p.cliente);
     p.tokNom = CONC_tokensNombre(p.cliente);
+    // Contratos Anulados o Cancelados (Protect columna AR): no se consolidan y no entran al reparto de pagos
+    if (p.extra && /ANULAD|CANCELAD/i.test(String(p.extra.estadoCliente || ''))) { p.noAplica = true; anulados.push(p); return; }
     if (p.kCed && consPorCedula[p.kCed]) {
       var gk = 'C:' + p.kCed;
       if (!grupos[gk]) { grupos[gk] = { cruce: 'Cédula', filas: consPorCedula[p.kCed], contratos: [] }; orden.push(gk); }
@@ -315,6 +319,13 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
     }
   });
   orden.forEach(function (gk) { grupos[gk].filas.forEach(function (r) { r.usada = true; }); });
+  // Si la cédula solo tiene contratos anulados/cancelados pero aparece en Consolidado, se avisa en esa fila (no es "sin registro")
+  anulados.forEach(function (p) {
+    (consPorCedula[p.kCed] || []).forEach(function (r) {
+      if (!r.usada) { r.usada = true; r.estadoFila = 'Contrato anulado/cancelado en Protect (revisar)'; }
+      p.tienePago = true;
+    });
+  });
 
   var libresPorToken = {};
   cons.forEach(function (r) {
@@ -347,6 +358,15 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
       cruce: cruce, filaCons: '', filaProtect: p.fila, obs: '', extra: p.extra || null, nCons: 0, varios: false, asignacion: '', porOrden: false
     };
   };
+
+  anulados.forEach(function (p) {
+    var f = base(p, '');
+    f.estado = CONC_ESTADO.NO_APLICA;
+    f.obs = 'En Protect (columna AR) este contrato figura como "' + p.extra.estadoCliente + '": el cliente no llevó la póliza, no hay que consolidarlo.' +
+      (p.tienePago ? ' OJO: la cédula aparece en Consolidado; revisa si ese pago corresponde a otro contrato.' : '');
+    CONC_aplicarAjusteManual(f, p, ajustes, []);
+    salida.push(f);
+  });
 
   sinGrupo.forEach(function (p) {
     var f = base(p, '');
@@ -746,6 +766,7 @@ function CONC_textoFila(f) {
 function CONC_colorFila(t) {
   if (/^No es un pago/.test(t)) return '#e6e6e6';
   if (/^Pagó directo/.test(t)) return '#cfe2f3';
+  if (/^Contrato anulado/.test(t)) return '#e6e6e6';
   if (/^Pagó de menos/.test(t)) return '#ea4335';
   if (/revisar|nombre/i.test(t)) return '#fce5cd';
   if (/^Sin registro/.test(t)) return '#e6e6e6';
@@ -754,7 +775,7 @@ function CONC_colorFila(t) {
 }
 
 function CONC_esEstadoPropio(v) {
-  return /^(Consolidado|Pagó de menos|Pagó directo|Sin registro en Protect|No es un pago)/.test(String(v));
+  return /^(Consolidado|Pagó de menos|Pagó directo|Contrato anulado|Sin registro en Protect|No es un pago)/.test(String(v));
 }
 
 // Escribe SOLO las columnas F (estado) y G (# contrato de Protect) de Consolidado. No sobrescribe datos ajenos.
@@ -985,7 +1006,7 @@ function CONC_aplicarHistorial(filas, previos, ahora) {
     if (nuevoReciente) resumen.nuevos++;
     if (concReciente) resumen.concRecientes++;
     if (cambioReciente) resumen.cambios++;
-    if (!conc && rep.estado !== CONC_ESTADO.DIRECTO) resumen.pendientes++;
+    if (!conc && rep.estado !== CONC_ESTADO.DIRECTO && rep.estado !== CONC_ESTADO.NO_APLICA) resumen.pendientes++;
     var hist = {
       clave: clave, estadoContrato: rep.estado,
       primeraVez: CONC_fechaHoraTxt(r.primeraVez), fechaConc: CONC_fechaHoraTxt(r.fechaConc), estadoAnterior: r.estadoAnterior || '',

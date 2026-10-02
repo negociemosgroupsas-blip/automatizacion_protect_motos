@@ -74,6 +74,7 @@
   tbody tr{cursor:pointer} tbody tr:hover{background:#f0f4fb} tbody tr.menos td{background:#fff5f5}
   td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
   .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.74rem;font-weight:700}
+  .tab.gris{background:linear-gradient(135deg,#4b5563,#9ca3af)} .b-gris2{background:#eceff3;color:#4b5563}
   .tab.azul{background:linear-gradient(135deg,#1d4ed8,#60a5fa)} .b-azul{background:var(--azulinfo-bg);color:var(--azulinfo)}
   .b-verde{background:var(--verde-bg);color:var(--verde)} .b-rojo{background:var(--rojo-bg);color:var(--rojo)}
   .b-naranja{background:var(--naranja-bg);color:var(--naranja)} .b-gris{background:#e9e9ef;color:#4b4f5a}
@@ -120,6 +121,7 @@
 
   <div class="tabs">
     <button class="tab verde activa" id="tabCons" type="button"><span class="num" id="nCons">–</span><span class="tit">✅ Ya consolidados</span><span class="sub">Aparecen en la lista de pagos</span></button>
+    <button class="tab gris" id="tabNoAplica" type="button"><span class="num" id="nNoAplica">–</span><span class="tit">🚫 Anulados / Cancelados</span><span class="sub">No llevaron la póliza: no se consolidan</span></button>
     <button class="tab azul" id="tabDirecto" type="button"><span class="num" id="nDirecto">–</span><span class="tit">💵 Pagaron directo a Protect</span><span class="sub">Marcados a mano</span></button>
     <button class="tab rojo" id="tabFalta" type="button"><span class="num" id="nFalta">–</span><span class="tit">❌ Faltan por consolidar</span><span class="sub">No aparecen en la lista de pagos</span></button>
   </div>
@@ -155,6 +157,7 @@
   function norm(s) { return String(s === null || s === undefined ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
   function nombre(f) { return f.clienteProtect || f.clienteCons || '(sin nombre)'; }
   function esCons(f) { return /^Consolidado/.test(f.estado); }
+  function esNoAplica(f) { return /^No aplica/.test(f.estado); }
   function esDirecto(f) { return f.estado === 'Pagó directo a Protect'; }
   function esFalta(f) { return f.estado === 'Falta por consolidar'; }
   function valorCons(f) {
@@ -320,7 +323,7 @@
       return [];
     }
     return datos.filter(function (f) {
-      if (!(lista === 'cons' ? esCons(f) : lista === 'directo' ? esDirecto(f) : esFalta(f))) return false;
+      if (!(lista === 'cons' ? esCons(f) : lista === 'directo' ? esDirecto(f) : lista === 'noaplica' ? esNoAplica(f) : esFalta(f))) return false;
       if (lista === 'cons' && soloMenos && f.valor !== 'Pagó de menos') return false;
       return true;
     });
@@ -328,7 +331,8 @@
 
   function badge(f) {
     var b = el('span', 'badge');
-    if (esDirecto(f)) { b.className += ' b-azul'; b.textContent = '💵 Dinero entró directo a Protect'; }
+    if (esNoAplica(f)) { b.className += ' b-gris2'; b.textContent = '🚫 ' + f.estado.replace('No aplica · ', ''); }
+    else if (esDirecto(f)) { b.className += ' b-azul'; b.textContent = '💵 Dinero entró directo a Protect'; }
     else if (esFalta(f)) { b.className += ' b-rojo'; b.textContent = 'Falta por consolidar'; }
     else if (f.estado === 'Sin registro en Protect') { b.className += ' b-gris'; b.textContent = 'Está en Consolidado, no en Protect'; }
     else if (f.estado === 'Consolidado por nombre (revisar)') { b.className += ' b-naranja'; b.textContent = 'Consolidado por nombre (revisar)'; }
@@ -339,9 +343,9 @@
 
   function pintar() {
     var nc = datos.filter(esCons).length, nf = datos.filter(esFalta).length;
-    $('nDirecto').textContent = fmt.format(datos.filter(esDirecto).length); $('nCons').textContent = fmt.format(nc); $('nFalta').textContent = fmt.format(nf);
+    $('nNoAplica').textContent = fmt.format(datos.filter(esNoAplica).length); $('nDirecto').textContent = fmt.format(datos.filter(esDirecto).length); $('nCons').textContent = fmt.format(nc); $('nFalta').textContent = fmt.format(nf);
     var q = consulta();
-    $('tabCons').classList.toggle('activa', !q && lista === 'cons'); $('tabFalta').classList.toggle('activa', !q && lista === 'falta'); $('tabDirecto').classList.toggle('activa', !q && lista === 'directo');
+    $('tabCons').classList.toggle('activa', !q && lista === 'cons'); $('tabFalta').classList.toggle('activa', !q && lista === 'falta'); $('tabDirecto').classList.toggle('activa', !q && lista === 'directo'); $('tabNoAplica').classList.toggle('activa', !q && lista === 'noaplica');
     var menos = datos.filter(function (f) { return esCons(f) && f.valor === 'Pagó de menos'; });
     var al = $('alerta');
     if (!q && lista === 'cons' && menos.length) {
@@ -351,13 +355,13 @@
     var tb = $('tbody'); tb.textContent = '';
     var rows = actual();
     $('btnDescargar').disabled = !rows.length;
-    $('btnDescargar').textContent = q ? '⬇ Descargar estos resultados' : (lista === 'cons' ? '⬇ Descargar lista de consolidados' : lista === 'directo' ? '⬇ Descargar lista de pagos directos' : '⬇ Descargar lista de los que faltan');
+    $('btnDescargar').textContent = q ? '⬇ Descargar estos resultados' : (lista === 'cons' ? '⬇ Descargar lista de consolidados' : lista === 'directo' ? '⬇ Descargar lista de pagos directos' : lista === 'noaplica' ? '⬇ Descargar lista de anulados/cancelados' : '⬇ Descargar lista de los que faltan');
     var tl = $('tituloLista');
     if (q) {
       var nc = rows.filter(esCons).length, nf = rows.filter(esFalta).length, ns = rows.length - nc - nf;
       tl.textContent = (parecidos ? 'No hay coincidencia exacta; estos se parecen a «' + $('buscar').value.trim() + '»: ' + rows.length + (rows.length === 1 ? ' cliente' : ' clientes') : '') || 'Resultados de la búsqueda «' + $('buscar').value.trim() + '»: ' + rows.length + (rows.length === 1 ? ' cliente' : ' clientes') +
         ' (' + nc + ' consolidado' + (nc === 1 ? '' : 's') + ', ' + nf + ' que falta' + (nf === 1 ? '' : 'n') + (ns ? ', ' + ns + ' sin registro en Protect' : '') + ')';
-    } else { tl.textContent = lista === 'cons' ? 'Clientes ya consolidados' : lista === 'directo' ? 'Clientes que pagaron directo a Protect (no aparecen en Consolidado)' : 'Clientes que faltan por consolidar'; }
+    } else { tl.textContent = lista === 'cons' ? 'Clientes ya consolidados' : lista === 'directo' ? 'Clientes que pagaron directo a Protect (no aparecen en Consolidado)' : lista === 'noaplica' ? 'Contratos Anulados o Cancelados en Protect (no se consolidan)' : 'Clientes que faltan por consolidar'; }
     if (!rows.length) { var tr0 = el('tr'), td0 = el('td', 'vacio', !datos.length ? 'Pulsa «Actualizar datos» para cargar la información.' : (q ? 'No se encontró ningún cliente con «' + $('buscar').value.trim() + '». Prueba con menos palabras o solo el apellido.' : 'No hay clientes en esta lista.')); td0.colSpan = 7; tr0.appendChild(td0); tb.appendChild(tr0); }
     rows.forEach(function (f) {
       var tr = el('tr', f.valor === 'Pagó de menos' && esCons(f) ? 'menos' : '');
@@ -390,6 +394,7 @@
   $('tabCons').addEventListener('click', function () { elegir('cons'); });
   $('tabFalta').addEventListener('click', function () { elegir('falta'); });
   $('tabDirecto').addEventListener('click', function () { elegir('directo'); });
+  $('tabNoAplica').addEventListener('click', function () { elegir('noaplica'); });
   $('alerta').addEventListener('click', function () { soloMenos = !soloMenos; pintar(); });
   $('buscar').addEventListener('input', pintar);
   $('btnLimpiar').addEventListener('click', function () { $('buscar').value = ''; pintar(); $('buscar').focus(); });
@@ -560,7 +565,8 @@
   function construirFicha(f, d, enModal, volver) {
     d.appendChild(el('h2', '', nombre(f)));
     var gr = el('div', 'grande');
-    if (esFalta(f)) { gr.className += ' g-rojo'; gr.textContent = 'FALTA POR CONSOLIDAR'; }
+    if (esNoAplica(f)) { gr.className += ' g-gris'; gr.textContent = 'NO APLICA — contrato ' + (f.estado.indexOf('Anul') >= 0 ? 'ANULADO / CANCELADO' : '') + ' en Protect'; }
+    else if (esFalta(f)) { gr.className += ' g-rojo'; gr.textContent = 'FALTA POR CONSOLIDAR'; }
     else if (f.estado === 'Consolidado por nombre (revisar)') { gr.className += ' g-naranja'; gr.textContent = 'CONSOLIDADO POR NOMBRE — confirma que sea la misma persona'; }
     else if (f.estado === 'Sin registro en Protect') { gr.className += ' g-gris'; gr.textContent = 'ESTÁ EN CONSOLIDADO PERO NO EN PROTECT'; }
     else { gr.className += ' g-verde'; gr.textContent = 'YA CONSOLIDADO'; }
@@ -615,7 +621,7 @@
   // ---------- Descarga ----------
   $('btnDescargar').addEventListener('click', function () {
     var q = consulta();
-    var rows = q ? actual() : datos.filter(lista === 'cons' ? esCons : lista === 'directo' ? esDirecto : esFalta);
+    var rows = q ? actual() : datos.filter(lista === 'cons' ? esCons : lista === 'directo' ? esDirecto : lista === 'noaplica' ? esNoAplica : esFalta);
     var cab = ['Cédula', 'Nombre completo', '# Contrato', 'Placa', 'Fila en Consolidado', 'Valor pagado a Dugo Motos', 'Valor pagado en Consolidado (C)', 'Valor pagado en Consolidado (D)', 'Diferencia', 'Estado', 'Nota', 'Asesor', 'Celular'];
     var filas = rows.map(function (f) { var e = f.extra || {};
       return [f.cedula, nombre(f), f.contrato, f.placa, f.filaCons, f.pagado, f.c, f.d, f.dif, f.estado + (f.valor === 'Pagó de menos' ? ' · pagó de menos' : ''), nota(f), e.asesor, e.celular]; });
@@ -623,7 +629,7 @@
     var h = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
     var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = (q ? 'busqueda_clientes_' : (lista === 'cons' ? 'clientes_consolidados_' : lista === 'directo' ? 'clientes_pagaron_directo_' : 'clientes_faltan_por_consolidar_')) + h.getFullYear() + '-' + z(h.getMonth() + 1) + '-' + z(h.getDate()) + '.csv';
+    a.download = (q ? 'busqueda_clientes_' : (lista === 'cons' ? 'clientes_consolidados_' : lista === 'directo' ? 'clientes_pagaron_directo_' : lista === 'noaplica' ? 'clientes_anulados_cancelados_' : 'clientes_faltan_por_consolidar_')) + h.getFullYear() + '-' + z(h.getMonth() + 1) + '-' + z(h.getDate()) + '.csv';
     document.body.appendChild(a); a.click(); a.remove();
   });
 
