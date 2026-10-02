@@ -123,7 +123,7 @@
 
   <div class="tabs">
     <button class="tab verde activa" id="tabCons" type="button"><span class="num" id="nCons">–</span><span class="tit">✅ Ya consolidados</span><span class="sub">Aparecen en la lista de pagos</span></button>
-    <button class="tab gris" id="tabNoAplica" type="button"><span class="num" id="nNoAplica">–</span><span class="tit">🚫 Anulados / Cancelados</span><span class="sub">No llevaron la póliza: no se consolidan</span></button>
+    <button class="tab gris" id="tabNoAplica" type="button"><span class="num" id="nNoAplica">–</span><span class="tit">🚫 Anulados</span><span class="sub">No llevaron la póliza: no se consolidan</span></button>
     <button class="tab azul" id="tabDirecto" type="button"><span class="num" id="nDirecto">–</span><span class="tit">💵 Pagaron directo a Protect</span><span class="sub">Marcados a mano</span></button>
     <button class="tab rojo" id="tabFalta" type="button"><span class="num" id="nFalta">–</span><span class="tit">❌ Faltan por consolidar</span><span class="sub">No aparecen en la lista de pagos</span></button>
   </div>
@@ -343,7 +343,7 @@
     else if (f.estado === 'Sin registro en Protect') { b.className += ' b-gris'; b.textContent = 'Está en Consolidado, no en Protect'; }
     else if (f.estado === 'Consolidado por nombre (revisar)') { b.className += ' b-naranja'; b.textContent = 'Consolidado por nombre (revisar)'; }
     else if (f.valor === 'Pagó de menos') { b.className += ' b-rojo'; b.textContent = '⚠ Consolidado · pagó de menos'; }
-    else if (f.anuladoConPago) { b.className += ' b-naranja'; b.textContent = '🔎 Consolidado · contrato anulado/cancelado (revisar)'; }
+    else if (f.anuladoConPago) { b.className += ' b-naranja'; b.textContent = '🔎 Consolidado · contrato anulado (revisar)'; }
     else if (f.valor === 'Pagó de más (revisar valor)') { b.className += ' b-naranja'; b.textContent = '🔎 Consolidado · revisar valor en Protect'; }
     else { b.className += ' b-verde'; b.textContent = '✔ Consolidado'; }
     return b;
@@ -366,13 +366,13 @@
     var tb = $('tbody'); tb.textContent = '';
     var rows = actual();
     $('btnDescargar').disabled = !rows.length;
-    $('btnDescargar').textContent = q ? '⬇ Descargar estos resultados' : (lista === 'cons' ? '⬇ Descargar lista de consolidados' : lista === 'directo' ? '⬇ Descargar lista de pagos directos' : lista === 'noaplica' ? '⬇ Descargar lista de anulados/cancelados' : '⬇ Descargar lista de los que faltan');
+    $('btnDescargar').textContent = q ? '⬇ Descargar estos resultados' : (lista === 'cons' ? '⬇ Descargar lista de consolidados' : lista === 'directo' ? '⬇ Descargar lista de pagos directos' : lista === 'noaplica' ? '⬇ Descargar lista de anulados' : '⬇ Descargar lista de los que faltan');
     var tl = $('tituloLista');
     if (q) {
       var nc = rows.filter(esCons).length, nf = rows.filter(esFalta).length, ns = rows.length - nc - nf;
       tl.textContent = (parecidos ? 'No hay coincidencia exacta; estos se parecen a «' + $('buscar').value.trim() + '»: ' + rows.length + (rows.length === 1 ? ' cliente' : ' clientes') : '') || 'Resultados de la búsqueda «' + $('buscar').value.trim() + '»: ' + rows.length + (rows.length === 1 ? ' cliente' : ' clientes') +
         ' (' + nc + ' consolidado' + (nc === 1 ? '' : 's') + ', ' + nf + ' que falta' + (nf === 1 ? '' : 'n') + (ns ? ', ' + ns + ' sin registro en Protect' : '') + ')';
-    } else { tl.textContent = lista === 'cons' ? 'Clientes ya consolidados' : lista === 'directo' ? 'Clientes que pagaron directo a Protect (no aparecen en Consolidado)' : lista === 'noaplica' ? 'Contratos Anulados o Cancelados en Protect (no se consolidan)' : 'Clientes que faltan por consolidar'; }
+    } else { tl.textContent = lista === 'cons' ? 'Clientes ya consolidados' : lista === 'directo' ? 'Clientes que pagaron directo a Protect (no aparecen en Consolidado)' : lista === 'noaplica' ? 'Contratos Anulados en Protect (no se consolidan)' : 'Clientes que faltan por consolidar'; }
     if (!q && estadosAR) {
       var partes = Object.keys(estadosAR).sort(function (a, b) { return estadosAR[b] - estadosAR[a]; }).slice(0, 12).map(function (k) { return k + ': ' + fmt.format(estadosAR[k]); });
       if (lista === 'noaplica') tl.textContent += ' · Valores que hay en la columna AR de Protect → ' + partes.join(' · ');
@@ -581,7 +581,7 @@
   function construirFicha(f, d, enModal, volver) {
     d.appendChild(el('h2', '', nombre(f)));
     var gr = el('div', 'grande');
-    if (esNoAplica(f)) { gr.className += ' g-gris'; gr.textContent = 'NO APLICA — contrato ' + (f.estado.indexOf('Anul') >= 0 ? 'ANULADO / CANCELADO' : '') + ' en Protect'; }
+    if (esNoAplica(f)) { gr.className += ' g-gris'; gr.textContent = 'NO APLICA — contrato ' + (f.estado.indexOf('Anul') >= 0 ? 'ANULADO' : '') + ' en Protect'; }
     else if (esFalta(f)) { gr.className += ' g-rojo'; gr.textContent = 'FALTA POR CONSOLIDAR'; }
     else if (f.estado === 'Consolidado por nombre (revisar)') { gr.className += ' g-naranja'; gr.textContent = 'CONSOLIDADO POR NOMBRE — confirma que sea la misma persona'; }
     else if (f.estado === 'Sin registro en Protect') { gr.className += ' g-gris'; gr.textContent = 'ESTÁ EN CONSOLIDADO PERO NO EN PROTECT'; }
@@ -640,7 +640,7 @@
   $('btnDescargar').addEventListener('click', function () {
     var q = consulta();
     var rows = q ? actual() : datos.filter(lista === 'cons' ? esCons : lista === 'directo' ? esDirecto : lista === 'noaplica' ? esNoAplica : esFalta);
-    descargar(rows, q ? 'busqueda_clientes_' : (lista === 'cons' ? 'clientes_consolidados_' : lista === 'directo' ? 'clientes_pagaron_directo_' : lista === 'noaplica' ? 'clientes_anulados_cancelados_' : 'clientes_faltan_por_consolidar_'));
+    descargar(rows, q ? 'busqueda_clientes_' : (lista === 'cons' ? 'clientes_consolidados_' : lista === 'directo' ? 'clientes_pagaron_directo_' : lista === 'noaplica' ? 'clientes_anulados_' : 'clientes_faltan_por_consolidar_'));
   });
   function descargar(rows, prefijo) {
     var cab = ['Cédula', 'Nombre completo', '# Contrato', 'Placa', 'Fila en Consolidado', 'Valor pagado a Dugo Motos', 'Valor pagado en Consolidado (C)', 'Valor pagado en Consolidado (D)', 'Diferencia', 'Estado', 'Nota', 'Asesor', 'Celular'];

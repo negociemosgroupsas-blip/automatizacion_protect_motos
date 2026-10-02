@@ -63,7 +63,7 @@ var CONC_ESTADO = {
   POR_NOMBRE: 'Consolidado por nombre (revisar)',
   FALTA: 'Falta por consolidar',
   SIN_PROTECT: 'Sin registro en Protect',
-  NO_APLICA: 'No aplica · Anulado/Cancelado',   // Protect columna AR = Anulado o Cancelado: el cliente no llevó la póliza, no hay que consolidar
+  NO_APLICA: 'No aplica · Anulado',   // Protect columna AR = Anulado: el cliente no llevó la póliza, no hay que consolidar
   DIRECTO: 'Pagó directo a Protect'   // el cliente paga directo a la cuenta: no aparece en Consolidado, se marca a mano
 };
 
@@ -341,7 +341,7 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
   // Si la cédula solo tiene contratos anulados/cancelados pero aparece en Consolidado, se avisa en esa fila (no es "sin registro")
   anulados.forEach(function (p) {
     (consPorCedula[p.kCed] || []).forEach(function (r) {
-      if (!r.usada) { r.usada = true; r.estadoFila = 'Contrato anulado/cancelado en Protect (revisar)'; }
+      if (!r.usada) { r.usada = true; r.estadoFila = 'Contrato anulado en Protect (revisar)'; }
       p.tienePago = true;
     });
   });
@@ -715,10 +715,10 @@ function CONC_guardarAjuste(ss, d) {
   }
 }
 
-// Solo cuenta si la celda de Protect (columna AR) dice EXACTAMENTE Anulado o Cancelado (cualquier otro texto no cuenta)
+// Solo cuenta si la celda de Protect (columna AR) dice EXACTAMENTE Anulado (cualquier otro texto, incluido Cancelado, no cuenta)
 function CONC_esAnulado(v) {
   var t = String(v === undefined || v === null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z]/g, '');
-  return t === 'ANULADO' || t === 'ANULADA' || t === 'CANCELADO' || t === 'CANCELADA';
+  return t === 'ANULADO' || t === 'ANULADA';   // "Cancelado" es otra cosa: no se toma en cuenta
 }
 
 // Contratos a los que apunta una asignación manual: uno, varios ("130, 141" / "130 + 141") o 'TODOS' (todos los de la cédula)
@@ -789,7 +789,7 @@ function CONC_textoFila(f) {
     t = CONC_VALOR.MENOS + ' · faltan $' + String(falta).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   }
   if (f.porOrden) t += ' · por orden (revisar)';
-  if (f.anuladoConPago) t += ' · contrato anulado/cancelado (revisar)';
+  if (f.anuladoConPago) t += ' · contrato anulado (revisar)';
   if (f.ajuste && f.ajuste.decision === 'Consolidado') t += ' · ajuste manual';
   return t;
 }
