@@ -109,7 +109,7 @@
     <button class="btn btn-oro" id="btnGuardarUrl">Guardar</button>
     <button class="btn btn-azul" id="btnRecargar" style="background:#0e1a33">Actualizar datos</button>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-02.5</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-02.6</span>
   </div>
 </header>
 
@@ -368,7 +368,7 @@
     var tb = $('tbody'); tb.textContent = '';
     var rows = actual();
     $('btnDescargar').disabled = !rows.length;
-    $('btnDescargar').textContent = q ? '⬇ Descargar estos resultados' : (lista === 'cons' ? '⬇ Descargar lista de consolidados' : lista === 'directo' ? '⬇ Descargar lista de pagos directos' : lista === 'noaplica' ? '⬇ Descargar lista de anulados' : '⬇ Descargar lista de los que faltan');
+    $('btnDescargar').textContent = q ? '⬇ Descargar estos resultados' : (lista === 'cons' && soloMenos ? '⬇ Descargar los que pagaron de menos' : lista === 'cons' && soloRevisar ? '⬇ Descargar los de valor por revisar' : lista === 'cons' ? '⬇ Descargar lista de consolidados' : lista === 'directo' ? '⬇ Descargar lista de pagos directos' : lista === 'noaplica' ? '⬇ Descargar lista de anulados' : '⬇ Descargar lista de los que faltan');
     var tl = $('tituloLista');
     if (q) {
       var nc = rows.filter(esCons).length, nf = rows.filter(esFalta).length, ns = rows.length - nc - nf;
@@ -646,8 +646,9 @@
   $('btnDescargarTodo').addEventListener('click', function () { if (!datos.length) { mensaje('error', 'Primero pulsa «Actualizar datos».'); return; } descargar(datos, 'clientes_TODOS_con_estado_'); });
   $('btnDescargar').addEventListener('click', function () {
     var q = consulta();
-    var rows = q ? actual() : datos.filter(lista === 'cons' ? esCons : lista === 'directo' ? esDirecto : lista === 'noaplica' ? esNoAplica : esFalta);
-    descargar(rows, q ? 'busqueda_clientes_' : (lista === 'cons' ? 'clientes_consolidados_' : lista === 'directo' ? 'clientes_pagaron_directo_' : lista === 'noaplica' ? 'clientes_anulados_' : 'clientes_faltan_por_consolidar_'));
+    var rows = actual();   // respeta la pestaña, la búsqueda y el filtro de las franjas roja / naranja
+    if (!q && lista === 'cons' && (soloMenos || soloRevisar)) rows = rows.slice().sort(function (a, b) { return Math.abs(b.dif || 0) - Math.abs(a.dif || 0); });
+    descargar(rows, q ? 'busqueda_clientes_' : (lista === 'cons' && soloMenos ? 'consolidados_pagaron_de_menos_' : lista === 'cons' && soloRevisar ? 'consolidados_revisar_valor_Protect_' : lista === 'cons' ? 'clientes_consolidados_' : lista === 'directo' ? 'clientes_pagaron_directo_' : lista === 'noaplica' ? 'clientes_anulados_' : 'clientes_faltan_por_consolidar_'));
   });
   function descargar(rows, prefijo) {
     var cab = ['Cédula', 'Nombre completo', '# Contrato', 'Placa', 'Fila en Consolidado', 'Valor pagado a Dugo Motos', 'Valor pagado en Consolidado (C)', 'Valor pagado en Consolidado (D)', 'Diferencia', 'Estado', 'Nota', 'Asesor', 'Celular'];
