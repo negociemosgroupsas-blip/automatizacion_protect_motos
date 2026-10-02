@@ -39,8 +39,12 @@ var CONC_TITULO_ESTADO_CONS = 'Estado de consolidación';
 var CONC_ESCRIBIR_CONTRATO_CONS = true;
 var CONC_COL_CONTRATO_CONS = 7;
 var CONC_TITULO_CONTRATO_CONS = 'N° contrato (Protect)';
-// Columna donde TÚ escribes el número de contrato de cada pago (8 = H). La automatización solo pone el título; nunca toca esas celdas.
-var CONC_COL_CONTRATO_MANUAL = 8;
+// Valor pagado a Dugo Motos (Protect columna P) del contrato al que se asignó cada pago, escrito en esta columna (8 = H)
+var CONC_ESCRIBIR_VALOR_DUGO_CONS = true;
+var CONC_COL_VALOR_DUGO_CONS = 8;
+var CONC_TITULO_VALOR_DUGO_CONS = 'Valor pagado a Dugo Motos';
+// Columna donde TÚ escribes el número de contrato de cada pago (9 = I). La automatización solo pone el título; nunca toca esas celdas.
+var CONC_COL_CONTRATO_MANUAL = 9;
 var CONC_TITULO_CONTRATO_MANUAL = 'Contrato manual (escribe aquí)';
 
 var CONC_TOLERANCIA = 1000; // diferencias de hasta $1.000 (redondeos) se ignoran: cuenta como "Pagó lo correcto"
@@ -220,7 +224,7 @@ function CONC_detectarColumnas(cons, protect, encabezados) {
   if (!ancho) return info;
   var i;
   var propias = {};
-  propias[CONC_COL_ESTADO_CONS - 1] = true; propias[CONC_COL_CONTRATO_CONS - 1] = true; // columnas que escribe esta automatización
+  propias[CONC_COL_ESTADO_CONS - 1] = true; propias[CONC_COL_CONTRATO_CONS - 1] = true; propias[CONC_COL_VALOR_DUGO_CONS - 1] = true; // columnas que escribe esta automatización
   for (i = 4; i < 4 + ancho; i++) {
     if (propias[i]) continue;
     var h = CONC_normNombre(encabezados[i] || '');
@@ -447,6 +451,7 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
       }
       f.obs = notas.join(' ');
       CONC_aplicarAjusteManual(f, p, ajustes, a.filas);
+      a.filas.forEach(function (r) { r.valorDugo = r.compartida ? pagadoEval : p.pagado; });
       a.filas.forEach(function (r) { r.contratoAsig = r.compartida ? r.compartida.map(function (q) { return CONC_texto(q.contrato); }).join(' + ') : CONC_texto(p.contrato); });
       salida.push(f);
       if (!(f.ajuste && f.ajuste.decision === 'Falta')) {
@@ -821,16 +826,41 @@ function CONC_escribirEstadoEnConsolidados(hoja, filasCons) {
     }
   }
 
+  // Columna H (valor Dugo) e I (contrato manual). Antes la columna H era la del contrato manual: si ya tenía contratos escritos, se pasan a I.
+  var colV = CONC_COL_VALOR_DUGO_CONS, colM = CONC_COL_CONTRATO_MANUAL, escribirV = CONC_ESCRIBIR_VALOR_DUGO_CONS;
+  var moverAManual = null;
+  if (escribirV) {
+    var tituloV = hoja.getRange(ini - 1, colV).getValue();
+    var datosV = hoja.getRange(ini, colV, n, 1).getValues();
+    var hayV = datosV.some(function (x) { return !CONC_vacio(x[0]); });
+    if (tituloV === CONC_TITULO_CONTRATO_MANUAL) {
+      if (hayV) {
+        var tituloM = hoja.getRange(ini - 1, colM).getValue();
+        var datosM = hoja.getRange(ini, colM, n, 1).getValues();
+        if ((!CONC_vacio(tituloM) && tituloM !== CONC_TITULO_CONTRATO_MANUAL) || datosM.some(function (x) { return !CONC_vacio(x[0]); })) {
+          throw new Error('La columna H de "' + hoja.getName() + '" tiene contratos escritos a mano y la columna I no está libre para pasarlos. Vacía la columna I o mueve esos contratos.');
+        }
+        moverAManual = datosV;
+      }
+    } else if (tituloV !== CONC_TITULO_VALOR_DUGO_CONS) {
+      if (!CONC_vacio(tituloV)) throw new Error('El título de la columna H de "' + hoja.getName() + '" (fila ' + (ini - 1) + ') es "' + tituloV + '". No se sobrescribe.');
+      if (hayV) throw new Error('La columna H de "' + hoja.getName() + '" ya tiene datos. No se sobrescribe. Vacíala o cambia CONC_COL_VALOR_DUGO_CONS.');
+    }
+  }
+
   // ---- Escritura ----
   var estadoPorFila = {}, contratoPorFila = {};
   filasCons.forEach(function (r) { estadoPorFila[r.fila] = r.estadoFila || ''; contratoPorFila[r.fila] = r.contratoAsig || ''; });
-  var textos = [], colores = [], fuentes = [], contratos = [];
+  var textos = [], colores = [], fuentes = [], contratos = [], valoresDugo = [], valorPorFila = {};
+  filasCons.forEach(function (r) { valorPorFila[r.fila] = r.valorDugo; });
   for (var m = 0; m < n; m++) {
     var t = estadoPorFila[ini + m] || '';
     textos.push([t]);
     colores.push([t ? CONC_colorFila(t) : null]);
     fuentes.push([/^Pagó de menos/.test(t) ? '#ffffff' : '#000000']);
     contratos.push([contratoPorFila[ini + m] || '']);
+    var vd = valorPorFila[ini + m];
+    valoresDugo.push([vd === null || vd === undefined || vd === '' ? '' : vd]);
   }
   hoja.getRange(ini - 1, colF).setValue(CONC_TITULO_ESTADO_CONS).setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');
   hoja.getRange(ini, colF, n, 1).setValues(textos).setBackgrounds(colores).setFontColors(fuentes).setFontWeight('bold');
@@ -839,6 +869,15 @@ function CONC_escribirEstadoEnConsolidados(hoja, filasCons) {
     var rg = hoja.getRange(ini, colG, n, 1);
     rg.setNumberFormat('@'); // texto, para que "1342-R" o "0061" no cambien
     rg.setValues(contratos).setFontWeight('bold').setHorizontalAlignment('center');
+  }
+  if (moverAManual) {
+    hoja.getRange(ini, colM, n, 1).setNumberFormat('@').setValues(moverAManual);
+    hoja.getRange(ini - 1, colM).setValue(CONC_TITULO_CONTRATO_MANUAL).setFontWeight('bold').setBackground('#d6a417').setFontColor('#13223f');
+    hoja.getRange(ini, colV, n, 1).clearContent();
+  }
+  if (escribirV) {
+    hoja.getRange(ini - 1, colV).setValue(CONC_TITULO_VALOR_DUGO_CONS).setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');
+    hoja.getRange(ini, colV, n, 1).setNumberFormat('$#,##0').setValues(valoresDugo).setFontWeight('bold').setHorizontalAlignment('right');
   }
   // Título de la columna donde tú escribes el contrato (solo si está vacío; las celdas de abajo nunca se tocan)
   var colH = CONC_COL_CONTRATO_MANUAL;
