@@ -1611,7 +1611,7 @@
   // Sube la captura del comprobante a Drive (carpeta "Comprobantes de pago")
   // y devuelve su enlace. Usa POST en vez del JSONP normal porque una
   // imagen no cabe en la URL de una petición GET.
-  function subirComprobante(archivo, contrato, cedula, cliente){
+  function subirComprobante(archivo, contrato, cedula, cliente, cuota, fecha){
     return new Promise(function(resolve, reject){
       if(!estado.urlConector){ reject(new Error('Primero guarda la URL del conector.')); return; }
       if(archivo.size > 8*1024*1024){ reject(new Error('La imagen es muy pesada (máximo 8 MB).')); return; }
@@ -1625,7 +1625,7 @@
           headers: {'Content-Type':'text/plain;charset=utf-8'},
           body: JSON.stringify({
             token: TOKEN, action:'subirComprobante',
-            contrato:contrato, cedula:cedula, cliente:cliente,
+            contrato:contrato, cedula:cedula, cliente:cliente, cuota:cuota, fecha:fecha,
             nombreArchivo: archivo.name, tipoMime: archivo.type || 'image/jpeg',
             datosBase64: base64
           })
@@ -1769,7 +1769,7 @@
     ayudaComprobante.textContent = 'Subiendo comprobante...';
     boton.disabled = true;
     boton.textContent = 'Subiendo comprobante...';
-    subirComprobante(archivoComprobante, contrato, cedula, cliente).then(function(url){
+    subirComprobante(archivoComprobante, contrato, cedula, cliente, cuota, fecha).then(function(url){
       ayudaComprobante.textContent = 'Comprobante subido ✓';
       nota = (nota ? nota+'\n' : '') + 'Comprobante: '+url;
       boton.disabled = false;

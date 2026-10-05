@@ -353,6 +353,9 @@ function extraerNumerosCuota(texto) {
 // "Pagos" — el enlace se agrega después, al registrar el pago.
 function accionSubirComprobante(body) {
   var contrato = String(body.contrato || '').trim();
+  var cedula = String(body.cedula || '').trim();
+  var cuota = String(body.cuota || '').trim();
+  var fecha = String(body.fecha || '').trim(); // d/m/aaaa o yyyy-mm-dd, como la escribió el usuario
   var nombreArchivo = String(body.nombreArchivo || '').trim() || 'comprobante';
   var tipoMime = String(body.tipoMime || '').trim() || 'image/jpeg';
   var datosBase64 = body.datosBase64;
@@ -368,8 +371,18 @@ function accionSubirComprobante(body) {
 
   try {
     var bytes = Utilities.base64Decode(datosBase64);
-    var nombreConContrato = contrato + ' - ' + nombreArchivo;
-    var blob = Utilities.newBlob(bytes, tipoMime, nombreConContrato);
+    // Nombre pensado para encontrarlo fácil en Drive: cédula primero (así
+    // quedan juntos los comprobantes de un mismo cliente al ordenar
+    // alfabéticamente), luego la cuota y la fecha del pago.
+    var extension = (nombreArchivo.match(/\.[a-zA-Z0-9]+$/) || [''])[0];
+    var partesNombre = [];
+    if (cedula) partesNombre.push(cedula);
+    else partesNombre.push(contrato);
+    if (cuota) partesNombre.push('Cuota ' + cuota);
+    var fechaFormateada = formatoFechaParaNombre(fecha);
+    if (fechaFormateada) partesNombre.push(fechaFormateada);
+    var nombreFinal = partesNombre.join(' - ') + extension;
+    var blob = Utilities.newBlob(bytes, tipoMime, nombreFinal);
 
     var carpeta = obtenerCarpetaComprobantes();
     var archivo = carpeta.createFile(blob);
@@ -489,4 +502,13 @@ function parsearFecha(texto) {
   }
   var fecha = new Date(texto);
   return isNaN(fecha.getTime()) ? null : fecha;
+}
+
+// dd-mm-aaaa, para usar en nombres de archivo (sin "/" que no es válido ahí).
+function formatoFechaParaNombre(texto) {
+  var fecha = parsearFecha(texto);
+  if (!fecha) return '';
+  var dia = ('0' + fecha.getDate()).slice(-2);
+  var mes = ('0' + (fecha.getMonth() + 1)).slice(-2);
+  return dia + '-' + mes + '-' + fecha.getFullYear();
 }
