@@ -389,6 +389,20 @@ function obtenerCarpetaComprobantes() {
   return DriveApp.createFolder(CARPETA_COMPROBANTES);
 }
 
+// Función de prueba: selecciónala en el desplegable de funciones del editor
+// y dale "Ejecutar" para forzar que Google pida el permiso de Drive la
+// primera vez (crea un archivo de prueba en la carpeta "Comprobantes de
+// pago", que puedes borrar después). No la usa el panel ni se ejecuta sola.
+function pruebaDrive() {
+  var resultado = accionSubirComprobante({
+    contrato: 'PRUEBA',
+    nombreArchivo: 'prueba.txt',
+    tipoMime: 'text/plain',
+    datosBase64: Utilities.base64Encode('contenido de prueba')
+  });
+  Logger.log(resultado);
+}
+
 // ==================== ACCIÓN: CAMBIAR ESTADO ====================
 function accionCambiarEstado(params) {
   var contrato = String(params.contrato || '').trim();
