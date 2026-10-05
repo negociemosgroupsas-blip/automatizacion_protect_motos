@@ -436,6 +436,11 @@
       <textarea id="pagoNota" rows="2" placeholder="N° de comprobante, observación..."></textarea>
     </div>
     <div class="campo-form">
+      <label>Adjuntar captura del comprobante (opcional)</label>
+      <input type="file" id="pagoComprobanteArchivo" accept="image/*">
+      <span class="sub" id="pagoComprobanteAyuda" style="display:block;margin-top:4px;"></span>
+    </div>
+    <div class="campo-form">
       <label>Registrado por</label>
       <input type="text" id="pagoRegistradoPor" placeholder="Tu nombre">
     </div>
@@ -1438,6 +1443,8 @@
     document.getElementById('pagoFecha').value = formatoFechaInput(new Date());
     document.getElementById('pagoNota').value = '';
     notaEsAutomatica = true;
+    document.getElementById('pagoComprobanteArchivo').value = '';
+    document.getElementById('pagoComprobanteAyuda').textContent = '';
     var registradoPrevio = localStorage.getItem('pm_cobros_registrado_por')||'';
     document.getElementById('pagoRegistradoPor').value = registradoPrevio;
 
@@ -1533,6 +1540,38 @@
     });
   }
 
+  // Sube la captura del comprobante a Drive (carpeta "Comprobantes de pago")
+  // y devuelve su enlace. Usa POST en vez del JSONP normal porque una
+  // imagen no cabe en la URL de una petición GET.
+  function subirComprobante(archivo, contrato, cedula, cliente){
+    return new Promise(function(resolve, reject){
+      if(!estado.urlConector){ reject(new Error('Primero guarda la URL del conector.')); return; }
+      if(archivo.size > 8*1024*1024){ reject(new Error('La imagen es muy pesada (máximo 8 MB).')); return; }
+
+      var lector = new FileReader();
+      lector.onerror = function(){ reject(new Error('No se pudo leer el archivo.')); };
+      lector.onload = function(){
+        var base64 = String(lector.result).split(',')[1] || '';
+        fetch(estado.urlConector, {
+          method: 'POST',
+          headers: {'Content-Type':'text/plain;charset=utf-8'},
+          body: JSON.stringify({
+            token: TOKEN, action:'subirComprobante',
+            contrato:contrato, cedula:cedula, cliente:cliente,
+            nombreArchivo: archivo.name, tipoMime: archivo.type || 'image/jpeg',
+            datosBase64: base64
+          })
+        }).then(function(resp){ return resp.json(); })
+          .then(function(data){
+            if(data.ok) resolve(data.url);
+            else reject(new Error(data.error || 'El conector rechazó la imagen.'));
+          })
+          .catch(function(err){ reject(err); });
+      };
+      lector.readAsDataURL(archivo);
+    });
+  }
+
   document.getElementById('btnGuardarPago').addEventListener('click', function(){
     var contrato = document.getElementById('pagoContrato').value;
     var cedula = document.getElementById('pagoCedula').value;
@@ -1594,6 +1633,7 @@
       });
     }
 
+    function continuarGuardado(){
     // ¿La cuota que está registrando deja huecos atrás (cuotas que el
     // sistema no tiene registradas y que tampoco está marcando ahora)?
     // Puede ser un cliente que ya llevaba pagando antes de este sistema.
@@ -1649,6 +1689,31 @@
     }
 
     guardarPagoReal();
+    } // fin continuarGuardado
+
+    var archivoComprobante = document.getElementById('pagoComprobanteArchivo').files[0] || null;
+    if(!archivoComprobante){
+      continuarGuardado();
+      return;
+    }
+
+    var ayudaComprobante = document.getElementById('pagoComprobanteAyuda');
+    ayudaComprobante.textContent = 'Subiendo comprobante...';
+    boton.disabled = true;
+    boton.textContent = 'Subiendo comprobante...';
+    subirComprobante(archivoComprobante, contrato, cedula, cliente).then(function(url){
+      ayudaComprobante.textContent = 'Comprobante subido ✓';
+      nota = (nota ? nota+'\n' : '') + 'Comprobante: '+url;
+      boton.disabled = false;
+      boton.textContent = 'Guardar pago';
+      continuarGuardado();
+    }).catch(function(err){
+      boton.disabled = false;
+      boton.textContent = 'Guardar pago';
+      ayudaComprobante.textContent = '';
+      msg.className = 'msg-modal error';
+      msg.textContent = 'No se pudo subir el comprobante: '+err.message+'. Puedes quitar el archivo adjunto y guardar el pago sin comprobante, o intentar de nuevo.';
+    });
   });
 
   // ==================== MODAL: CANCELAR CLIENTE ====================

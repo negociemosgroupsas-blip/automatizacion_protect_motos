@@ -43,7 +43,11 @@ var ENCABEZADOS_GESTIONES = [
   'Fecha de gestión', 'N° contrato', 'Cédula', 'Cliente', 'Acción', 'Registrado por'
 ];
 
-// ==================== PUNTO DE ENTRADA ====================
+// Carpeta de Drive donde se guardan las capturas de los comprobantes de
+// pago. Se crea sola la primera vez que se sube un comprobante.
+var CARPETA_COMPROBANTES = 'Comprobantes de pago';
+
+// ==================== PUNTO DE ENTRADA (GET) ====================
 function doGet(e) {
   var params = (e && e.parameter) ? e.parameter : {};
   var callback = params.callback;
@@ -71,6 +75,26 @@ function doGet(e) {
   }
 
   return responder(salida, callback);
+}
+
+// ==================== PUNTO DE ENTRADA (POST) ====================
+// Solo se usa para subir la imagen del comprobante de pago: por su tamaño
+// no cabe en una URL de GET/JSONP como las demás acciones.
+function doPost(e) {
+  var salida;
+  try {
+    var body = (e && e.postData && e.postData.contents) ? JSON.parse(e.postData.contents) : {};
+    if (body.token !== TOKEN) {
+      salida = { ok: false, error: 'Token inválido.' };
+    } else if (body.action === 'subirComprobante') {
+      salida = accionSubirComprobante(body);
+    } else {
+      salida = { ok: false, error: 'Acción desconocida: ' + body.action };
+    }
+  } catch (err) {
+    salida = { ok: false, error: 'Error en el servidor: ' + err.message };
+  }
+  return responder(salida, null);
 }
 
 function responder(objeto, callback) {
@@ -321,6 +345,48 @@ function extraerNumerosCuota(texto) {
     for (var k = x; k <= y; k++) numeros.push(k);
   }
   return numeros;
+}
+
+// ==================== ACCIÓN: SUBIR COMPROBANTE ====================
+// Recibe la imagen en base64, la guarda en Drive (carpeta "Comprobantes de
+// pago", se crea sola la primera vez) y devuelve el enlace. No toca la hoja
+// "Pagos" — el enlace se agrega después, al registrar el pago.
+function accionSubirComprobante(body) {
+  var contrato = String(body.contrato || '').trim();
+  var nombreArchivo = String(body.nombreArchivo || '').trim() || 'comprobante';
+  var tipoMime = String(body.tipoMime || '').trim() || 'image/jpeg';
+  var datosBase64 = body.datosBase64;
+
+  if (!contrato) return { ok: false, error: 'Falta el número de contrato.' };
+  if (!datosBase64) return { ok: false, error: 'No se recibió ninguna imagen.' };
+
+  var lock = LockService.getScriptLock();
+  var exito = lock.tryLock(15000);
+  if (!exito) {
+    return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
+  }
+
+  try {
+    var bytes = Utilities.base64Decode(datosBase64);
+    var nombreConContrato = contrato + ' - ' + nombreArchivo;
+    var blob = Utilities.newBlob(bytes, tipoMime, nombreConContrato);
+
+    var carpeta = obtenerCarpetaComprobantes();
+    var archivo = carpeta.createFile(blob);
+    archivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    return { ok: true, url: 'https://drive.google.com/file/d/' + archivo.getId() + '/view' };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo subir el comprobante: ' + err.message };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function obtenerCarpetaComprobantes() {
+  var carpetas = DriveApp.getFoldersByName(CARPETA_COMPROBANTES);
+  if (carpetas.hasNext()) return carpetas.next();
+  return DriveApp.createFolder(CARPETA_COMPROBANTES);
 }
 
 // ==================== ACCIÓN: CAMBIAR ESTADO ====================
