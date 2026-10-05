@@ -251,6 +251,18 @@
     font-family:inherit;
   }
   .modal-acciones{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+  .zona-pegar{
+    margin-top:8px;
+    padding:12px;
+    border:2px dashed var(--borde);
+    border-radius:8px;
+    text-align:center;
+    font-size:.8rem;
+    color:var(--texto-suave);
+    cursor:text;
+  }
+  .zona-pegar:focus{outline:none;border-color:var(--azul);color:var(--azul);}
+
   .msg-modal{font-size:.8rem;padding:8px 10px;border-radius:8px;margin-top:10px;display:none;}
   .msg-modal.ok{display:block;background:var(--verde-bg);color:var(--verde);}
   .msg-modal.error{display:block;background:var(--rojo-bg);color:var(--rojo);}
@@ -438,6 +450,8 @@
     <div class="campo-form">
       <label>Adjuntar captura del comprobante (opcional)</label>
       <input type="file" id="pagoComprobanteArchivo" accept="image/*">
+      <div id="pagoComprobanteZonaPegar" class="zona-pegar" tabindex="0">📋 O haz clic aquí y pega la captura con Ctrl+V</div>
+      <img id="pagoComprobantePreview" style="display:none;max-width:100%;max-height:160px;margin-top:8px;border-radius:8px;border:1px solid var(--borde);">
       <span class="sub" id="pagoComprobanteAyuda" style="display:block;margin-top:4px;"></span>
     </div>
     <div class="campo-form">
@@ -1445,6 +1459,7 @@
     notaEsAutomatica = true;
     document.getElementById('pagoComprobanteArchivo').value = '';
     document.getElementById('pagoComprobanteAyuda').textContent = '';
+    document.getElementById('pagoComprobantePreview').style.display = 'none';
     var registradoPrevio = localStorage.getItem('pm_cobros_registrado_por')||'';
     document.getElementById('pagoRegistradoPor').value = registradoPrevio;
 
@@ -1539,6 +1554,59 @@
       return resp;
     });
   }
+
+  // Muestra una miniatura de la imagen elegida/pegada, para confirmar que
+  // es la correcta antes de guardar el pago.
+  function mostrarPreviewComprobante(archivo){
+    var preview = document.getElementById('pagoComprobantePreview');
+    if(!archivo){ preview.style.display = 'none'; preview.src = ''; return; }
+    var lector = new FileReader();
+    lector.onload = function(){
+      preview.src = lector.result;
+      preview.style.display = 'block';
+    };
+    lector.readAsDataURL(archivo);
+  }
+
+  // Pone un archivo (elegido o pegado) en el <input type="file">, para que
+  // el resto del código (que lee pagoComprobanteArchivo.files[0]) funcione
+  // igual sin importar de dónde vino la imagen.
+  function asignarArchivoComprobante(archivo){
+    var input = document.getElementById('pagoComprobanteArchivo');
+    try {
+      var transferencia = new DataTransfer();
+      transferencia.items.add(archivo);
+      input.files = transferencia.files;
+    } catch(e) {
+      // Navegador sin soporte para asignar files por DataTransfer: igual
+      // mostramos la vista previa, pero el usuario deberá usar "Elegir
+      // archivo" si esto llegara a fallar al guardar.
+    }
+    mostrarPreviewComprobante(archivo);
+    document.getElementById('pagoComprobanteAyuda').textContent = 'Imagen lista: '+(archivo.name || 'captura pegada');
+  }
+
+  document.getElementById('pagoComprobanteArchivo').addEventListener('change', function(){
+    mostrarPreviewComprobante(this.files[0] || null);
+  });
+
+  function manejarPegadoComprobante(e){
+    var items = (e.clipboardData && e.clipboardData.items) || [];
+    for(var i=0; i<items.length; i++){
+      if(items[i].type && items[i].type.indexOf('image/')===0){
+        var archivo = items[i].getAsFile();
+        if(archivo){
+          e.preventDefault();
+          asignarArchivoComprobante(archivo);
+        }
+        return;
+      }
+    }
+  }
+  // Un solo listener en el modal: así funciona pegar (Ctrl+V) con el foco
+  // en la zona de pegar o en cualquier otro campo del modal, sin duplicar
+  // el manejo por el burbujeo del evento.
+  document.getElementById('modalPago').addEventListener('paste', manejarPegadoComprobante);
 
   // Sube la captura del comprobante a Drive (carpeta "Comprobantes de pago")
   // y devuelve su enlace. Usa POST en vez del JSONP normal porque una
