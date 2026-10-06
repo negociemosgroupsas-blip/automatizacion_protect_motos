@@ -354,6 +354,7 @@ function extraerNumerosCuota(texto) {
 function accionSubirComprobante(body) {
   var contrato = String(body.contrato || '').trim();
   var cedula = String(body.cedula || '').trim();
+  var cliente = String(body.cliente || '').trim();
   var cuota = String(body.cuota || '').trim();
   var fecha = String(body.fecha || '').trim(); // d/m/aaaa o yyyy-mm-dd, como la escribió el usuario
   var nombreArchivo = String(body.nombreArchivo || '').trim() || 'comprobante';
@@ -371,21 +372,19 @@ function accionSubirComprobante(body) {
 
   try {
     var bytes = Utilities.base64Decode(datosBase64);
-    // Nombre pensado para encontrarlo fácil en Drive: cédula primero (así
-    // quedan juntos los comprobantes de un mismo cliente al ordenar
-    // alfabéticamente), luego la cuota y la fecha del pago.
+    // Dentro de la carpeta del cliente ya no hace falta repetir la cédula
+    // en cada archivo: con la cuota y la fecha basta.
     var extension = (nombreArchivo.match(/\.[a-zA-Z0-9]+$/) || [''])[0];
     var partesNombre = [];
-    if (cedula) partesNombre.push(cedula);
-    else partesNombre.push(contrato);
     if (cuota) partesNombre.push('Cuota ' + cuota);
     var fechaFormateada = formatoFechaParaNombre(fecha);
     if (fechaFormateada) partesNombre.push(fechaFormateada);
+    if (partesNombre.length === 0) partesNombre.push('comprobante');
     var nombreFinal = partesNombre.join(' - ') + extension;
     var blob = Utilities.newBlob(bytes, tipoMime, nombreFinal);
 
-    var carpeta = obtenerCarpetaComprobantes();
-    var archivo = carpeta.createFile(blob);
+    var carpetaCliente = obtenerCarpetaCliente(cedula || contrato, cliente);
+    var archivo = carpetaCliente.createFile(blob);
     archivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
     return { ok: true, url: 'https://drive.google.com/file/d/' + archivo.getId() + '/view' };
@@ -400,6 +399,22 @@ function obtenerCarpetaComprobantes() {
   var carpetas = DriveApp.getFoldersByName(CARPETA_COMPROBANTES);
   if (carpetas.hasNext()) return carpetas.next();
   return DriveApp.createFolder(CARPETA_COMPROBANTES);
+}
+
+// Subcarpeta de un cliente dentro de "Comprobantes de pago", identificada
+// por su cédula (o el contrato si no hay cédula). Se busca por el prefijo
+// "clave - " para que, aunque el nombre del cliente cambie o esté escrito
+// distinto, siga cayendo en la misma carpeta ya creada.
+function obtenerCarpetaCliente(clave, cliente) {
+  var carpetaRaiz = obtenerCarpetaComprobantes();
+  var prefijo = clave + ' - ';
+  var subcarpetas = carpetaRaiz.getFolders();
+  while (subcarpetas.hasNext()) {
+    var sub = subcarpetas.next();
+    if (sub.getName().indexOf(prefijo) === 0) return sub;
+  }
+  var nombreCarpeta = clave + ' - ' + (cliente || 'Cliente');
+  return carpetaRaiz.createFolder(nombreCarpeta);
 }
 
 // Función de prueba: selecciónala en el desplegable de funciones del editor
