@@ -6,6 +6,7 @@
  * Conciliacion_Consolidados.gs y Conciliacion_Dugo.html), nunca en el de cobros.
  * Así no se toca el conector de cobros ni el de contratos.
  *
+ * Este archivo va en el segundo archivo del proyecto (el "Sin título"). NO se pega en el archivo .html.
  * Despliegue: Implementar > Nueva implementación > Aplicación web
  *   - Ejecutar como: Yo
  *   - Quién tiene acceso: Solo yo  (recomendado: la pantalla ve datos de pagos)
@@ -20,9 +21,9 @@ function doGet(e) {
   if (params.action === 'ajustar') return CONC_respuestaAjuste(params);
   if (params.action === 'asignar') return CONC_respuestaAsignar(params);
   if (params.action === 'asignarlote') return CONC_respuestaAsignarLote(params);
-  return HtmlService.createHtmlOutputFromFile('Conciliacion_Dugo')
-    .setTitle('Conciliación Dugo Motos')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  // Sin acción: solo confirma que el conector está activo (el HTML se abre desde el escritorio, no desde aquí)
+  return ContentService.createTextOutput('Conector de Conciliación Dugo activo · versión v10')
+    .setMimeType(ContentService.MimeType.TEXT);
 }
 
 /**
