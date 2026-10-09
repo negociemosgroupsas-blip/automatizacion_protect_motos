@@ -47,6 +47,11 @@ var CONC_TITULO_VALOR_DUGO_CONS = 'Valor pagado a Dugo Motos';
 var CONC_COL_CONTRATO_MANUAL = 9;
 var CONC_TITULO_CONTRATO_MANUAL = 'Contrato manual (escribe aquí)';
 
+// Estado de cada contrato escrito en la hoja Protect, al frente de cada fila (3 = columna C). Solo escribe si la columna está vacía o ya es de esta automatización.
+var CONC_ESCRIBIR_ESTADO_PROTECT = true;
+var CONC_COL_ESTADO_PROTECT = 3;
+var CONC_TITULO_ESTADO_PROTECT = 'Estado de consolidación';
+
 var CONC_TOLERANCIA = 1000; // diferencias de hasta $1.000 (redondeos) se ignoran: cuenta como "Pagó lo correcto"
 
 // Protect: fila 1 = encabezados. Columnas (base 1): E, H, M, N, P
@@ -130,15 +135,17 @@ function CONC_procesar(ss, tol, rapido) {
     var res = CONC_calcular(protect, lectura.filas, tol, ajustes, asignaciones);
     var previos = CONC_leerHistorial(ss);
     var ah = CONC_aplicarHistorial(res.filas, previos, new Date());
-    var estadoEnHoja = { escrito: false, rapido: true };
+    var estadoEnHoja = { escrito: false, rapido: true }, estadoProtect = { escrito: false };
     if (!rapido) {
       CONC_escribirResultado(ss, res);
       CONC_escribirHistorial(ss, ah.registros);
       estadoEnHoja = CONC_escribirEstadoEnConsolidados(hojaCons, lectura.filas);
+      try { estadoProtect = CONC_escribirEstadoEnProtect(hojaProtect, res.filas); }
+      catch (e) { estadoProtect = { escrito: false, error: String(e && e.message ? e.message : e) }; }
     }
     var estadosAR = {};
     protect.forEach(function (p) { var v = String((p.extra && p.extra.estadoCliente) || '').trim() || '(vacío)'; estadosAR[v] = (estadosAR[v] || 0) + 1; });
-    return { estadosAR: estadosAR, diag: CONC_diagnostico(protect, lectura.filas, res.filas), estadoEnHoja: estadoEnHoja, res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas), columnas: columnas };
+    return { estadoProtect: estadoProtect, estadosAR: estadosAR, diag: CONC_diagnostico(protect, lectura.filas, res.filas), estadoEnHoja: estadoEnHoja, res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas), columnas: columnas };
   } finally {
     if (lock) lock.releaseLock();
   }
@@ -930,6 +937,60 @@ function CONC_escribirEstadoEnConsolidados(hoja, filasCons) {
     } catch (e) { muestraH = 'no se pudo leer: ' + e.message; }
   }
   return { escrito: true, columna: colF, filas: Object.keys(estadoPorFila).length, contrato: escribirG, columnaManual: colH, valorDugo: escribirV, valoresDugo: nValores, muestraH: muestraH };
+}
+
+// Escribe SOLO la columna C (estado) de la hoja Protect, al frente de cada contrato. No toca ninguna otra columna ni fórmula.
+function CONC_textoEstadoProtect(f) {
+  if (f.estado === CONC_ESTADO.FALTA) return 'Falta por consolidar';
+  if (f.estado === CONC_ESTADO.NO_APLICA) return 'No aplica · Anulado';
+  if (f.estado === CONC_ESTADO.DIRECTO) return 'Pagó directo a Protect';
+  var t = CONC_textoFila(f);
+  if (f.ajuste && f.ajuste.nota) t = t.split(' · Nota:')[0];   // la nota no se repite aquí
+  return t;
+}
+
+function CONC_colorEstadoProtect(t) {
+  if (/^Falta/.test(t)) return '#f4cccc';
+  if (/^No aplica/.test(t)) return '#e6e6e6';
+  if (/^Pagó directo/.test(t)) return '#cfe2f3';
+  return CONC_colorFila(t);
+}
+
+function CONC_escribirEstadoEnProtect(hoja, filasRes) {
+  if (!CONC_ESCRIBIR_ESTADO_PROTECT) return { escrito: false };
+  var col = CONC_COL_ESTADO_PROTECT, ini = CONC_PROTECT_FILA_INICIO, n = hoja.getLastRow() - ini + 1;
+  if (n < 1) return { escrito: false };
+  var titulo = hoja.getRange(ini - 1, col).getValue();
+  if (!CONC_vacio(titulo) && titulo !== CONC_TITULO_ESTADO_PROTECT) {
+    throw new Error('El título de la columna C de "' + hoja.getName() + '" (fila ' + (ini - 1) + ') es "' + titulo + '". No se sobrescribe.');
+  }
+  var actual = hoja.getRange(ini, col, n, 1).getValues();
+  if (CONC_vacio(titulo)) {
+    for (var i = 0; i < actual.length; i++) {
+      if (!CONC_vacio(actual[i][0])) throw new Error('La columna C de "' + hoja.getName() + '" ya tiene datos (fila ' + (ini + i) + ': "' + actual[i][0] + '"). No se sobrescribe. Vacíala o cambia CONC_COL_ESTADO_PROTECT.');
+    }
+  } else {
+    for (var j = 0; j < actual.length; j++) {
+      var v = actual[j][0];
+      if (!CONC_vacio(v) && !/^(Consolidado|Pagó de menos|Pagó directo|Falta por consolidar|No aplica|Sin registro)/.test(String(v))) {
+        throw new Error('La columna C de "' + hoja.getName() + '" tiene datos que no son de esta automatización (fila ' + (ini + j) + ': "' + v + '"). No se sobrescribe.');
+      }
+    }
+  }
+  var porFila = {};
+  filasRes.forEach(function (f) { if (f.filaProtect !== '' && f.filaProtect !== undefined && f.filaProtect !== null) porFila[f.filaProtect] = CONC_textoEstadoProtect(f); });
+  var textos = [], colores = [], fuentes = [], cuenta = 0;
+  for (var m = 0; m < n; m++) {
+    var t = porFila[ini + m] || '';
+    if (t) cuenta++;
+    textos.push([t]);
+    colores.push([t ? CONC_colorEstadoProtect(t) : null]);
+    fuentes.push([/^Pagó de menos/.test(t) ? '#ffffff' : '#000000']);
+  }
+  hoja.getRange(ini - 1, col).setValue(CONC_TITULO_ESTADO_PROTECT).setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');
+  hoja.getRange(ini, col, n, 1).setValues(textos).setBackgrounds(colores).setFontColors(fuentes).setFontWeight('bold');
+  try { hoja.setColumnWidth(col, 260); } catch (e) {}
+  return { escrito: true, columna: col, filas: cuenta };
 }
 
 // Diagnóstico del cruce: ayuda a ver por qué las cédulas de las dos hojas coinciden o no

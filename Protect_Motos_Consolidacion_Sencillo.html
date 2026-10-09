@@ -113,7 +113,7 @@
         <option value="0">Nunca</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
       </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-02.7</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-09.1</span>
   </div>
 </header>
 
@@ -259,7 +259,7 @@
     var nota = $('notaSync'); if (nota) nota.textContent = 'Actualizando la hoja de Google en segundo plano…';
     llamar(tolActual(), function (r) {
       sincronizando = false;
-      if (nota) nota.textContent = r.estadoEnHoja && r.estadoEnHoja.escrito ? 'Hoja Consolidado actualizada ✔ (' + r.generado + ')' + (r.estadoEnHoja.valorDugo ? ' · valor Dugo escrito en ' + r.estadoEnHoja.valoresDugo + ' filas (columna H)' + (r.estadoEnHoja.muestraH ? ' · comprobado: ' + r.estadoEnHoja.muestraH : '') : ' · el código de Apps Script aún no es el último (falta Nueva versión)') : '';
+      if (nota) nota.textContent = r.estadoEnHoja && r.estadoEnHoja.escrito ? 'Hoja Consolidado actualizada ✔ (' + r.generado + ')' + (r.estadoEnHoja.valorDugo ? ' · valor Dugo escrito en ' + r.estadoEnHoja.valoresDugo + ' filas (columna H)' + (r.estadoEnHoja.muestraH ? ' · comprobado: ' + r.estadoEnHoja.muestraH : '') + (r.estadoProtect ? (r.estadoProtect.escrito ? ' · hoja Protect, columna C: ' + r.estadoProtect.filas + ' contratos' : (r.estadoProtect.error ? ' · ⚠ hoja Protect: ' + r.estadoProtect.error : '')) : '') : ' · el código de Apps Script aún no es el último (falta Nueva versión)') : '';
     }, function (msg) { sincronizando = false; if (nota) nota.textContent = 'La hoja de Google no pudo actualizarse sola (' + msg + '). Pulsa «Actualizar datos».'; }, true);
   }
   function programarSync(ms) { clearTimeout(timerSync); timerSync = setTimeout(sincronizar, ms || 4000); }
