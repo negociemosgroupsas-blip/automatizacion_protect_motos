@@ -113,7 +113,7 @@
         <option value="0">Nunca</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
       </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-09.1</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-09.2</span>
   </div>
 </header>
 
@@ -651,6 +651,9 @@
       }
       if (f.estado === 'Sin registro en Protect') {
         if (!(aj && aj.decision === 'Revisado')) accion('✔ Marcar como REVISADO', 'btn-verde', 'Revisado', '¿Marcar a ' + nombre(f) + ' como REVISADO? Quedará escrito en la hoja Consolidado.');
+      } else if (esDirecto(f)) {
+        accion('Marcar como YA CONSOLIDADO', 'btn-verde', 'Consolidado', '¿Marcar a ' + nombre(f) + ' como YA CONSOLIDADO? Dejará de figurar como pago directo.');
+        accion('⏳ Pendiente por consolidar', 'btn-rojo', 'Falta', '¿Marcar a ' + nombre(f) + ' como PENDIENTE POR CONSOLIDAR? Dejará de figurar como pago directo.');
       } else if (esCons(f)) {
         if (!f.revisado) accion('✔ Todo bien: confirmar consolidado', 'btn-verde', 'Revisado', '¿Confirmar que el consolidado de ' + nombre(f) + ' está bien? Quedará escrito «Consolidado · revisado ✔» en la hoja Consolidado.');
         accion('⏳ Pendiente por consolidar', 'btn-rojo', 'Falta', '¿Marcar a ' + nombre(f) + ' como PENDIENTE POR CONSOLIDAR? Se quitará de los consolidados.');

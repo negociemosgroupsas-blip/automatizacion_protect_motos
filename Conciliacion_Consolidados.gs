@@ -650,8 +650,20 @@ function CONC_claveAjuste(p) {
   return 'P:' + (CONC_normClave(p.contrato) || ('F' + p.fila)) + '|' + CONC_normCedula(p.cedula);
 }
 
+// Asesores cuyos clientes pagan directo a Protect (columna B de Protect): sus contratos se marcan "Pagó directo a Protect" solos
+var CONC_ASESORES_DIRECTO = /KELL[IY]/;
+function CONC_esAsesorDirecto(asesor) {
+  var t = String(asesor === undefined || asesor === null ? '' : asesor).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+  return CONC_ASESORES_DIRECTO.test(t);
+}
+
 function CONC_aplicarAjusteManual(f, p, ajustes, filasAsignadas) {
   f.claveAjuste = CONC_claveAjuste(p);
+  if (p.extra && CONC_esAsesorDirecto(p.extra.asesor) && f.estado !== CONC_ESTADO.NO_APLICA) {
+    f.estado = CONC_ESTADO.DIRECTO; f.valor = ''; f.dif = null; f.difC = null; f.difD = null; f.concordo = '';
+    f.asignacion = ''; f.porOrden = false; f.directoAuto = true;
+    f.obs = 'Asesor "' + p.extra.asesor + '" (columna B de Protect): sus clientes pagan directo a Protect, no aparecen en Consolidado.' + (f.obs ? ' ' + f.obs : '');
+  }
   var aj = ajustes && ajustes[f.claveAjuste];
   if (!aj) return;
   f.ajuste = { decision: aj.decision, nota: aj.nota || '', fecha: aj.fecha || '' };
