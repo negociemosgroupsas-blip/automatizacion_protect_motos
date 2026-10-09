@@ -121,7 +121,8 @@ function CONC_procesar(ss, tol, rapido) {
   // resultados en pocos segundos; la escritura de las hojas se hace aparte (rapido = false), en segundo plano.
   var lock = null;
   if (!rapido) {
-    lock = LockService.getScriptLock();
+    // Candado del USUARIO (distinto del candado del script que usan los guardados): así una actualización larga de las hojas no bloquea los guardados
+    lock = LockService.getUserLock();
     if (!lock.tryLock(30000)) throw new Error('Hay otra actualización de la hoja en curso. Espera unos segundos y vuelve a intentar.');
   }
   try {

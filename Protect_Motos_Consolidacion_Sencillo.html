@@ -113,7 +113,7 @@
         <option value="0">Nunca</option><option value="1">1 min</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
       </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-09.3</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-09.4</span>
   </div>
 </header>
 
@@ -160,7 +160,7 @@
   var TOKEN = 'PM-CONC-3e97c3a8bb5298ef9d192391';
   var $ = function (id) { return document.getElementById(id); };
   var fmt = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });   // pesos colombianos: sin centavos
-  var datos = [], estadosAR = null, lista = 'cons', soloMenos = false, soloRevisar = false, abierta = null, verTabla = false, ultimaConsulta = '';
+  var guardando = 0, datos = [], estadosAR = null, lista = 'cons', soloMenos = false, soloRevisar = false, abierta = null, verTabla = false, ultimaConsulta = '';
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; }
   function money(v) { return v === null || v === undefined || v === '' ? '—' : '$ ' + fmt.format(v); }
   function norm(s) { return String(s === null || s === undefined ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
@@ -200,12 +200,16 @@
     try { localStorage.setItem('conc_url', $('inputUrlConector').value.trim()); } catch (e) {}
     cargar();
   });
-  function llamarAjuste(d, ok, fail) {
+  function llamarAjuste(a, ok, fail) {
+    guardando++;
+    llamarAjuste0(a, function (r) { guardando--; ok(r); }, function (m) { guardando--; fail(m); });
+  }
+  function llamarAjuste0(d, ok, fail) {
     var url = $('inputUrlConector').value.trim();
     if (!/^https:\/\/script\.google\.com\//.test(url)) { fail('Pega la URL del conector y pulsa Guardar.'); return; }
     var cb = 'conc_aj_' + Date.now(), s = document.createElement('script'), listo = false;
     var limpiar = function () { delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); clearTimeout(t); };
-    var t = setTimeout(function () { if (!listo) { limpiar(); fail('No hubo respuesta en 25 segundos. Lo más probable: el código de Apps Script no está actualizado o falta publicar la «Nueva versión».'); } }, 25000);
+    var t = setTimeout(function () { if (!listo) { limpiar(); fail('No hubo respuesta en 90 segundos. Lo más probable: el código de Apps Script no está actualizado o falta publicar la «Nueva versión».'); } }, 90000);
     window[cb] = function (r) { listo = true; limpiar(); r && r.ok ? ok(r.data) : fail(r && r.error ? r.error : 'Respuesta inválida.'); };
     s.onerror = function () { if (!listo) { limpiar(); fail('No se pudo conectar para guardar el ajuste.'); } };
     s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=ajustar&token=' + encodeURIComponent(TOKEN) +
@@ -214,12 +218,16 @@
       '&rapido=1&tolerancia=' + encodeURIComponent(tolActual()) + '&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(s);
   }
-  function llamarAsignar(d, ok, fail) {
+  function llamarAsignar(a, ok, fail) {
+    guardando++;
+    llamarAsignar0(a, function (r) { guardando--; ok(r); }, function (m) { guardando--; fail(m); });
+  }
+  function llamarAsignar0(d, ok, fail) {
     var url = $('inputUrlConector').value.trim();
     if (!/^https:\/\/script\.google\.com\//.test(url)) { fail('Pega la URL del conector y pulsa Guardar.'); return; }
     var cb = 'conc_as_' + Date.now(), s = document.createElement('script'), listo = false;
     var limpiar = function () { delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); clearTimeout(t); };
-    var t = setTimeout(function () { if (!listo) { limpiar(); fail('No hubo respuesta en 25 segundos. Lo más probable: el código de Apps Script no está actualizado o falta publicar la «Nueva versión».'); } }, 25000);
+    var t = setTimeout(function () { if (!listo) { limpiar(); fail('No hubo respuesta en 90 segundos. Lo más probable: el código de Apps Script no está actualizado o falta publicar la «Nueva versión».'); } }, 90000);
     window[cb] = function (r) { listo = true; limpiar(); r && r.ok ? ok(r.data) : fail(r && r.error ? r.error : 'Respuesta inválida.'); };
     s.onerror = function () { if (!listo) { limpiar(); fail('No se pudo conectar para guardar la asignación.'); } };
     s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=asignar&token=' + encodeURIComponent(TOKEN) +
@@ -228,12 +236,16 @@
       '&d=' + encodeURIComponent(d.d === null || d.d === undefined ? '' : d.d) + '&rapido=1&tolerancia=' + encodeURIComponent(tolActual()) + '&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(s);
   }
-  function llamarLote(lista, ok, fail) {
+  function llamarLote(a, ok, fail) {
+    guardando++;
+    llamarLote0(a, function (r) { guardando--; ok(r); }, function (m) { guardando--; fail(m); });
+  }
+  function llamarLote0(lista, ok, fail) {
     var url = $('inputUrlConector').value.trim();
     if (!/^https:\/\/script\.google\.com\//.test(url)) { fail('Pega la URL del conector y pulsa Guardar.'); return; }
     var cb = 'conc_lt_' + Date.now(), s = document.createElement('script'), listo = false;
     var limpiar = function () { delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); clearTimeout(t); };
-    var t = setTimeout(function () { if (!listo) { limpiar(); fail('No hubo respuesta en 40 segundos. Lo más probable: el código de Apps Script no está actualizado o falta publicar la «Nueva versión».'); } }, 40000);
+    var t = setTimeout(function () { if (!listo) { limpiar(); fail('No hubo respuesta en 2 minutos. Lo más probable: el código de Apps Script no está actualizado o falta publicar la «Nueva versión».'); } }, 120000);
     window[cb] = function (r) { listo = true; limpiar(); r && r.ok ? ok(r.data) : fail(r && r.error ? r.error : 'Respuesta inválida.'); };
     s.onerror = function () { if (!listo) { limpiar(); fail('No se pudo conectar para guardar.'); } };
     s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=asignarlote&token=' + encodeURIComponent(TOKEN) +
@@ -283,7 +295,7 @@
   // Actualización automática: vuelve a leer las hojas cada cierto tiempo (si no estás escribiendo ni tienes una ficha abierta)
   var timerAuto = null, ultimaFirma = null;
   function cargarAuto() {
-    if (abierta || sincronizando) return;
+    if (abierta || sincronizando || guardando > 0 || consulta()) return;   // no interrumpe un guardado, una ficha abierta ni una búsqueda en curso
     var u = $('inputUrlConector').value.trim(); if (!/^https:\/\/script\.google\.com\//.test(u)) return;
     var ae = document.activeElement;
     if (ae && (ae.tagName === 'TEXTAREA' || (ae.tagName === 'INPUT' && ae.id !== 'buscar' && ae.id !== 'inputUrlConector'))) return;
