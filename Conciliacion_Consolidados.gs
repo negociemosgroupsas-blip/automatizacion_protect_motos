@@ -322,9 +322,12 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
   // Agrupar contratos de Protect por persona. 1) por cédula; 2) los que no cruzan por cédula, por nombre
   // (exacto o aproximado) entre las filas de Consolidado que todavía no tienen dueño.
   var grupos = {}, orden = [], sinGrupo = [], pendientesNombre = [];
-  var anulados = [], activasPorCed = {};
+  var anulados = [], directosAparte = [], activasPorCed = {}, noAnuladasPorCed = {};
   protect.forEach(function (p) {
-    if (!(p.extra && CONC_esAnulado(p.extra.estadoCliente))) activasPorCed[CONC_normCedula(p.cedula)] = true;
+    p.directoAuto = !!(p.extra && CONC_esAsesorDirecto(p.extra.asesor));
+    if (!(p.extra && CONC_esAnulado(p.extra.estadoCliente))) noAnuladasPorCed[CONC_normCedula(p.cedula)] = true;
+    // "activo" = contrato normal: ni anulado ni de un asesor que cobra directo
+    if (!(p.extra && CONC_esAnulado(p.extra.estadoCliente)) && !p.directoAuto) activasPorCed[CONC_normCedula(p.cedula)] = true;
   });
   protect.forEach(function (p) {
     p.kCed = CONC_normCedula(p.cedula);
@@ -333,9 +336,11 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
     // Contratos Anulados o Cancelados (Protect columna AR): no se consolidan y no entran al reparto de pagos
     if (p.extra && CONC_esAnulado(p.extra.estadoCliente)) {
       // Si la persona NO tiene otros contratos activos y SÍ aparece en Consolidado con un pago, no se esconde: se consolida normal y se marca para revisar
-      if (p.kCed && consPorCedula[p.kCed] && !activasPorCed[p.kCed]) { p.anuladoConPago = true; }
+      if (p.kCed && consPorCedula[p.kCed] && !noAnuladasPorCed[p.kCed]) { p.anuladoConPago = true; }
       else { p.noAplica = true; anulados.push(p); return; }
     }
+    // Contrato de un asesor que cobra directo (Kelli): si la persona tiene otros contratos normales, el pago de Consolidado es de esos, no de este
+    if (p.directoAuto && p.kCed && activasPorCed[p.kCed]) { directosAparte.push(p); return; }
     if (p.kCed && consPorCedula[p.kCed]) {
       var gk = 'C:' + p.kCed;
       if (!grupos[gk]) { grupos[gk] = { cruce: 'Cédula', filas: consPorCedula[p.kCed], contratos: [] }; orden.push(gk); }
@@ -384,6 +389,12 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
       cruce: cruce, filaCons: '', filaProtect: p.fila, obs: (p.pagadoOriginal !== undefined && p.pagadoOriginal !== null && p.pagadoOriginal !== p.pagado) ? 'Protect!P trae ' + p.pagadoOriginal + ' (con punto de miles): se leyó como $' + String(p.pagado).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '. Corrige la celda en Protect. ' : '', extra: p.extra || null, nCons: 0, varios: false, asignacion: '', porOrden: false
     };
   };
+
+  directosAparte.forEach(function (p) {
+    var f = base(p, '');
+    CONC_aplicarAjusteManual(f, p, ajustes, []);   // aquí se marca "Pagó directo a Protect" (o lo que hayas decidido a mano)
+    salida.push(f);
+  });
 
   anulados.forEach(function (p) {
     var f = base(p, '');
