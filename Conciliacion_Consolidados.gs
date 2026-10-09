@@ -55,7 +55,7 @@ var CONC_TITULO_ESTADO_PROTECT = 'Estado de consolidación';
 var CONC_TOLERANCIA = 1000; // diferencias de hasta $1.000 (redondeos) se ignoran: cuenta como "Pagó lo correcto"
 
 // Protect: fila 1 = encabezados. Columnas (base 1): E, H, M, N, P
-var CONC_PROTECT_FILA_INICIO = 2;
+var CONC_PROTECT_FILA_INICIO = 2;   // por defecto; CONC_filaInicioProtect() lo corrige si los encabezados están más abajo (p. ej. fila 2 y datos desde la 3)
 var CONC_P = { CEDULA: 5, CLIENTE: 8, PLACA: 13, CONTRATO: 14, PAGADO_DUGO: 16 };
 // Columnas de Protect que solo se MUESTRAN como información del cliente (no intervienen en la conciliación)
 var CONC_P_INFO = { ASESOR: 2, FECHA_FIRMA: 11, FIN: 12, CUOTA: 17, PLAZO: 18, FORMA: 20, CELULAR: 31, ESTADO_CLIENTE: 44 };
@@ -168,12 +168,28 @@ function CONC_buscarHoja(ss, nombre) {
 }
 
 // ==================== LECTURA (solo lectura) ====================
+// Fila donde empiezan los datos de Protect: la siguiente a la fila de encabezados, que se reconoce porque en la columna del contrato (N) dice "contrato"
+function CONC_filaInicioProtect(hoja) {
+  try {
+    var tope = Math.min(8, hoja.getLastRow());
+    if (tope >= 1) {
+      var enc = hoja.getRange(1, CONC_P.CONTRATO, tope, 1).getValues();
+      for (var i = 0; i < enc.length; i++) {
+        var t = CONC_normNombre(enc[i][0]);
+        if (t && /CONTRATO/.test(t)) return i + 2;
+      }
+    }
+  } catch (e) {}
+  return CONC_PROTECT_FILA_INICIO;
+}
+
 function CONC_leerProtect(hoja) {
+  var iniP = CONC_filaInicioProtect(hoja);
   var ultima = hoja.getLastRow();
-  if (ultima < CONC_PROTECT_FILA_INICIO) return [];
-  var n = ultima - CONC_PROTECT_FILA_INICIO + 1;
+  if (ultima < iniP) return [];
+  var n = ultima - iniP + 1;
   var anchoLectura = Math.min(Math.max(CONC_P_INFO.ESTADO_CLIENTE, CONC_P.PAGADO_DUGO), hoja.getLastColumn());
-  var datos = hoja.getRange(CONC_PROTECT_FILA_INICIO, 1, n, anchoLectura).getValues();
+  var datos = hoja.getRange(iniP, 1, n, anchoLectura).getValues();
   var filas = [];
   for (var i = 0; i < datos.length; i++) {
     var f = datos[i];
@@ -184,7 +200,7 @@ function CONC_leerProtect(hoja) {
     var pagado = f[CONC_P.PAGADO_DUGO - 1];
     if (CONC_vacio(cedula) && CONC_vacio(cliente) && CONC_vacio(contrato) && CONC_vacio(placa)) continue;
     filas.push({
-      fila: CONC_PROTECT_FILA_INICIO + i,
+      fila: iniP + i,
       cedula: cedula, cliente: cliente, placa: placa, contrato: contrato,
       pagado: CONC_corregirMiles(CONC_aNumero(pagado)), pagadoOriginal: CONC_aNumero(pagado),
       extra: {
@@ -983,10 +999,11 @@ function CONC_colorEstadoProtect(t) {
 
 function CONC_escribirEstadoEnProtect(hoja, filasRes) {
   if (!CONC_ESCRIBIR_ESTADO_PROTECT) return { escrito: false };
-  var col = CONC_COL_ESTADO_PROTECT, ini = CONC_PROTECT_FILA_INICIO, n = hoja.getLastRow() - ini + 1;
+  var col = CONC_COL_ESTADO_PROTECT, ini = CONC_filaInicioProtect(hoja), n = hoja.getLastRow() - ini + 1;
   if (n < 1) return { escrito: false };
   var titulo = hoja.getRange(ini - 1, col).getValue();
-  if (!CONC_vacio(titulo) && titulo !== CONC_TITULO_ESTADO_PROTECT) {
+  var tituloNorm = CONC_normNombre(titulo), tituloPropio = (titulo === CONC_TITULO_ESTADO_PROTECT || tituloNorm === 'CONSOLIDADO');   // "Consolidado" es el título que ya tenías en Protect
+  if (!CONC_vacio(titulo) && !tituloPropio) {
     throw new Error('El título de la columna C de "' + hoja.getName() + '" (fila ' + (ini - 1) + ') es "' + titulo + '". No se sobrescribe.');
   }
   var actual = hoja.getRange(ini, col, n, 1).getValues();
@@ -1012,7 +1029,7 @@ function CONC_escribirEstadoEnProtect(hoja, filasRes) {
     colores.push([t ? CONC_colorEstadoProtect(t) : null]);
     fuentes.push([/^Pagó de menos/.test(t) ? '#ffffff' : '#000000']);
   }
-  hoja.getRange(ini - 1, col).setValue(CONC_TITULO_ESTADO_PROTECT).setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');
+  if (CONC_vacio(titulo)) hoja.getRange(ini - 1, col).setValue(CONC_TITULO_ESTADO_PROTECT).setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');   // si ya tienes título ("Consolidado") se respeta
   hoja.getRange(ini, col, n, 1).setValues(textos).setBackgrounds(colores).setFontColors(fuentes).setFontWeight('bold');
   try { hoja.setColumnWidth(col, 260); } catch (e) {}
   return { escrito: true, columna: col, filas: cuenta };
