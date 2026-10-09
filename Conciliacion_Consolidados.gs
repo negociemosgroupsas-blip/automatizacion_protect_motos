@@ -661,9 +661,11 @@ function CONC_claveAjuste(p) {
   return 'P:' + (CONC_normClave(p.contrato) || ('F' + p.fila)) + '|' + CONC_normCedula(p.cedula);
 }
 
-// Asesores cuyos clientes pagan directo a Protect (columna B de Protect): sus contratos se marcan "Pagó directo a Protect" solos
-var CONC_ASESORES_DIRECTO = /KELL[IY]/;
+// Regla automática DESACTIVADA: "Pagó directo a Protect" se marca solo a mano desde el HTML (botón «Dinero entró directo a Protect»).
+// Para volver a activarla por asesor (columna B de Protect), cambia null por una expresión, por ejemplo /KELL[IY]/
+var CONC_ASESORES_DIRECTO = null;
 function CONC_esAsesorDirecto(asesor) {
+  if (!CONC_ASESORES_DIRECTO) return false;
   var t = String(asesor === undefined || asesor === null ? '' : asesor).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
   return CONC_ASESORES_DIRECTO.test(t);
 }
