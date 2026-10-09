@@ -1007,17 +1007,16 @@ function CONC_escribirEstadoEnProtect(hoja, filasRes) {
     throw new Error('El título de la columna C de "' + hoja.getName() + '" (fila ' + (ini - 1) + ') es "' + titulo + '". No se sobrescribe.');
   }
   var actual = hoja.getRange(ini, col, n, 1).getValues();
-  if (CONC_vacio(titulo)) {
-    for (var i = 0; i < actual.length; i++) {
-      if (!CONC_vacio(actual[i][0])) throw new Error('La columna C de "' + hoja.getName() + '" ya tiene datos (fila ' + (ini + i) + ': "' + actual[i][0] + '"). No se sobrescribe. Vacíala o cambia CONC_COL_ESTADO_PROTECT.');
-    }
-  } else {
-    for (var j = 0; j < actual.length; j++) {
-      var v = actual[j][0];
-      if (!CONC_vacio(v) && !/^(Consolidado|Pagó de menos|Pagó directo|Falta por consolidar|No aplica|Sin registro)/.test(String(v))) {
-        throw new Error('La columna C de "' + hoja.getName() + '" tiene datos que no son de esta automatización (fila ' + (ini + j) + ': "' + v + '"). No se sobrescribe.');
-      }
-    }
+  // Un cero suelto (0, "0") o un espacio cuenta como celda vacía; cualquier otro dato que no sea de esta automatización se respeta
+  var ajenas = [];
+  for (var i = 0; i < actual.length; i++) {
+    var v = actual[i][0];
+    if (CONC_vacio(v) || String(v).trim() === '' || Number(v) === 0) continue;
+    if (!CONC_vacio(titulo) && /^(Consolidado|Pagó de menos|Pagó directo|Falta por consolidar|No aplica|Sin registro)/.test(String(v))) continue;
+    ajenas.push('fila ' + (ini + i) + ': "' + v + '"');
+  }
+  if (ajenas.length) {
+    throw new Error('La columna C de "' + hoja.getName() + '" tiene ' + ajenas.length + ' celda(s) con datos que no son de esta automatización (' + ajenas.slice(0, 6).join(' · ') + (ajenas.length > 6 ? ' …' : '') + '). No se sobrescribe. Bórralas o vacía esas celdas.');
   }
   var porFila = {};
   filasRes.forEach(function (f) { if (f.filaProtect !== '' && f.filaProtect !== undefined && f.filaProtect !== null) porFila[f.filaProtect] = CONC_textoEstadoProtect(f); });
