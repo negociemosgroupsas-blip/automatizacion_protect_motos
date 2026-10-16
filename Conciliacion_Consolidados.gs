@@ -317,6 +317,7 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
       var dests = CONC_destinosManual(am.contrato, r.kCed, porContrato, protect);
       if (dests.length) {
         r.directa = true; r.usada = true; r.manual = true;
+        if (am.otra) r.otraManual = { cedula: CONC_texto(r.cedula), nombre: CONC_texto(r.cliente) };   // tú indicaste que pagó otra persona
         if (dests.length > 1) r.compartida = dests;   // un solo pago que cubre varios contratos
         dests.forEach(function (dest) { dest.directRows.push(r); dest.directMetodo = 'manual'; });
         return;
@@ -472,9 +473,9 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
         f.valor = CONC_VALOR.ATIPICO; f.dif = null; f.difC = null; f.difD = null; f.concordo = '';
       }
       if (f.valor === CONC_VALOR.MAS && pagadoEval && f.dif > Math.max(CONC_REVISAR_MAS_MIN, CONC_REVISAR_MAS_PORC * pagadoEval)) f.valor = CONC_VALOR.MAS_REVISAR;
-      // Pago hecho por OTRA persona: la fila de Consolidado se asignó a este contrato (a mano o por número de contrato) pero trae otra cédula
-      var kContrato = CONC_normCedula(p.cedula), otra = null;
-      a.filas.forEach(function (r) { if (!otra && r.directa && r.kCed && kContrato && r.kCed !== kContrato) otra = { cedula: CONC_texto(r.cedula), nombre: CONC_texto(r.cliente) }; });
+      // Pago hecho por OTRA persona: solo cuando TÚ lo indicaste al asignar el pago (opción "¿Pagó otra persona por este contrato?")
+      var otra = null;
+      a.filas.forEach(function (r) { if (!otra && r.otraManual) otra = r.otraManual; });
       if (otra) f.otraPersona = otra;
       f.filaCons = a.filas.map(function (r) { return r.fila; }).join(', ');
       var notas = ['Aparece en Consolidados (' + a.filas.length + (a.filas.length === 1 ? ' fila' : ' filas') + ': ' + f.filaCons + ').'];
@@ -610,7 +611,7 @@ function CONC_buscarPorNombre(tok, indice) {
 }
 
 // ----- Asignación manual de pagos a contratos (hoja "Asignaciones_Pagos") -----
-var CONC_ASIG_ENCABEZADOS = ['ClavePago', 'Contrato asignado', 'Cédula', 'Cliente', 'Valor C', 'Valor D', 'Fecha'];
+var CONC_ASIG_ENCABEZADOS = ['ClavePago', 'Contrato asignado', 'Cédula', 'Cliente', 'Valor C', 'Valor D', 'Fecha', 'Pagó otra persona'];
 
 // Identidad de un pago aunque cambie de fila: cédula + C + D (+ n° de repetición si hay filas idénticas)
 function CONC_clavePago(r, veces) {
@@ -627,7 +628,7 @@ function CONC_leerAsignaciones(ss) {
   }
   if (hoja.getLastRow() < 2) return {};
   var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, CONC_ASIG_ENCABEZADOS.length).getValues(), out = {};
-  datos.forEach(function (r) { if (!CONC_vacio(r[0]) && !CONC_vacio(r[1])) out[String(r[0])] = { contrato: String(r[1]) }; });
+  datos.forEach(function (r) { if (!CONC_vacio(r[0]) && !CONC_vacio(r[1])) out[String(r[0])] = { contrato: String(r[1]), otra: String(r[7] || '') === 'Sí' }; });
   return out;
 }
 
@@ -661,8 +662,9 @@ function CONC_guardarAsignacion(ss, d) {
     if (fila < 0) fila = ultima + 1;
     hoja.getRange(fila, 1, 1, 6).setNumberFormat('@');
     hoja.getRange(fila, 1, 1, CONC_ASIG_ENCABEZADOS.length).setValues([[clave, contrato, String(d.cedula || ''), String(d.cliente || ''),
-      d.c === undefined || d.c === null ? '' : d.c, d.d === undefined || d.d === null ? '' : d.d, new Date()]]);
+      d.c === undefined || d.c === null ? '' : d.c, d.d === undefined || d.d === null ? '' : d.d, new Date(), d.otra ? 'Sí' : '']]);
     hoja.getRange(fila, 7).setNumberFormat('dd/mm/yyyy hh:mm');
+    if (CONC_vacio(hoja.getRange(1, 8).getValue())) hoja.getRange(1, 8).setValue(CONC_ASIG_ENCABEZADOS[7]).setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');
     return { ok: true, accion: 'guardado' };
   } finally {
     lock.releaseLock();

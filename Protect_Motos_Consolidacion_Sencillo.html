@@ -139,7 +139,7 @@
         <option value="0">Nunca</option><option value="1">1 min</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
       </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.7</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.8</span>
   </div>
 </header>
 
@@ -263,7 +263,7 @@
       '&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(s);
   }
-  function llamarAsignar0(d, ok, fail) { llamarLote0([{ clavePago: d.clavePago, contrato: d.contrato, cedula: d.cedula, cliente: d.cliente, c: d.c, d: d.d }], ok, fail); }
+  function llamarAsignar0(d, ok, fail) { llamarLote0([{ clavePago: d.clavePago, contrato: d.contrato, cedula: d.cedula, cliente: d.cliente, c: d.c, d: d.d, otra: d.otra }], ok, fail); }
   function llamarAsignar(a, ok, fail) {
     guardando++;
     var intentos = 0;
@@ -698,7 +698,7 @@
     var pregunta = '¿Asignar el pago de ' + valorCons(pago) + ' (' + (pago.clienteCons || 'sin nombre') + ', cédula ' + pago.cedula + ') al contrato ' + contrato.contrato + ' de ' + nombre(contrato) + ' (cédula ' + contrato.cedula + ')? Quedará como CONSOLIDADO.';
     confirmar(pregunta, function () {
       bloquear(box, true); avisoLocal(box, 'cargando', 'Guardando la asignación… espera unos segundos.');
-      llamarAsignar({ clavePago: 'R:' + cc, contrato: contrato.contrato, cedula: pago.cedula, cliente: pago.clienteCons || '', c: pago.c, d: pago.d },
+      llamarAsignar({ clavePago: 'R:' + cc, contrato: contrato.contrato, cedula: pago.cedula, cliente: pago.clienteCons || '', c: pago.c, d: pago.d, otra: true },
         function (res) { trasGuardar(box, res); },
         function (msg) { avisoLocal(box, 'error', 'No se pudo guardar: ' + msg); bloquear(box, false); });
     });
