@@ -113,7 +113,7 @@
         <option value="0">Nunca</option><option value="1">1 min</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
       </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.1</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.2</span>
   </div>
 </header>
 
@@ -179,6 +179,19 @@
     var a = cont.querySelector(':scope > .aviso-local');
     if (!a) { a = el('div', 'aviso-local'); cont.insertBefore(a, cont.firstChild); }
     a.className = 'aviso-local ' + tipo; a.textContent = txt;
+  }
+  // Confirmación dentro de la página (los cuadros del navegador pueden estar bloqueados y entonces el botón "no hace nada")
+  function confirmar(texto, siAcepta) {
+    var fondo = el('div'); fondo.style.cssText = 'position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(15,23,42,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+    var caja = el('div'); caja.style.cssText = 'background:#fff;border-radius:14px;padding:22px;max-width:580px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.35)';
+    var p = el('p', '', texto); p.style.cssText = 'font-size:1.02rem;margin:0 0 18px;line-height:1.45;color:#1f2430';
+    var fila = el('div'); fila.style.cssText = 'display:flex;gap:10px;justify-content:flex-end';
+    var no = el('button', 'btn btn-gris', 'Cancelar'), si = el('button', 'btn btn-verde', 'Sí, continuar'); no.type = 'button'; si.type = 'button';
+    var teclas = function (e) { if (e.key === 'Escape') cerrarC(); };
+    var cerrarC = function () { if (fondo.parentNode) fondo.parentNode.removeChild(fondo); document.removeEventListener('keydown', teclas, true); };
+    no.onclick = cerrarC; si.onclick = function () { cerrarC(); siAcepta(); };
+    document.addEventListener('keydown', teclas, true);
+    fila.appendChild(no); fila.appendChild(si); caja.appendChild(p); caja.appendChild(fila); fondo.appendChild(caja); document.body.appendChild(fondo); si.focus();
   }
   function mensaje(tipo, txt) { var b = $('estado'); b.className = 'estado' + (tipo ? ' ' + tipo : ''); b.textContent = txt || ''; }
   function nota(f) { return f.ajuste && f.ajuste.nota ? f.ajuste.nota : ''; }
@@ -476,12 +489,13 @@
         var b = el('button', cls + (activo ? ' actual' : ''), txt); b.type = 'button'; b.title = pregunta;
         b.onclick = function () {
           if (activo) { avisoLocal(box, 'info', 'Este pago ya está asignado a esa opción. Toca otro contrato si quieres cambiarlo.'); return; }
-          if (!window.confirm(pregunta)) return;
-          box.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
-          avisoLocal(box, 'cargando', 'Guardando la asignación… espera unos segundos.');
-          llamarAsignar({ clavePago: p.clavePago, contrato: contrato, cedula: f.cedula, cliente: nombre(f), c: p.c, d: p.d },
-            function (res) { trasGuardar(box, res); },
-            function (msg) { avisoLocal(box, 'error', 'No se pudo guardar: ' + msg); box.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
+          confirmar(pregunta, function () {
+            box.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
+            avisoLocal(box, 'cargando', 'Guardando la asignación… espera unos segundos.');
+            llamarAsignar({ clavePago: p.clavePago, contrato: contrato, cedula: f.cedula, cliente: nombre(f), c: p.c, d: p.d },
+              function (res) { trasGuardar(box, res); },
+              function (msg) { avisoLocal(box, 'error', 'No se pudo guardar: ' + msg); box.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
+          });
         };
         bs.appendChild(b);
       }
@@ -497,12 +511,13 @@
         var existe = f.contratosGrupo.some(function (k) { return mismo(k.contrato, valor); });
         if (!existe) { avisoLocal(box, 'error', 'El contrato «' + valor + '» no es uno de los contratos de esta persona. Escríbelo como aparece en Protect o usa los botones.'); return; }
         var real = f.contratosGrupo.filter(function (k) { return mismo(k.contrato, valor); })[0].contrato;
-        if (!window.confirm('¿Asignar este pago al contrato ' + real + '?')) return;
-        box.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
-        avisoLocal(box, 'cargando', 'Guardando la asignación… espera unos segundos.');
-        llamarAsignar({ clavePago: p.clavePago, contrato: real, cedula: f.cedula, cliente: nombre(f), c: p.c, d: p.d },
-          function (res) { trasGuardar(box, res); },
-          function (msg) { avisoLocal(box, 'error', 'No se pudo guardar: ' + msg); box.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
+        confirmar('¿Asignar este pago al contrato ' + real + '?', function () {
+          box.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
+          avisoLocal(box, 'cargando', 'Guardando la asignación… espera unos segundos.');
+          llamarAsignar({ clavePago: p.clavePago, contrato: real, cedula: f.cedula, cliente: nombre(f), c: p.c, d: p.d },
+            function (res) { trasGuardar(box, res); },
+            function (msg) { avisoLocal(box, 'error', 'No se pudo guardar: ' + msg); box.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
+        });
       };
       bs.appendChild(escribe); bs.appendChild(ir);
       if (p.manual) boton('Volver a automático', 'auto', 'AUTO', false, '¿Quitar la asignación manual y dejar que el sistema decida?');
@@ -626,11 +641,12 @@
   function asignarPagoAContrato(box, pago, contrato) {
     var cc = pago.claveAjuste.slice(2);
     var pregunta = '¿Asignar el pago de ' + valorCons(pago) + ' (' + (pago.clienteCons || 'sin nombre') + ', cédula ' + pago.cedula + ') al contrato ' + contrato.contrato + ' de ' + nombre(contrato) + ' (cédula ' + contrato.cedula + ')? Quedará como CONSOLIDADO.';
-    if (!window.confirm(pregunta)) return;
-    bloquear(box, true); avisoLocal(box, 'cargando', 'Guardando la asignación… espera unos segundos.');
-    llamarAsignar({ clavePago: 'R:' + cc, contrato: contrato.contrato, cedula: pago.cedula, cliente: pago.clienteCons || '', c: pago.c, d: pago.d },
-      function (res) { trasGuardar(box, res); },
-      function (msg) { avisoLocal(box, 'error', 'No se pudo guardar: ' + msg); bloquear(box, false); });
+    confirmar(pregunta, function () {
+      bloquear(box, true); avisoLocal(box, 'cargando', 'Guardando la asignación… espera unos segundos.');
+      llamarAsignar({ clavePago: 'R:' + cc, contrato: contrato.contrato, cedula: pago.cedula, cliente: pago.clienteCons || '', c: pago.c, d: pago.d },
+        function (res) { trasGuardar(box, res); },
+        function (msg) { avisoLocal(box, 'error', 'No se pudo guardar: ' + msg); bloquear(box, false); });
+    });
   }
   // En la ficha de un pago que NO está en Protect: escribir a qué contrato de Protect pertenece
   function panelAsignarPago(f, d) {
@@ -703,12 +719,14 @@
       function accion(txt, cls, decision, pregunta) {
         var bt = el('button', 'btn ' + cls, txt); bt.type = 'button';
         bt.onclick = function () {
-          if (pregunta && !window.confirm(pregunta)) return;
-          ac.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
-          avisoLocal(d, 'cargando', 'Guardando… espera unos segundos.');
-          llamarAjuste({ clave: f.claveAjuste, decision: decision, nota: nt.value, cedula: f.cedula, cliente: nombre(f), contrato: f.contrato },
-            function (res) { trasGuardar(d, res); },
-            function (msg) { avisoLocal(d, 'error', 'No se pudo guardar: ' + msg); ac.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
+          var hacer = function () {
+            ac.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
+            avisoLocal(d, 'cargando', 'Guardando… espera unos segundos.');
+            llamarAjuste({ clave: f.claveAjuste, decision: decision, nota: nt.value, cedula: f.cedula, cliente: nombre(f), contrato: f.contrato },
+              function (res) { trasGuardar(d, res); },
+              function (msg) { avisoLocal(d, 'error', 'No se pudo guardar: ' + msg); ac.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
+          };
+          if (pregunta) confirmar(pregunta, hacer); else hacer();
         };
         ac.appendChild(bt);
       }

@@ -700,11 +700,14 @@ function CONC_aplicarAjusteManual(f, p, ajustes, filasAsignadas) {
   var nota = aj.nota ? ' Nota: ' + aj.nota : '';
   if (aj.decision === 'Nota') {
     f.obs = (f.obs ? f.obs + ' ' : '') + 'Nota: ' + (aj.nota || '(vacía)');
-  } else if (aj.decision === 'Falta') {
+  } else if (aj.decision === 'Falta' && !(filasAsignadas || []).some(function (r) { return r.manual; })) {
     f.estado = CONC_ESTADO.FALTA; f.valor = ''; f.dif = null; f.difC = null; f.difD = null; f.concordo = '';
     f.asignacion = ''; f.porOrden = false;
     f.obs = 'Ajuste manual: marcado como "Falta por consolidar" (lo que aparece en Consolidado no es un pago).' + nota;
     (filasAsignadas || []).forEach(function (r) { r.estadoFila = 'No es un pago · ajuste manual'; });
+  } else if (aj.decision === 'Falta') {
+    // Marcaste "Falta" pero después asignaste a mano un pago a este contrato: la asignación manda
+    f.obs = 'Antes lo marcaste como "Falta por consolidar", pero asignaste un pago a este contrato: la asignación manda.' + nota + (f.obs ? ' ' + f.obs : '');
   } else if (aj.decision === 'Revisado') {
     f.revisado = true;
     f.obs = 'Revisado por ti: confirmaste que el consolidado está bien.' + nota + (f.obs ? ' ' + f.obs : '');
