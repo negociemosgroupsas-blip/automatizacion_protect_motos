@@ -81,6 +81,7 @@
   .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.74rem;font-weight:700}
   .tab.gris{background:linear-gradient(135deg,#4b5563,#9ca3af)} .b-gris2{background:#eceff3;color:#4b5563}
   .tab.azul{background:linear-gradient(135deg,#1d4ed8,#60a5fa)} .b-azul{background:var(--azulinfo-bg);color:var(--azulinfo)}
+  .btn-morado{background:#6d28d9;color:#fff}
   .g-morado{background:#ede9fe;color:#5b21b6}
   .b-morado{background:#ede9fe;color:#5b21b6}
   .b-verde{background:var(--verde-bg);color:var(--verde)} .b-rojo{background:var(--rojo-bg);color:var(--rojo)}
@@ -139,7 +140,7 @@
         <option value="0">Nunca</option><option value="1">1 min</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
       </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.9</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.10</span>
   </div>
 </header>
 
@@ -835,6 +836,19 @@
         accion('⏳ Pendiente por consolidar', 'btn-rojo', 'Falta', '¿Marcar a ' + nombre(f) + ' como PENDIENTE POR CONSOLIDAR? Se quitará de los consolidados.');
       }
       else if (!esDirecto(f)) accion('Marcar como YA CONSOLIDADO', 'btn-verde', 'Consolidado', '¿Marcar a ' + nombre(f) + ' como YA CONSOLIDADO?');
+      if (esCons(f) && f.pagosAsignados && f.pagosAsignados.length) {
+        var yaOtra = !!f.otraPersona, bo = el('button', 'btn ' + (yaOtra ? 'btn-gris' : 'btn-morado'), yaOtra ? '↩ Quitar «a nombre de otra persona»' : '👥 Consolidado a nombre de otra persona'); bo.type = 'button';
+        bo.onclick = function () {
+          confirmar(yaOtra ? '¿Quitar el aviso «Consolidado a nombre de otra persona» de este contrato?' : '¿Marcar este contrato como «Consolidado a nombre de otra persona»? Lo pagó una persona distinta al titular y quedará escrito en las hojas.', function () {
+            var lote = f.pagosAsignados.map(function (q) { return { clavePago: q.clavePago, contrato: f.contrato, cedula: q.cedula, cliente: q.cliente, c: q.c, d: q.d, otra: !yaOtra }; });
+            ac.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
+            avisoLocal(d, 'cargando', 'Guardando… espera unos segundos.');
+            llamarLote(lote, function (res) { trasGuardar(d, res); },
+              function (msg) { avisoLocal(d, 'error', 'No se pudo guardar: ' + msg); ac.querySelectorAll('button').forEach(function (x) { x.disabled = false; }); });
+          });
+        };
+        acP.appendChild(bo);
+      }
       if (f.estado !== 'Sin registro en Protect' && !esDirecto(f)) accion('💵 Dinero entró directo a Protect', 'btn-azul', 'Directo', '¿Marcar a ' + nombre(f) + ' como «Dinero entró directo a Protect»? Pasará a la lista de pagos directos y dejará de aparecer como faltante.', true);
       accion('💾 Guardar solo la nota', 'btn-info', 'Nota', null, true);
       if (aj) accion('↩ Quitar ajuste / nota', 'btn-gris', 'Quitar', '¿Quitar el ajuste y la nota de este cliente?', true);

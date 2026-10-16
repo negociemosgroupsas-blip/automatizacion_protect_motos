@@ -477,6 +477,8 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
       var otra = null;
       a.filas.forEach(function (r) { if (!otra && r.otraManual) otra = r.otraManual; });
       if (otra) f.otraPersona = otra;
+      // Pagos de Consolidado asignados a este contrato (la pantalla los usa para marcar «pagó otra persona» con un botón)
+      f.pagosAsignados = a.filas.filter(function (r) { return r.clavePago; }).map(function (r) { return { clavePago: r.clavePago, cedula: CONC_texto(r.cedula), cliente: CONC_texto(r.cliente), c: r.c, d: r.d, fila: r.fila, otra: !!r.otraManual }; });
       f.filaCons = a.filas.map(function (r) { return r.fila; }).join(', ');
       var notas = ['Aparece en Consolidados (' + a.filas.length + (a.filas.length === 1 ? ' fila' : ' filas') + ': ' + f.filaCons + ').'];
       if (otra) notas.push('El pago lo hizo otra persona: ' + (otra.nombre || 'sin nombre') + ' (cédula ' + otra.cedula + '). El contrato está a nombre de ' + (p.cliente || 'otra persona') + '.');
