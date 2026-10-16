@@ -113,7 +113,7 @@
         <option value="0">Nunca</option><option value="1">1 min</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
       </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.3</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.4</span>
   </div>
 </header>
 
@@ -237,6 +237,7 @@
       '&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(s);
   }
+  function llamarAsignar0(d, ok, fail) { llamarLote0([{ clavePago: d.clavePago, contrato: d.contrato, cedula: d.cedula, cliente: d.cliente, c: d.c, d: d.d }], ok, fail); }
   function llamarAsignar(a, ok, fail) {
     guardando++;
     var intentos = 0;
@@ -247,7 +248,7 @@
       });
     })();
   }
-  function llamarAsignar0(d, ok, fail) {
+  function llamarAsignarViejo(d, ok, fail) {
     var url = $('inputUrlConector').value.trim();
     if (!/^https:\/\/script\.google\.com\//.test(url)) { fail('Pega la URL del conector y pulsa Guardar.'); return; }
     var cb = 'conc_as_' + Date.now(), s = document.createElement('script'), listo = false;
