@@ -113,7 +113,7 @@
         <option value="0">Nunca</option><option value="1">1 min</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
       </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-09.4</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.1</span>
   </div>
 </header>
 
@@ -621,6 +621,51 @@
     if (enModal) { var cb = el('button', 'btn btn-gris', 'Cerrar'); cb.type = 'button'; cb.onclick = cerrar; barra.appendChild(cb); }
     d.appendChild(barra);
   }
+  // ---- Pago hecho por otra persona: asignar un pago de Consolidado a un contrato de Protect ----
+  function bloquear(box, si) { box.querySelectorAll('button, input').forEach(function (x) { x.disabled = si; }); }
+  function asignarPagoAContrato(box, pago, contrato) {
+    var cc = pago.claveAjuste.slice(2);
+    var pregunta = '¿Asignar el pago de ' + valorCons(pago) + ' (' + (pago.clienteCons || 'sin nombre') + ', cédula ' + pago.cedula + ') al contrato ' + contrato.contrato + ' de ' + nombre(contrato) + ' (cédula ' + contrato.cedula + ')? Quedará como CONSOLIDADO.';
+    if (!window.confirm(pregunta)) return;
+    bloquear(box, true); avisoLocal(box, 'cargando', 'Guardando la asignación… espera unos segundos.');
+    llamarAsignar({ clavePago: 'R:' + cc, contrato: contrato.contrato, cedula: pago.cedula, cliente: pago.clienteCons || '', c: pago.c, d: pago.d },
+      function (res) { trasGuardar(box, res); },
+      function (msg) { avisoLocal(box, 'error', 'No se pudo guardar: ' + msg); bloquear(box, false); });
+  }
+  // En la ficha de un pago que NO está en Protect: escribir a qué contrato de Protect pertenece
+  function panelAsignarPago(f, d) {
+    var box = el('div', 'pagos');
+    box.appendChild(el('h3', '', '¿Este pago es de un contrato de Protect? Asígnalo'));
+    box.appendChild(el('p', 'obs', 'Sirve cuando el contrato está a nombre de una persona pero pagó otra. Escribe el número de contrato de Protect y quedará CONSOLIDADO, con su valor y su número de contrato en la hoja Consolidado.'));
+    var inp = el('input', 'contrato'); inp.type = 'text'; inp.placeholder = '# contrato en Protect';
+    var bt = el('button', 'btn btn-verde', 'Asignar este pago a ese contrato'); bt.type = 'button'; bt.style.marginLeft = '8px';
+    bt.onclick = function () {
+      var v = inp.value.trim(); if (!v) { avisoLocal(box, 'error', 'Escribe el número de contrato.'); return; }
+      var hit = datos.filter(function (x) { return x.contrato && x.claveAjuste && x.claveAjuste.indexOf('P:') === 0 && mismo(x.contrato, v); });
+      if (!hit.length) { avisoLocal(box, 'error', 'No encontré el contrato «' + v + '» en Protect.'); return; }
+      asignarPagoAContrato(box, f, hit[0]);
+    };
+    box.appendChild(inp); box.appendChild(bt); d.appendChild(box);
+  }
+  // En la ficha de un contrato (falta o consolidado): buscar el pago de otra persona entre los que no están en Protect
+  function panelBuscarPago(f, d) {
+    var box = el('div', 'pagos');
+    box.appendChild(el('h3', '', '¿Pagó otra persona por este contrato? Busca su pago'));
+    box.appendChild(el('p', 'obs', 'Escribe la cédula o el nombre de quien hizo el pago en el banco. Se buscan los pagos de Consolidado que no están en Protect.'));
+    var inp = el('input', 'contrato'); inp.type = 'text'; inp.placeholder = 'cédula o nombre de quien pagó'; inp.style.width = '280px';
+    var bt = el('button', 'btn btn-azul', 'Buscar pago'); bt.type = 'button'; bt.style.marginLeft = '8px';
+    var res = el('div'); res.style.marginTop = '8px';
+    bt.onclick = function () {
+      res.textContent = ''; var q = norm(inp.value).trim(); if (!q) { avisoLocal(box, 'error', 'Escribe la cédula o el nombre.'); return; }
+      var lista = datos.filter(function (x) { return x.estado === 'Sin registro en Protect' && x.claveAjuste && coincide(x, q); }).slice(0, 12);
+      if (!lista.length) { res.appendChild(el('p', 'obs', 'No hay pagos sin registro en Protect que coincidan con «' + inp.value.trim() + '».')); return; }
+      lista.forEach(function (p) {
+        var b = el('button', 'btn btn-verde', 'Asignar ' + valorCons(p) + ' · ' + (p.clienteCons || 'sin nombre') + ' · cédula ' + p.cedula + ' · fila ' + p.filaCons);
+        b.type = 'button'; b.style.display = 'block'; b.style.margin = '6px 0'; b.onclick = function () { asignarPagoAContrato(box, p, f); }; res.appendChild(b);
+      });
+    };
+    box.appendChild(inp); box.appendChild(bt); box.appendChild(res); d.appendChild(box);
+  }
   function construirFicha(f, d, enModal, volver) {
     d.appendChild(el('h2', '', nombre(f)));
     var gr = el('div', 'grande');
@@ -645,6 +690,9 @@
     if (esCons(f) && f.valor === 'Pagó de más' && f.dif !== null) d.appendChild(el('p', 'obs', 'Pagó $ ' + fmt.format(f.dif) + ' de más (no es problema).'));
     if (!f.obs && f.filaCons !== '' && f.filaCons !== undefined) d.appendChild(el('p', 'obs', 'Fila(s) en la hoja Consolidado: ' + f.filaCons + '.'));
     if (f.obs) d.appendChild(el('p', 'obs', f.obs));
+
+    if (f.estado === 'Sin registro en Protect' && f.claveAjuste) panelAsignarPago(f, d);
+    else if (f.claveAjuste && f.claveAjuste.indexOf('P:') === 0 && !esNoAplica(f) && !esDirecto(f)) panelBuscarPago(f, d);
 
     if (f.claveAjuste) {
       var aj = f.ajuste;
