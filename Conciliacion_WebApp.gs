@@ -22,7 +22,7 @@ function doGet(e) {
   if (params.action === 'asignar') return CONC_respuestaAsignar(params);
   if (params.action === 'asignarlote') return CONC_respuestaAsignarLote(params);
   // Sin acción: solo confirma que el conector está activo (el HTML se abre desde el escritorio, no desde aquí)
-  return ContentService.createTextOutput('Conector de Conciliación Dugo activo · versión v10')
+  return ContentService.createTextOutput('Conector de Conciliación Dugo activo · versión v11')
     .setMimeType(ContentService.MimeType.TEXT);
 }
 
@@ -51,7 +51,8 @@ function CONC_apiConciliar(tolerancia, rapido) {
     estadoEnHoja: out.estadoEnHoja,
     estadosAR: out.estadosAR,
     estadoProtect: out.estadoProtect,
-    version: 'v10',
+    capacidades: out.capacidades,
+    version: 'v11',
     rapido: !!rapido,
     acciones: ['conciliar', 'ajustar', 'asignar', 'asignarlote'], // la pantalla usa esto para avisar si el código publicado está desactualizado
     diag: out.diag,

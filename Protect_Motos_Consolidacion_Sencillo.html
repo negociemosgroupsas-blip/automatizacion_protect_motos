@@ -139,7 +139,7 @@
         <option value="0">Nunca</option><option value="1">1 min</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
       </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.8</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.9</span>
   </div>
 </header>
 
@@ -317,6 +317,8 @@
     datos = r.filas || [];
     estadosAR = r.estadosAR || null;
     var viejo = !r.acciones || r.acciones.indexOf('asignarlote') < 0 || r.acciones.indexOf('ajustar') < 0;
+    var sinOtra = !viejo && (!r.capacidades || r.capacidades.indexOf('otraPersona') < 0);   // código de Apps Script anterior a «Consolidado a nombre de otra persona'
+    viejo = viejo || sinOtra;
     mensaje('ok', textoEstado || ('Datos al día (' + r.generado + ').'));
     var av = $('avisoVersion'); av.style.display = viejo ? 'block' : 'none';
     pintar();

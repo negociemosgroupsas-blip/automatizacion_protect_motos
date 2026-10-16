@@ -146,7 +146,7 @@ function CONC_procesar(ss, tol, rapido) {
     }
     var estadosAR = {};
     protect.forEach(function (p) { var v = String((p.extra && p.extra.estadoCliente) || '').trim() || '(vacío)'; estadosAR[v] = (estadosAR[v] || 0) + 1; });
-    return { estadoProtect: estadoProtect, estadosAR: estadosAR, diag: CONC_diagnostico(protect, lectura.filas, res.filas), estadoEnHoja: estadoEnHoja, res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas), columnas: columnas };
+    return { capacidades: ['otraPersona', 'asignarLote'], estadoProtect: estadoProtect, estadosAR: estadosAR, diag: CONC_diagnostico(protect, lectura.filas, res.filas), estadoEnHoja: estadoEnHoja, res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas), columnas: columnas };
   } finally {
     if (lock) lock.releaseLock();
   }
