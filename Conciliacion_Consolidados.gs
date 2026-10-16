@@ -472,8 +472,13 @@ function CONC_calcular(protect, cons, tol, ajustes, asignaciones) {
         f.valor = CONC_VALOR.ATIPICO; f.dif = null; f.difC = null; f.difD = null; f.concordo = '';
       }
       if (f.valor === CONC_VALOR.MAS && pagadoEval && f.dif > Math.max(CONC_REVISAR_MAS_MIN, CONC_REVISAR_MAS_PORC * pagadoEval)) f.valor = CONC_VALOR.MAS_REVISAR;
+      // Pago hecho por OTRA persona: la fila de Consolidado se asignó a este contrato (a mano o por número de contrato) pero trae otra cédula
+      var kContrato = CONC_normCedula(p.cedula), otra = null;
+      a.filas.forEach(function (r) { if (!otra && r.directa && r.kCed && kContrato && r.kCed !== kContrato) otra = { cedula: CONC_texto(r.cedula), nombre: CONC_texto(r.cliente) }; });
+      if (otra) f.otraPersona = otra;
       f.filaCons = a.filas.map(function (r) { return r.fila; }).join(', ');
       var notas = ['Aparece en Consolidados (' + a.filas.length + (a.filas.length === 1 ? ' fila' : ' filas') + ': ' + f.filaCons + ').'];
+      if (otra) notas.push('El pago lo hizo otra persona: ' + (otra.nombre || 'sin nombre') + ' (cédula ' + otra.cedula + '). El contrato está a nombre de ' + (p.cliente || 'otra persona') + '.');
       if (comp) notas.push('Un solo pago de Consolidado cubre los contratos ' + f.compartidoCon.join(' + ') + ': se compara con la suma de Dugo Motos ($ ' + String(Math.round(pagadoEval || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ').');
       if (mejor.suma) notas.push('Este contrato tiene ' + mejor.suma.n + ' pagos: se sumaron ($ ' + String(Math.round(mejor.suma.total)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ') para compararlos con el valor de Dugo Motos.');
       if (g.cruce === 'Nombre (revisar)' && !p.directRows.length) notas.push('Se encontró solo por nombre; confirma que sea la misma persona.');
@@ -842,6 +847,15 @@ function CONC_asignar(contratos, filas, tol) {
 
 // Texto del estado para la fila de Consolidados, según el contrato al que se asignó
 function CONC_textoFila(f) {
+  var t0 = CONC_textoFilaBase(f);
+  if (f.otraPersona && /^(Consolidado|Pagó de menos)/.test(t0)) {
+    if (/^Consolidado/.test(t0)) return t0.replace(/^Consolidado/, 'Consolidado a nombre de otra persona');
+    return t0 + ' · a nombre de otra persona';
+  }
+  return t0;
+}
+
+function CONC_textoFilaBase(f) {
   if (f.revisado && (f.estado === CONC_ESTADO.CONCILIADO || f.estado === CONC_ESTADO.POR_NOMBRE)) {
     return 'Consolidado · revisado ✔' + (f.ajuste && f.ajuste.nota ? ' · Nota: ' + String(f.ajuste.nota).slice(0, 150) : '');
   }
@@ -862,7 +876,8 @@ function CONC_textoFila(f) {
 }
 
 function CONC_colorFila(t) {
-  t = String(t).split(' · Nota:')[0];   // la nota escrita por ti no cambia el color
+  t = String(t).split(' · Nota:')[0];
+  if (/^Consolidado a nombre de otra persona/.test(t) && !/revisar/.test(t)) return '#e4dcf5';   // la nota escrita por ti no cambia el color
   if (/^No es un pago/.test(t)) return '#e6e6e6';
   if (/^Pagó directo/.test(t)) return '#cfe2f3';
   if (/^Contrato anulado/.test(t)) return '#e6e6e6';

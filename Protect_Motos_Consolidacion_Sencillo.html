@@ -81,6 +81,8 @@
   .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.74rem;font-weight:700}
   .tab.gris{background:linear-gradient(135deg,#4b5563,#9ca3af)} .b-gris2{background:#eceff3;color:#4b5563}
   .tab.azul{background:linear-gradient(135deg,#1d4ed8,#60a5fa)} .b-azul{background:var(--azulinfo-bg);color:var(--azulinfo)}
+  .g-morado{background:#ede9fe;color:#5b21b6}
+  .b-morado{background:#ede9fe;color:#5b21b6}
   .b-verde{background:var(--verde-bg);color:var(--verde)} .b-rojo{background:var(--rojo-bg);color:var(--rojo)}
   .b-naranja{background:var(--naranja-bg);color:var(--naranja)} .b-gris{background:#e9e9ef;color:#4b4f5a}
   .vacio{padding:28px;text-align:center;color:var(--suave)} .pie{font-size:.75rem;color:var(--suave);padding:8px 16px}
@@ -137,7 +139,7 @@
         <option value="0">Nunca</option><option value="1">1 min</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
       </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.6</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.7</span>
   </div>
 </header>
 
@@ -440,6 +442,7 @@
     else if (esFalta(f)) { b.className += ' b-rojo'; b.textContent = 'Falta por consolidar'; }
     else if (f.estado === 'Sin registro en Protect') { b.className += ' b-gris'; b.textContent = 'Está en Consolidado, no en Protect' + (f.revisado ? ' · revisado ✔' : ''); }
     else if (f.estado === 'Consolidado por nombre (revisar)') { b.className += ' b-naranja'; b.textContent = 'Consolidado por nombre (revisar)'; }
+    else if (f.otraPersona && esCons(f) && f.valor !== 'Pagó de menos') { b.className += ' b-morado'; b.textContent = '👥 Consolidado a nombre de otra persona' + (f.revisado ? ' · revisado' : ''); }
     else if (f.revisado && esCons(f)) { b.className += ' b-verde'; b.textContent = '✔ Consolidado · revisado'; }
     else if (f.valor === 'Pagó de menos') { b.className += ' b-rojo'; b.textContent = '⚠ Consolidado · pagó de menos'; }
     else if (f.anuladoConPago) { b.className += ' b-naranja'; b.textContent = '🔎 Consolidado · contrato anulado (revisar)'; }
@@ -736,7 +739,7 @@
   }
   function construirFicha(f, d, enModal, volver) {
     // ----- Cabecera: iniciales + nombre + estado -----
-    var clsAv = esNoAplica(f) || f.estado === 'Sin registro en Protect' ? '' : esDirecto(f) ? 'a' : esFalta(f) ? 'r' : f.estado === 'Consolidado por nombre (revisar)' || f.anuladoConPago ? 'n' : 'v';
+    var clsAv = esNoAplica(f) || f.estado === 'Sin registro en Protect' ? '' : f.otraPersona && esCons(f) ? 'n' : esDirecto(f) ? 'a' : esFalta(f) ? 'r' : f.estado === 'Consolidado por nombre (revisar)' || f.anuladoConPago ? 'n' : 'v';
     var cab = el('div', 'fh');
     var ini = nombre(f).split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w.charAt(0); }).join('').toUpperCase();
     cab.appendChild(el('div', 'fh-avatar ' + clsAv, ini || '?'));
@@ -749,6 +752,7 @@
     else if (esFalta(f)) { gr.className += ' g-rojo'; gr.textContent = '❌ FALTA POR CONSOLIDAR'; }
     else if (f.estado === 'Consolidado por nombre (revisar)') { gr.className += ' g-naranja'; gr.textContent = '🔎 CONSOLIDADO POR NOMBRE · REVISAR'; }
     else if (f.estado === 'Sin registro en Protect') { gr.className += ' g-gris'; gr.textContent = 'EN CONSOLIDADO, NO EN PROTECT' + (f.revisado ? ' · REVISADO ✔' : ''); }
+    else if (f.otraPersona && esCons(f)) { gr.className += ' g-morado'; gr.textContent = '👥 CONSOLIDADO A NOMBRE DE OTRA PERSONA' + (f.revisado ? ' · REVISADO ✔' : ''); }
     else { gr.className += ' g-verde'; gr.textContent = '✅ YA CONSOLIDADO' + (f.revisado ? ' · REVISADO ✔' : ''); }
     cab.appendChild(gr); d.appendChild(cab);
 
@@ -784,6 +788,7 @@
     function aviso(cls, ic, txt) { var x = el('div', 'callout ' + cls); x.appendChild(el('span', 'ic', ic)); x.appendChild(el('div', '', txt)); d.appendChild(x); }
     if (esCons(f) && !f.revisado && f.valor === 'Pagó de menos' && f.dif !== null) aviso('rojo', '⚠', 'Pagó de menos: faltan $ ' + fmt.format(Math.abs(f.dif)) + ' frente al valor de Dugo Motos.');
     if (esCons(f) && !f.revisado && f.valor === 'Pagó de más (revisar valor)' && f.dif !== null) aviso('naranja', '🔎', 'Pagó $ ' + fmt.format(f.dif) + ' de más: es bastante. Revisa si el valor de Protect (columna P) está bien.');
+    if (f.otraPersona && esCons(f)) aviso('info', '👥', 'Consolidado a nombre de otra persona: el pago lo hizo ' + (f.otraPersona.nombre || 'otra persona') + ' (cédula ' + f.otraPersona.cedula + '), pero el contrato es de ' + nombre(f) + '.');
     if (f.anuladoConPago) aviso('naranja', '🔎', 'En Protect este contrato figura como anulado, pero la cédula aparece pagando en Consolidado. Revisa si de verdad no llevó la póliza.');
     var aj0 = f.ajuste;
     if (aj0 && aj0.decision !== 'Nota') aviso('gris', '📌', 'Ajuste manual activo' + (aj0.fecha ? ' · ' + aj0.fecha : '') + (aj0.decision === 'Falta' ? ' · marcado como «Pendiente por consolidar»' : aj0.decision === 'Directo' ? ' · marcado como pago directo' : aj0.decision === 'Revisado' ? ' · revisado ✔' : aj0.decision === 'Consolidado' ? ' · marcado como consolidado' : '') + '.');
