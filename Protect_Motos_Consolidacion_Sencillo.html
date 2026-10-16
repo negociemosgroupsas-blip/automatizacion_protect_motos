@@ -113,7 +113,7 @@
         <option value="0">Nunca</option><option value="1">1 min</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
       </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.2</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.3</span>
   </div>
 </header>
 
@@ -215,7 +215,13 @@
   });
   function llamarAjuste(a, ok, fail) {
     guardando++;
-    llamarAjuste0(a, function (r) { guardando--; ok(r); }, function (m) { guardando--; fail(m); });
+    var intentos = 0;
+    (function ir() {
+      llamarAjuste0(a, function (r) { guardando--; ok(r); }, function (m) {
+        if (intentos++ < 1 && /No se pudo conectar/.test(m)) { setTimeout(ir, 3000); return; }   // guardar es repetible: se reintenta una vez
+        guardando--; fail(m + ' Puede que SÍ se haya guardado: pulsa «Actualizar datos» y revisa antes de repetirlo.');
+      });
+    })();
   }
   function llamarAjuste0(d, ok, fail) {
     var url = $('inputUrlConector').value.trim();
@@ -228,12 +234,18 @@
     s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=ajustar&token=' + encodeURIComponent(TOKEN) +
       '&clave=' + encodeURIComponent(d.clave) + '&decision=' + encodeURIComponent(d.decision) + '&nota=' + encodeURIComponent(d.nota || '') +
       '&cedula=' + encodeURIComponent(d.cedula || '') + '&cliente=' + encodeURIComponent(d.cliente || '') + '&contrato=' + encodeURIComponent(d.contrato || '') +
-      '&rapido=1&tolerancia=' + encodeURIComponent(tolActual()) + '&callback=' + cb + '&_=' + Date.now();
+      '&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(s);
   }
   function llamarAsignar(a, ok, fail) {
     guardando++;
-    llamarAsignar0(a, function (r) { guardando--; ok(r); }, function (m) { guardando--; fail(m); });
+    var intentos = 0;
+    (function ir() {
+      llamarAsignar0(a, function (r) { guardando--; ok(r); }, function (m) {
+        if (intentos++ < 1 && /No se pudo conectar/.test(m)) { setTimeout(ir, 3000); return; }   // guardar es repetible: se reintenta una vez
+        guardando--; fail(m + ' Puede que SÍ se haya guardado: pulsa «Actualizar datos» y revisa antes de repetirlo.');
+      });
+    })();
   }
   function llamarAsignar0(d, ok, fail) {
     var url = $('inputUrlConector').value.trim();
@@ -246,12 +258,18 @@
     s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=asignar&token=' + encodeURIComponent(TOKEN) +
       '&clavePago=' + encodeURIComponent(d.clavePago) + '&contrato=' + encodeURIComponent(d.contrato) + '&cedula=' + encodeURIComponent(d.cedula || '') +
       '&cliente=' + encodeURIComponent(d.cliente || '') + '&c=' + encodeURIComponent(d.c === null || d.c === undefined ? '' : d.c) +
-      '&d=' + encodeURIComponent(d.d === null || d.d === undefined ? '' : d.d) + '&rapido=1&tolerancia=' + encodeURIComponent(tolActual()) + '&callback=' + cb + '&_=' + Date.now();
+      '&d=' + encodeURIComponent(d.d === null || d.d === undefined ? '' : d.d) + '&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(s);
   }
   function llamarLote(a, ok, fail) {
     guardando++;
-    llamarLote0(a, function (r) { guardando--; ok(r); }, function (m) { guardando--; fail(m); });
+    var intentos = 0;
+    (function ir() {
+      llamarLote0(a, function (r) { guardando--; ok(r); }, function (m) {
+        if (intentos++ < 1 && /No se pudo conectar/.test(m)) { setTimeout(ir, 3000); return; }   // guardar es repetible: se reintenta una vez
+        guardando--; fail(m + ' Puede que SÍ se haya guardado: pulsa «Actualizar datos» y revisa antes de repetirlo.');
+      });
+    })();
   }
   function llamarLote0(lista, ok, fail) {
     var url = $('inputUrlConector').value.trim();
@@ -262,7 +280,7 @@
     window[cb] = function (r) { listo = true; limpiar(); r && r.ok ? ok(r.data) : fail(r && r.error ? r.error : 'Respuesta inválida.'); };
     s.onerror = function () { if (!listo) { limpiar(); fail('No se pudo conectar para guardar.'); } };
     s.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'action=asignarlote&token=' + encodeURIComponent(TOKEN) +
-      '&lote=' + encodeURIComponent(JSON.stringify(lista)) + '&rapido=1&tolerancia=' + encodeURIComponent(tolActual()) + '&callback=' + cb + '&_=' + Date.now();
+      '&lote=' + encodeURIComponent(JSON.stringify(lista)) + '&callback=' + cb + '&_=' + Date.now();
     document.head.appendChild(s);
   }
 
