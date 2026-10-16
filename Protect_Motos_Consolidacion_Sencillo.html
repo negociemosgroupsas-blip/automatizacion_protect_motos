@@ -33,7 +33,7 @@
  .ficha-inline{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 10px rgba(19,34,63,.08)}
   .fichas-titulo{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 2px 10px;font-size:.88rem;font-weight:700;color:var(--azul)}
   .fichas-titulo button{background:none;border:none;color:var(--azulinfo);cursor:pointer;font-size:.8rem;font-weight:700;text-decoration:underline}
- .pagos{margin:14px 0;padding:12px 14px;border:2px solid #c7d2fe;border-radius:12px;background:#f5f7ff}
+ .pagos{margin:14px 0 0;padding:12px 16px;border:1px solid #c7d2fe;border-left:5px solid #6366f1;border-radius:12px;background:#f5f7ff}
   .pagos h3{margin:0 0 4px;font-size:.95rem;color:var(--azul)} .pagos p.obs{margin:0 0 8px}
   .pago{padding:10px 0;border-top:1px solid #dbe2fb} .pago:first-of-type{border-top:none}
   .pago-info{font-size:.85rem;font-weight:700;margin-bottom:6px}
@@ -56,7 +56,10 @@
   .persona input.contrato:focus{outline:3px solid #bfd0f5}
   .persona .barra-guardar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
   .btn-grande{font-size:1rem;padding:12px 20px}
-  .link-chico{background:none;border:none;color:var(--azulinfo);cursor:pointer;font-size:.78rem;font-weight:700;text-decoration:underline;padding:0;font-family:inherit}
+  .link-chico{background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;cursor:pointer;font-size:.76rem;font-weight:700;text-decoration:none;padding:5px 12px;border-radius:999px;font-family:inherit;margin:2px 3px;white-space:nowrap} .link-chico:hover{background:#e0e7ff}
+  .persona .fh{padding-bottom:12px;margin-bottom:4px} .persona .fh-info h2{font-size:1.3rem}
+  .persona table{border:1px solid var(--borde);border-radius:12px;overflow:hidden} .persona th{background:#f1f3f8}
+  .persona h3{display:flex;align-items:center;gap:8px;font-size:.9rem;margin:20px 0 8px} .persona h3:before{content:'';width:4px;height:16px;border-radius:2px;background:var(--dorado)}
   .tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:12px}
   .tab{border:none;border-radius:16px;padding:16px 20px;text-align:left;color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(19,34,63,.18);outline:3px solid transparent;outline-offset:2px;transition:transform .12s}
   .tab:hover{transform:translateY(-2px)} .tab.activa{outline-color:var(--azul)}
@@ -85,7 +88,28 @@
   #modal.on{display:flex}
   .ficha{background:#fff;border-radius:16px;max-width:620px;width:100%;max-height:92vh;overflow:auto;padding:20px 22px}
   .ficha h2{margin:0 0 2px;font-size:1.25rem;color:var(--azul)}
-  .grande{margin:12px 0;padding:14px;border-radius:12px;text-align:center;font-size:1.25rem;font-weight:800;letter-spacing:.3px}
+  .grande{margin:0;padding:8px 16px;border-radius:999px;text-align:center;font-size:.82rem;font-weight:800;letter-spacing:.4px;white-space:nowrap}
+  .g-azul{background:var(--azulinfo-bg);color:var(--azulinfo)}
+  .fh{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-bottom:16px;margin-bottom:6px;border-bottom:1px solid var(--borde)}
+  .fh-avatar{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.15rem;color:#fff;background:#6b7280;flex:none;box-shadow:0 3px 10px rgba(0,0,0,.18)}
+  .fh-avatar.v{background:linear-gradient(135deg,#15803d,#34d399)} .fh-avatar.r{background:linear-gradient(135deg,#b91c1c,#ef4444)} .fh-avatar.n{background:linear-gradient(135deg,#b45309,#f59e0b)} .fh-avatar.a{background:linear-gradient(135deg,#1d4ed8,#60a5fa)}
+  .fh-info{flex:1;min-width:220px} .fh-info h2{margin:0;font-size:1.35rem;color:var(--azul);line-height:1.2} .fh-sub{color:var(--suave);font-size:.85rem;margin-top:4px}
+  .fsec{margin:18px 0 0} .fsec-t{font-size:.68rem;font-weight:800;letter-spacing:.9px;text-transform:uppercase;color:var(--suave);margin:0 0 8px}
+  .datos{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .dato{background:#f8f9fb;border:1px solid var(--borde);border-radius:12px;padding:9px 13px} .dato small{display:block;font-size:.64rem;text-transform:uppercase;letter-spacing:.5px;color:var(--suave)} .dato b{font-size:1rem;color:var(--azul);word-break:break-word}
+  .vcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  .vcard{border-radius:14px;padding:13px 16px;background:#fff;border:1px solid var(--borde);border-top:4px solid #cbd5e1;box-shadow:0 1px 4px rgba(19,34,63,.05)}
+  .vcard small{display:block;font-size:.66rem;text-transform:uppercase;letter-spacing:.5px;color:var(--suave)} .vcard b{display:block;margin-top:4px;font-size:1.45rem;color:var(--azul);line-height:1.2} .vcard .sub2{font-size:.76rem;color:var(--suave);margin-top:3px}
+  .vcard.dugo{border-top-color:#1c3050} .vcard.cons{border-top-color:var(--verde)}
+  .vcard.ok{border-top-color:var(--verde)} .vcard.ok b{color:var(--verde)} .vcard.menos{border-top-color:var(--rojo);background:var(--rojo-bg)} .vcard.menos b{color:var(--rojo)} .vcard.mas{border-top-color:var(--azulinfo)} .vcard.mas b{color:var(--azulinfo)} .vcard.rev{border-top-color:var(--naranja);background:var(--naranja-bg)} .vcard.rev b{color:var(--naranja)}
+  .callout{display:flex;gap:10px;align-items:flex-start;padding:11px 14px;border-radius:12px;font-size:.88rem;margin:12px 0 0;line-height:1.45}
+  .callout .ic{font-size:1.1rem;line-height:1.3} .callout.rojo{background:var(--rojo-bg);color:#991b1b} .callout.naranja{background:var(--naranja-bg);color:#92400e} .callout.info{background:var(--azulinfo-bg);color:#1e40af} .callout.gris{background:#f1f2f5;color:#4b5563} .callout.verde{background:var(--verde-bg);color:#166534}
+  .fdet{border:1px solid var(--borde);border-radius:12px;margin:12px 0 0;background:#fafbfc} .fdet > summary{cursor:pointer;padding:10px 14px;font-weight:700;font-size:.84rem;color:var(--azul)} .fdet-c{padding:0 14px 12px;font-size:.83rem;color:var(--suave);line-height:1.5}
+  .decision{background:#f8f9fb;border:1px solid var(--borde);border-radius:14px;padding:14px 16px;margin-top:18px}
+  .decision .lab{font-size:.84rem;font-weight:700;color:var(--azul);display:block;margin-bottom:2px} .decision .hint{font-size:.74rem;color:var(--suave);display:block;margin-bottom:6px}
+  .decision .nota{background:#fff;margin-bottom:12px} .acc-fila{display:flex;gap:8px;flex-wrap:wrap} .acc-fila + .acc-fila{margin-top:8px;padding-top:8px;border-top:1px dashed var(--borde)}
+  .tog{cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;user-select:none} .tog:after{content:'▾';font-size:1rem;color:var(--suave)} .tog.cerrado:after{content:'▸'}
+  .pagos input.contrato{padding:9px 12px;border:1px solid #c7d2fe;border-radius:10px;font-size:.92rem;background:#fff;font-family:inherit} .pagos input.contrato:focus{outline:3px solid #c7d2fe} .pagos-c{margin-top:8px} .pagos-c.oculto{display:none}
   .g-verde{background:var(--verde-bg);color:var(--verde)} .g-rojo{background:var(--rojo-bg);color:var(--rojo)} .g-naranja{background:var(--naranja-bg);color:var(--naranja)} .g-gris{background:#e9e9ef;color:#4b4f5a}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 16px;margin:12px 0}
   .grid .c small{display:block;font-size:.66rem;text-transform:uppercase;color:var(--suave);letter-spacing:.3px} .grid .c b{font-size:.98rem}
@@ -113,7 +137,7 @@
         <option value="0">Nunca</option><option value="1">1 min</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
       </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.4</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.6</span>
   </div>
 </header>
 
@@ -569,8 +593,11 @@
   // Tarjeta sencilla de una persona con VARIOS contratos
   function personaCard(cs, d, enModal) {
     var f0 = cs[0], pagos = f0.pagosGrupo || [];
-    d.appendChild(el('h2', '', nombre(f0)));
-    d.appendChild(el('div', 'sub', 'Cédula ' + f0.cedula + ' · ' + cs.length + ' contratos'));
+    var cabP = el('div', 'fh'), nSi = cs.filter(esCons).length, nNo = cs.filter(esFalta).length;
+    cabP.appendChild(el('div', 'fh-avatar ' + (nNo ? 'r' : nSi ? 'v' : ''), nombre(f0).split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w.charAt(0); }).join('').toUpperCase() || '?'));
+    var infP = el('div', 'fh-info'); infP.appendChild(el('h2', '', nombre(f0))); infP.appendChild(el('div', 'fh-sub', 'Cédula ' + f0.cedula + '  ·  ' + cs.length + ' contratos')); cabP.appendChild(infP);
+    var chP = el('div', 'grande ' + (nNo ? 'g-rojo' : 'g-verde'), nSi + ' de ' + cs.length + ' consolidados'); cabP.appendChild(chP);
+    d.appendChild(cabP);
     // 1) Contratos
     d.appendChild(el('h3', '', '1. Contratos de esta persona'));
     var t1 = el('table'), h1 = el('tr');
@@ -655,6 +682,12 @@
     if (enModal) { var cb = el('button', 'btn btn-gris', 'Cerrar'); cb.type = 'button'; cb.onclick = cerrar; barra.appendChild(cb); }
     d.appendChild(barra);
   }
+  // Panel que se puede abrir y cerrar (el título queda siempre visible)
+  function colapsable(box, titulo, cerrado) {
+    var h = el('h3', 'tog' + (cerrado ? ' cerrado' : ''), titulo), c = el('div', 'pagos-c' + (cerrado ? ' oculto' : ''));
+    h.onclick = function () { var oc = c.classList.toggle('oculto'); h.classList.toggle('cerrado', oc); };
+    box.appendChild(h); box.appendChild(c); return c;
+  }
   // ---- Pago hecho por otra persona: asignar un pago de Consolidado a un contrato de Protect ----
   function bloquear(box, si) { box.querySelectorAll('button, input').forEach(function (x) { x.disabled = si; }); }
   function asignarPagoAContrato(box, pago, contrato) {
@@ -670,8 +703,8 @@
   // En la ficha de un pago que NO está en Protect: escribir a qué contrato de Protect pertenece
   function panelAsignarPago(f, d) {
     var box = el('div', 'pagos');
-    box.appendChild(el('h3', '', '¿Este pago es de un contrato de Protect? Asígnalo'));
-    box.appendChild(el('p', 'obs', 'Sirve cuando el contrato está a nombre de una persona pero pagó otra. Escribe el número de contrato de Protect y quedará CONSOLIDADO, con su valor y su número de contrato en la hoja Consolidado.'));
+    var cuerpo = colapsable(box, '🔗 ¿Este pago es de un contrato de Protect? Asígnalo', false);
+    cuerpo.appendChild(el('p', 'obs', 'Sirve cuando el contrato está a nombre de una persona pero pagó otra. Escribe el número de contrato de Protect y quedará CONSOLIDADO, con su valor y su número de contrato en la hoja Consolidado.'));
     var inp = el('input', 'contrato'); inp.type = 'text'; inp.placeholder = '# contrato en Protect';
     var bt = el('button', 'btn btn-verde', 'Asignar este pago a ese contrato'); bt.type = 'button'; bt.style.marginLeft = '8px';
     bt.onclick = function () {
@@ -680,13 +713,13 @@
       if (!hit.length) { avisoLocal(box, 'error', 'No encontré el contrato «' + v + '» en Protect.'); return; }
       asignarPagoAContrato(box, f, hit[0]);
     };
-    box.appendChild(inp); box.appendChild(bt); d.appendChild(box);
+    cuerpo.appendChild(inp); cuerpo.appendChild(bt); d.appendChild(box);
   }
   // En la ficha de un contrato (falta o consolidado): buscar el pago de otra persona entre los que no están en Protect
   function panelBuscarPago(f, d) {
     var box = el('div', 'pagos');
-    box.appendChild(el('h3', '', '¿Pagó otra persona por este contrato? Busca su pago'));
-    box.appendChild(el('p', 'obs', 'Escribe la cédula o el nombre de quien hizo el pago en el banco. Se buscan los pagos de Consolidado que no están en Protect.'));
+    var cuerpo = colapsable(box, '🔗 ¿Pagó otra persona por este contrato? Busca su pago', !esFalta(f));
+    cuerpo.appendChild(el('p', 'obs', 'Escribe la cédula o el nombre de quien hizo el pago en el banco. Se buscan los pagos de Consolidado que no están en Protect.'));
     var inp = el('input', 'contrato'); inp.type = 'text'; inp.placeholder = 'cédula o nombre de quien pagó'; inp.style.width = '280px';
     var bt = el('button', 'btn btn-azul', 'Buscar pago'); bt.type = 'button'; bt.style.marginLeft = '8px';
     var res = el('div'); res.style.marginTop = '8px';
@@ -699,43 +732,79 @@
         b.type = 'button'; b.style.display = 'block'; b.style.margin = '6px 0'; b.onclick = function () { asignarPagoAContrato(box, p, f); }; res.appendChild(b);
       });
     };
-    box.appendChild(inp); box.appendChild(bt); box.appendChild(res); d.appendChild(box);
+    cuerpo.appendChild(inp); cuerpo.appendChild(bt); cuerpo.appendChild(res); d.appendChild(box);
   }
   function construirFicha(f, d, enModal, volver) {
-    d.appendChild(el('h2', '', nombre(f)));
+    // ----- Cabecera: iniciales + nombre + estado -----
+    var clsAv = esNoAplica(f) || f.estado === 'Sin registro en Protect' ? '' : esDirecto(f) ? 'a' : esFalta(f) ? 'r' : f.estado === 'Consolidado por nombre (revisar)' || f.anuladoConPago ? 'n' : 'v';
+    var cab = el('div', 'fh');
+    var ini = nombre(f).split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w.charAt(0); }).join('').toUpperCase();
+    cab.appendChild(el('div', 'fh-avatar ' + clsAv, ini || '?'));
+    var inf = el('div', 'fh-info'); inf.appendChild(el('h2', '', nombre(f)));
+    var subt = f.estado === 'Sin registro en Protect' ? 'Pago en la hoja Consolidado (fila ' + f.filaCons + ')' : (f.contrato ? 'Contrato ' + f.contrato : '');
+    if (subt) inf.appendChild(el('div', 'fh-sub', subt)); cab.appendChild(inf);
     var gr = el('div', 'grande');
-    if (esNoAplica(f)) { gr.className += ' g-gris'; gr.textContent = 'NO APLICA — contrato ' + (f.estado.indexOf('Anul') >= 0 ? 'ANULADO' : '') + ' en Protect'; }
-    else if (esFalta(f)) { gr.className += ' g-rojo'; gr.textContent = 'FALTA POR CONSOLIDAR'; }
-    else if (f.estado === 'Consolidado por nombre (revisar)') { gr.className += ' g-naranja'; gr.textContent = 'CONSOLIDADO POR NOMBRE — confirma que sea la misma persona'; }
-    else if (f.estado === 'Sin registro en Protect') { gr.className += ' g-gris'; gr.textContent = 'ESTÁ EN CONSOLIDADO PERO NO EN PROTECT' + (f.revisado ? ' · REVISADO ✔' : ''); }
-    else { gr.className += ' g-verde'; gr.textContent = 'YA CONSOLIDADO' + (f.revisado ? ' · REVISADO ✔' : ''); }
-    d.appendChild(gr);
-    var g = el('div', 'grid');
-    g.appendChild(campo('Nombre completo', nombre(f))); g.appendChild(campo('Número de cédula', f.cedula)); g.appendChild(campo('# Contrato', f.contrato));
-    if (f.placa) g.appendChild(campo('Placa', f.placa));
-    if (f.filaCons) g.appendChild(campo('Fila en Consolidado', 'Fila ' + f.filaCons));
-    d.appendChild(g);
-    var v = el('div', 'valores');
-    var a = el('div', 'valor-caja'); a.appendChild(el('small', '', 'Valor pagado a Dugo Motos')); a.appendChild(el('b', '', money(f.pagado))); v.appendChild(a);
-    var b = el('div', 'valor-caja'); b.appendChild(el('small', '', 'Valor que pagó en Consolidado'));
-    b.appendChild(el('b', '', esCons(f) || f.estado === 'Sin registro en Protect' ? valorCons(f) : '—')); v.appendChild(b);
-    d.appendChild(v);
-    if (esCons(f) && !f.revisado && f.valor === 'Pagó de menos' && f.dif !== null) d.appendChild(el('p', 'ajuste-actual', '⚠ Pagó de menos: faltan $ ' + fmt.format(Math.abs(f.dif)) + ' frente al valor de Dugo Motos.'));
-    if (esCons(f) && !f.revisado && f.valor === 'Pagó de más (revisar valor)' && f.dif !== null) d.appendChild(el('p', 'ajuste-actual', '🔎 Pagó $ ' + fmt.format(f.dif) + ' de más: es mucho. Revisa si el valor de Protect (columna P) está bien.'));
-    if (esCons(f) && f.valor === 'Pagó de más' && f.dif !== null) d.appendChild(el('p', 'obs', 'Pagó $ ' + fmt.format(f.dif) + ' de más (no es problema).'));
-    if (!f.obs && f.filaCons !== '' && f.filaCons !== undefined) d.appendChild(el('p', 'obs', 'Fila(s) en la hoja Consolidado: ' + f.filaCons + '.'));
-    if (f.obs) d.appendChild(el('p', 'obs', f.obs));
+    if (esNoAplica(f)) { gr.className += ' g-gris'; gr.textContent = '🚫 NO APLICA · ANULADO'; }
+    else if (esDirecto(f)) { gr.className += ' g-azul'; gr.textContent = '💵 PAGÓ DIRECTO A PROTECT'; }
+    else if (esFalta(f)) { gr.className += ' g-rojo'; gr.textContent = '❌ FALTA POR CONSOLIDAR'; }
+    else if (f.estado === 'Consolidado por nombre (revisar)') { gr.className += ' g-naranja'; gr.textContent = '🔎 CONSOLIDADO POR NOMBRE · REVISAR'; }
+    else if (f.estado === 'Sin registro en Protect') { gr.className += ' g-gris'; gr.textContent = 'EN CONSOLIDADO, NO EN PROTECT' + (f.revisado ? ' · REVISADO ✔' : ''); }
+    else { gr.className += ' g-verde'; gr.textContent = '✅ YA CONSOLIDADO' + (f.revisado ? ' · REVISADO ✔' : ''); }
+    cab.appendChild(gr); d.appendChild(cab);
+
+    // ----- Datos del cliente -----
+    function dato(t, v) { var x = el('div', 'dato'); x.appendChild(el('small', '', t)); x.appendChild(el('b', '', v)); return x; }
+    var sd = el('div', 'fsec'); sd.appendChild(el('div', 'fsec-t', 'Datos del cliente'));
+    var dg = el('div', 'datos');
+    dg.appendChild(dato('Cédula', f.cedula || '—')); dg.appendChild(dato('# Contrato', f.contrato || '—'));
+    if (f.placa) dg.appendChild(dato('Placa', f.placa));
+    if (f.filaCons) dg.appendChild(dato('Fila en Consolidado', 'Fila ' + f.filaCons));
+    if (f.extra && f.extra.asesor) dg.appendChild(dato('Asesor', f.extra.asesor));
+    if (f.extra && f.extra.celular) dg.appendChild(dato('Celular', f.extra.celular));
+    sd.appendChild(dg); d.appendChild(sd);
+
+    // ----- Valores -----
+    var sv = el('div', 'fsec'); sv.appendChild(el('div', 'fsec-t', 'Valores'));
+    var vc = el('div', 'vcards');
+    var c1 = el('div', 'vcard dugo'); c1.appendChild(el('small', '', 'Valor pagado a Dugo Motos')); c1.appendChild(el('b', '', money(f.pagado))); vc.appendChild(c1);
+    var tieneCons = esCons(f) || f.estado === 'Sin registro en Protect';
+    var c2 = el('div', 'vcard cons'); c2.appendChild(el('small', '', 'Valor que pagó en Consolidado')); c2.appendChild(el('b', '', tieneCons ? valorCons(f) : '—')); vc.appendChild(c2);
+    if (esCons(f) && f.dif !== null && f.dif !== undefined) {
+      var dif = Number(f.dif), cl, tx, st;
+      if (!f.revisado && f.valor === 'Pagó de menos') { cl = 'menos'; tx = '$ ' + fmt.format(Math.abs(dif)); st = 'Faltan por pagar'; }
+      else if (!f.revisado && f.valor === 'Pagó de más (revisar valor)') { cl = 'rev'; tx = '$ ' + fmt.format(Math.abs(dif)); st = 'Pagó de más · revisa Protect'; }
+      else if (dif > 1000) { cl = 'mas'; tx = '$ ' + fmt.format(Math.abs(dif)); st = 'Pagó de más (no es problema)'; }
+      else if (dif < -1000) { cl = 'menos'; tx = '$ ' + fmt.format(Math.abs(dif)); st = 'Faltan (ya revisado)'; }
+      else { cl = 'ok'; tx = 'Al día'; st = 'Coincide con lo de Dugo Motos'; }
+      var c3 = el('div', 'vcard ' + cl); c3.appendChild(el('small', '', 'Diferencia')); c3.appendChild(el('b', '', tx)); c3.appendChild(el('div', 'sub2', st)); vc.appendChild(c3);
+    }
+    sv.appendChild(vc); d.appendChild(sv);
+
+    // ----- Avisos importantes -----
+    function aviso(cls, ic, txt) { var x = el('div', 'callout ' + cls); x.appendChild(el('span', 'ic', ic)); x.appendChild(el('div', '', txt)); d.appendChild(x); }
+    if (esCons(f) && !f.revisado && f.valor === 'Pagó de menos' && f.dif !== null) aviso('rojo', '⚠', 'Pagó de menos: faltan $ ' + fmt.format(Math.abs(f.dif)) + ' frente al valor de Dugo Motos.');
+    if (esCons(f) && !f.revisado && f.valor === 'Pagó de más (revisar valor)' && f.dif !== null) aviso('naranja', '🔎', 'Pagó $ ' + fmt.format(f.dif) + ' de más: es bastante. Revisa si el valor de Protect (columna P) está bien.');
+    if (f.anuladoConPago) aviso('naranja', '🔎', 'En Protect este contrato figura como anulado, pero la cédula aparece pagando en Consolidado. Revisa si de verdad no llevó la póliza.');
+    var aj0 = f.ajuste;
+    if (aj0 && aj0.decision !== 'Nota') aviso('gris', '📌', 'Ajuste manual activo' + (aj0.fecha ? ' · ' + aj0.fecha : '') + (aj0.decision === 'Falta' ? ' · marcado como «Pendiente por consolidar»' : aj0.decision === 'Directo' ? ' · marcado como pago directo' : aj0.decision === 'Revisado' ? ' · revisado ✔' : aj0.decision === 'Consolidado' ? ' · marcado como consolidado' : '') + '.');
+    var detalle = f.obs || ((f.filaCons !== '' && f.filaCons !== undefined) ? 'Fila(s) en la hoja Consolidado: ' + f.filaCons + '.' : '');
+    if (detalle) {
+      if (detalle.length <= 150) aviso('info', 'ℹ', detalle);
+      else { var dt = el('details', 'fdet'); dt.appendChild(el('summary', '', 'ℹ Detalle del sistema')); dt.appendChild(el('div', 'fdet-c', detalle)); d.appendChild(dt); }
+    }
 
     if (f.estado === 'Sin registro en Protect' && f.claveAjuste) panelAsignarPago(f, d);
     else if (f.claveAjuste && f.claveAjuste.indexOf('P:') === 0 && !esNoAplica(f) && !esDirecto(f)) panelBuscarPago(f, d);
 
     if (f.claveAjuste) {
       var aj = f.ajuste;
-      if (aj && aj.decision !== 'Nota') d.appendChild(el('p', 'ajuste-actual', 'Ajuste manual activo' + (aj.fecha ? ' (' + aj.fecha + ')' : '') + '.'));
-      d.appendChild(el('small', '', 'Nota (opcional) — también se escribe en la hoja Consolidado, columna F, al frente de este pago'));
-      var nt = el('textarea', 'nota'); nt.rows = 2; nt.maxLength = 300; nt.placeholder = 'Escribe una nota si lo necesitas…'; if (aj && aj.nota) nt.value = aj.nota; d.appendChild(nt);
-      var ac = el('div', 'acciones');
-      function accion(txt, cls, decision, pregunta) {
+      var dec = el('div', 'decision'); d.appendChild(dec);
+      dec.appendChild(el('span', 'lab', '📝 Nota'));
+      dec.appendChild(el('span', 'hint', 'Opcional. También se escribe en la hoja Consolidado, columna F, al frente de este pago.'));
+      var nt = el('textarea', 'nota'); nt.rows = 2; nt.maxLength = 300; nt.placeholder = 'Escribe una nota si lo necesitas…'; if (aj && aj.nota) nt.value = aj.nota; dec.appendChild(nt);
+      dec.appendChild(el('span', 'lab', '✅ Tu decisión'));
+      var ac = el('div', 'acciones-wrap'), acP = el('div', 'acc-fila'), acS = el('div', 'acc-fila'); ac.appendChild(acP); ac.appendChild(acS); dec.appendChild(ac);
+      function accion(txt, cls, decision, pregunta, sec) {
         var bt = el('button', 'btn ' + cls, txt); bt.type = 'button';
         bt.onclick = function () {
           var hacer = function () {
@@ -747,7 +816,7 @@
           };
           if (pregunta) confirmar(pregunta, hacer); else hacer();
         };
-        ac.appendChild(bt);
+        (sec ? acS : acP).appendChild(bt);
       }
       if (f.estado === 'Sin registro en Protect') {
         if (!(aj && aj.decision === 'Revisado')) accion('✔ Marcar como REVISADO', 'btn-verde', 'Revisado', '¿Marcar a ' + nombre(f) + ' como REVISADO? Quedará escrito en la hoja Consolidado.');
@@ -759,10 +828,9 @@
         accion('⏳ Pendiente por consolidar', 'btn-rojo', 'Falta', '¿Marcar a ' + nombre(f) + ' como PENDIENTE POR CONSOLIDAR? Se quitará de los consolidados.');
       }
       else if (!esDirecto(f)) accion('Marcar como YA CONSOLIDADO', 'btn-verde', 'Consolidado', '¿Marcar a ' + nombre(f) + ' como YA CONSOLIDADO?');
-      if (f.estado !== 'Sin registro en Protect' && !esDirecto(f)) accion('💵 Dinero entró directo a Protect', 'btn-azul', 'Directo', '¿Marcar a ' + nombre(f) + ' como «Dinero entró directo a Protect»? Pasará a la lista de pagos directos y dejará de aparecer como faltante.');
-      accion('Guardar solo la nota', 'btn-info', 'Nota', null);
-      if (aj) accion('Quitar ajuste / nota', 'btn-gris', 'Quitar', '¿Quitar el ajuste y la nota de este cliente?');
-      d.appendChild(ac);
+      if (f.estado !== 'Sin registro en Protect' && !esDirecto(f)) accion('💵 Dinero entró directo a Protect', 'btn-azul', 'Directo', '¿Marcar a ' + nombre(f) + ' como «Dinero entró directo a Protect»? Pasará a la lista de pagos directos y dejará de aparecer como faltante.', true);
+      accion('💾 Guardar solo la nota', 'btn-info', 'Nota', null, true);
+      if (aj) accion('↩ Quitar ajuste / nota', 'btn-gris', 'Quitar', '¿Quitar el ajuste y la nota de este cliente?', true);
     }
     if (volver) { var vb = el('button', 'btn btn-azul', '← Volver a los contratos de la persona'); vb.type = 'button'; vb.style.marginTop = '12px'; vb.style.marginRight = '8px'; vb.onclick = volver; d.appendChild(vb); }
     if (enModal) { var cb = el('button', 'btn btn-gris', 'Cerrar'); cb.type = 'button'; cb.style.marginTop = '12px'; cb.onclick = cerrar; d.appendChild(cb); }
