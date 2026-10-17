@@ -1652,6 +1652,11 @@
     var msg = document.getElementById('msgPago');
 
     if(!cuota){ msg.className='msg-modal error'; msg.textContent='Escribe el número de cuota.'; return; }
+    if(extraerNumerosCuota(cuota).length===0){
+      msg.className='msg-modal error';
+      msg.textContent='No entendí "'+cuota+'" como número de cuota. Usa un formato como 5, o varias con coma (3,4), guion (3-4) o la palabra "a" (3 a 4) — nunca con punto.';
+      return;
+    }
     if(!valor || Number(valor)<=0){ msg.className='msg-modal error'; msg.textContent='El valor debe ser mayor a 0.'; return; }
     if(!fecha){ msg.className='msg-modal error'; msg.textContent='Selecciona la fecha de pago.'; return; }
 
