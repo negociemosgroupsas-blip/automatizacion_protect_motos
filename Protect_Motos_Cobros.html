@@ -593,6 +593,10 @@
         for(var n=a;n<=b;n++) numeros.push(n);
       } else if(/^\d+$/.test(parte)){
         numeros.push(parseInt(parte,10));
+      } else if(parte.indexOf('-')!==-1 && parte.split('-').every(function(s){return /^\d+$/.test(s);})){
+        // "2-3-4-5": varias cuotas sueltas separadas por guion (no un
+        // rango de dos), a diferencia de "2-3" que sí se expande arriba.
+        parte.split('-').forEach(function(s){ numeros.push(parseInt(s,10)); });
       }
     }
     return numeros;
