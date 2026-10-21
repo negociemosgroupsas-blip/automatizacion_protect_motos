@@ -1212,7 +1212,7 @@
         if(c.estado!==estadoBuscado) return;
         var detalle = 'Vence póliza: '+(c.fin || '—');
         if(c.forma==='FINANCIADO') detalle += ' · Cuota: '+formatoDineroOTexto(c.valorCuota, 'no registrada');
-        filas.push({c:c, detalle:detalle, semaforo:null, tipoAcciones:'historial'});
+        filas.push({c:c, detalle:detalle, semaforo:null, tipoAcciones: tipo==='cancelados' ? 'cancelado' : 'historial'});
       });
     } else if(tipo==='pendientesHoy' || tipo==='totalPendiente'){
       estado.contratos.forEach(function(c){
@@ -1334,6 +1334,9 @@
         }
         celdaAcciones.appendChild(crearBotonAccion('Acepto renovación','btn-azul', function(e){ marcarRenovacion(c, true, e.currentTarget); }));
         celdaAcciones.appendChild(crearBotonAccion('No acepto renovación','btn-rojo', function(e){ marcarRenovacion(c, false, e.currentTarget); }));
+      } else if(item.tipoAcciones==='cancelado'){
+        celdaAcciones.appendChild(crearBotonAccion('Reactivar cliente','btn-verde', function(e){ reactivarCliente(c, e.currentTarget); }));
+        celdaAcciones.appendChild(crearBotonAccion('Ver historial','btn-azul', function(){ irAHistorial(c); }));
       } else {
         celdaAcciones.appendChild(crearBotonAccion('Ver historial','btn-azul', function(){ irAHistorial(c); }));
       }
@@ -1844,6 +1847,36 @@
     });
   });
 
+  // ==================== REACTIVAR CLIENTE ====================
+  // Para cuando un cliente se canceló por error, o vuelve a ponerse al día
+  // después de cancelado. Vuelve a marcarlo ACTIVO; no toca pagos ni cuotas.
+  function reactivarCliente(c, boton){
+    if(!window.confirm('¿Confirmas que quieres reactivar a '+c.cliente+' (contrato '+c.contrato+')?\n\nQuedará como ACTIVO otra vez.')) return;
+
+    var textoOriginal = boton ? boton.textContent : null;
+    if(boton){ boton.disabled = true; boton.textContent = 'Reactivando...'; }
+
+    llamarConector({action:'estado', contrato:c.contrato, nuevoEstado:'ACTIVO'}).then(function(resp){
+      if(!resp.ok){
+        if(boton){ boton.disabled = false; boton.textContent = textoOriginal; }
+        mostrarEstado('error', resp.error || 'No se pudo reactivar el cliente.');
+        window.alert('No se pudo reactivar a '+c.cliente+':\n\n'+(resp.error||'error desconocido'));
+        return;
+      }
+      c.estado = 'ACTIVO';
+      estadosLocalesPendientes[c.contrato] = 'ACTIVO';
+      mostrarEstado('ok', '✓ '+c.cliente+' reactivado — contrato '+c.contrato+' vuelve a estar ACTIVO.');
+      renderizarVistas(construirMapaPagos());
+      if(document.getElementById('inputBusqueda').value.trim()){
+        buscarCliente();
+      }
+    }).catch(function(err){
+      if(boton){ boton.disabled = false; boton.textContent = textoOriginal; }
+      mostrarEstado('error', err.message);
+      window.alert('No se pudo reactivar a '+c.cliente+':\n\n'+err.message);
+    });
+  }
+
   // ==================== GESTIÓN DE COBRO (Ya cobré hoy) ====================
   // No cambia el estado del cliente ni registra ningún pago: solo deja
   // constancia de que hoy ya se hizo el contacto, para que no vuelva a
@@ -2072,6 +2105,10 @@
       html += '<button class="btn btn-azul btn-sm" data-accion="acepto-renovacion-ficha">Acepto renovación</button>';
       html += '<button class="btn btn-rojo btn-sm" data-accion="no-acepto-renovacion-ficha">No acepto renovación</button>';
       html += '</div>';
+    } else if(encontrado.estado==='CANCELADO'){
+      html += '<div class="acciones-fila" style="margin-bottom:16px;">';
+      html += '<button class="btn btn-verde btn-sm" data-accion="reactivar-ficha">Reactivar cliente</button>';
+      html += '</div>';
     }
 
     if(info.pagos.length===0){
@@ -2150,6 +2187,10 @@
     var accNoAceptoRenovacion = tarjeta.querySelector('[data-accion="no-acepto-renovacion-ficha"]');
     if(accNoAceptoRenovacion) accNoAceptoRenovacion.addEventListener('click', function(e){
       marcarRenovacion(encontrado, false, e.currentTarget);
+    });
+    var accReactivar = tarjeta.querySelector('[data-accion="reactivar-ficha"]');
+    if(accReactivar) accReactivar.addEventListener('click', function(e){
+      reactivarCliente(encontrado, e.currentTarget);
     });
   }
 
