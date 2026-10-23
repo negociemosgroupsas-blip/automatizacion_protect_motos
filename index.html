@@ -231,6 +231,37 @@
   .ed-per{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px} .ed-per button{border:1px solid var(--borde,#dfe3ee);background:var(--tarjeta,#fff);border-radius:999px;padding:5px 12px;font-size:.78rem;cursor:pointer;color:var(--texto,#1b2133)} .ed-per button.on{background:var(--btn,#021346);color:var(--btntx,#fff);border-color:transparent}
   .ed-i{margin-top:10px} .ed-i .gi b{font-size:1.2rem}
   #tarjetas .asr{order:1}#tarjetas .seg{order:2}#tarjetas .edc{order:3}#tarjetas .rcm{order:4}#tarjetas .anu{order:5}
+  /* ===== Inicio estilo dashboard: tarjetas pequeñas en cuadrícula ===== */
+  #v-inicio{overflow:auto} #v-inicio .pagina{height:auto!important;overflow:visible!important;grid-auto-rows:min-content;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;align-content:start;padding:18px 22px 28px;max-width:1500px}
+  #v-inicio #tarjetas{display:contents}
+  #v-inicio .pagina>*{margin:0!important;max-width:none!important;min-width:0}
+  #v-inicio .ruta{grid-column:1/-1;order:0}
+  #v-inicio .pagina>h1{grid-column:1/-1;order:1;font-size:1.15rem;display:flex;align-items:baseline;gap:10px} 
+  #v-inicio .pagina>.sub{display:none}
+  #v-inicio .meta{grid-column:span 4;order:2} #v-inicio .tkt{grid-column:span 4;order:3} #v-inicio .seg{grid-column:span 4;order:4}
+  #v-inicio .pagina>h2.sec-t{display:none}
+  #v-inicio .alertas{grid-column:1/-1;order:5;grid-template-columns:repeat(4,1fr);gap:12px}
+  #v-inicio .edc{grid-column:span 6;order:6} #v-inicio .asr{grid-column:span 6;order:7} #v-inicio .rcm{grid-column:span 6;order:8} #v-inicio .anu{grid-column:span 6;order:9}
+  #v-inicio .card{padding:14px 16px;border-top-width:3px} #v-inicio .card h3{font-size:.95rem;margin:0 0 2px}
+  #v-inicio .tot{font-size:.74rem!important;margin:0 0 8px!important;line-height:1.35}
+  #v-inicio .nota{font-size:.7rem;margin-top:4px} #v-inicio .tkt .nota{display:none}
+  /* alertas: mini tarjetas */
+  #v-inicio .al{padding:8px 12px;border-radius:10px} #v-inicio .al b{font-size:1.25rem} #v-inicio .al span{font-size:.66rem}
+  /* meta compacta */
+  #v-inicio .gauge-w{gap:8px;justify-content:center;flex-direction:column;align-items:center} #v-inicio .gauge svg{width:190px;height:auto} #v-inicio .gauge-i{min-width:0;width:100%;grid-template-columns:repeat(3,1fr);gap:6px} #v-inicio .gi{padding:6px 8px} #v-inicio .gi b{font-size:1.05rem} #v-inicio .gi span{font-size:.58rem} #v-inicio .meta-t{font-size:.7rem}
+  /* ticket compacto */
+  #v-inicio .tk-g{grid-template-columns:1fr;gap:8px} #v-inicio .tk-p{padding:8px 12px} #v-inicio .tk-n{font-size:1.5rem;margin:2px 0 0} #v-inicio .tk-p small{font-size:.72rem} #v-inicio .tk-b{margin:6px 0 4px;height:5px} #v-inicio .tk-d{font-size:.7rem}
+  /* dona compacta */
+  #v-inicio .dona-w{gap:10px;justify-content:center;flex-direction:column;align-items:center} #v-inicio .dona{width:150px;height:150px} #v-inicio .dona-l{min-width:0;width:100%;gap:6px} #v-inicio .dona-i{font-size:.78rem}
+  /* asesores en una columna con desplazamiento */
+  #v-inicio .asr-l{grid-auto-flow:row;grid-template-rows:none!important;max-height:340px;overflow:auto;padding-right:6px}
+  #v-inicio .asr .fila-a{margin:2px 0;font-size:.78rem}
+  /* edad */
+  #v-inicio .ed-per button{padding:3px 10px;font-size:.72rem} #v-inicio .ed-i .gi b{font-size:1rem}
+  @media(max-width:1180px){#v-inicio .meta,#v-inicio .tkt{grid-column:span 6}#v-inicio .seg{grid-column:1/-1}#v-inicio .edc,#v-inicio .asr,#v-inicio .rcm,#v-inicio .anu{grid-column:1/-1}#v-inicio .alertas{grid-template-columns:repeat(2,1fr)}}
+  #q{min-width:0} #top{flex-wrap:wrap}
+  @media(max-width:520px){#ultAct{display:none}#btnRec{padding:9px 10px}}
+  @media(max-width:760px){#v-inicio .pagina{padding:14px 12px 24px}#v-inicio .meta,#v-inicio .tkt{grid-column:1/-1}}
 </style>
 </head>
 <body>
