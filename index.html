@@ -129,6 +129,20 @@
   #tarjetas{grid-template-columns:repeat(auto-fit,minmax(380px,1fr));max-width:1000px}
   #tarjetas .asr{order:1}#tarjetas .seg{order:2}#tarjetas .rcm{order:3}#tarjetas .anu{order:4}
   @media(max-width:520px){#tarjetas{grid-template-columns:1fr}}
+
+  .asr{grid-column:1/-1;max-width:1000px}
+  .asr-l{display:grid;grid-auto-flow:column;column-gap:28px;grid-template-rows:repeat(var(--f,10),auto)}
+  .asr .fila-a{grid-template-columns:22px minmax(80px,170px) 1fr 34px 44px;gap:8px;margin:3px 0;font-size:.82rem}
+  .asr .fila-a .pista{height:16px;border-radius:5px} .asr .fila-a .barra{border-radius:5px;background:var(--btn,var(--azul))}
+  .asr .fila-a:nth-child(2n+1) .barra{background:var(--btn,var(--azul))} .asr .fila-a.top .barra{background:var(--dorado)}
+  .asr .fila-a .rk{color:var(--suave);font-size:.7rem;text-align:right;font-variant-numeric:tabular-nums} .asr .fila-a .pc{color:var(--suave);font-size:.72rem;text-align:right;font-variant-numeric:tabular-nums}
+  .seg{grid-column:1/-1}
+  .sg-b i{display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:700;font-size:.8rem;color:#021346;font-variant-numeric:tabular-nums} .sg-b .sg-1,.sg-b .sg-3,.sg-b .sg-4{color:#fff} .rc-b i{font-style:normal}
+  .rc-g{height:250px} .rc-b i{display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;font-variant-numeric:tabular-nums;overflow:hidden;min-height:0}
+  .rc-b .s{color:#fff} .rc-b .r{color:#021346} .rc-b{max-width:78px}
+  @media(max-width:720px){.asr-l{grid-auto-flow:row;grid-template-rows:none}}
+  #tarjetas>.card,.meta{min-width:0} .pagina{min-width:0}
+  @media(max-width:760px){#tarjetas{grid-template-columns:minmax(0,1fr)} .asr .fila-a{grid-template-columns:18px minmax(60px,110px) 1fr 28px 38px;gap:6px} .rc-g{gap:6px} .rc-b{max-width:46px} .rc-n{font-size:.6rem;text-align:center} .an-d{font-size:.55rem}}
 </style>
 </head>
 <body>
@@ -223,7 +237,7 @@
     tot.textContent='Mes actual: '+act.rc+' de '+act.t+' contratos con RC ('+(act.t?Math.round(act.rc/act.t*100):0)+' %)'+(ant.t?' · mes anterior: '+Math.round(ant.rc/ant.t*100)+' %':'');
     g.innerHTML='<div class="rc-g">'+datos.map(function(x){
       var alto=x.t/max*100;
-      return '<div class="rc-c"><span class="rc-p">'+(x.t?Math.round(x.rc/x.t*100)+' %':'—')+'</span><div class="rc-b" style="height:'+alto+'%" title="'+x.rc+' con RC · '+x.sin+' sin RC"><i class="s" style="flex:'+x.sin+'"></i><i class="r" style="flex:'+x.rc+'"></i></div><span class="rc-n">'+x.rc+' / '+x.t+'</span><span class="rc-m">'+MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')+'</span></div>'}).join('')+'</div>'+
+      return '<div class="rc-c"><span class="rc-p">'+(x.t?Math.round(x.rc/x.t*100)+' %':'—')+'</span><div class="rc-b" style="height:'+alto+'%" title="'+x.rc+' con RC · '+x.sin+' sin RC"><i class="s" style="flex:'+x.sin+'">'+(x.sin&&x.sin/x.t*alto>7?x.sin:'')+'</i><i class="r" style="flex:'+x.rc+'">'+(x.rc&&x.rc/x.t*alto>7?x.rc:'')+'</i></div><span class="rc-n">'+x.rc+' con RC de '+x.t+'</span><span class="rc-m">'+MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')+'</span></div>'}).join('')+'</div>'+
       '<div class="rc-l"><span>Con RC</span><span>Sin RC</span><span style="margin-left:auto">% sobre el total de contratos del mes</span></div>'}
   var seg=document.createElement('div');seg.className='card seg';seg.innerHTML='<h3>Seguros por contrato · '+MES_TXT+'</h3><p class="tot" id="sgTot">Se muestra al conectar Cobros.</p><div id="sgCuerpo"></div>';tarjetas.appendChild(seg);
   var anu=document.createElement('div');anu.className='card anu';anu.innerHTML='<h3>Contratos por mes del año</h3><p class="tot" id="anTot">Se muestra al conectar Cobros.</p><div id="anCuerpo"></div>';tarjetas.appendChild(anu);
@@ -235,7 +249,7 @@
     var con=s.ambos+s.rc+s.ap;
     tot.textContent=con+' de '+t+' contratos llevan RC o AP ('+Math.round(con/t*100)+' %) · '+s.ninguno+' no llevan ninguno';
     var it=[['sg-1','RC y AP',s.ambos,'#1f9d55'],['sg-2','Solo RC',s.rc,'#fdc33e'],['sg-3','Solo AP',s.ap,'#5b78c7'],['sg-4','Ni RC ni AP',s.ninguno,'#021346']];
-    b.innerHTML='<div class="sg-b" role="img" aria-label="Seguros por contrato">'+it.map(function(x){return '<i class="'+x[0]+'" style="flex:'+x[2]+'" title="'+x[1]+': '+x[2]+'"></i>'}).join('')+'</div>'+
+    b.innerHTML='<div class="sg-b" role="img" aria-label="Seguros por contrato">'+it.map(function(x){return '<i class="'+x[0]+'" style="flex:'+x[2]+'" title="'+x[1]+': '+x[2]+'">'+(x[2]/t>0.04?x[2]:'')+'</i>'}).join('')+'</div>'+
       '<div class="sg-l">'+it.map(function(x){return '<div style="--c:'+x[3]+'">'+x[1]+': <b>'+x[2]+'</b> ('+Math.round(x[2]/t*100)+' %)</div>'}).join('')+'</div>'}
   function pintarAnual(hist,ok){
     var tot=document.getElementById('anTot'),g=document.getElementById('anCuerpo');
@@ -286,7 +300,8 @@
     if(!ok){tot.textContent='Para ver las ventas por asesor, publica una Nueva versión del conector de Cobros.';return}
     var lista=Object.keys(v).map(function(k){return [k,v[k]]}).sort(function(a,b){return b[1]-a[1]}),suma=lista.reduce(function(s,x){return s+x[1]},0),max=lista.length?lista[0][1]:1;
     tot.textContent=suma?'Contratos del mes · '+suma+' en total':'Todavía no hay contratos este mes.';
-    box.innerHTML=lista.map(function(x){return '<div class="fila-a"><span class="nm" title="'+x[0]+'">'+x[0]+'</span><div class="pista"><div class="barra" style="width:'+Math.round(x[1]/max*100)+'%"></div></div><b>'+x[1]+'</b></div>'}).join('');
+    box.className='asr-l';box.style.setProperty('--f',Math.max(1,Math.ceil(lista.length/2)));
+    box.innerHTML=lista.map(function(x,i){return '<div class="fila-a'+(i===0?' top':'')+'"><span class="rk">'+(i+1)+'</span><span class="nm" title="'+x[0]+': '+x[1]+' contratos">'+x[0]+'</span><div class="pista"><div class="barra" style="width:'+Math.round(x[1]/max*100)+'%"></div></div><b>'+x[1]+'</b><span class="pc">'+Math.round(x[1]/suma*100)+' %</span></div>'}).join('');
   }
 
   // Resumen en vivo (opcional): usa la URL del conector de Cobros ya guardada en el navegador.
