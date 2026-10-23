@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Protect Motos — Plataforma</title>
+<title>CRM Protect Motos</title>
 <style>
   :root{--azul:#13223f;--azul2:#1c3050;--dorado:#d6a417;--dorado2:#f0c94a;--fondo:#f4f5f7;--tarjeta:#fff;--texto:#1f2430;--suave:#6b7280;--borde:#e3e6eb;--verde:#1f9d55;--naranja:#d97706;--ancho:236px}
   *{box-sizing:border-box}
   html,body{height:100%;margin:0}
   body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fondo);color:var(--texto);display:flex}
   nav{width:var(--ancho);background:var(--azul);color:#fff;display:flex;flex-direction:column;flex-shrink:0;height:100vh;position:sticky;top:0}
-  .marca{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 14px 14px;border-bottom:1px solid #ffffff1f;text-align:center}
-  .marca .lg{background:#fff;border-radius:14px;padding:12px 14px;width:100%;display:flex;justify-content:center}
-  .marca img{height:112px;width:auto;max-width:100%;display:block}
-  .marca small{color:var(--dorado2);font-size:.74rem;letter-spacing:.4px;text-transform:uppercase}
+  .marca{display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 16px 16px;border-bottom:1px solid #ffffff1f;text-align:center}
+  .marca img{width:150px;max-width:100%;height:auto;display:block}
+  .marca .crm{color:var(--dorado);font-weight:800;font-size:1.35rem;letter-spacing:.32em;padding-left:.32em;line-height:1}
+  .marca small{color:#b9c4e4;font-size:.72rem;letter-spacing:.4px}
   nav ul{list-style:none;margin:10px 0;padding:0 10px;flex:1}
   nav li a{display:flex;align-items:center;gap:10px;padding:11px 12px;margin-bottom:4px;border-radius:10px;color:#dbe3f2;text-decoration:none;font-size:.93rem;border-left:3px solid transparent}
   nav li a:hover{background:var(--azul2);color:#fff}
@@ -48,14 +48,14 @@
     nav ul{display:flex;overflow-x:auto;margin:0;padding:6px 8px}
     nav li a{white-space:nowrap;margin:0 4px 0 0;border-left:0;border-bottom:3px solid transparent}
     nav li a.activo{border-bottom-color:var(--dorado)}
-    .pie{display:none} .marca{padding:8px 14px;flex-direction:row;justify-content:center;gap:12px} .marca .lg{width:auto;padding:4px 10px} .marca img{height:46px}
+    .pie{display:none} .marca{padding:8px 14px;flex-direction:row;justify-content:center;gap:14px} .marca img{width:52px} .marca .crm{font-size:1.1rem} .marca small{display:none}
     main{height:calc(100vh - 118px)} .pagina{padding:18px 16px}
   }
 </style>
 </head>
 <body>
 <nav>
-  <div class="marca"><div class="lg"><img src="assets/logo.png" alt="Protect Motos"></div><small>Plataforma de gestión</small></div>
+  <div class="marca"><img src="assets/logo_menu.png" alt="Protect Motos"><div class="crm">CRM</div><small>Plataforma de gestión</small></div>
   <ul id="menu"></ul>
   <div class="pie"><a id="solo" href="#" target="_blank" style="color:var(--dorado2);display:none;margin-bottom:8px">↗ Abrir este módulo en pestaña propia</a><br>Negociemos Group S.A.S.<br>Todos los módulos usan el mismo Google Sheet.</div>
 </nav>
@@ -124,7 +124,7 @@
       else v.innerHTML=pendiente(m);
     }
     var so=document.getElementById('solo');so.style.display=m.src&&m.disponible?'inline':'none';if(m.src)so.href=m.src;
-    document.title=(m.id==='inicio'?'':m.nombre+' · ')+'Protect Motos';
+    document.title=(m.id==='inicio'?'':m.nombre+' · ')+'CRM Protect Motos';
   }
   window.addEventListener('hashchange',function(){mostrar(location.hash.slice(1))});
   mostrar(location.hash.slice(1)||'inicio');
