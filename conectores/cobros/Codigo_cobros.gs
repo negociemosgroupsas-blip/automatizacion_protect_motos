@@ -24,6 +24,8 @@ var COL = {
   VALOR_CUOTA: 17,
   PLAZO: 18,
   FORMA: 20,         // CONTADO | FINANCIADO
+  FECHA_NAC: 6,      // Fecha de nacimiento del cliente (columna F)
+  EDAD: 7,           // Edad del cliente al firmar (columna G)
   MES: 9,            // Mes del contrato (columna I)
   ANIO: 10,          // Año del contrato (columna J)
   RC: 21,            // Responsabilidad Civil: SI | NO (columna U)
@@ -158,6 +160,8 @@ function leerContratos(hoja) {
       celular: String(fila[COL.CELULAR - 1] || ''),
       correo: String(fila[COL.CORREO - 1] || ''),
       direccion: String(fila[COL.DIRECCION - 1] || ''),
+      edad: Number(fila[COL.EDAD - 1]) || 0,
+      fechaNacISO: formatoISO(fila[COL.FECHA_NAC - 1]),
       mes: valorMesAnio(fila[COL.MES - 1], 'mes'),
       anio: valorMesAnio(fila[COL.ANIO - 1], 'anio'),
       rc: String(fila[COL.RC - 1] || '').trim().toUpperCase(),
