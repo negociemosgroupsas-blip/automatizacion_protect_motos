@@ -210,6 +210,15 @@
   .gauge-i .gi{background:var(--fondo,#f3f4f8);border-radius:10px;padding:8px 12px} .gi span{display:block;font-size:.66rem;text-transform:uppercase;color:var(--suave,#6b7280)} .gi b{font-size:1.4rem;color:var(--titulo,#021346);font-variant-numeric:tabular-nums}
   .gauge-i .meta-t{grid-column:1/-1}
   @media(prefers-reduced-motion:reduce){.ch-line.an,.ch-area.an,.ch-pt.an,.dona-b i,.asr .barra{animation:none;opacity:1;stroke-dashoffset:0;transform:none}.ch-pulso{animation:none}.dona-seg{transition:none}}
+  .ch-eje{fill:#e08a00;font-size:10px;font-weight:700} .ch-in-o{fill:#021346;font-size:11px;font-weight:700;text-anchor:middle;paint-order:stroke;stroke:#fdc33e;stroke-width:3px} .ch-in-b{fill:#fff;font-size:11px;font-weight:700;text-anchor:middle;paint-order:stroke;stroke:#021346;stroke-width:3px}
+  .ch-col-guia{fill:var(--fondo,#f3f4f8);opacity:.9}
+  .ch-bar.an{transform-box:fill-box;transform-origin:50% 100%;transform:scaleY(0);animation:sube .8s cubic-bezier(.3,.8,.3,1) forwards}
+  @keyframes sube{to{transform:scaleY(1)}}
+  .ch-tend{stroke:#e08a00;stroke-width:3;stroke-dasharray:9 6;stroke-linecap:round;fill:none} .ch-tend.ext{opacity:.55;stroke-dasharray:3 7}
+  .ch-tend.an{stroke-dashoffset:200;animation:tdib 1.2s ease .6s forwards;opacity:0} @keyframes tdib{from{opacity:1;stroke-dashoffset:200}to{opacity:1;stroke-dashoffset:0}}
+  .tend-l{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.8rem;color:var(--suave);margin-top:8px} .tend-s{display:inline-block;width:26px;border-top:3px dashed #e08a00}
+  .tl-oro,.tl-az{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 3px 0 8px;background:#fdc33e} .tl-az{background:var(--btn,#021346)}
+  @media(prefers-reduced-motion:reduce){.ch-bar.an{animation:none;transform:none}.ch-tend.an{animation:none;opacity:1;stroke-dashoffset:0}}
 </style>
 </head>
 <body>
@@ -378,7 +387,58 @@
     });
   }
 
-  /* ----- Contratos por mes del año: línea suave ----- */
+
+  /* ----- Columnas con línea de tendencia ----- */
+  function regresion(ys){ // ys: [{i,y}] -> {a,b} con y=a+b*i
+    var n=ys.length,sx=0,sy=0,sxx=0,sxy=0;ys.forEach(function(p){sx+=p.i;sy+=p.y;sxx+=p.i*p.i;sxy+=p.i*p.y});
+    var d=n*sxx-sx*sx;if(!n)return {a:0,b:0};if(!d)return {a:sy/n,b:0};var b=(n*sxy-sx*sy)/d;return {a:(sy-b*sx)/n,b:b}}
+  function fmt1(n){return (Math.round(n*10)/10).toString().replace('.',',')}
+  function columnas(box,o){
+    // o: {datos:[{v,rc,sin,pct}],n,max,etiquetas,activo,tip,alto,apilado,tend:{pts:[{i,y}],ext:true},escalaTend:fn(y)->0..1,ejeDer:bool,etqBarra}
+    enAncho(box,function(W){
+      var an=!box._dib,H=o.alto||250,pl=12,pr=o.ejeDer?40:12,pt=34,pb=o.etqBajo2?46:30,iw=W-pl-pr,ih=H-pt-pb,n=o.n,slot=iw/n,bw=Math.min(54,slot*0.62);
+      var svg=sv('svg',{width:W,height:H,viewBox:'0 0 '+W+' '+H,'class':'ch-svg','role':'img','aria-label':o.aria||'Gráfica de columnas'});
+      var xs=function(i){return pl+slot*(i+.5)},ys=function(v){return pt+ih-(v/o.max)*ih};
+      [0,.5,1].forEach(function(f){var y=pt+ih-f*ih;svg.appendChild(sv('line',{x1:pl,x2:W-pr,y1:y,y2:y,'class':'ch-g'}));if(o.ejeDer)svg.appendChild(stxt(W-pr+6,y+4,Math.round((o.dmin+(o.dmax-o.dmin)*f))+' %','ch-eje','start'))});
+      var guia=sv('rect',{x:0,y:pt-4,width:slot,height:ih+4,'class':'ch-col-guia',style:'display:none'});svg.appendChild(guia);
+      var labs=[];
+      o.datos.forEach(function(d,i){
+        if(d===null)return;
+        var x=xs(i)-bw/2,cur=i===o.activo,g=sv('g',{'class':an?'ch-bar an':'ch-bar',style:an?'animation-delay:'+(i*0.06)+'s':''});
+        if(o.apilado){
+          var hs=d.sin/o.max*ih,hr=d.rc/o.max*ih;
+          g.appendChild(sv('rect',{x:x,y:pt+ih-hr-hs,width:bw,height:hs,rx:5,fill:'var(--btn,#021346)'}));
+          g.appendChild(sv('rect',{x:x,y:pt+ih-hr,width:bw,height:hr,rx:d.sin?0:5,fill:'#fdc33e'}));
+          if(hr>16)labs.push(stxt(xs(i),pt+ih-hr/2+4,d.rc,'ch-in-o'));
+          if(hs>16)labs.push(stxt(xs(i),pt+ih-hr-hs/2+4,d.sin,'ch-in-b'));
+        }else{
+          var h=d.v/o.max*ih;g.appendChild(sv('rect',{x:x,y:pt+ih-h,width:bw,height:Math.max(h,2),rx:5,fill:cur?'#fdc33e':'var(--btn,#021346)',stroke:cur?'#021346':'none','stroke-width':cur?1.5:0}));
+        }
+        svg.appendChild(g);
+        var tope=o.apilado?ys(d.rc+d.sin):ys(d.v);
+        svg.appendChild(stxt(xs(i),tope-7,o.etqBarra(d,i),'ch-v'+(cur?' ch-act':''),'middle'));
+      });
+      for(var i=0;i<n;i++){var t=String(o.etiquetas[i]);svg.appendChild(stxt(xs(i),H-(o.etqBajo2?28:11),t.charAt(0).toUpperCase()+t.slice(1),'ch-s'+(i===o.activo?' ch-act':''),'middle'));if(o.etqBajo2&&o.datos[i])svg.appendChild(stxt(xs(i),H-12,o.etqBajo2(o.datos[i],i,W),'ch-s2','middle'))}
+      // línea de tendencia (regresión lineal)
+      if(o.tend&&o.tend.pts.length>=2){
+        var r=regresion(o.tend.pts),ty=function(i){var v=r.a+r.b*i;return o.escalaTend?pt+ih-o.escalaTend(v)*ih:ys(v)},cl=function(y){return Math.max(pt-4,Math.min(pt+ih,y))},
+            ult=o.tend.pts[o.tend.pts.length-1].i,pri=o.tend.pts[0].i;
+        svg.appendChild(sv('line',{x1:xs(pri),y1:cl(ty(pri)),x2:xs(ult),y2:cl(ty(ult)),'class':(an?'ch-tend an':'ch-tend')}));
+        if(o.tend.ext&&o.tend.hasta>ult)svg.appendChild(sv('line',{x1:xs(ult),y1:cl(ty(ult)),x2:xs(o.tend.hasta),y2:cl(ty(o.tend.hasta)),'class':'ch-tend ext'}));
+        if(o.puntosTend)o.tend.pts.forEach(function(p){svg.appendChild(sv('circle',{cx:xs(p.i),cy:cl(o.escalaTend?pt+ih-o.escalaTend(p.y)*ih:ys(p.y)),r:3,fill:'#fff',stroke:'#e08a00','stroke-width':2}))});
+      }
+      labs.forEach(function(t){svg.appendChild(t)});
+      var cw=slot;
+      o.datos.forEach(function(d,i){
+        if(d===null)return;
+        var rr=sv('rect',{x:pl+slot*i,y:0,width:cw,height:H,fill:'transparent','class':'ch-hit'});
+        var ir=function(ev){guia.setAttribute('x',pl+slot*i);guia.style.display='';verTip(ev,o.tip(d,i))};
+        rr.addEventListener('mousemove',ir);rr.addEventListener('click',ir);rr.addEventListener('mouseleave',function(){guia.style.display='none';ocultarTip()});svg.appendChild(rr)});
+      box.innerHTML='';box.appendChild(svg);box._dib=true;
+    });
+  }
+
+  /* ----- Contratos por mes del año: columnas + tendencia ----- */
   function pintarAnual(hist,ok){
     var tot=document.getElementById('anTot'),g=document.getElementById('anCuerpo');
     if(!ok){tot.textContent='Para ver esta gráfica, publica una Nueva versión del conector de Cobros.';g.innerHTML='';return}
@@ -389,28 +449,33 @@
     else if(!prev)txt='Mes actual: '+cur+' contratos (el mes anterior no tuvo).';
     else{var dif=Math.round((cur-prev)/prev*100);txt='Mes actual (en curso): '+cur+' contratos frente a '+prev+' del mes anterior · '+(dif>=0?'▲ +':'▼ ')+Math.abs(dif)+' %'}
     tot.textContent=txt+' · año '+y;
-    if(!g.querySelector('.an-c2')){g.innerHTML='<div class="an-c2"></div><div class="nota">Pasa el mouse (o toca) cada punto para ver el detalle. El punto dorado es el mes en curso, que aún no termina.</div>'}
-    var box=g.querySelector('.an-c2');
-    var datos=v.map(function(n,idx){var d=idx>0&&v[idx-1]>0?Math.round((n-v[idx-1])/v[idx-1]*100):null;return {v:n,d:d,m:idx+1}});
-    lineaSuave(box,{datos:datos,nTotal:12,max:Math.ceil(max*1.2),idg:'gAnual',color:'var(--btn,#021346)',etiquetas:MES_C,activo:mAct-1,aria:'Contratos por mes del año',
-      etqTop:function(d){return d.v},
+    var comp=[];for(i=0;i<(mAct>1?mAct-1:mAct);i++)comp.push({i:i,y:v[i]});
+    var rg=regresion(comp),pend=comp.length>=2?rg.b:0,tx=comp.length<3?'Aún hay pocos meses para calcular la tendencia.':(Math.abs(pend)<0.05?'Tendencia: estable':'Tendencia: '+(pend>0?'▲ sube':'▼ baja')+' en promedio '+fmt1(Math.abs(pend))+' contratos por mes')+' (sin contar el mes en curso)';
+    if(!g.querySelector('.an-c2')){g.innerHTML='<div class="an-c2"></div><div class="tend-l"></div>'}
+    g.querySelector('.tend-l').innerHTML='<span class="tend-s"></span>'+tx;
+    var datos=[];for(i=0;i<12;i++)datos.push(i<mAct?{v:v[i],d:(i>0&&v[i-1]>0?Math.round((v[i]-v[i-1])/v[i-1]*100):null),m:i+1}:null);
+    columnas(g.querySelector('.an-c2'),{datos:datos,n:12,max:Math.ceil(max*1.2)||1,etiquetas:MES_C,activo:mAct-1,aria:'Contratos por mes del año con línea de tendencia',
+      etqBarra:function(d){return d.v},tend:{pts:comp,ext:true,hasta:11},
       tip:function(d,i){return '<b>'+MES_C[i].toUpperCase()+' '+y+'</b><br>'+d.v+' contratos'+(d.d===null?'':'<br>'+(d.d>=0?'▲ +':'▼ ')+Math.abs(d.d)+' % frente al mes anterior')+(i===mAct-1?'<br><i>mes en curso</i>':'')}});
   }
 
-  /* ----- RC contra sin RC: línea del % de RC ----- */
+  /* ----- RC contra sin RC: columnas apiladas + tendencia del % ----- */
   function pintarRc(b,ok){
     var tot=document.getElementById('rcTot'),g=document.getElementById('rcGraf');
     if(!ok){tot.textContent='Para ver esta gráfica, publica una Nueva versión del conector de Cobros.';g.innerHTML='';return}
     var h=new Date(),meses=[],i;
     for(i=5;i>=0;i--){var d=new Date(h.getFullYear(),h.getMonth()-i,1);meses.push({y:d.getFullYear(),m:d.getMonth()+1})}
-    var datos=meses.map(function(x){var k=b[x.y*12+x.m]||{rc:0,sin:0},t=k.rc+k.sin;return {y:x.y,m:x.m,rc:k.rc,sin:k.sin,t:t,v:t?Math.round(k.rc/t*100):0}});
-    var act=datos[5],ant=datos[4];
-    tot.textContent='Mes actual: '+act.rc+' de '+act.t+' contratos con RC ('+act.v+' %)'+(ant.t?' · mes anterior: '+ant.v+' %':'');
-    if(!g.querySelector('.rc-c2'))g.innerHTML='<div class="rc-c2"></div><div class="nota">Línea: porcentaje de contratos con RC en cada mes. Pasa el mouse para ver las cantidades.</div>';
-    var vs=datos.filter(function(x){return x.t}).map(function(x){return x.v}),mnv=vs.length?Math.min.apply(null,vs):0,mxv=vs.length?Math.max.apply(null,vs):100,lo=Math.max(0,Math.floor((mnv-12)/10)*10),hi=Math.min(100,Math.ceil((mxv+12)/10)*10);if(hi-lo<30){hi=Math.min(100,lo+30);lo=Math.max(0,hi-30)}
-    lineaSuave(g.querySelector('.rc-c2'),{datos:datos,min:lo,max:hi,idg:'gRc',color:'#e0a000',etiquetas:datos.map(function(x){return MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')}),activo:5,alto:250,aria:'Porcentaje de contratos con RC por mes',etqBajo2:function(d){return d.rc+' / '+d.t},
-      etqTop:function(d){return d.t?d.v+' %':'—'},
-      tip:function(d){return '<b>'+MES_C[d.m-1].toUpperCase()+' '+d.y+'</b><br>Con RC: '+d.rc+'<br>Sin RC: '+d.sin+'<br>Total: '+d.t+' ('+d.v+' % con RC)'}});
+    var datos=meses.map(function(x){var k=b[x.y*12+x.m]||{rc:0,sin:0},t=k.rc+k.sin;return {y:x.y,m:x.m,rc:k.rc,sin:k.sin,t:t,pct:t?Math.round(k.rc/t*100):0}});
+    var act=datos[5],ant=datos[4],max=Math.max.apply(null,datos.map(function(x){return x.t}).concat(1));
+    tot.textContent='Mes actual: '+act.rc+' de '+act.t+' contratos con RC ('+act.pct+' %)'+(ant.t?' · mes anterior: '+ant.pct+' %':'');
+    var pts=[];datos.forEach(function(x,i){if(x.t)pts.push({i:i,y:x.pct})});
+    var rg=regresion(pts),tx=pts.length<3?'Aún hay pocos meses para calcular la tendencia.':(Math.abs(rg.b)<0.3?'Tendencia del % con RC: estable':'Tendencia del % con RC: '+(rg.b>0?'▲ sube':'▼ baja')+' en promedio '+fmt1(Math.abs(rg.b))+' puntos por mes');
+    if(!g.querySelector('.rc-c2'))g.innerHTML='<div class="rc-c2"></div><div class="tend-l"></div>';
+    g.querySelector('.tend-l').innerHTML='<span class="tend-s"></span>'+tx+' · <span class="tl-oro"></span>Con RC <span class="tl-az"></span>Sin RC · escala del % a la derecha';
+    columnas(g.querySelector('.rc-c2'),{datos:datos.map(function(x){return x.t?x:null}),n:6,max:max*1.25,apilado:true,alto:260,ejeDer:true,dmin:0,dmax:100,escalaTend:function(v){return Math.max(0,Math.min(1,v/100))},
+      etiquetas:datos.map(function(x){return MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')}),activo:5,etqBajo2:function(d,i,W){return W<600?d.rc+'/'+d.t:d.rc+' con RC de '+d.t},aria:'Contratos con y sin RC por mes, con tendencia del porcentaje',
+      etqBarra:function(d){return d.pct+' %'},tend:{pts:pts,ext:false,hasta:5},
+      tip:function(d){return '<b>'+MES_C[d.m-1].toUpperCase()+' '+d.y+'</b><br>Con RC: '+d.rc+'<br>Sin RC: '+d.sin+'<br>Total: '+d.t+' ('+d.pct+' % con RC)'}});
   }
 
   /* ----- Seguros por contrato: dona animada ----- */
