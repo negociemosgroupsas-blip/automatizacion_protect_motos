@@ -24,6 +24,7 @@ var COL = {
   VALOR_CUOTA: 17,
   PLAZO: 18,
   FORMA: 20,         // CONTADO | FINANCIADO
+  RC: 21,            // Responsabilidad Civil: SI | NO (columna U)
   CELULAR: 31,
   CORREO: 32,
   DIRECCION: 33,
@@ -154,6 +155,7 @@ function leerContratos(hoja) {
       celular: String(fila[COL.CELULAR - 1] || ''),
       correo: String(fila[COL.CORREO - 1] || ''),
       direccion: String(fila[COL.DIRECCION - 1] || ''),
+      rc: String(fila[COL.RC - 1] || '').trim().toUpperCase(),
       estado: String(fila[COL.ESTADO_CLIENTE - 1] || '').trim().toUpperCase()
     });
   }
