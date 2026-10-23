@@ -572,11 +572,11 @@
   }
 
 
-  var edc=document.createElement('div');edc.className='card edc';edc.innerHTML='<h3>Edad de los clientes</h3><p class="tot" id="edTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="edPer"><label>Año <select id="edAnio"></select></label><label>Mes <select id="edMes"></select></label></div><div id="edCuerpo"></div>';tarjetas.appendChild(edc);
-  var edAnio=String(new Date().getFullYear()),edMes='0',edDatos=null,edOk=false,MES_LARGO=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  try{var ea=localStorage.getItem('pm_edad_anio'),em=localStorage.getItem('pm_edad_mes');if(ea&&(ea==='todos'||/^\d{4}$/.test(ea)))edAnio=ea;if(em&&/^(0|[1-9]|1[0-2])$/.test(em))edMes=em}catch(e){}
+  var edc=document.createElement('div');edc.className='card edc';edc.innerHTML='<h3>Edad de los clientes</h3><p class="tot" id="edTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="edPer"><label>Año <select id="edAnio"></select></label><label>Mes <select id="edMes"></select></label><label>Ver por <select id="edVer"><option value="rango">Rango de edad</option><option value="mes">Mes</option></select></label></div><div id="edCuerpo"></div>';tarjetas.appendChild(edc);
+  var edAnio=String(new Date().getFullYear()),edMes='0',edVer='rango',edDatos=null,edOk=false,MES_LARGO=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  try{var ea=localStorage.getItem('pm_edad_anio'),em=localStorage.getItem('pm_edad_mes');if(ea&&(ea==='todos'||/^\d{4}$/.test(ea)))edAnio=ea;if(em&&/^(0|[1-9]|1[0-2])$/.test(em))edMes=em;var ev=localStorage.getItem('pm_edad_ver');if(ev==='mes'||ev==='rango')edVer=ev}catch(e){}
   document.getElementById('edMes').innerHTML='<option value="0">Todo el año</option>'+MES_LARGO.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>'}).join('');
-  document.getElementById('edPer').addEventListener('change',function(){edAnio=document.getElementById('edAnio').value;edMes=document.getElementById('edMes').value;try{localStorage.setItem('pm_edad_anio',edAnio);localStorage.setItem('pm_edad_mes',edMes)}catch(e){}pintarEdad(edDatos,edOk)});
+  document.getElementById('edPer').addEventListener('change',function(){edAnio=document.getElementById('edAnio').value;edMes=document.getElementById('edMes').value;edVer=document.getElementById('edVer').value;try{localStorage.setItem('pm_edad_anio',edAnio);localStorage.setItem('pm_edad_mes',edMes);localStorage.setItem('pm_edad_ver',edVer)}catch(e){}pintarEdad(edDatos,edOk)});
   function pintarEdad(lista,ok){
     if(lista){edDatos=lista;edOk=ok}
     var tot=document.getElementById('edTot'),b=document.getElementById('edCuerpo');
@@ -585,7 +585,22 @@
     var lst=Object.keys(anios).sort(function(a,b){return b-a}),sa=document.getElementById('edAnio');
     sa.innerHTML='<option value="todos">Todos los años</option>'+lst.map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');
     if(edAnio!=='todos'&&!anios[edAnio])edAnio=String(yAct);
-    sa.value=edAnio;document.getElementById('edMes').value=edMes;
+    sa.value=edAnio;document.getElementById('edMes').value=edMes;document.getElementById('edVer').value=edVer;document.getElementById('edMes').disabled=(edVer==='mes');
+    if(edVer==='mes'){
+      var ly=edDatos.filter(function(x){return edAnio==='todos'||x.y===+edAnio}),porM=[],i;
+      for(i=1;i<=12;i++)porM.push(ly.filter(function(x){return x.k-x.y*12===i}).map(function(x){return x.e}));
+      var dm=porM.map(function(a,i){if(!a.length)return null;var sum=a.reduce(function(p,q){return p+q},0),fr={},mo=0,mf=0;a.forEach(function(e){fr[e]=(fr[e]||0)+1;if(fr[e]>mf||(fr[e]===mf&&e<mo)){mf=fr[e];mo=e}});return {v:Math.round(sum/a.length*10)/10,n:a.length,moda:mo,m:i}});
+      var con=dm.filter(Boolean);
+      if(!con.length){tot.textContent='No hay edades registradas para '+(edAnio==='todos'?'ningún año':edAnio)+' (columna G de Protect).';b.innerHTML='';return}
+      var tp=ly.length,pr=ly.reduce(function(p,q){return p+q.e},0)/tp,may=con.reduce(function(p,q){return q.v>p.v?q:p},con[0]),men=con.reduce(function(p,q){return q.v<p.v?q:p},con[0]);
+      tot.textContent='Edad promedio de los clientes en cada mes · '+(edAnio==='todos'?'todos los años':'año '+edAnio)+' · '+tp+' clientes';
+      if(!b.querySelector('.ed-c')||b.dataset.v!=='mes'){b.innerHTML='<div class="ed-c"></div><div class="gauge-i ed-i"></div>';b.dataset.v='mes'}
+      b.querySelector('.ed-i').innerHTML='<div class="gi"><span>Edad promedio del periodo</span><b>'+fmt1(pr)+' años</b></div><div class="gi"><span>Mes con clientes de mayor edad</span><b>'+MES_LARGO[may.m]+' · '+fmt1(may.v)+'</b></div><div class="gi"><span>Mes con clientes más jóvenes</span><b>'+MES_LARGO[men.m]+' · '+fmt1(men.v)+'</b></div>';
+      var mxv=Math.max.apply(null,con.map(function(d){return d.v})),actM=(edAnio==='todos'||+edAnio===yAct)?h.getMonth():-1;
+      columnas(b.querySelector('.ed-c'),{datos:dm,n:12,max:mxv*1.2,alto:210,etiquetas:MES_C,activo:dm.indexOf(may),aria:'Edad promedio de los clientes por mes',etqBarra:function(d){return fmt1(d.v)},
+        tip:function(d,i){return '<b>'+MES_LARGO[i]+(edAnio==='todos'?'':' '+edAnio)+'</b><br>Edad promedio: '+fmt1(d.v)+' años<br>Edad más frecuente: '+d.moda+' años<br>'+d.n+' clientes'}});
+      return}
+    if(b.dataset.v==='mes'){b.innerHTML='';b.dataset.v=''}
     var l=edDatos.filter(function(x){return (edAnio==='todos'||x.y===+edAnio)&&(edMes==='0'||x.k-x.y*12===+edMes)});
     var etq=['< 25','25–34','35–44','45–54','55+'],lim=[[0,24],[25,34],[35,44],[45,54],[55,200]],cont=lim.map(function(r){return l.filter(function(x){return x.e>=r[0]&&x.e<=r[1]}).length}),n=l.length;
     if(!n){tot.textContent='No hay edades registradas para '+(edMes==='0'?'':MES_LARGO[+edMes-1]+' ')+(edAnio==='todos'?'ningún año':edAnio)+' (columna G de Protect).';b.innerHTML='';return}
