@@ -113,6 +113,19 @@
   .rc-b i{display:block;width:100%} .rc-b .s{background:var(--btn,var(--azul))} .rc-b .r{background:var(--dorado)}
   .rc-m{font-size:.74rem;color:var(--suave);text-transform:capitalize} .rc-n{font-size:.7rem;color:var(--suave);font-variant-numeric:tabular-nums}
   .rc-l{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:.78rem;color:var(--suave)} .rc-l span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;background:var(--dorado)} .rc-l span+span::before{background:var(--btn,var(--azul))} .rc-l span:nth-child(3)::before{display:none}
+
+  .seg,.anu{cursor:default;max-width:1000px;grid-column:1/-1} .seg:hover,.anu:hover{box-shadow:none;transform:none}
+  .seg h3,.anu h3{margin:0 0 2px} .seg .tot,.anu .tot{font-size:.8rem;color:var(--suave);margin:0 0 12px}
+  .sg-b{display:flex;height:34px;border-radius:9px;overflow:hidden;background:var(--borde)}
+  .sg-b i{display:block;min-width:2px} .sg-1{background:#1f9d55}.sg-2{background:#fdc33e}.sg-3{background:#5b78c7}.sg-4{background:var(--btn,var(--azul))}
+  .sg-l{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 16px;margin-top:12px;font-size:.84rem}
+  .sg-l div::before{content:"";display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:7px;vertical-align:-1px;background:var(--c)} .sg-l b{font-variant-numeric:tabular-nums;color:var(--titulo,var(--azul))}
+  .an-g{display:flex;align-items:flex-end;gap:clamp(4px,1.4vw,12px);height:200px}
+  .an-c{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px}
+  .an-b{width:100%;max-width:46px;background:var(--btn,var(--azul));border-radius:6px 6px 0 0;min-height:2px} .an-b.cur{background:var(--dorado)} .an-b.fut{background:var(--borde)}
+  .an-n{font-size:.76rem;font-weight:700;color:var(--titulo,var(--azul));font-variant-numeric:tabular-nums} .an-m{font-size:.7rem;color:var(--suave);text-transform:capitalize}
+  .an-d{font-size:.66rem;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums} .an-d.up{color:#1f9d55}.an-d.dn{color:#dc2626}.an-d.eq{color:var(--suave)}
+  @media(max-width:520px){.an-d{font-size:.58rem}.an-m{font-size:.62rem}}
 </style>
 </head>
 <body>
@@ -208,6 +221,34 @@
       var alto=x.t/max*100;
       return '<div class="rc-c"><span class="rc-p">'+(x.t?Math.round(x.rc/x.t*100)+' %':'—')+'</span><div class="rc-b" style="height:'+alto+'%" title="'+x.rc+' con RC · '+x.sin+' sin RC"><i class="s" style="flex:'+x.sin+'"></i><i class="r" style="flex:'+x.rc+'"></i></div><span class="rc-n">'+x.rc+' / '+x.t+'</span><span class="rc-m">'+MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')+'</span></div>'}).join('')+'</div>'+
       '<div class="rc-l"><span>Con RC</span><span>Sin RC</span><span style="margin-left:auto">% sobre el total de contratos del mes</span></div>'}
+  var seg=document.createElement('div');seg.className='card seg';seg.innerHTML='<h3>Seguros por contrato · mes actual</h3><p class="tot" id="sgTot">Se muestra al conectar Cobros.</p><div id="sgCuerpo"></div>';tarjetas.appendChild(seg);
+  var anu=document.createElement('div');anu.className='card anu';anu.innerHTML='<h3>Contratos por mes del año</h3><p class="tot" id="anTot">Se muestra al conectar Cobros.</p><div id="anCuerpo"></div>';tarjetas.appendChild(anu);
+  function pintarSeg(s,ok){
+    var tot=document.getElementById('sgTot'),b=document.getElementById('sgCuerpo');
+    if(!ok){tot.textContent='Para ver esta gráfica, publica una Nueva versión del conector de Cobros.';b.innerHTML='';return}
+    var t=s.ambos+s.rc+s.ap+s.ninguno;
+    if(!t){tot.textContent='Todavía no hay contratos este mes.';b.innerHTML='';return}
+    var con=s.ambos+s.rc+s.ap;
+    tot.textContent=con+' de '+t+' contratos llevan RC o AP ('+Math.round(con/t*100)+' %) · '+s.ninguno+' no llevan ninguno';
+    var it=[['sg-1','RC y AP',s.ambos,'#1f9d55'],['sg-2','Solo RC',s.rc,'#fdc33e'],['sg-3','Solo AP',s.ap,'#5b78c7'],['sg-4','Ni RC ni AP',s.ninguno,'#021346']];
+    b.innerHTML='<div class="sg-b" role="img" aria-label="Seguros por contrato">'+it.map(function(x){return '<i class="'+x[0]+'" style="flex:'+x[2]+'" title="'+x[1]+': '+x[2]+'"></i>'}).join('')+'</div>'+
+      '<div class="sg-l">'+it.map(function(x){return '<div style="--c:'+x[3]+'">'+x[1]+': <b>'+x[2]+'</b> ('+Math.round(x[2]/t*100)+' %)</div>'}).join('')+'</div>'}
+  function pintarAnual(hist,ok){
+    var tot=document.getElementById('anTot'),g=document.getElementById('anCuerpo');
+    if(!ok){tot.textContent='Para ver esta gráfica, publica una Nueva versión del conector de Cobros.';g.innerHTML='';return}
+    var h=new Date(),y=h.getFullYear(),mAct=h.getMonth()+1,v=[],i,max=1;
+    for(i=1;i<=12;i++){var k=hist[y*12+i];v.push(k?k.rc+k.sin:0);if(v[i-1]>max)max=v[i-1]}
+    var cur=v[mAct-1],prev=mAct>1?v[mAct-2]:null,txt;
+    if(prev===null)txt='Este año llevas '+cur+' contratos en el primer mes.';
+    else if(!prev)txt='Mes actual: '+cur+' contratos (el mes anterior no tuvo).';
+    else{var dif=Math.round((cur-prev)/prev*100);txt='Mes actual (en curso): '+cur+' contratos frente a '+prev+' del mes anterior · '+(dif>=0?'▲ +':'▼ ')+Math.abs(dif)+' %'}
+    tot.textContent=txt+' · año '+y;
+    var MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    g.innerHTML='<div class="an-g">'+v.map(function(n,idx){
+      var m=idx+1,fut=m>mAct,dl='',cl='eq';
+      if(!fut&&idx>0&&v[idx-1]>0){var p=Math.round((n-v[idx-1])/v[idx-1]*100);dl=(p>=0?'▲':'▼')+Math.abs(p)+'%';cl=p>0?'up':p<0?'dn':'eq'}
+      return '<div class="an-c"><span class="an-d '+cl+'">'+(fut?'':dl||'')+'</span><span class="an-n">'+(fut?'':n)+'</span><div class="an-b '+(m===mAct?'cur':fut?'fut':'')+'" style="height:'+(fut?4:Math.max(n/max*100*0.78,1))+'%"></div><span class="an-m">'+MES[idx]+'</span></div>'}).join('')+'</div>'+
+      '<div class="nota">▲ ▼ comparan cada mes con el anterior. El mes actual (dorado) aún no ha terminado.</div>'}
   function pendiente(m){
     return '<div class="pagina"><h1>'+m.ico+' '+m.nombre+'</h1><p class="sub">Este módulo aún no está instalado.</p>'+
       '<div class="caja">Para activarlo, copia el HTML del Automatizador de Contratos como <code>'+m.src+'</code> '+
@@ -255,13 +296,14 @@
       fin();
       if(!r||!r.ok){nota.textContent='No se pudo leer el resumen de Cobros.';return}
       window.PM_COBROS=r;document.dispatchEvent(new Event('pm-cobros'));
-      var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
+      var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},sg={ambos:0,rc:0,ap:0,ninguno:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
       (r.contratos||[]).forEach(function(x){
         if(c[x.estado]!==undefined)c[x.estado]++;
         if(x.mes===undefined)return;nuevo=true;
         if(String(x.contrato||'').trim()){var mm=numMes(x.mes),aa=numAnio(x.anio);if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};if(x.rc==='SI')kk.rc++;else kk.sin++}}
         if(numMes(x.mes)===mesAct&&numAnio(x.anio)===anioAct){
           if(String(x.contrato||'').trim()){var as=(x.asesor||'').trim().toUpperCase()||'SIN ASESOR';ventas[as]=(ventas[as]||0)+1}
+          if(String(x.contrato||'').trim()){var tr=x.rc==='SI',ta=x.ap==='SI';if(tr&&ta)sg.ambos++;else if(tr)sg.rc++;else if(ta)sg.ap++;else sg.ninguno++}
           if(x.rc==='SI')rc++;
           if(x.forma==='CONTADO')cont++;
         }
@@ -269,6 +311,8 @@
       var conRc=nuevo;
       pintarAsesores(ventas,nuevo);
       pintarRc(hist,nuevo);
+      pintarSeg(sg,nuevo&&r.contratos.some(function(x){return x.ap!==undefined}));
+      pintarAnual(hist,nuevo);
       pintarMeta(nuevo?Object.keys(ventas).reduce(function(a,k){return a+ventas[k]},0):null);
       document.getElementById('kpis').innerHTML=[['Activos',c.ACTIVO],['Finalizados',c.FINALIZADO],['Cancelados',c.CANCELADO],['Contratos',(r.contratos||[]).length],['RC este mes',nuevo?rc:'—'],['Contado este mes',nuevo?cont:'—']]
         .map(function(k){return '<div class="kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join('');

@@ -27,6 +27,7 @@ var COL = {
   MES: 9,            // Mes del contrato (columna I)
   ANIO: 10,          // Año del contrato (columna J)
   RC: 21,            // Responsabilidad Civil: SI | NO (columna U)
+  AP: 23,            // Asistencias: SI | NO (columna W)
   CELULAR: 31,
   CORREO: 32,
   DIRECCION: 33,
@@ -160,6 +161,7 @@ function leerContratos(hoja) {
       mes: valorMesAnio(fila[COL.MES - 1], 'mes'),
       anio: valorMesAnio(fila[COL.ANIO - 1], 'anio'),
       rc: String(fila[COL.RC - 1] || '').trim().toUpperCase(),
+      ap: String(fila[COL.AP - 1] || '').trim().toUpperCase(),
       estado: String(fila[COL.ESTADO_CLIENTE - 1] || '').trim().toUpperCase()
     });
   }
