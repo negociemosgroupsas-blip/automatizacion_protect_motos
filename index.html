@@ -92,6 +92,27 @@
   .al.rojo{border-left-color:#dc2626}.al.nar{border-left-color:#d97706}.al.verde{border-left-color:#1f9d55}
   h2.sec-t{font-size:1rem;color:var(--titulo,var(--azul));margin:22px 0 4px}
   @media(max-width:760px){#top{padding:8px 12px}#res{left:12px}}
+
+  .meta{cursor:default;max-width:1000px;margin:0 0 6px} .meta:hover{box-shadow:none;transform:none}
+  .meta h3{margin:0 0 2px} .meta .tot{font-size:.8rem;color:var(--suave);margin:0 0 10px}
+  .meta-n{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap} .meta-n b{font-size:2.2rem;color:var(--titulo,var(--azul));font-variant-numeric:tabular-nums} .meta-n span{color:var(--suave);font-size:.95rem}
+  .meta-p{position:relative;background:var(--borde);border-radius:10px;height:26px;margin:12px 0 8px;overflow:visible}
+  .meta-p i{display:block;height:100%;border-radius:10px;background:var(--btn,var(--azul));min-width:3px}
+  .meta-p i.ok{background:#1f9d55}.meta-p i.med{background:var(--dorado)}.meta-p i.bajo{background:#dc2626}
+  .meta-p u{position:absolute;top:-5px;bottom:-5px;width:3px;background:var(--texto);border-radius:2px}
+  .meta-t{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:.82rem;color:var(--suave)}
+  .meta-e{background:none;border:0;color:var(--suave);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:0}
+  .meta-e input{width:70px;padding:4px 6px;border:1px solid var(--borde);border-radius:6px;background:var(--fondo);color:var(--texto)}
+
+  .rcm{cursor:default;max-width:1000px;grid-column:1/-1} .rcm:hover{box-shadow:none;transform:none}
+  .rcm h3{margin:0 0 2px} .rcm .tot{font-size:.8rem;color:var(--suave);margin:0 0 10px}
+  .rc-g{display:flex;align-items:flex-end;gap:clamp(6px,2vw,18px);height:190px;padding-top:6px}
+  .rc-c{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:3px}
+  .rc-p{font-size:.78rem;font-weight:700;color:var(--titulo,var(--azul));font-variant-numeric:tabular-nums}
+  .rc-b{width:100%;max-width:64px;display:flex;flex-direction:column;border-radius:6px 6px 0 0;overflow:hidden;background:var(--borde)}
+  .rc-b i{display:block;width:100%} .rc-b .s{background:var(--btn,var(--azul))} .rc-b .r{background:var(--dorado)}
+  .rc-m{font-size:.74rem;color:var(--suave);text-transform:capitalize} .rc-n{font-size:.7rem;color:var(--suave);font-variant-numeric:tabular-nums}
+  .rc-l{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:.78rem;color:var(--suave)} .rc-l span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;background:var(--dorado)} .rc-l span+span::before{background:var(--btn,var(--azul))} .rc-l span:nth-child(3)::before{display:none}
 </style>
 </head>
 <body>
@@ -156,6 +177,37 @@
   });
 
   var asr=document.createElement('div');asr.className='card asr';asr.innerHTML='<h3>Ventas por asesor</h3><p class="tot" id="asrTot">Se muestra al conectar Cobros (contratos del mes por asesor).</p><div id="asrBarras"></div>';tarjetas.appendChild(asr);
+  var meta=document.createElement('div');meta.className='card meta';meta.id='metaCard';meta.innerHTML='<h3>Meta de contratos del mes</h3><p class="tot" id="metaTot">Se muestra al conectar Cobros.</p><div id="metaCuerpo"></div>';var pg=tarjetas.parentNode;pg.insertBefore(meta,pg.querySelector('.sec-t'));
+  var META_CLAVE='pm_meta_contratos',metaVal=105,metaTotal=null;
+  try{var mv=parseInt(localStorage.getItem(META_CLAVE),10);if(mv>0)metaVal=mv}catch(e){}
+  function pintarMeta(total){
+    if(total!==undefined)metaTotal=total;
+    var cuerpo=document.getElementById('metaCuerpo'),tot=document.getElementById('metaTot');
+    if(metaTotal===null){tot.textContent='Para ver la meta, publica una Nueva versión del conector de Cobros.';cuerpo.innerHTML='';return}
+    var h=new Date(),dm=new Date(h.getFullYear(),h.getMonth()+1,0).getDate(),esp=Math.round(metaVal*h.getDate()/dm),pct=Math.round(metaTotal/metaVal*100),falta=Math.max(0,metaVal-metaTotal);
+    var cl=metaTotal>=metaVal||metaTotal>=esp?'ok':metaTotal>=esp*0.8?'med':'bajo';
+    var estado=metaTotal>=metaVal?'¡Meta cumplida!':metaTotal>=esp?'Vas al día o adelantado':'Vas por debajo del ritmo';
+    tot.textContent=estado+' · ritmo esperado a hoy: '+esp;
+    cuerpo.innerHTML='<div class="meta-n"><b>'+metaTotal+'</b><span>de '+metaVal+' contratos · '+pct+' %</span></div>'+
+      '<div class="meta-p" role="img" aria-label="'+pct+' por ciento de la meta"><i class="'+cl+'" style="width:'+Math.min(100,pct)+'%"></i><u title="Ritmo esperado" style="left:'+Math.min(100,esp/metaVal*100)+'%"></u></div>'+
+      '<div class="meta-t"><span>'+(falta?'Faltan '+falta+' contratos · '+(dm-h.getDate())+' días para cerrar el mes':'Superaste la meta por '+(metaTotal-metaVal))+'</span><span>La línea marca el ritmo esperado · <button class="meta-e" id="metaEd" type="button">Cambiar meta</button></span></div>';
+    document.getElementById('metaEd').onclick=function(){
+      this.parentNode.innerHTML='Meta: <input id="metaIn" type="number" min="1" value="'+metaVal+'"> <button class="meta-e" id="metaOk" type="button">Guardar</button>';
+      document.getElementById('metaOk').onclick=function(){var n=parseInt(document.getElementById('metaIn').value,10);if(n>0){metaVal=n;try{localStorage.setItem(META_CLAVE,String(n))}catch(e){}}pintarMeta()}}}
+  var rcm=document.createElement('div');rcm.className='card rcm';rcm.innerHTML='<h3>RC contra sin RC, mes a mes</h3><p class="tot" id="rcTot">Se muestra al conectar Cobros.</p><div id="rcGraf"></div>';tarjetas.appendChild(rcm);
+  var MES_C=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  function pintarRc(b,ok){
+    var tot=document.getElementById('rcTot'),g=document.getElementById('rcGraf');
+    if(!ok){tot.textContent='Para ver esta gráfica, publica una Nueva versión del conector de Cobros.';g.innerHTML='';return}
+    var h=new Date(),meses=[],i,y,m;
+    for(i=5;i>=0;i--){var d=new Date(h.getFullYear(),h.getMonth()-i,1);meses.push({y:d.getFullYear(),m:d.getMonth()+1})}
+    var datos=meses.map(function(x){var k=b[x.y*12+x.m]||{rc:0,sin:0};return {y:x.y,m:x.m,rc:k.rc,sin:k.sin,t:k.rc+k.sin}});
+    var max=Math.max.apply(null,datos.map(function(x){return x.t}).concat(1)),act=datos[5],ant=datos[4];
+    tot.textContent='Mes actual: '+act.rc+' de '+act.t+' contratos con RC ('+(act.t?Math.round(act.rc/act.t*100):0)+' %)'+(ant.t?' · mes anterior: '+Math.round(ant.rc/ant.t*100)+' %':'');
+    g.innerHTML='<div class="rc-g">'+datos.map(function(x){
+      var alto=x.t/max*100;
+      return '<div class="rc-c"><span class="rc-p">'+(x.t?Math.round(x.rc/x.t*100)+' %':'—')+'</span><div class="rc-b" style="height:'+alto+'%" title="'+x.rc+' con RC · '+x.sin+' sin RC"><i class="s" style="flex:'+x.sin+'"></i><i class="r" style="flex:'+x.rc+'"></i></div><span class="rc-n">'+x.rc+' / '+x.t+'</span><span class="rc-m">'+MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')+'</span></div>'}).join('')+'</div>'+
+      '<div class="rc-l"><span>Con RC</span><span>Sin RC</span><span style="margin-left:auto">% sobre el total de contratos del mes</span></div>'}
   function pendiente(m){
     return '<div class="pagina"><h1>'+m.ico+' '+m.nombre+'</h1><p class="sub">Este módulo aún no está instalado.</p>'+
       '<div class="caja">Para activarlo, copia el HTML del Automatizador de Contratos como <code>'+m.src+'</code> '+
@@ -203,10 +255,11 @@
       fin();
       if(!r||!r.ok){nota.textContent='No se pudo leer el resumen de Cobros.';return}
       window.PM_COBROS=r;document.dispatchEvent(new Event('pm-cobros'));
-      var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
+      var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
       (r.contratos||[]).forEach(function(x){
         if(c[x.estado]!==undefined)c[x.estado]++;
         if(x.mes===undefined)return;nuevo=true;
+        if(String(x.contrato||'').trim()){var mm=numMes(x.mes),aa=numAnio(x.anio);if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};if(x.rc==='SI')kk.rc++;else kk.sin++}}
         if(numMes(x.mes)===mesAct&&numAnio(x.anio)===anioAct){
           if(String(x.contrato||'').trim()){var as=(x.asesor||'').trim().toUpperCase()||'SIN ASESOR';ventas[as]=(ventas[as]||0)+1}
           if(x.rc==='SI')rc++;
@@ -215,6 +268,8 @@
       });
       var conRc=nuevo;
       pintarAsesores(ventas,nuevo);
+      pintarRc(hist,nuevo);
+      pintarMeta(nuevo?Object.keys(ventas).reduce(function(a,k){return a+ventas[k]},0):null);
       document.getElementById('kpis').innerHTML=[['Activos',c.ACTIVO],['Finalizados',c.FINALIZADO],['Cancelados',c.CANCELADO],['Contratos',(r.contratos||[]).length],['RC este mes',nuevo?rc:'—'],['Contado este mes',nuevo?cont:'—']]
         .map(function(k){return '<div class="kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join('');
       nota.textContent=conRc?'Datos de la hoja Protect al abrir la plataforma. Este mes (columnas I y J de Protect): RC = SI en la columna U; Contado = CONTADO en la columna T.':'Para ver RC y Contado del mes, publica una Nueva versión del conector de Cobros (conectores/cobros/Codigo_cobros.gs).';
