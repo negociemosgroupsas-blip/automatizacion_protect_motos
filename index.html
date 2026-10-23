@@ -266,6 +266,10 @@
   .ed-dos{display:grid;grid-template-columns:1fr 1fr;gap:10px} .ed-dos .gi{padding:10px 14px} .ed-dos .gi b{font-size:1.4rem}
   #v-inicio .edc{grid-column:span 4;order:6} #v-inicio .asr{grid-column:span 8;order:7}
   @media(max-width:1180px){#v-inicio .edc,#v-inicio .asr{grid-column:1/-1}}
+  .ed-tk{margin-top:14px;padding-top:12px;border-top:1px dashed var(--borde,#dfe3ee)} .ed-tk h3{font-size:.9rem!important} #v-inicio .edc .tk-g{grid-template-columns:1fr} #v-inicio .edc .tk-n{white-space:nowrap}
+  #v-inicio .meta{grid-column:span 6} #v-inicio .seg{grid-column:span 6}
+  @media(max-width:1180px){#v-inicio .edc .tk-g{grid-template-columns:1fr 1fr}#v-inicio .meta,#v-inicio .seg{grid-column:1/-1}}
+  @media(max-width:520px){#v-inicio .edc .tk-g{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -557,32 +561,36 @@
   }
 
 
-  var tkt=document.createElement('div');tkt.className='card tkt';tkt.innerHTML='<h3>Ticket promedio · '+MES_TXT+'</h3><p class="tot" id="tkTot">Se muestra al conectar Cobros.</p><div id="tkCuerpo"></div>';meta.parentNode.insertBefore(tkt,meta.nextSibling);
   function pesos(n){return '$ '+Math.round(n).toLocaleString('es-CO')}
+  var tkData=null,tkOk=false;
   function pintarTicket(tk,ok){
-    var tot=document.getElementById('tkTot'),b=document.getElementById('tkCuerpo');
-    if(!ok){tot.textContent='Para ver el ticket promedio, publica una Nueva versión del conector de Cobros.';b.innerHTML='';return}
-    var h=new Date(),k=h.getFullYear()*12+h.getMonth()+1,cur=tk[k]||{FINANCIADO:{s:0,n:0},CONTADO:{s:0,n:0}},ant=tk[k-1]||{FINANCIADO:{s:0,n:0},CONTADO:{s:0,n:0}};
-    var nT=cur.FINANCIADO.n+cur.CONTADO.n,sT=cur.FINANCIADO.s+cur.CONTADO.s,aT=nT?sT/nT:0;
-    tot.textContent=nT?'Valor promedio por venta del mes · '+nT+' ventas con valor registrado · promedio general '+pesos(aT):'Todavía no hay ventas con valor registrado este mes.';
+    if(tk){tkData=tk;tkOk=ok}
+    var tot=document.getElementById('tkTot'),b=document.getElementById('tkCuerpo'),ti=document.getElementById('tkTit');if(!tot)return;
+    if(!tkOk){tot.textContent='Para ver el ticket promedio, publica una Nueva versión del conector de Cobros.';b.innerHTML='';return}
+    var sum=function(f){var r={FINANCIADO:{s:0,n:0},CONTADO:{s:0,n:0}};Object.keys(tkData).forEach(function(k){k=+k;var y=Math.floor((k-1)/12),m=k-y*12;if(f(y,m)){['FINANCIADO','CONTADO'].forEach(function(t){r[t].s+=tkData[k][t].s;r[t].n+=tkData[k][t].n})}});return r};
+    var yy=edAnio==='todos'?null:+edAnio,mm=+edMes,cur,ant=null,antTxt='';
+    if(yy===null){cur=sum(function(y,m){return mm===0||m===mm})}
+    else if(mm){cur=sum(function(y,m){return y===yy&&m===mm});var pk=yy*12+mm-1,py=Math.floor((pk-1)/12),pm=pk-py*12;ant=sum(function(y,m){return y===py&&m===pm});antTxt='mes anterior'}
+    else{cur=sum(function(y){return y===yy});ant=sum(function(y){return y===yy-1});antTxt='año anterior'}
+    var per=(mm?MES_LARGO[mm-1]+' ':'')+(yy===null?'todos los años':(mm?'':'año ')+yy);
+    if(ti)ti.textContent='Ticket promedio · '+per;
+    var nT=cur.FINANCIADO.n+cur.CONTADO.n,sT=cur.FINANCIADO.s+cur.CONTADO.s;
+    tot.textContent=nT?nT+' ventas con valor registrado · promedio general '+pesos(sT/nT):'No hay ventas con valor registrado en este periodo.';
     var tipos=[['FINANCIADO','Venta financiada','#5b78c7'],['CONTADO','Venta de contado','#fdc33e']],medias=tipos.map(function(t){var c=cur[t[0]];return c.n?c.s/c.n:0}),mx=Math.max.apply(null,medias.concat(1));
     var primera=!b.querySelector('.tk-g');
     b.innerHTML='<div class="tk-g">'+tipos.map(function(t,i){
-      var c=cur[t[0]],a=ant[t[0]],m=medias[i],am=a.n?a.s/a.n:0,d=am&&m?Math.round((m-am)/am*100):null;
+      var c=cur[t[0]],a=ant?ant[t[0]]:{s:0,n:0},m=medias[i],am=a.n?a.s/a.n:0,d=am&&m?Math.round((m-am)/am*100):null;
       return '<div class="tk-p" style="--c:'+t[2]+'"><span class="tk-et"><i></i>'+t[1]+'</span><b class="tk-n" data-v="'+Math.round(m)+'">'+(m?(primera?'$ 0':pesos(m)):'—')+'</b>'+
-        '<small>'+(c.n?c.n+' ventas · total '+pesos(c.s):'Sin ventas con valor este mes')+'</small>'+
+        '<small>'+(c.n?c.n+' ventas · total '+pesos(c.s):'Sin ventas con valor')+'</small>'+
         '<div class="tk-b"><i style="width:'+(m/mx*100)+'%"></i></div>'+
-        '<div class="tk-d '+(d===null?'':d>=0?'up':'dn')+'">'+(d===null?(am?'':'Sin dato del mes anterior'):(d>=0?'▲ +':'▼ ')+Math.abs(d)+' % frente al mes anterior ('+pesos(am)+')')+'</div></div>'}).join('')+'</div>'+
-      '<div class="nota">Ticket promedio = suma del «Valor Protect» (columna O) de las ventas del mes, dividida por el número de ventas. No incluye RC ni asistencias.</div>';
+        (ant?'<div class="tk-d '+(d===null?'':d>=0?'up':'dn')+'">'+(d===null?'':(d>=0?'▲ +':'▼ ')+Math.abs(d)+' % frente al '+antTxt+' ('+pesos(am)+')')+'</div>':'')+'</div>'}).join('')+'</div>';
     if(primera)[].forEach.call(b.querySelectorAll('.tk-n'),function(el){var v=+el.dataset.v;if(!v)return;var t0=null;(function paso(ts){if(!t0)t0=ts;var f=Math.min(1,(ts-t0)/1100),e=1-Math.pow(1-f,3);el.textContent=pesos(v*e);if(f<1)requestAnimationFrame(paso)})(performance.now())});
   }
-
-
-  var edc=document.createElement('div');edc.className='card edc';edc.innerHTML='<h3>Edad de los clientes</h3><p class="tot" id="edTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="edPer"><label>Año <select id="edAnio"></select></label><label>Mes <select id="edMes"></select></label></div><div id="edCuerpo"></div>';tarjetas.appendChild(edc);
+  var edc=document.createElement('div');edc.className='card edc';edc.innerHTML='<h3>Edad de los clientes</h3><p class="tot" id="edTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="edPer"><label>Año <select id="edAnio"></select></label><label>Mes <select id="edMes"></select></label></div><div id="edCuerpo"></div><div class="ed-tk"><h3 id="tkTit">Ticket promedio</h3><p class="tot" id="tkTot">Se muestra al conectar Cobros.</p><div id="tkCuerpo"></div></div>';tarjetas.appendChild(edc);
   var edAnio=String(new Date().getFullYear()),edMes='0',edDatos=null,edOk=false,MES_LARGO=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   try{var ea=localStorage.getItem('pm_edad_anio'),em=localStorage.getItem('pm_edad_mes');if(ea&&(ea==='todos'||/^\d{4}$/.test(ea)))edAnio=ea;if(em&&/^(0|[1-9]|1[0-2])$/.test(em))edMes=em}catch(e){}
   document.getElementById('edMes').innerHTML='<option value="0">Todo el año</option>'+MES_LARGO.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>'}).join('');
-  document.getElementById('edPer').addEventListener('change',function(){edAnio=document.getElementById('edAnio').value;edMes=document.getElementById('edMes').value;try{localStorage.setItem('pm_edad_anio',edAnio);localStorage.setItem('pm_edad_mes',edMes)}catch(e){}pintarEdad(edDatos,edOk)});
+  document.getElementById('edPer').addEventListener('change',function(){edAnio=document.getElementById('edAnio').value;edMes=document.getElementById('edMes').value;try{localStorage.setItem('pm_edad_anio',edAnio);localStorage.setItem('pm_edad_mes',edMes)}catch(e){}pintarEdad(edDatos,edOk);pintarTicket()});
   function pintarEdad(lista,ok){
     if(lista){edDatos=lista;edOk=ok}
     var tot=document.getElementById('edTot'),b=document.getElementById('edCuerpo');
