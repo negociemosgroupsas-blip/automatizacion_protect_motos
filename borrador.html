@@ -58,6 +58,13 @@
   .bt{background:var(--azul);color:#fff;border:0;border-radius:9px;padding:9px 13px;margin:0 6px 8px 0;font-size:.85rem;cursor:pointer}
   .pt{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px} .pt.r{background:#dc2626}.pt.n{background:#d97706}.pt.v{background:#1f9d55}
   .barras{display:flex;align-items:flex-end;gap:10px;height:110px;margin:10px 0 4px}.barras i{flex:1;background:var(--azul);border-radius:5px 5px 0 0;border-top:4px solid var(--dorado)}
+  .asr{cursor:default;border-top-color:var(--dorado)} .asr:hover{box-shadow:none;transform:none}
+  .asr h3{margin:0 0 2px} .asr .tot{font-size:.8rem;color:var(--suave);margin:0 0 12px}
+  .fila-a{display:grid;grid-template-columns:minmax(70px,110px) 1fr 38px;gap:10px;align-items:center;margin:10px 0;font-size:.86rem}
+  .fila-a .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--texto)}
+  .fila-a .pista{background:var(--borde);border-radius:7px;height:22px;overflow:hidden}
+  .fila-a .barra{height:100%;border-radius:7px;background:var(--btn,var(--azul))} .fila-a:nth-child(2n+1) .barra{background:var(--dorado)}
+  .fila-a b{text-align:right;color:var(--titulo,var(--azul));font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -140,6 +147,7 @@
       tarjetas.appendChild(a);
     }
   });
+  var d=document.createElement('div');d.className='card asr';d.innerHTML='<h3>Ventas por asesor</h3><p class="tot">Contratos del mes · 27 en total · datos de ejemplo</p><div class="fila-a"><span class="nm">Asesor 1</span><div class="pista"><div class="barra" style="width:100%"></div></div><b>14</b></div><div class="fila-a"><span class="nm">Asesor 2</span><div class="pista"><div class="barra" style="width:93%"></div></div><b>13</b></div>';tarjetas.appendChild(d);
 
   function pendiente(m){
     return '<div class="pagina"><h1>'+m.ico+' '+m.nombre+'</h1><p class="sub">Este módulo aún no está instalado.</p>'+
