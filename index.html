@@ -58,6 +58,40 @@
   .fila-a .pista{background:var(--borde);border-radius:7px;height:22px;overflow:hidden}
   .fila-a .barra{height:100%;border-radius:7px;background:var(--btn,var(--azul))} .fila-a:nth-child(2n+1) .barra{background:var(--dorado)}
   .fila-a b{text-align:right;color:var(--titulo,var(--azul));font-variant-numeric:tabular-nums}
+
+  main{display:flex;flex-direction:column}
+  #vistas{flex:1;position:relative;min-height:0}
+  #top{display:flex;align-items:center;gap:10px;padding:10px max(16px,28px);background:var(--tarjeta,#fff);border-bottom:1px solid var(--borde);position:relative;z-index:5}
+  #q{flex:1;max-width:560px;padding:10px 14px 10px 38px;border:1px solid var(--borde);border-radius:10px;font-size:.92rem;background:var(--fondo) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E") no-repeat 12px center;color:var(--texto)}
+  #q:focus{outline:2px solid var(--dorado);border-color:transparent}
+  #btnRec{border:1px solid var(--borde);background:var(--tarjeta,#fff);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:.85rem;color:var(--texto)}
+  #res{position:absolute;left:max(16px,28px);top:100%;width:min(640px,calc(100% - 32px));background:var(--tarjeta,#fff);border:1px solid var(--borde);border-radius:12px;box-shadow:0 12px 30px #13223f33;max-height:60vh;overflow:auto;display:none}
+  #res.abierto{display:block}
+  .r-item{display:block;width:100%;text-align:left;border:0;background:none;padding:10px 14px;border-bottom:1px solid var(--borde);cursor:pointer;font:inherit;color:var(--texto)}
+  .r-item:hover,.r-item:focus{background:var(--fondo);outline:none}
+  .r-item b{display:block} .r-item small{color:var(--suave)}
+  .r-vacio{padding:14px;color:var(--suave);font-size:.88rem}
+  .bd{display:inline-block;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:9px;margin:3px 4px 0 0;background:var(--borde);color:var(--texto)}
+  .bd.v{background:#e7f8ee;color:#1f9d55}.bd.r{background:#fdeaea;color:#dc2626}.bd.n{background:#fff3e0;color:#b45309}.bd.a{background:#eaf1fd;color:#2563eb}
+  #ficha{position:absolute;inset:0;background:#0b122955;display:none;z-index:8;overflow:auto;padding:24px 16px}
+  #ficha.abierto{display:block}
+  .f-caja{background:var(--tarjeta,#fff);max-width:820px;margin:0 auto;border-radius:16px;padding:22px;position:relative;border-top:5px solid var(--dorado)}
+  .f-cerrar{position:absolute;right:14px;top:12px;border:0;background:var(--fondo);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:1rem;color:var(--texto)}
+  .f-caja h2{margin:0 0 4px;font-size:1.25rem;color:var(--titulo,var(--azul))}
+  .f-caja h4{margin:18px 0 8px;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--suave)}
+  .f-dat{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 16px}
+  .f-dat div{font-size:.85rem} .f-dat span{display:block;font-size:.68rem;text-transform:uppercase;color:var(--suave)}
+  .f-tabla{width:100%;border-collapse:collapse;font-size:.84rem} .f-tabla th,.f-tabla td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--borde)} .f-tabla th{font-size:.7rem;text-transform:uppercase;color:var(--suave)}
+  .f-scroll{overflow-x:auto}
+  .f-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+  .f-acc a,.f-acc button{background:var(--azul);color:#fff;border:0;border-radius:9px;padding:9px 14px;font-size:.85rem;cursor:pointer;text-decoration:none}
+  .f-acc .sec{background:var(--borde);color:var(--texto)}
+  .alertas{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;max-width:1000px;margin:6px 0 4px}
+  .al{display:block;text-decoration:none;color:inherit;background:var(--tarjeta,#fff);border:1px solid var(--borde);border-left:5px solid var(--borde);border-radius:12px;padding:12px 16px}
+  .al b{font-size:1.6rem;display:block;color:var(--titulo,var(--azul))} .al span{font-size:.75rem;text-transform:uppercase;color:var(--suave)}
+  .al.rojo{border-left-color:#dc2626}.al.nar{border-left-color:#d97706}.al.verde{border-left-color:#1f9d55}
+  h2.sec-t{font-size:1rem;color:var(--titulo,var(--azul));margin:22px 0 4px}
+  @media(max-width:760px){#top{padding:8px 12px}#res{left:12px}}
 </style>
 </head>
 <body>
@@ -67,9 +101,14 @@
   <div class="pie"><a id="solo" href="#" target="_blank" style="color:var(--dorado2);display:none;margin-bottom:8px">↗ Abrir este módulo en pestaña propia</a><br>Negociemos Group S.A.S.<br>Todos los módulos usan el mismo Google Sheet.</div>
 </nav>
 <main>
+  <div id="top"><input id="q" type="search" placeholder="Buscar cliente: cédula, placa, nombre o contrato" autocomplete="off" aria-label="Buscar cliente"><button id="btnRec" type="button" title="Volver a leer los datos de Cobros y Conciliación">↻ Actualizar</button><div id="res"></div></div>
+  <div id="vistas">
   <section class="vista" id="v-inicio"><div class="pagina">
     <h1>Bienvenida a Protect Motos</h1>
     <p class="sub">Elige un módulo. Cada uno conserva su propia conexión y sus datos.</p>
+    <h2 class="sec-t">Conciliación</h2>
+    <div class="alertas" id="alertas"><div class="nota">Abre Conciliación y guarda su URL para ver aquí las alertas.</div></div>
+    <h2 class="sec-t">Módulos</h2>
     <div class="grid" id="tarjetas"></div>
     <div class="kpis" id="kpis"></div>
     <div class="nota" id="kpiNota"></div>
@@ -92,6 +131,8 @@
       <p><b>No se modificó</b> ningún módulo: se muestran tal cual dentro de esta plataforma.</p>
     </div>
   </div></section>
+  <div id="ficha"></div>
+  </div>
 </main>
 <script>
 (function(){
@@ -152,7 +193,7 @@
   }
 
   // Resumen en vivo (opcional): usa la URL del conector de Cobros ya guardada en el navegador.
-  (function(){
+  function cargarResumen(){
     var nota=document.getElementById('kpiNota'),url=null;
     try{url=localStorage.getItem('pm_cobros_url_conector')}catch(e){}
     if(!url){nota.textContent='Abre el módulo Cobros y guarda su URL para ver aquí el resumen de clientes.';return}
@@ -161,6 +202,7 @@
     window[cb]=function(r){
       fin();
       if(!r||!r.ok){nota.textContent='No se pudo leer el resumen de Cobros.';return}
+      window.PM_COBROS=r;document.dispatchEvent(new Event('pm-cobros'));
       var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
       (r.contratos||[]).forEach(function(x){
         if(c[x.estado]!==undefined)c[x.estado]++;
@@ -178,9 +220,116 @@
       nota.textContent=conRc?'Datos de la hoja Protect al abrir la plataforma. Este mes (columnas I y J de Protect): RC = SI en la columna U; Contado = CONTADO en la columna T.':'Para ver RC y Contado del mes, publica una Nueva versión del conector de Cobros (conectores/cobros/Codigo_cobros.gs).';
     };
     s.onerror=function(){fin();nota.textContent='No se pudo conectar con Cobros para el resumen.'};
-    s.src=url+(url.indexOf('?')<0?'?':'&')+'action=datos&token=PM-COBROS-2026&callback='+cb;
+    s.src=url+(url.indexOf('?')<0?'?':'&')+'action=datos&token=PM-COBROS-2026&callback='+cb+'&_='+Date.now();
     document.head.appendChild(s);
-  })();
+  }
+  cargarResumen();window.PM_recargarCobros=cargarResumen;
+})();
+</script>
+<script>
+/* Búsqueda global + alertas de conciliación. Lee los mismos conectores que los módulos; no escribe nada. */
+(function(){
+  var TOKEN_CONC='PM-CONC-3e97c3a8bb5298ef9d192391';
+  var $=function(i){return document.getElementById(i)};
+  var COB=null, CON=null;
+  function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function norm(t){return String(t==null?'':t).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim()}
+  function pesos(n){return '$ '+Math.round(n).toLocaleString('es-CO')}
+  function url(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
+
+  // ---------- Conciliación (modo rápido: calcula sin escribir en las hojas)
+  function cargarConc(){
+    var u=url('conc_url'),al=$('alertas');
+    if(!/^https:\/\/script\.google\.com\//.test(u)){al.innerHTML='<div class="nota">Abre Conciliación y guarda su URL para ver aquí las alertas.</div>';return}
+    var cb='pmConc'+Date.now(),s=document.createElement('script'),t=setTimeout(fin,120000);
+    function fin(){clearTimeout(t);delete window[cb];s.remove()}
+    window[cb]=function(r){fin();
+      if(!r||!r.ok){al.innerHTML='<div class="nota">No se pudo leer la conciliación: '+esc(r&&r.error||'sin respuesta')+'</div>';return}
+      CON=(r.data&&r.data.filas)||[];pintarAlertas()};
+    s.onerror=function(){fin();al.innerHTML='<div class="nota">No se pudo conectar con Conciliación.</div>'};
+    s.src=u+(u.indexOf('?')<0?'?':'&')+'action=conciliar&token='+encodeURIComponent(TOKEN_CONC)+'&tolerancia=&rapido=1&callback='+cb+'&_='+Date.now();
+    document.head.appendChild(s);
+  }
+  function esCons(f){return /^Consolidado/.test(f.estado)}
+  function pintarAlertas(){
+    var falta=0,menos=0,revisar=0,ok=0;
+    (CON||[]).forEach(function(f){
+      if(f.estado==='Falta por consolidar')falta++;
+      else if(esCons(f)){ok++;
+        if(!f.revisado&&f.valor==='Pagó de menos')menos++;
+        else if(!f.revisado&&f.valor==='Pagó de más (revisar valor)')revisar++}});
+    function c(cl,n,t){return '<a class="al '+cl+'" href="#conciliacion"><b>'+n+'</b><span>'+t+'</span></a>'}
+    $('alertas').innerHTML=c(falta?'rojo':'verde',falta,'Faltan por consolidar')+c(menos?'rojo':'verde',menos,'Pagaron de menos')+c(revisar?'nar':'verde',revisar,'Pagaron de más · revisar valor')+c('verde',ok,'Ya consolidados');
+  }
+
+  // ---------- Búsqueda
+  function cuotasPagadas(c,pagos){
+    var set={};if(c.forma==='FINANCIADO'&&c.plazo>0)set[1]=1;
+    pagos.forEach(function(p){
+      String(p.cuota||'').split(/[\s,;]+/).forEach(function(tok){
+        var m=tok.match(/^(\d+)-(\d+)$/);
+        if(m){for(var i=+m[1];i<=+m[2]&&i<=120;i++)set[i]=1;return}
+        (tok.match(/\d+/g)||[]).forEach(function(n){set[+n]=1})});
+      var r=String(p.cuota||'').match(/^\s*(\d+)\s+a\s+(\d+)\s*$/i);
+      if(r){for(var j=+r[1];j<=+r[2]&&j<=120;j++)set[j]=1}});
+    return Object.keys(set).length}
+  function pagosDe(c){return ((COB&&COB.pagos)||[]).filter(function(p){return String(p.contrato).trim()===String(c.contrato).trim()})}
+  function concDe(c){
+    if(!CON)return null;
+    var x=CON.filter(function(f){return String(f.contrato).trim()===String(c.contrato).trim()&&String(c.contrato).trim()});
+    if(!x.length)x=CON.filter(function(f){return f.cedula&&String(f.cedula)===String(c.cedula)});
+    return x[0]||null}
+  function badgeEstado(e){var cl=e==='ACTIVO'?'v':e==='CANCELADO'?'r':'a';return '<span class="bd '+cl+'">'+esc(e||'SIN ESTADO')+'</span>'}
+  function badgeConc(f){
+    if(CON===null)return '';
+    if(!f)return '<span class="bd">Sin dato de consolidación</span>';
+    var cl=esCons(f)?(f.valor==='Pagó de menos'&&!f.revisado?'r':(f.valor==='Pagó de más (revisar valor)'&&!f.revisado?'n':'v')):/^Falta/.test(f.estado)?'r':'a';
+    return '<span class="bd '+cl+'">'+esc(f.estado)+(f.valor==='Pagó de menos'&&!f.revisado?' · pagó de menos':'')+'</span>'}
+
+  var res=$('res'),q=$('q'),timer=null;
+  function buscar(){
+    var t=norm(q.value);
+    if(t.length<2||!COB){res.className=t.length>=2?'abierto':'';if(t.length>=2)res.innerHTML='<div class="r-vacio">Cargando datos de Cobros… si no aparecen, abre Cobros y guarda su URL.</div>';return}
+    var palabras=t.split(/\s+/);
+    var lista=(COB.contratos||[]).filter(function(c){
+      var h=norm([c.cliente,c.cedula,c.placa,c.contrato].join(' '));
+      return palabras.every(function(w){return h.indexOf(w)>-1})}).slice(0,12);
+    res.innerHTML=lista.length?lista.map(function(c,i){
+      return '<button class="r-item" type="button" data-i="'+(COB.contratos.indexOf(c))+'"><b>'+esc(c.cliente||'(sin nombre)')+'</b><small>CC '+esc(c.cedula)+' · Placa '+esc(c.placa||'—')+' · Contrato '+esc(c.contrato||'—')+'</small><div>'+badgeEstado(c.estado)+'<span class="bd">'+esc(c.forma||'')+'</span>'+badgeConc(concDe(c))+'</div></button>'}).join('')
+      :'<div class="r-vacio">No se encontró ningún cliente con «'+esc(q.value.trim())+'».</div>';
+    res.className='abierto'}
+  q.addEventListener('input',function(){clearTimeout(timer);timer=setTimeout(buscar,180)});
+  q.addEventListener('focus',buscar);
+  document.addEventListener('click',function(e){if(!e.target.closest('#top'))res.className=''});
+  q.addEventListener('keydown',function(e){if(e.key==='Escape'){res.className='';q.blur()}});
+  res.addEventListener('click',function(e){var b=e.target.closest('.r-item');if(b){res.className='';ficha(COB.contratos[+b.dataset.i])}});
+
+  // ---------- Ficha del cliente
+  function d(l,v){return '<div><span>'+l+'</span>'+(v===''||v==null?'—':esc(v))+'</div>'}
+  function ficha(c){
+    var pagos=pagosDe(c),f=concDe(c),fin=c.forma==='FINANCIADO'&&c.plazo>0,pag=fin?cuotasPagadas(c,pagos):0;
+    var h='<div class="f-caja"><button class="f-cerrar" id="fx" type="button" aria-label="Cerrar">✕</button>'+
+      '<h2>'+esc(c.cliente||'(sin nombre)')+'</h2><div>'+badgeEstado(c.estado)+'<span class="bd">'+esc(c.forma||'')+'</span>'+(c.rc==='SI'?'<span class="bd a">RC</span>':'')+badgeConc(f)+'</div>'+
+      '<h4>Contrato</h4><div class="f-dat">'+d('Cédula',c.cedula)+d('Placa',c.placa)+d('N° contrato',c.contrato)+d('Asesor',c.asesor)+d('Celular',c.celular)+d('Fecha de firma',c.fechaFirma)+d('Vence póliza',c.fin)+d('Mes / año',[c.mes,c.anio].filter(Boolean).join(' / '))+
+      (fin?d('Valor cuota',c.valorCuota?pesos(c.valorCuota):'No registrado')+d('Plazo',c.plazo+' cuotas')+d('Cuotas pagadas',pag+' / '+c.plazo)+d('Saldo estimado',c.valorCuota?pesos(Math.max(0,c.plazo-pag)*c.valorCuota):'No registrado'):d('Valor Protect',c.valorProtect?pesos(c.valorProtect):''))+'</div>';
+    h+='<h4>Pagos registrados ('+pagos.length+')</h4>';
+    h+=pagos.length?'<div class="f-scroll"><table class="f-tabla"><tr><th>Fecha</th><th>Cuota</th><th>Valor</th><th>Nota</th></tr>'+pagos.map(function(p){return '<tr><td>'+esc(p.fechaPago)+'</td><td>'+esc(p.cuota)+'</td><td>'+pesos(p.valorPagado)+'</td><td>'+esc(p.nota)+'</td></tr>'}).join('')+'</table></div>':'<div class="nota">'+(fin?'Sin pagos en la hoja Pagos (la cuota 1 se da por pagada al firmar).':'Contrato de contado: no tiene cuotas.')+'</div>';
+    h+='<h4>Consolidación</h4>';
+    if(CON===null)h+='<div class="nota">Abre Conciliación y guarda su URL para ver este dato.</div>';
+    else if(!f)h+='<div class="nota">Este contrato no aparece en la conciliación.</div>';
+    else h+='<div class="f-dat">'+d('Estado',f.estado+(f.revisado?' · revisado':''))+d('Valor Dugo Motos (Protect)',f.pagado!=null&&f.pagado!==''?pesos(f.pagado):'')+d('Valor en Consolidado',f.c!=null&&f.c!==''?pesos(f.c):'')+d('Diferencia',f.dif!=null&&f.dif!==''?pesos(f.dif):'')+'</div>';
+    var wa=String(c.celular||'').replace(/\D/g,'');if(wa&&wa.length===10)wa='57'+wa;
+    h+='<div class="f-acc"><a href="#cobros">Ir a Cobros</a><a href="#conciliacion">Ir a Conciliación</a>'+(wa?'<a class="sec" target="_blank" rel="noopener" href="https://wa.me/'+wa+'">WhatsApp</a>':'')+'</div></div>';
+    var box=$('ficha');box.innerHTML=h;box.className='abierto';
+    $('fx').onclick=cerrar;box.onclick=function(e){if(e.target===box)cerrar()};
+    box.querySelectorAll('.f-acc a[href^="#"]').forEach(function(a){a.addEventListener('click',cerrar)})}
+  function cerrar(){$('ficha').className=''}
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')cerrar()});
+
+  document.addEventListener('pm-cobros',function(){COB=window.PM_COBROS;if(document.activeElement===q)buscar()});
+  if(window.PM_COBROS)COB=window.PM_COBROS;
+  $('btnRec').addEventListener('click',function(){if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc()});
+  cargarConc();
 })();
 </script>
 </body>

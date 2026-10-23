@@ -31,3 +31,8 @@ Conciliación lo cruza con Consolidado (escribe col. C de Protect). Cada módulo
 3. El Inicio muestra un resumen de clientes (activos/finalizados/cancelados) usando la URL de Cobros.
 
 Las copias antiguas en la raíz (`Protect_Motos_Cobros.html`, `Codigo_cobros.gs`) no se modificaron; la versión vigente es la de `modulos/` y `conectores/`.
+
+## Búsqueda global y alertas (Inicio)
+- **Búsqueda** (barra superior, siempre visible): por cédula, placa, nombre o N° de contrato. Abre una ficha con datos del contrato, cuotas pagadas, pagos registrados y estado de consolidación. Solo lee datos; no escribe en las hojas. Usa las URLs de Cobros y Conciliación ya guardadas en el navegador.
+- **Alertas de Conciliación** (Inicio): faltan por consolidar, pagaron de menos, pagaron de más (revisar valor) y ya consolidados. Se calculan con el modo rápido del conector de Conciliación (no escribe en las hojas).
+- Botón «↻ Actualizar» vuelve a leer ambos conectores.
