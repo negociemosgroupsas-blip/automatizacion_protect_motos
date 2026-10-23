@@ -141,7 +141,7 @@
   <div id="top"><input id="q" type="search" placeholder="Buscar cliente: cédula, placa, nombre o contrato" autocomplete="off" aria-label="Buscar cliente"><button id="btnRec" type="button" title="Volver a leer los datos de Cobros y Conciliación">↻ Actualizar</button><div id="res"></div></div>
   <div id="vistas">
   <section class="vista" id="v-inicio"><div class="pagina">
-    <h1>Inicio</h1><p class="sub">Resumen del mes · usa el buscador de arriba para consultar un cliente</p>
+    <h1>Inicio</h1><p class="sub" id="subInicio">Resumen del mes · usa el buscador de arriba para consultar un cliente</p>
     <h2 class="sec-t">Alertas de conciliación</h2>
     <div class="alertas" id="alertas"><div class="nota">Abre Conciliación y guarda su URL para ver aquí las alertas.</div></div>
     <div class="grid" id="tarjetas"></div>
@@ -171,6 +171,8 @@
 </main>
 <script>
 (function(){
+  var NOMBRE_MES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][new Date().getMonth()],MES_TXT=NOMBRE_MES.charAt(0).toUpperCase()+NOMBRE_MES.slice(1)+' '+new Date().getFullYear();
+
   var MODULOS=[
     {id:'inicio',   nombre:'Inicio',        ico:'🏠'},
     {id:'cobros',   nombre:'Cobros',        ico:'💰', src:'modulos/cobros.html',        disponible:true,  desc:'Cuotas pendientes, registro de pagos, renovaciones, historial y WhatsApp.'},
@@ -190,8 +192,9 @@
     }
   });
 
-  var asr=document.createElement('div');asr.className='card asr';asr.innerHTML='<h3>Ventas por asesor</h3><p class="tot" id="asrTot">Se muestra al conectar Cobros (contratos del mes por asesor).</p><div id="asrBarras"></div>';tarjetas.appendChild(asr);
-  var meta=document.createElement('div');meta.className='card meta';meta.id='metaCard';meta.innerHTML='<h3>Meta de contratos del mes</h3><p class="tot" id="metaTot">Se muestra al conectar Cobros.</p><div id="metaCuerpo"></div>';var pg=tarjetas.parentNode;pg.insertBefore(meta,pg.querySelector('.sec-t'));
+  document.getElementById('subInicio').textContent='Mes en curso: '+MES_TXT+' · usa el buscador de arriba para consultar un cliente';
+  var asr=document.createElement('div');asr.className='card asr';asr.innerHTML='<h3>Ventas por asesor · '+MES_TXT+'</h3><p class="tot" id="asrTot">Se muestra al conectar Cobros (contratos del mes por asesor).</p><div id="asrBarras"></div>';tarjetas.appendChild(asr);
+  var meta=document.createElement('div');meta.className='card meta';meta.id='metaCard';meta.innerHTML='<h3>Meta de contratos · '+MES_TXT+'</h3><p class="tot" id="metaTot">Se muestra al conectar Cobros.</p><div id="metaCuerpo"></div>';var pg=tarjetas.parentNode;pg.insertBefore(meta,pg.querySelector('.sec-t'));
   var META_CLAVE='pm_meta_contratos',metaVal=105,metaTotal=null;
   try{var mv=parseInt(localStorage.getItem(META_CLAVE),10);if(mv>0)metaVal=mv}catch(e){}
   function pintarMeta(total){
@@ -222,7 +225,7 @@
       var alto=x.t/max*100;
       return '<div class="rc-c"><span class="rc-p">'+(x.t?Math.round(x.rc/x.t*100)+' %':'—')+'</span><div class="rc-b" style="height:'+alto+'%" title="'+x.rc+' con RC · '+x.sin+' sin RC"><i class="s" style="flex:'+x.sin+'"></i><i class="r" style="flex:'+x.rc+'"></i></div><span class="rc-n">'+x.rc+' / '+x.t+'</span><span class="rc-m">'+MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')+'</span></div>'}).join('')+'</div>'+
       '<div class="rc-l"><span>Con RC</span><span>Sin RC</span><span style="margin-left:auto">% sobre el total de contratos del mes</span></div>'}
-  var seg=document.createElement('div');seg.className='card seg';seg.innerHTML='<h3>Seguros por contrato · mes actual</h3><p class="tot" id="sgTot">Se muestra al conectar Cobros.</p><div id="sgCuerpo"></div>';tarjetas.appendChild(seg);
+  var seg=document.createElement('div');seg.className='card seg';seg.innerHTML='<h3>Seguros por contrato · '+MES_TXT+'</h3><p class="tot" id="sgTot">Se muestra al conectar Cobros.</p><div id="sgCuerpo"></div>';tarjetas.appendChild(seg);
   var anu=document.createElement('div');anu.className='card anu';anu.innerHTML='<h3>Contratos por mes del año</h3><p class="tot" id="anTot">Se muestra al conectar Cobros.</p><div id="anCuerpo"></div>';tarjetas.appendChild(anu);
   function pintarSeg(s,ok){
     var tot=document.getElementById('sgTot'),b=document.getElementById('sgCuerpo');
