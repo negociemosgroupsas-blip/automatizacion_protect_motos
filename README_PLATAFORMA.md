@@ -36,3 +36,6 @@ Las copias antiguas en la raíz (`Protect_Motos_Cobros.html`, `Codigo_cobros.gs`
 - **Búsqueda** (barra superior, siempre visible): por cédula, placa, nombre o N° de contrato. Abre una ficha con datos del contrato, cuotas pagadas, pagos registrados y estado de consolidación. Solo lee datos; no escribe en las hojas. Usa las URLs de Cobros y Conciliación ya guardadas en el navegador.
 - **Alertas de Conciliación** (Inicio): faltan por consolidar, pagaron de menos, pagaron de más (revisar valor) y ya consolidados. Se calculan con el modo rápido del conector de Conciliación (no escribe en las hojas).
 - Botón «↻ Actualizar» vuelve a leer ambos conectores.
+
+## Actualización automática
+El Inicio (gráficas, moto, alertas y búsqueda) vuelve a leer Cobros y Conciliación cada 60 segundos mientras la pestaña está visible, y al volver a ella si pasó más de un minuto. La hora de la última lectura aparece junto a «Actualizar». Los módulos mantienen su propia actualización (Cobros: cada 1 min; Conciliación: la que elijas en su selector). Contratos no se actualiza solo para no borrar lo que se está escribiendo.

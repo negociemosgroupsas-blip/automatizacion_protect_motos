@@ -197,7 +197,7 @@
   <div class="pie"><a id="solo" href="#" target="_blank" style="color:var(--dorado2);display:none;margin-bottom:8px">↗ Abrir este módulo en pestaña propia</a><br>Negociemos Group S.A.S.<br>Todos los módulos usan el mismo Google Sheet.</div>
 </nav>
 <main>
-  <div id="top"><input id="q" type="search" placeholder="Buscar cliente: cédula, placa, nombre o contrato" autocomplete="off" aria-label="Buscar cliente"><button id="btnRec" type="button" title="Volver a leer los datos de Cobros y Conciliación">↻ Actualizar</button><div id="res"></div></div>
+  <div id="top"><input id="q" type="search" placeholder="Buscar cliente: cédula, placa, nombre o contrato" autocomplete="off" aria-label="Buscar cliente"><button id="btnRec" type="button" title="Volver a leer los datos de Cobros y Conciliación">↻ Actualizar</button><span id="ultAct" style="font-size:.74rem;color:var(--suave);white-space:nowrap" title="Se actualiza solo cada minuto">Se actualiza cada minuto</span><div id="res"></div></div>
   <div id="vistas">
   <section class="vista" id="v-inicio"><div class="pagina">
     <h1>Inicio</h1><p class="sub" id="subInicio">Resumen del mes · usa el buscador de arriba para consultar un cliente</p>
@@ -373,12 +373,14 @@
   }
 
   // Resumen en vivo (opcional): usa la URL del conector de Cobros ya guardada en el navegador.
+  var cargandoResumen=false;
   function cargarResumen(){
+    if(cargandoResumen)return;cargandoResumen=true;
     var nota=document.getElementById('kpiNota'),url=null;
     try{url=localStorage.getItem('pm_cobros_url_conector')}catch(e){}
-    if(!url){nota.textContent='Abre el módulo Cobros y guarda su URL para ver aquí el resumen de clientes.';return}
+    if(!url){cargandoResumen=false;nota.textContent='Abre el módulo Cobros y guarda su URL para ver aquí el resumen de clientes.';return}
     var cb='pmInicio'+Date.now(),s=document.createElement('script'),t=setTimeout(fin,45000);
-    function fin(){clearTimeout(t);delete window[cb];s.remove()}
+    function fin(){clearTimeout(t);cargandoResumen=false;delete window[cb];s.remove()}
     window[cb]=function(r){
       fin();
       if(!r||!r.ok){nota.textContent='No se pudo leer el resumen de Cobros.';return}
@@ -424,11 +426,14 @@
   function url(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
 
   // ---------- Conciliación (modo rápido: calcula sin escribir en las hojas)
+  var cargandoConc=false;
   function cargarConc(){
+    if(cargandoConc)return;
     var u=url('conc_url'),al=$('alertas');
     if(!/^https:\/\/script\.google\.com\//.test(u)){al.innerHTML='<div class="nota">Abre Conciliación y guarda su URL para ver aquí las alertas.</div>';return}
+    cargandoConc=true;
     var cb='pmConc'+Date.now(),s=document.createElement('script'),t=setTimeout(fin,120000);
-    function fin(){clearTimeout(t);delete window[cb];s.remove()}
+    function fin(){clearTimeout(t);cargandoConc=false;delete window[cb];s.remove()}
     window[cb]=function(r){fin();
       if(!r||!r.ok){al.innerHTML='<div class="nota">No se pudo leer la conciliación: '+esc(r&&r.error||'sin respuesta')+'</div>';return}
       CON=(r.data&&r.data.filas)||[];pintarAlertas()};
@@ -512,10 +517,15 @@
   function cerrar(){$('ficha').className=''}
   document.addEventListener('keydown',function(e){if(e.key==='Escape')cerrar()});
 
-  document.addEventListener('pm-cobros',function(){COB=window.PM_COBROS;if(document.activeElement===q)buscar()});
+  function marcarHora(){var d=new Date(),h=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);var e=$('ultAct');if(e)e.textContent='Actualizado '+h+' · cada minuto'}
+  document.addEventListener('pm-cobros',function(){COB=window.PM_COBROS;marcarHora();if(document.activeElement===q)buscar()});
   if(window.PM_COBROS)COB=window.PM_COBROS;
   $('btnRec').addEventListener('click',function(){if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc()});
   cargarConc();
+  var ultimoAuto=Date.now();
+  function actualizarTodo(){ultimoAuto=Date.now();if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc()}
+  setInterval(function(){if(!document.hidden)actualizarTodo()},60000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden&&Date.now()-ultimoAuto>60000)actualizarTodo()});
 })();
 </script>
 </body>
