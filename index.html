@@ -229,7 +229,7 @@
   @media(max-width:520px){.tk-n{font-size:1.6rem}}
   .edc{grid-column:1/-1;cursor:default;max-width:1000px} .edc:hover{box-shadow:none;transform:none} .edc h3{margin:0 0 2px} .edc .tot{font-size:.8rem;color:var(--suave);margin:0 0 10px}
   .ed-per{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 8px} .ed-per label{display:flex;align-items:center;gap:6px;font-size:.76rem;color:var(--suave,#6b7280)} .ed-per select{border:1px solid var(--borde,#dfe3ee);background:var(--tarjeta,#fff);border-radius:8px;padding:4px 8px;font-size:.8rem;color:var(--texto,#1b2133);cursor:pointer}
-  .ed-i{margin-top:10px} .ed-i .gi b{font-size:1.2rem}
+  .ed-leg{display:flex;gap:14px;flex-wrap:wrap;font-size:.74rem;color:var(--suave,#6b7280);margin:6px 0 0} .ed-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px} .ed-i{margin-top:10px} .ed-i .gi b{font-size:1.2rem}
   #tarjetas .asr{order:1}#tarjetas .seg{order:2}#tarjetas .edc{order:3}#tarjetas .rcm{order:4}#tarjetas .anu{order:5}
   /* ===== Inicio estilo dashboard: tarjetas pequeñas en cuadrícula ===== */
   #v-inicio{overflow:auto} #v-inicio .pagina{height:auto!important;overflow:visible!important;grid-auto-rows:min-content;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;align-content:start;padding:18px 22px 28px;max-width:1500px}
@@ -454,11 +454,13 @@
           g.appendChild(sv('rect',{x:x,y:pt+ih-hr,width:bw,height:hr,rx:d.sin?0:5,fill:'#fdc33e'}));
           if(hr>16)labs.push(stxt(xs(i),pt+ih-hr/2+4,d.rc,'ch-in-o'));
           if(hs>16)labs.push(stxt(xs(i),pt+ih-hr-hs/2+4,d.sin,'ch-in-b'));
+        }else if(o.segs){
+          var acc=0;d.segs.forEach(function(c,si){if(!c)return;var hh=c/o.max*ih;g.appendChild(sv('rect',{x:x,y:pt+ih-acc-hh,width:bw,height:hh,fill:o.colores[si],rx:si===d.segs.length-1?5:0}));if(hh>15)labs.push(stxt(xs(i),pt+ih-acc-hh/2+4,c,si===0||si===1||si===2?'ch-in-b':'ch-in-o'));acc+=hh})
         }else{
           var h=d.v/o.max*ih;g.appendChild(sv('rect',{x:x,y:pt+ih-h,width:bw,height:Math.max(h,2),rx:5,fill:cur?'#fdc33e':'var(--btn,#021346)',stroke:cur?'#021346':'none','stroke-width':cur?1.5:0}));
         }
         svg.appendChild(g);
-        var tope=o.apilado?ys(d.rc+d.sin):ys(d.v);
+        var tope=o.apilado?ys(d.rc+d.sin):o.segs?ys(d.t):ys(d.v);
         svg.appendChild(stxt(xs(i),tope-7,o.etqBarra(d,i),'ch-v'+(cur?' ch-act':''),'middle'));
       });
       for(var i=0;i<n;i++){var t=String(o.etiquetas[i]);svg.appendChild(stxt(xs(i),H-(o.etqBajo2?28:11),t.charAt(0).toUpperCase()+t.slice(1),'ch-s'+(i===o.activo?' ch-act':''),'middle'));if(o.etqBajo2&&o.datos[i])svg.appendChild(stxt(xs(i),H-12,o.etqBajo2(o.datos[i],i,W),'ch-s2','middle'))}
@@ -587,18 +589,18 @@
     if(edAnio!=='todos'&&!anios[edAnio])edAnio=String(yAct);
     sa.value=edAnio;document.getElementById('edMes').value=edMes;document.getElementById('edVer').value=edVer;document.getElementById('edMes').disabled=(edVer==='mes');
     if(edVer==='mes'){
-      var ly=edDatos.filter(function(x){return edAnio==='todos'||x.y===+edAnio}),porM=[],i;
-      for(i=1;i<=12;i++)porM.push(ly.filter(function(x){return x.k-x.y*12===i}).map(function(x){return x.e}));
-      var dm=porM.map(function(a,i){if(!a.length)return null;var sum=a.reduce(function(p,q){return p+q},0),fr={},mo=0,mf=0;a.forEach(function(e){fr[e]=(fr[e]||0)+1;if(fr[e]>mf||(fr[e]===mf&&e<mo)){mf=fr[e];mo=e}});return {v:Math.round(sum/a.length*10)/10,n:a.length,moda:mo,m:i}});
+      var ly=edDatos.filter(function(x){return edAnio==='todos'||x.y===+edAnio}),LIM=[[0,24],[25,34],[35,44],[45,54],[55,200]],ET=['< 25','25–34','35–44','45–54','55+'],COL=['#7fb3ff','#4a67c4','#021346','#fdc33e','#e08a00'],i,tp=ly.length;
+      var dm=[];for(i=1;i<=12;i++){var arr=ly.filter(function(x){return x.k-x.y*12===i}),sg=LIM.map(function(r){return arr.filter(function(x){return x.e>=r[0]&&x.e<=r[1]}).length}),t=arr.length;dm.push(t?{segs:sg,t:t,m:i-1,dom:sg.indexOf(Math.max.apply(null,sg)),prom:arr.reduce(function(p,q){return p+q.e},0)/t}:null)}
       var con=dm.filter(Boolean);
       if(!con.length){tot.textContent='No hay edades registradas para '+(edAnio==='todos'?'ningún año':edAnio)+' (columna G de Protect).';b.innerHTML='';return}
-      var tp=ly.length,pr=ly.reduce(function(p,q){return p+q.e},0)/tp,may=con.reduce(function(p,q){return q.v>p.v?q:p},con[0]),men=con.reduce(function(p,q){return q.v<p.v?q:p},con[0]);
-      tot.textContent='Edad promedio de los clientes en cada mes · '+(edAnio==='todos'?'todos los años':'año '+edAnio)+' · '+tp+' clientes';
-      if(!b.querySelector('.ed-c')||b.dataset.v!=='mes'){b.innerHTML='<div class="ed-c"></div><div class="gauge-i ed-i"></div>';b.dataset.v='mes'}
-      b.querySelector('.ed-i').innerHTML='<div class="gi"><span>Edad promedio del periodo</span><b>'+fmt1(pr)+' años</b></div><div class="gi"><span>Mes con clientes de mayor edad</span><b>'+MES_LARGO[may.m]+' · '+fmt1(may.v)+'</b></div><div class="gi"><span>Mes con clientes más jóvenes</span><b>'+MES_LARGO[men.m]+' · '+fmt1(men.v)+'</b></div>';
-      var mxv=Math.max.apply(null,con.map(function(d){return d.v})),actM=(edAnio==='todos'||+edAnio===yAct)?h.getMonth():-1;
-      columnas(b.querySelector('.ed-c'),{datos:dm,n:12,max:mxv*1.2,alto:210,etiquetas:MES_C,activo:dm.indexOf(may),aria:'Edad promedio de los clientes por mes',etqBarra:function(d){return fmt1(d.v)},
-        tip:function(d,i){return '<b>'+MES_LARGO[i]+(edAnio==='todos'?'':' '+edAnio)+'</b><br>Edad promedio: '+fmt1(d.v)+' años<br>Edad más frecuente: '+d.moda+' años<br>'+d.n+' clientes'}});
+      var tr=LIM.map(function(r,ri){return con.reduce(function(p,q){return p+q.segs[ri]},0)}),topG=tr.indexOf(Math.max.apply(null,tr)),mayM=con.reduce(function(p,q){return q.t>p.t?q:p},con[0]),prG=ly.reduce(function(p,q){return p+q.e},0)/tp;
+      tot.textContent='Clientes por mes y rango de edad · '+(edAnio==='todos'?'todos los años':'año '+edAnio)+' · '+tp+' clientes · el rango que más compra es '+ET[topG].replace('< 25','menos de 25').replace('55+','55 o más')+' años';
+      if(!b.querySelector('.ed-c')||b.dataset.v!=='mes'){b.innerHTML='<div class="ed-c"></div><div class="ed-leg"></div><div class="gauge-i ed-i"></div>';b.dataset.v='mes'}
+      b.querySelector('.ed-leg').innerHTML=ET.map(function(e,ri){return '<span><i style="background:'+COL[ri]+'"></i>'+e+' años</span>'}).join('');
+      b.querySelector('.ed-i').innerHTML='<div class="gi"><span>Rango que más compra</span><b>'+ET[topG].replace('< 25','Menos de 25').replace('55+','55 o más')+'</b></div><div class="gi"><span>Mes con más clientes</span><b>'+MES_LARGO[mayM.m]+' · '+mayM.t+'</b></div><div class="gi"><span>Edad promedio</span><b>'+fmt1(prG)+' años</b></div>';
+      var mxt=Math.max.apply(null,con.map(function(d){return d.t}));
+      columnas(b.querySelector('.ed-c'),{datos:dm,n:12,max:mxt*1.2,alto:240,etiquetas:MES_C,segs:true,colores:COL,activo:-1,etqBajo2:function(d,i,W){return W<640?'':ET[d.dom]},aria:'Clientes por mes y rango de edad',etqBarra:function(d){return d.t},
+        tip:function(d,i){return '<b>'+MES_LARGO[i]+(edAnio==='todos'?'':' '+edAnio)+'</b> · '+d.t+' clientes<br>'+ET.map(function(e,ri){return '<span style="display:inline-block;width:9px;height:9px;border-radius:2px;border:1px solid #fff;background:'+COL[ri]+';margin-right:5px"></span>'+e+': '+d.segs[ri]}).join('<br>')+'<br>Rango que más compra: <b>'+ET[d.dom]+'</b><br>Edad promedio: '+fmt1(d.prom)+' años'}});
       return}
     if(b.dataset.v==='mes'){b.innerHTML='';b.dataset.v=''}
     var l=edDatos.filter(function(x){return (edAnio==='todos'||x.y===+edAnio)&&(edMes==='0'||x.k-x.y*12===+edMes)});
