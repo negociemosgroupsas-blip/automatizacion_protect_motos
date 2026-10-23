@@ -166,7 +166,7 @@
         if(c[x.estado]!==undefined)c[x.estado]++;
         if(x.mes===undefined)return;nuevo=true;
         if(numMes(x.mes)===mesAct&&numAnio(x.anio)===anioAct){
-          var as=(x.asesor||'SIN ASESOR').trim().toUpperCase()||'SIN ASESOR';ventas[as]=(ventas[as]||0)+1;
+          if(String(x.contrato||'').trim()){var as=(x.asesor||'').trim().toUpperCase()||'SIN ASESOR';ventas[as]=(ventas[as]||0)+1}
           if(x.rc==='SI')rc++;
           if(x.forma==='CONTADO')cont++;
         }
