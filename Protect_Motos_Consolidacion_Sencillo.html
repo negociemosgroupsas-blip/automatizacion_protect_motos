@@ -104,7 +104,7 @@
   .vcard{border-radius:14px;padding:13px 16px;background:#fff;border:1px solid var(--borde);border-top:4px solid #cbd5e1;box-shadow:0 1px 4px rgba(19,34,63,.05)}
   .vcard small{display:block;font-size:.66rem;text-transform:uppercase;letter-spacing:.5px;color:var(--suave)} .vcard b{display:block;margin-top:4px;font-size:1.45rem;color:var(--azul);line-height:1.2} .vcard .sub2{font-size:.76rem;color:var(--suave);margin-top:3px}
   .vcard.dugo{border-top-color:#1c3050} .vcard.cons{border-top-color:var(--verde)}
-  .vcard.ok{border-top-color:var(--verde)} .vcard.ok b{color:var(--verde)} .vcard.menos{border-top-color:var(--rojo);background:var(--rojo-bg)} .vcard.menos b{color:var(--rojo)} .vcard.mas{border-top-color:var(--azulinfo)} .vcard.mas b{color:var(--azulinfo)} .vcard.rev{border-top-color:var(--naranja);background:var(--naranja-bg)} .vcard.rev b{color:var(--naranja)}
+  .vcard.ok{border-top-color:var(--verde)} .vcard.ok .sub2{color:var(--verde);font-weight:700} .vcard.menos{border-top-color:var(--rojo);background:var(--rojo-bg)} .vcard.menos .sub2{color:var(--rojo);font-weight:700} .vcard.mas{border-top-color:var(--azulinfo)} .vcard.mas .sub2{color:var(--azulinfo);font-weight:700} .vcard.rev{border-top-color:var(--naranja);background:var(--naranja-bg)} .vcard.rev .sub2{color:var(--naranja);font-weight:700}
   .callout{display:flex;gap:10px;align-items:flex-start;padding:11px 14px;border-radius:12px;font-size:.88rem;margin:12px 0 0;line-height:1.45}
   .callout .ic{font-size:1.1rem;line-height:1.3} .callout.rojo{background:var(--rojo-bg);color:#991b1b} .callout.naranja{background:var(--naranja-bg);color:#92400e} .callout.info{background:var(--azulinfo-bg);color:#1e40af} .callout.gris{background:#f1f2f5;color:#4b5563} .callout.verde{background:var(--verde-bg);color:#166534}
   .fdet{border:1px solid var(--borde);border-radius:12px;margin:12px 0 0;background:#fafbfc} .fdet > summary{cursor:pointer;padding:10px 14px;font-weight:700;font-size:.84rem;color:var(--azul)} .fdet-c{padding:0 14px 12px;font-size:.83rem;color:var(--suave);line-height:1.5}
@@ -140,7 +140,7 @@
         <option value="0">Nunca</option><option value="1">1 min</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
       </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.10</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-23.1</span>
   </div>
 </header>
 
@@ -776,14 +776,22 @@
     var c1 = el('div', 'vcard dugo'); c1.appendChild(el('small', '', 'Valor pagado a Dugo Motos')); c1.appendChild(el('b', '', money(f.pagado))); vc.appendChild(c1);
     var tieneCons = esCons(f) || f.estado === 'Sin registro en Protect';
     var c2 = el('div', 'vcard cons'); c2.appendChild(el('small', '', 'Valor que pagó en Consolidado')); c2.appendChild(el('b', '', tieneCons ? valorCons(f) : '—')); vc.appendChild(c2);
+    var vProt = f.extra && f.extra.valorProtect !== undefined && f.extra.valorProtect !== null ? f.extra.valorProtect : null;
+    var cl = '', st = '';
     if (esCons(f) && f.dif !== null && f.dif !== undefined) {
-      var dif = Number(f.dif), cl, tx, st;
-      if (!f.revisado && f.valor === 'Pagó de menos') { cl = 'menos'; tx = '$ ' + fmt.format(Math.abs(dif)); st = 'Faltan por pagar'; }
-      else if (!f.revisado && f.valor === 'Pagó de más (revisar valor)') { cl = 'rev'; tx = '$ ' + fmt.format(Math.abs(dif)); st = 'Pagó de más · revisa Protect'; }
-      else if (dif > 1000) { cl = 'mas'; tx = '$ ' + fmt.format(Math.abs(dif)); st = 'Pagó de más (no es problema)'; }
-      else if (dif < -1000) { cl = 'menos'; tx = '$ ' + fmt.format(Math.abs(dif)); st = 'Faltan (ya revisado)'; }
-      else { cl = 'ok'; tx = 'Al día'; st = 'Coincide con lo de Dugo Motos'; }
-      var c3 = el('div', 'vcard ' + cl); c3.appendChild(el('small', '', 'Diferencia')); c3.appendChild(el('b', '', tx)); c3.appendChild(el('div', 'sub2', st)); vc.appendChild(c3);
+      var dif = Number(f.dif);
+      if (!f.revisado && f.valor === 'Pagó de menos') { cl = 'menos'; st = 'Diferencia: faltan $ ' + fmt.format(Math.abs(dif)); }
+      else if (!f.revisado && f.valor === 'Pagó de más (revisar valor)') { cl = 'rev'; st = 'Diferencia: pagó $ ' + fmt.format(Math.abs(dif)) + ' de más · revisa Protect'; }
+      else if (dif > 1000) { cl = 'mas'; st = 'Diferencia: pagó $ ' + fmt.format(Math.abs(dif)) + ' de más'; }
+      else if (dif < -1000) { cl = 'menos'; st = 'Diferencia: faltan $ ' + fmt.format(Math.abs(dif)) + ' (ya revisado)'; }
+      else { cl = 'ok'; st = 'Diferencia: al día'; }
+    }
+    if (vProt !== null || cl) {
+      var c3 = el('div', 'vcard ' + (cl || 'dugo'));
+      c3.appendChild(el('small', '', 'Valor que se debe a Protect Motos'));
+      c3.appendChild(el('b', '', vProt !== null ? money(vProt) : '—'));
+      if (st) c3.appendChild(el('div', 'sub2', st));
+      vc.appendChild(c3);
     }
     sv.appendChild(vc); d.appendChild(sv);
 
@@ -869,9 +877,9 @@
     descargar(rows, q ? 'busqueda_clientes_' : (lista === 'cons' && soloMenos ? 'consolidados_pagaron_de_menos_' : lista === 'cons' && soloRevisar ? 'consolidados_revisar_valor_Protect_' : lista === 'cons' ? 'clientes_consolidados_' : lista === 'directo' ? 'clientes_pagaron_directo_' : lista === 'noaplica' ? 'clientes_anulados_' : 'clientes_faltan_por_consolidar_'));
   });
   function descargar(rows, prefijo) {
-    var cab = ['Cédula', 'Nombre completo', '# Contrato', 'Placa', 'Fila en Consolidado', 'Valor pagado a Dugo Motos', 'Valor pagado en Consolidado (C)', 'Valor pagado en Consolidado (D)', 'Diferencia', 'Estado', 'Nota', 'Asesor', 'Celular'];
+    var cab = ['Cédula', 'Nombre completo', '# Contrato', 'Placa', 'Fila en Consolidado', 'Valor pagado a Dugo Motos', 'Valor que se debe a Protect Motos (col. O)', 'Valor pagado en Consolidado (C)', 'Valor pagado en Consolidado (D)', 'Diferencia', 'Estado', 'Nota', 'Asesor', 'Celular'];
     var filas = rows.map(function (f) { var e = f.extra || {};
-      return [f.cedula, nombre(f), f.contrato, f.placa, f.filaCons, f.pagado, f.c, f.d, f.dif, f.estado + (f.revisado ? ' · revisado' : '') + (f.valor === 'Pagó de menos' && !f.revisado ? ' · pagó de menos' : ''), nota(f), e.asesor, e.celular]; });
+      return [f.cedula, nombre(f), f.contrato, f.placa, f.filaCons, f.pagado, (f.extra && f.extra.valorProtect !== undefined ? f.extra.valorProtect : ''), f.c, f.d, f.dif, f.estado + (f.revisado ? ' · revisado' : '') + (f.valor === 'Pagó de menos' && !f.revisado ? ' · pagó de menos' : ''), nota(f), e.asesor, e.celular]; });
     var csv = [cab].concat(filas).map(function (r) { return r.map(function (v) { v = v === null || v === undefined ? '' : String(v); return '"' + v.replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
     var h = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
     var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });

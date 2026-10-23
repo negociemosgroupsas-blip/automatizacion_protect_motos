@@ -58,7 +58,7 @@ var CONC_TOLERANCIA = 1000; // diferencias de hasta $1.000 (redondeos) se ignora
 var CONC_PROTECT_FILA_INICIO = 2;   // por defecto; CONC_filaInicioProtect() lo corrige si los encabezados están más abajo (p. ej. fila 2 y datos desde la 3)
 var CONC_P = { CEDULA: 5, CLIENTE: 8, PLACA: 13, CONTRATO: 14, PAGADO_DUGO: 16 };
 // Columnas de Protect que solo se MUESTRAN como información del cliente (no intervienen en la conciliación)
-var CONC_P_INFO = { ASESOR: 2, FECHA_FIRMA: 11, FIN: 12, CUOTA: 17, PLAZO: 18, FORMA: 20, CELULAR: 31, ESTADO_CLIENTE: 44 };
+var CONC_P_INFO = { VALOR_PROTECT: 15, ASESOR: 2, FECHA_FIRMA: 11, FIN: 12, CUOTA: 17, PLAZO: 18, FORMA: 20, CELULAR: 31, ESTADO_CLIENTE: 44 };
 
 // Consolidados: fila 1 = fórmulas (se ignora), fila 2 = encabezados, datos desde la 3. A, B, C, D
 var CONC_CONS_FILA_INICIO = 3;
@@ -205,6 +205,8 @@ function CONC_leerProtect(hoja) {
       cedula: cedula, cliente: cliente, placa: placa, contrato: contrato,
       pagado: CONC_corregirMiles(CONC_aNumero(pagado)), pagadoOriginal: CONC_aNumero(pagado),
       extra: {
+        // Columna O: lo que se debe a Protect Motos. SOLO se muestra en la ficha; NO interviene en ninguna comparación.
+        valorProtect: CONC_corregirMiles(CONC_aNumero(f[CONC_P_INFO.VALOR_PROTECT - 1])),
         asesor: CONC_texto(f[CONC_P_INFO.ASESOR - 1]),
         fechaFirma: CONC_fechaTxt(f[CONC_P_INFO.FECHA_FIRMA - 1]),
         fin: CONC_fechaTxt(f[CONC_P_INFO.FIN - 1]),
