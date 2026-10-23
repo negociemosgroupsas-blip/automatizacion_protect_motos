@@ -219,6 +219,14 @@
   .tend-l{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.8rem;color:var(--suave);margin-top:8px} .tend-s{display:inline-block;width:26px;border-top:3px dashed #e08a00}
   .tl-oro,.tl-az{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 3px 0 8px;background:#fdc33e} .tl-az{background:var(--btn,#021346)}
   @media(prefers-reduced-motion:reduce){.ch-bar.an{animation:none;transform:none}.ch-tend.an{animation:none;opacity:1;stroke-dashoffset:0}}
+  .tkt{cursor:default;max-width:1000px;margin:0 0 6px} .tkt:hover{box-shadow:none;transform:none} .tkt h3{margin:0 0 2px} .tkt .tot{font-size:.8rem;color:var(--suave);margin:0 0 12px}
+  .tk-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+  .tk-p{background:var(--fondo,#f3f4f8);border-radius:12px;padding:14px 16px;border-left:5px solid var(--c)}
+  .tk-et{display:flex;align-items:center;gap:8px;font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;color:var(--suave,#6b7280)} .tk-et i{width:10px;height:10px;border-radius:3px;background:var(--c);display:inline-block}
+  .tk-n{display:block;font-size:2rem;color:var(--titulo,#021346);font-variant-numeric:tabular-nums;margin:4px 0 2px} .tk-p small{display:block;color:var(--suave,#6b7280);font-size:.8rem}
+  .tk-b{height:7px;border-radius:4px;background:var(--borde,#dfe3ee);margin:10px 0 6px;overflow:hidden} .tk-b i{display:block;height:100%;background:var(--c);border-radius:4px;animation:crece .9s ease both;transform-origin:left}
+  .tk-d{font-size:.78rem;color:var(--suave,#6b7280);font-variant-numeric:tabular-nums} .tk-d.up{color:#1f9d55} .tk-d.dn{color:#dc2626}
+  @media(max-width:520px){.tk-n{font-size:1.6rem}}
 </style>
 </head>
 <body>
@@ -507,6 +515,27 @@
     b.innerHTML='<div class="dona-w"></div>';var w=b.firstChild;w.appendChild(svg);w.insertAdjacentHTML('beforeend',leyenda);b._ya=true;
   }
 
+
+  var tkt=document.createElement('div');tkt.className='card tkt';tkt.innerHTML='<h3>Ticket promedio · '+MES_TXT+'</h3><p class="tot" id="tkTot">Se muestra al conectar Cobros.</p><div id="tkCuerpo"></div>';meta.parentNode.insertBefore(tkt,meta.nextSibling);
+  function pesos(n){return '$ '+Math.round(n).toLocaleString('es-CO')}
+  function pintarTicket(tk,ok){
+    var tot=document.getElementById('tkTot'),b=document.getElementById('tkCuerpo');
+    if(!ok){tot.textContent='Para ver el ticket promedio, publica una Nueva versión del conector de Cobros.';b.innerHTML='';return}
+    var h=new Date(),k=h.getFullYear()*12+h.getMonth()+1,cur=tk[k]||{FINANCIADO:{s:0,n:0},CONTADO:{s:0,n:0}},ant=tk[k-1]||{FINANCIADO:{s:0,n:0},CONTADO:{s:0,n:0}};
+    var nT=cur.FINANCIADO.n+cur.CONTADO.n,sT=cur.FINANCIADO.s+cur.CONTADO.s,aT=nT?sT/nT:0;
+    tot.textContent=nT?'Valor promedio por venta del mes · '+nT+' ventas con valor registrado · promedio general '+pesos(aT):'Todavía no hay ventas con valor registrado este mes.';
+    var tipos=[['FINANCIADO','Venta financiada','#5b78c7'],['CONTADO','Venta de contado','#fdc33e']],medias=tipos.map(function(t){var c=cur[t[0]];return c.n?c.s/c.n:0}),mx=Math.max.apply(null,medias.concat(1));
+    var primera=!b.querySelector('.tk-g');
+    b.innerHTML='<div class="tk-g">'+tipos.map(function(t,i){
+      var c=cur[t[0]],a=ant[t[0]],m=medias[i],am=a.n?a.s/a.n:0,d=am&&m?Math.round((m-am)/am*100):null;
+      return '<div class="tk-p" style="--c:'+t[2]+'"><span class="tk-et"><i></i>'+t[1]+'</span><b class="tk-n" data-v="'+Math.round(m)+'">'+(m?(primera?'$ 0':pesos(m)):'—')+'</b>'+
+        '<small>'+(c.n?c.n+' ventas · total '+pesos(c.s):'Sin ventas con valor este mes')+'</small>'+
+        '<div class="tk-b"><i style="width:'+(m/mx*100)+'%"></i></div>'+
+        '<div class="tk-d '+(d===null?'':d>=0?'up':'dn')+'">'+(d===null?(am?'':'Sin dato del mes anterior'):(d>=0?'▲ +':'▼ ')+Math.abs(d)+' % frente al mes anterior ('+pesos(am)+')')+'</div></div>'}).join('')+'</div>'+
+      '<div class="nota">Ticket promedio = suma del «Valor Protect» (columna O) de las ventas del mes, dividida por el número de ventas. No incluye RC ni asistencias.</div>';
+    if(primera)[].forEach.call(b.querySelectorAll('.tk-n'),function(el){var v=+el.dataset.v;if(!v)return;var t0=null;(function paso(ts){if(!t0)t0=ts;var f=Math.min(1,(ts-t0)/1100),e=1-Math.pow(1-f,3);el.textContent=pesos(v*e);if(f<1)requestAnimationFrame(paso)})(performance.now())});
+  }
+
   function pendiente(m){
     return '<div class="pagina"><h1>'+m.ico+' '+m.nombre+'</h1><p class="sub">Este módulo aún no está instalado.</p>'+
       '<div class="caja">Para activarlo, copia el HTML del Automatizador de Contratos como <code>'+m.src+'</code> '+
@@ -557,11 +586,12 @@
       fin();
       if(!r||!r.ok){nota.textContent='No se pudo leer el resumen de Cobros.';return}
       window.PM_COBROS=r;document.dispatchEvent(new Event('pm-cobros'));
-      var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},sg={ambos:0,rc:0,ap:0,ninguno:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
+      var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},tk={},sg={ambos:0,rc:0,ap:0,ninguno:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
       (r.contratos||[]).forEach(function(x){
         if(c[x.estado]!==undefined)c[x.estado]++;
         if(x.mes===undefined)return;nuevo=true;
-        if(String(x.contrato||'').trim()){var mm=numMes(x.mes),aa=numAnio(x.anio);if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};if(x.rc==='SI')kk.rc++;else kk.sin++}}
+        if(String(x.contrato||'').trim()){var mm=numMes(x.mes),aa=numAnio(x.anio);if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};if(x.rc==='SI')kk.rc++;else kk.sin++}
+          var vp=Number(x.valorProtect)||0;if(mm&&aa&&vp>0&&(x.forma==='FINANCIADO'||x.forma==='CONTADO')){var tt=tk[aa*12+mm]=tk[aa*12+mm]||{FINANCIADO:{s:0,n:0},CONTADO:{s:0,n:0}};tt[x.forma].s+=vp;tt[x.forma].n++}}
         if(numMes(x.mes)===mesAct&&numAnio(x.anio)===anioAct){
           if(String(x.contrato||'').trim()){var as=(x.asesor||'').trim().toUpperCase()||'SIN ASESOR';ventas[as]=(ventas[as]||0)+1}
           if(String(x.contrato||'').trim()){var tr=x.rc==='SI',ta=x.ap==='SI';if(tr&&ta)sg.ambos++;else if(tr)sg.rc++;else if(ta)sg.ap++;else sg.ninguno++}
@@ -572,6 +602,7 @@
       var conRc=nuevo;
       pintarAsesores(ventas,nuevo);
       pintarRc(hist,nuevo);
+      pintarTicket(tk,nuevo);
       pintarSeg(sg,nuevo&&r.contratos.some(function(x){return x.ap!==undefined}));
       pintarAnual(hist,nuevo);
       pintarMeta(nuevo?Object.keys(ventas).reduce(function(a,k){return a+ventas[k]},0):null);
