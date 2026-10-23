@@ -188,6 +188,28 @@
   .moto-tag{bottom:84px!important;font-size:.7rem!important;padding:2px 9px!important} .globo{bottom:112px!important;font-size:.7rem!important}
   @keyframes cae{to{transform:translateY(150px) rotate(540deg);opacity:0}}
   @media(max-width:520px){.moto{width:104px!important;margin-left:-52px!important}.moto-tag{bottom:70px!important}.globo{bottom:98px!important}.ruta-pista{height:104px!important}}
+  /* gráficas dinámicas */
+  #pmTip{position:fixed;z-index:60;display:none;background:#021346;color:#fff;padding:7px 11px;border-radius:9px;font-size:.78rem;line-height:1.35;box-shadow:0 6px 18px #0006;pointer-events:none;max-width:240px}
+  .ch-svg{display:block;max-width:100%;overflow:visible}
+  .ch-t{fill:var(--texto,#1b2133);font-size:12px} .ch-s{fill:var(--suave,#6b7280);font-size:11px} .ch-s2{fill:var(--suave,#6b7280);font-size:10px}
+  .ch-v{fill:var(--titulo,#021346);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums} .ch-act{font-weight:800} .ch-s.ch-act{fill:var(--titulo,#021346)}
+  .ch-big{fill:var(--titulo,#021346);font-size:30px;font-weight:800;font-variant-numeric:tabular-nums} .ch-big2{fill:var(--titulo,#021346);font-size:34px;font-weight:800;font-variant-numeric:tabular-nums}
+  .ch-g{stroke:var(--borde,#dfe3ee);stroke-width:1;stroke-dasharray:3 4} .ch-guia{stroke:var(--suave,#6b7280);stroke-width:1.2;stroke-dasharray:4 3;opacity:.7}
+  .ch-hit{cursor:pointer}
+  .ch-line.an{stroke-dasharray:1;stroke-dashoffset:1;animation:dibuja 1.3s ease .1s forwards}
+  .ch-area.an{opacity:0;animation:aparece .9s ease .8s forwards} .ch-pt.an{opacity:0;transform-box:fill-box;transform-origin:center;animation:pop .4s ease forwards}
+  @keyframes dibuja{to{stroke-dashoffset:0}} @keyframes aparece{to{opacity:1}} @keyframes pop{0%{opacity:0;transform:scale(0)}70%{transform:scale(1.35)}100%{opacity:1;transform:scale(1)}}
+  .ch-pulso{transform-box:fill-box;transform-origin:center;animation:pulso 1.8s ease-in-out infinite} @keyframes pulso{0%,100%{transform:scale(1)}50%{transform:scale(1.28)}}
+  .dona-w{display:flex;gap:26px;align-items:center;flex-wrap:wrap} .dona{flex:0 0 auto} .dona-seg{transition:stroke-dasharray .9s cubic-bezier(.3,.7,.2,1),stroke-width .15s;cursor:pointer}
+  .dona-l{flex:1;min-width:230px;display:grid;gap:10px}
+  .dona-i{display:grid;grid-template-columns:12px 1fr auto 44px;gap:8px;align-items:center;font-size:.86rem} .dona-c{width:12px;height:12px;border-radius:4px} .dona-i b{font-variant-numeric:tabular-nums;color:var(--titulo,#021346)} .dona-p{color:var(--suave,#6b7280);text-align:right;font-size:.78rem}
+  .dona-b{grid-column:2/-1;height:5px;border-radius:3px;background:var(--borde,#dfe3ee);overflow:hidden;margin-top:-4px} .dona-b i{display:block;height:100%;border-radius:3px;animation:crece .9s ease both;transform-origin:left}
+  .asr .barra{animation:crece .9s ease both;transform-origin:left} .asr .fila-a:hover .barra{filter:brightness(1.15)} @keyframes crece{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  .gauge-w{display:flex;gap:22px;align-items:center;flex-wrap:wrap} .gauge svg{display:block;max-width:100%;height:auto}
+  .gauge-i{flex:1;min-width:220px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-content:center}
+  .gauge-i .gi{background:var(--fondo,#f3f4f8);border-radius:10px;padding:8px 12px} .gi span{display:block;font-size:.66rem;text-transform:uppercase;color:var(--suave,#6b7280)} .gi b{font-size:1.4rem;color:var(--titulo,#021346);font-variant-numeric:tabular-nums}
+  .gauge-i .meta-t{grid-column:1/-1}
+  @media(prefers-reduced-motion:reduce){.ch-line.an,.ch-area.an,.ch-pt.an,.dona-b i,.asr .barra{animation:none;opacity:1;stroke-dashoffset:0;transform:none}.ch-pulso{animation:none}.dona-seg{transition:none}}
 </style>
 </head>
 <body>
@@ -287,28 +309,111 @@
     var cl=metaTotal>=metaVal||metaTotal>=esp?'ok':metaTotal>=esp*0.8?'med':'bajo';
     var estado=metaTotal>=metaVal?'¡Meta cumplida!':metaTotal>=esp?'Vas al día o adelantado':'Vas por debajo del ritmo';
     tot.textContent=estado+' · ritmo esperado a hoy: '+esp;
-    cuerpo.innerHTML='<div class="meta-n"><b>'+metaTotal+'</b><span>de '+metaVal+' contratos · '+pct+' %</span></div>'+
-      '<div class="meta-p" role="img" aria-label="'+pct+' por ciento de la meta"><i class="'+cl+'" style="width:'+Math.min(100,pct)+'%"></i><u title="Ritmo esperado" style="left:'+Math.min(100,esp/metaVal*100)+'%"></u></div>'+
-      '<div class="meta-t"><span>'+(falta?'Faltan '+falta+' contratos · '+(dm-h.getDate())+' días para cerrar el mes':'Superaste la meta por '+(metaTotal-metaVal))+'</span><span>La línea marca el ritmo esperado · <button class="meta-e" id="metaEd" type="button">Cambiar meta</button></span></div>';
+    var R=100,cx=120,cy=118,ang=function(f){return [cx-R*Math.cos(Math.PI*f),cy-R*Math.sin(Math.PI*f)]},fe=Math.min(1,esp/metaVal),p0=ang(0),p1=ang(1),ti=function(f,r){return [cx-r*Math.cos(Math.PI*f),cy-r*Math.sin(Math.PI*f)]},t1=ti(fe,R-17),t2=ti(fe,R+17),col=cl==='ok'?'#1f9d55':cl==='med'?'#fdc33e':'#dc2626',first=!cuerpo.querySelector('.gauge');
+    var arc='M'+p0[0]+','+p0[1]+' A'+R+','+R+' 0 0 1 '+p1[0]+','+p1[1];
+    cuerpo.innerHTML='<div class="gauge-w"><div class="gauge"><svg viewBox="0 0 240 150" width="240" height="150" role="img" aria-label="'+pct+' por ciento de la meta"><path d="'+arc+'" fill="none" stroke="var(--borde,#dfe3ee)" stroke-width="20" stroke-linecap="round" pathLength="100"/><path id="gArc" d="'+arc+'" fill="none" stroke="'+col+'" stroke-width="20" stroke-linecap="round" pathLength="100" stroke-dasharray="'+(first?0:Math.min(100,pct))+' 100" style="transition:stroke-dasharray 1.2s ease"/><line x1="'+t1[0]+'" y1="'+t1[1]+'" x2="'+t2[0]+'" y2="'+t2[1]+'" stroke="var(--texto,#1b2133)" stroke-width="3" stroke-linecap="round"><title>Ritmo esperado a hoy: '+esp+'</title></line><text x="120" y="98" text-anchor="middle" class="ch-big2" id="gNum">'+(first?0:metaTotal)+'</text><text x="120" y="120" text-anchor="middle" class="ch-s">de '+metaVal+' contratos</text><text x="120" y="142" text-anchor="middle" class="ch-v" style="fill:'+col+'">'+pct+' %</text></svg></div>'+
+      '<div class="gauge-i"><div class="gi"><span>Ritmo esperado a hoy</span><b>'+esp+'</b></div><div class="gi"><span>Faltan</span><b>'+falta+'</b></div><div class="gi"><span>Días para cerrar</span><b>'+(dm-h.getDate())+'</b></div><div class="meta-t"><span>'+(falta?'La marca en el medidor es el ritmo esperado':'Superaste la meta por '+(metaTotal-metaVal))+' · <button class="meta-e" id="metaEd" type="button">Cambiar meta</button></span></div></div></div>';
+    if(first){var arcEl=document.getElementById('gArc'),num=document.getElementById('gNum'),t0=null;setTimeout(function(){arcEl.setAttribute('stroke-dasharray',Math.min(100,pct)+' 100')},60);
+      (function paso(ts){if(!t0)t0=ts;var f=Math.min(1,(ts-t0)/1200);num.textContent=Math.round(metaTotal*f);if(f<1)requestAnimationFrame(paso)})(performance.now())}
     document.getElementById('metaEd').onclick=function(){
       this.parentNode.innerHTML='Meta: <input id="metaIn" type="number" min="1" value="'+metaVal+'"> <button class="meta-e" id="metaOk" type="button">Guardar</button>';
       document.getElementById('metaOk').onclick=function(){var n=parseInt(document.getElementById('metaIn').value,10);if(n>0){metaVal=n;try{localStorage.setItem(META_CLAVE,String(n))}catch(e){}}pintarMeta()}}}
   var rcm=document.createElement('div');rcm.className='card rcm';rcm.innerHTML='<h3>RC contra sin RC, mes a mes</h3><p class="tot" id="rcTot">Se muestra al conectar Cobros.</p><div id="rcGraf"></div>';tarjetas.appendChild(rcm);
   var MES_C=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  var seg=document.createElement('div');seg.className='card seg';seg.innerHTML='<h3>Seguros por contrato · '+MES_TXT+'</h3><p class="tot" id="sgTot">Se muestra al conectar Cobros.</p><div id="sgCuerpo"></div>';tarjetas.appendChild(seg);
+  var anu=document.createElement('div');anu.className='card anu';anu.innerHTML='<h3>Contratos por mes del año</h3><p class="tot" id="anTot">Se muestra al conectar Cobros.</p><div id="anCuerpo"></div>';tarjetas.appendChild(anu);
+
+  /* ===== Gráficas dinámicas (SVG propio, sin librerías) ===== */
+  var SVGNS='http://www.w3.org/2000/svg';
+  function sv(tag,attrs,hijos){var e=document.createElementNS(SVGNS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);(hijos||[]).forEach(function(h){e.appendChild(h)});return e}
+  function stxt(x,y,t,cls,anchor,extra){var e=sv('text',{x:x,y:y,'text-anchor':anchor||'middle','class':cls||'ch-t'});if(extra)for(var k in extra)e.setAttribute(k,extra[k]);e.textContent=t;return e}
+  function tipEl(){var t=document.getElementById('pmTip');if(!t){t=document.createElement('div');t.id='pmTip';document.body.appendChild(t)}return t}
+  function verTip(ev,html){var t=tipEl();t.innerHTML=html;t.style.display='block';var w=t.offsetWidth,x=ev.clientX+14,y=ev.clientY-12;if(x+w>innerWidth-8)x=ev.clientX-w-14;t.style.left=Math.max(6,x)+'px';t.style.top=Math.max(6,y)+'px'}
+  function ocultarTip(){tipEl().style.display='none'}
+  function enAncho(el,fn){
+    el._fn=fn;var w=Math.max(260,el.clientWidth);el._w=w;fn(w);
+    if(!el._ro&&window.ResizeObserver){el._ro=new ResizeObserver(function(){var nw=Math.max(260,el.clientWidth);if(Math.abs(nw-el._w)>24){el._w=nw;el._fn(nw)}});el._ro.observe(el)}
+  }
+  function curva(p){
+    var d='M'+p[0][0]+','+p[0][1],i;
+    for(i=0;i<p.length-1;i++){var a=p[i-1]||p[i],b=p[i],c=p[i+1],e=p[i+2]||c;
+      d+=' C'+(b[0]+(c[0]-a[0])/6)+','+(b[1]+(c[1]-a[1])/6)+' '+(c[0]-(e[0]-b[0])/6)+','+(c[1]-(e[1]-b[1])/6)+' '+c[0]+','+c[1]}
+    return d}
+  function degradado(id,color,op1,op2){return sv('linearGradient',{id:id,x1:0,y1:0,x2:0,y2:1},[sv('stop',{offset:'0%','style':'stop-color:'+color+';stop-opacity:'+op1}),sv('stop',{offset:'100%','style':'stop-color:'+color+';stop-opacity:'+op2})])}
+  var MES_C=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+  /* línea suave con área: puntos [{x:etiqueta,v:valor,...}] */
+  function lineaSuave(box,o){
+    // o: {datos,max,alto,idg,color,fmt,etqTop,etqBajo,activo,tip,ultimo,animar}
+    enAncho(box,function(W){
+      var an=!box._dib;
+      var H=o.alto||230,pl=14,pr=14,pt=34,pb=o.etqBajo2?44:28,iw=W-pl-pr,ih=H-pt-pb,n=o.nTotal||o.datos.length;
+      var svg=sv('svg',{width:W,height:H,viewBox:'0 0 '+W+' '+H,'class':'ch-svg','role':'img','aria-label':o.aria||'Gráfica'});
+      svg.appendChild(sv('defs',{},[degradado(o.idg,o.color,.38,.02)]));
+      var xs=function(i){return pl+(n===1?iw/2:i*iw/(n-1))},mn=o.min||0,ys=function(v){return pt+ih-((v-mn)/(o.max-mn))*ih};
+      [0,.5,1].forEach(function(f){var y=pt+ih-f*ih;svg.appendChild(sv('line',{x1:pl,x2:W-pr,y1:y,y2:y,'class':'ch-g'}))});
+      var pts=o.datos.map(function(d,i){return [xs(i),ys(d.v)]});
+      if(pts.length>1){
+        var area=curva(pts)+' L'+pts[pts.length-1][0]+','+(pt+ih)+' L'+pts[0][0]+','+(pt+ih)+' Z';
+        svg.appendChild(sv('path',{d:area,fill:'url(#'+o.idg+')','class':an?'ch-area an':'ch-area'}));
+        svg.appendChild(sv('path',{d:curva(pts),fill:'none',stroke:o.color,'stroke-width':3,'stroke-linecap':'round',pathLength:1,'class':an?'ch-line an':'ch-line'}));
+      }
+      // etiquetas del eje
+      for(var i=0;i<n;i++)svg.appendChild(stxt(xs(i),H-(o.etqBajo2?26:10),String(o.etiquetas[i]).charAt(0).toUpperCase()+String(o.etiquetas[i]).slice(1),'ch-s'+(i===o.activo?' ch-act':''),'middle'));
+      var guia=sv('line',{x1:0,x2:0,y1:pt-6,y2:pt+ih,'class':'ch-guia',style:'display:none'});svg.appendChild(guia);
+      o.datos.forEach(function(d,i){
+        var c=sv('circle',{cx:pts[i][0],cy:pts[i][1],r:i===o.activo?6.5:4.5,fill:i===o.activo?'#fdc33e':'var(--tarjeta,#fff)',stroke:i===o.activo?'#021346':o.color,'stroke-width':2.5,'class':(an?'ch-pt an ':'ch-pt ')+(i===o.activo?'ch-pulso':''),style:an?'animation-delay:'+(0.5+i*0.07)+'s':''});
+        svg.appendChild(c);
+        if(o.etqTop)svg.appendChild(stxt(pts[i][0],pts[i][1]-(i===o.activo?14:11),o.etqTop(d,i),'ch-v'+(i===o.activo?' ch-act':''),'middle'));
+        if(o.etqBajo2)svg.appendChild(stxt(pts[i][0],H-11,o.etqBajo2(d,i),'ch-s2','middle'));
+      });
+      // zonas sensibles
+      var cw=n===1?iw:iw/(n-1);
+      o.datos.forEach(function(d,i){
+        var r=sv('rect',{x:xs(i)-cw/2,y:0,width:cw,height:H,fill:'transparent','class':'ch-hit'});
+        var ir=function(ev){guia.setAttribute('x1',xs(i));guia.setAttribute('x2',xs(i));guia.style.display='';verTip(ev,o.tip(d,i))};
+        r.addEventListener('mousemove',ir);r.addEventListener('click',ir);r.addEventListener('mouseleave',function(){guia.style.display='none';ocultarTip()});
+        svg.appendChild(r)});
+      box.innerHTML='';box.appendChild(svg);box._dib=true;
+    });
+  }
+
+  /* ----- Contratos por mes del año: línea suave ----- */
+  function pintarAnual(hist,ok){
+    var tot=document.getElementById('anTot'),g=document.getElementById('anCuerpo');
+    if(!ok){tot.textContent='Para ver esta gráfica, publica una Nueva versión del conector de Cobros.';g.innerHTML='';return}
+    var h=new Date(),y=h.getFullYear(),mAct=h.getMonth()+1,v=[],i,max=1;
+    for(i=1;i<=mAct;i++){var k=hist[y*12+i];v.push(k?k.rc+k.sin:0);if(v[i-1]>max)max=v[i-1]}
+    var cur=v[mAct-1],prev=mAct>1?v[mAct-2]:null,txt;
+    if(prev===null)txt='Este año llevas '+cur+' contratos en el primer mes.';
+    else if(!prev)txt='Mes actual: '+cur+' contratos (el mes anterior no tuvo).';
+    else{var dif=Math.round((cur-prev)/prev*100);txt='Mes actual (en curso): '+cur+' contratos frente a '+prev+' del mes anterior · '+(dif>=0?'▲ +':'▼ ')+Math.abs(dif)+' %'}
+    tot.textContent=txt+' · año '+y;
+    if(!g.querySelector('.an-c2')){g.innerHTML='<div class="an-c2"></div><div class="nota">Pasa el mouse (o toca) cada punto para ver el detalle. El punto dorado es el mes en curso, que aún no termina.</div>'}
+    var box=g.querySelector('.an-c2');
+    var datos=v.map(function(n,idx){var d=idx>0&&v[idx-1]>0?Math.round((n-v[idx-1])/v[idx-1]*100):null;return {v:n,d:d,m:idx+1}});
+    lineaSuave(box,{datos:datos,nTotal:12,max:Math.ceil(max*1.2),idg:'gAnual',color:'var(--btn,#021346)',etiquetas:MES_C,activo:mAct-1,aria:'Contratos por mes del año',
+      etqTop:function(d){return d.v},
+      tip:function(d,i){return '<b>'+MES_C[i].toUpperCase()+' '+y+'</b><br>'+d.v+' contratos'+(d.d===null?'':'<br>'+(d.d>=0?'▲ +':'▼ ')+Math.abs(d.d)+' % frente al mes anterior')+(i===mAct-1?'<br><i>mes en curso</i>':'')}});
+  }
+
+  /* ----- RC contra sin RC: línea del % de RC ----- */
   function pintarRc(b,ok){
     var tot=document.getElementById('rcTot'),g=document.getElementById('rcGraf');
     if(!ok){tot.textContent='Para ver esta gráfica, publica una Nueva versión del conector de Cobros.';g.innerHTML='';return}
-    var h=new Date(),meses=[],i,y,m;
+    var h=new Date(),meses=[],i;
     for(i=5;i>=0;i--){var d=new Date(h.getFullYear(),h.getMonth()-i,1);meses.push({y:d.getFullYear(),m:d.getMonth()+1})}
-    var datos=meses.map(function(x){var k=b[x.y*12+x.m]||{rc:0,sin:0};return {y:x.y,m:x.m,rc:k.rc,sin:k.sin,t:k.rc+k.sin}});
-    var max=Math.max.apply(null,datos.map(function(x){return x.t}).concat(1)),act=datos[5],ant=datos[4];
-    tot.textContent='Mes actual: '+act.rc+' de '+act.t+' contratos con RC ('+(act.t?Math.round(act.rc/act.t*100):0)+' %)'+(ant.t?' · mes anterior: '+Math.round(ant.rc/ant.t*100)+' %':'');
-    g.innerHTML='<div class="rc-g">'+datos.map(function(x){
-      var alto=x.t/max*100;
-      return '<div class="rc-c"><span class="rc-p">'+(x.t?Math.round(x.rc/x.t*100)+' %':'—')+'</span><div class="rc-b" style="height:'+alto+'%" title="'+x.rc+' con RC · '+x.sin+' sin RC"><i class="s" style="flex:'+x.sin+'">'+(x.sin&&x.sin/x.t*alto>7?x.sin:'')+'</i><i class="r" style="flex:'+x.rc+'">'+(x.rc&&x.rc/x.t*alto>7?x.rc:'')+'</i></div><span class="rc-n">'+x.rc+' con RC de '+x.t+'</span><span class="rc-m">'+MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')+'</span></div>'}).join('')+'</div>'+
-      '<div class="rc-l"><span>Con RC</span><span>Sin RC</span><span style="margin-left:auto">% sobre el total de contratos del mes</span></div>'}
-  var seg=document.createElement('div');seg.className='card seg';seg.innerHTML='<h3>Seguros por contrato · '+MES_TXT+'</h3><p class="tot" id="sgTot">Se muestra al conectar Cobros.</p><div id="sgCuerpo"></div>';tarjetas.appendChild(seg);
-  var anu=document.createElement('div');anu.className='card anu';anu.innerHTML='<h3>Contratos por mes del año</h3><p class="tot" id="anTot">Se muestra al conectar Cobros.</p><div id="anCuerpo"></div>';tarjetas.appendChild(anu);
+    var datos=meses.map(function(x){var k=b[x.y*12+x.m]||{rc:0,sin:0},t=k.rc+k.sin;return {y:x.y,m:x.m,rc:k.rc,sin:k.sin,t:t,v:t?Math.round(k.rc/t*100):0}});
+    var act=datos[5],ant=datos[4];
+    tot.textContent='Mes actual: '+act.rc+' de '+act.t+' contratos con RC ('+act.v+' %)'+(ant.t?' · mes anterior: '+ant.v+' %':'');
+    if(!g.querySelector('.rc-c2'))g.innerHTML='<div class="rc-c2"></div><div class="nota">Línea: porcentaje de contratos con RC en cada mes. Pasa el mouse para ver las cantidades.</div>';
+    var vs=datos.filter(function(x){return x.t}).map(function(x){return x.v}),mnv=vs.length?Math.min.apply(null,vs):0,mxv=vs.length?Math.max.apply(null,vs):100,lo=Math.max(0,Math.floor((mnv-12)/10)*10),hi=Math.min(100,Math.ceil((mxv+12)/10)*10);if(hi-lo<30){hi=Math.min(100,lo+30);lo=Math.max(0,hi-30)}
+    lineaSuave(g.querySelector('.rc-c2'),{datos:datos,min:lo,max:hi,idg:'gRc',color:'#e0a000',etiquetas:datos.map(function(x){return MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')}),activo:5,alto:250,aria:'Porcentaje de contratos con RC por mes',etqBajo2:function(d){return d.rc+' / '+d.t},
+      etqTop:function(d){return d.t?d.v+' %':'—'},
+      tip:function(d){return '<b>'+MES_C[d.m-1].toUpperCase()+' '+d.y+'</b><br>Con RC: '+d.rc+'<br>Sin RC: '+d.sin+'<br>Total: '+d.t+' ('+d.v+' % con RC)'}});
+  }
+
+  /* ----- Seguros por contrato: dona animada ----- */
   function pintarSeg(s,ok){
     var tot=document.getElementById('sgTot'),b=document.getElementById('sgCuerpo');
     if(!ok){tot.textContent='Para ver esta gráfica, publica una Nueva versión del conector de Cobros.';b.innerHTML='';return}
@@ -316,25 +421,27 @@
     if(!t){tot.textContent='Todavía no hay contratos este mes.';b.innerHTML='';return}
     var con=s.ambos+s.rc+s.ap;
     tot.textContent=con+' de '+t+' contratos llevan RC o AP ('+Math.round(con/t*100)+' %) · '+s.ninguno+' no llevan ninguno';
-    var it=[['sg-1','RC y AP',s.ambos,'#1f9d55'],['sg-2','Solo RC',s.rc,'#fdc33e'],['sg-3','Solo AP',s.ap,'#5b78c7'],['sg-4','Ni RC ni AP',s.ninguno,'#021346']];
-    b.innerHTML='<div class="sg-b" role="img" aria-label="Seguros por contrato">'+it.map(function(x){return '<i class="'+x[0]+'" style="flex:'+x[2]+'" title="'+x[1]+': '+x[2]+'">'+(x[2]/t>0.04?x[2]:'')+'</i>'}).join('')+'</div>'+
-      '<div class="sg-l">'+it.map(function(x){return '<div style="--c:'+x[3]+'">'+x[1]+': <b>'+x[2]+'</b> ('+Math.round(x[2]/t*100)+' %)</div>'}).join('')+'</div>'}
-  function pintarAnual(hist,ok){
-    var tot=document.getElementById('anTot'),g=document.getElementById('anCuerpo');
-    if(!ok){tot.textContent='Para ver esta gráfica, publica una Nueva versión del conector de Cobros.';g.innerHTML='';return}
-    var h=new Date(),y=h.getFullYear(),mAct=h.getMonth()+1,v=[],i,max=1;
-    for(i=1;i<=12;i++){var k=hist[y*12+i];v.push(k?k.rc+k.sin:0);if(v[i-1]>max)max=v[i-1]}
-    var cur=v[mAct-1],prev=mAct>1?v[mAct-2]:null,txt;
-    if(prev===null)txt='Este año llevas '+cur+' contratos en el primer mes.';
-    else if(!prev)txt='Mes actual: '+cur+' contratos (el mes anterior no tuvo).';
-    else{var dif=Math.round((cur-prev)/prev*100);txt='Mes actual (en curso): '+cur+' contratos frente a '+prev+' del mes anterior · '+(dif>=0?'▲ +':'▼ ')+Math.abs(dif)+' %'}
-    tot.textContent=txt+' · año '+y;
-    var MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-    g.innerHTML='<div class="an-g">'+v.map(function(n,idx){
-      var m=idx+1,fut=m>mAct,dl='',cl='eq';
-      if(!fut&&idx>0&&v[idx-1]>0){var p=Math.round((n-v[idx-1])/v[idx-1]*100);dl=(p>=0?'▲':'▼')+Math.abs(p)+'%';cl=p>0?'up':p<0?'dn':'eq'}
-      return '<div class="an-c"><span class="an-d '+cl+'">'+(fut?'':dl||'')+'</span><span class="an-n">'+(fut?'':n)+'</span><div class="an-b '+(m===mAct?'cur':fut?'fut':'')+'" style="height:'+(fut?4:Math.max(n/max*100*0.78,1))+'%"></div><span class="an-m">'+MES[idx]+'</span></div>'}).join('')+'</div>'+
-      '<div class="nota">▲ ▼ comparan cada mes con el anterior. El mes actual (dorado) aún no ha terminado.</div>'}
+    var it=[['RC y AP',s.ambos,'#1f9d55'],['Solo RC',s.rc,'#fdc33e'],['Solo AP',s.ap,'#5b78c7'],['Ni RC ni AP',s.ninguno,'#021346']];
+    var R=70,C=2*Math.PI*R,gap=it.filter(function(x){return x[1]>0}).length>1?3:0,acc=0,animar=!b._ya;
+    var svg=sv('svg',{width:210,height:210,viewBox:'0 0 210 210','class':'ch-svg dona','role':'img','aria-label':'Seguros por contrato'});
+    svg.appendChild(sv('circle',{cx:105,cy:105,r:R,fill:'none',stroke:'var(--borde,#dfe3ee)','stroke-width':30}));
+    var cTxt=stxt(105,104,Math.round(con/t*100)+' %','ch-big','middle'),cSub=stxt(105,124,'con RC o AP','ch-s','middle');
+    var restaurar=function(){cTxt.textContent=Math.round(con/t*100)+' %';cSub.textContent='con RC o AP'};
+    it.forEach(function(x,i){
+      if(!x[1])return;
+      var len=x[1]/t*C,seg=sv('circle',{cx:105,cy:105,r:R,fill:'none',stroke:x[2],'stroke-width':30,transform:'rotate(-90 105 105)','stroke-dashoffset':-acc,'class':'dona-seg'});
+      var d=Math.max(0,len-gap);
+      seg.setAttribute('stroke-dasharray',animar?'0 '+C:d+' '+(C-d));
+      if(animar)setTimeout(function(){seg.setAttribute('stroke-dasharray',d+' '+(C-d))},60+i*140);
+      seg.addEventListener('mouseenter',function(){seg.setAttribute('stroke-width',38);cTxt.textContent=x[1];cSub.textContent=x[0]+' · '+Math.round(x[1]/t*100)+' %'});
+      seg.addEventListener('mouseleave',function(){seg.setAttribute('stroke-width',30);restaurar()});
+      svg.appendChild(seg);acc+=len;
+    });
+    svg.appendChild(cTxt);svg.appendChild(cSub);
+    var leyenda='<div class="dona-l">'+it.map(function(x){return '<div class="dona-i"><span class="dona-c" style="background:'+x[2]+'"></span><span class="dona-n">'+x[0]+'</span><b>'+x[1]+'</b><span class="dona-p">'+Math.round(x[1]/t*100)+' %</span><div class="dona-b"><i style="width:'+(x[1]/t*100)+'%;background:'+x[2]+'"></i></div></div>'}).join('')+'</div>';
+    b.innerHTML='<div class="dona-w"></div>';var w=b.firstChild;w.appendChild(svg);w.insertAdjacentHTML('beforeend',leyenda);b._ya=true;
+  }
+
   function pendiente(m){
     return '<div class="pagina"><h1>'+m.ico+' '+m.nombre+'</h1><p class="sub">Este módulo aún no está instalado.</p>'+
       '<div class="caja">Para activarlo, copia el HTML del Automatizador de Contratos como <code>'+m.src+'</code> '+
