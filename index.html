@@ -114,7 +114,7 @@
   .rc-m{font-size:.74rem;color:var(--suave);text-transform:capitalize} .rc-n{font-size:.7rem;color:var(--suave);font-variant-numeric:tabular-nums}
   .rc-l{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:.78rem;color:var(--suave)} .rc-l span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;background:var(--dorado)} .rc-l span+span::before{background:var(--btn,var(--azul))} .rc-l span:nth-child(3)::before{display:none}
 
-  .seg,.anu{cursor:default;max-width:1000px;grid-column:1/-1} .seg:hover,.anu:hover{box-shadow:none;transform:none}
+  .seg,.anu{cursor:default;max-width:1000px} .anu{grid-column:1/-1} .seg:hover,.anu:hover{box-shadow:none;transform:none}
   .seg h3,.anu h3{margin:0 0 2px} .seg .tot,.anu .tot{font-size:.8rem;color:var(--suave);margin:0 0 12px}
   .sg-b{display:flex;height:34px;border-radius:9px;overflow:hidden;background:var(--borde)}
   .sg-b i{display:block;min-width:2px} .sg-1{background:#1f9d55}.sg-2{background:#fdc33e}.sg-3{background:#5b78c7}.sg-4{background:var(--btn,var(--azul))}
@@ -126,6 +126,9 @@
   .an-n{font-size:.76rem;font-weight:700;color:var(--titulo,var(--azul));font-variant-numeric:tabular-nums} .an-m{font-size:.7rem;color:var(--suave);text-transform:capitalize}
   .an-d{font-size:.66rem;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums} .an-d.up{color:#1f9d55}.an-d.dn{color:#dc2626}.an-d.eq{color:var(--suave)}
   @media(max-width:520px){.an-d{font-size:.58rem}.an-m{font-size:.62rem}}
+  #tarjetas{grid-template-columns:repeat(auto-fit,minmax(380px,1fr));max-width:1000px}
+  #tarjetas .asr{order:1}#tarjetas .seg{order:2}#tarjetas .rcm{order:3}#tarjetas .anu{order:4}
+  @media(max-width:520px){#tarjetas{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -138,14 +141,12 @@
   <div id="top"><input id="q" type="search" placeholder="Buscar cliente: cédula, placa, nombre o contrato" autocomplete="off" aria-label="Buscar cliente"><button id="btnRec" type="button" title="Volver a leer los datos de Cobros y Conciliación">↻ Actualizar</button><div id="res"></div></div>
   <div id="vistas">
   <section class="vista" id="v-inicio"><div class="pagina">
-    <h1>Bienvenida a Protect Motos</h1>
-    <p class="sub">Elige un módulo. Cada uno conserva su propia conexión y sus datos.</p>
-    <h2 class="sec-t">Conciliación</h2>
+    <h1>Inicio</h1><p class="sub">Resumen del mes · usa el buscador de arriba para consultar un cliente</p>
+    <h2 class="sec-t">Alertas de conciliación</h2>
     <div class="alertas" id="alertas"><div class="nota">Abre Conciliación y guarda su URL para ver aquí las alertas.</div></div>
-    <h2 class="sec-t">Módulos</h2>
     <div class="grid" id="tarjetas"></div>
-    <div class="kpis" id="kpis"></div>
-    <div class="nota" id="kpiNota"></div>
+    <div class="kpis" id="kpis" hidden style="display:none"></div>
+    <div class="nota" id="kpiNota" hidden></div>
   </div></section>
   <section class="vista" id="v-cobros"></section>
   <section class="vista" id="v-conciliacion"></section>
@@ -182,7 +183,7 @@
     var li=document.createElement('li');
     li.innerHTML='<a href="#'+m.id+'" data-id="'+m.id+'"><span class="ico">'+m.ico+'</span>'+m.nombre+(m.disponible===false?'<span class="tag">PRÓXIMO</span>':'')+'</a>';
     menu.appendChild(li);
-    if(m.desc){
+    if(false&&m.desc){
       var a=document.createElement('a');a.className='card';a.href='#'+m.id;
       a.innerHTML='<div class="ico">'+m.ico+'</div><h3>'+m.nombre+'</h3><p>'+m.desc+'</p><span class="estado '+(m.disponible?'ok':'pend')+'">'+(m.disponible?'Disponible':'Falta agregar el archivo')+'</span>';
       tarjetas.appendChild(a);
