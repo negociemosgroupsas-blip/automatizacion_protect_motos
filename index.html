@@ -299,6 +299,21 @@
   .es-ot{cursor:pointer;font-weight:600}
   .est-d{margin-top:10px;font-size:.8rem;color:var(--suave,#6b7280)} .est-d summary{cursor:pointer;font-weight:600} .est-d table{border-collapse:collapse;margin:8px 0;width:100%} .est-d th,.est-d td{border-bottom:1px solid var(--borde,#dfe3ee);padding:4px 8px;text-align:right} .est-d th:first-child,.est-d td:first-child{text-align:left}
   #v-inicio .ruta h3{color:#fff;font-size:1.1rem}
+  /* ===== Distribución del Inicio: filas parejas, sin huecos ===== */
+  @media(min-width:1181px){
+    #v-inicio .meta,#v-inicio .seg,#v-inicio .edc{grid-column:span 4}
+    #v-inicio .meta{order:2}#v-inicio .seg{order:3}#v-inicio .edc{order:4}
+    #v-inicio .alertas{order:5}
+    #v-inicio .asr{grid-column:span 7;order:6}#v-inicio .rcm{grid-column:span 5;order:7}
+    #v-inicio .cfc{grid-column:1/-1;order:8}#v-inicio .anu{grid-column:1/-1;order:9}
+    #v-inicio .edc .tk-g{grid-template-columns:1fr 1fr}
+    #v-inicio .anu .est-t{display:flex;flex-wrap:wrap}#v-inicio .anu .est-k{flex:1 1 150px}#v-inicio .anu .est-k.est-tot{flex:1 1 100%}
+  }
+  #v-inicio .meta,#v-inicio .seg{display:flex;flex-direction:column}
+  #metaCuerpo,#sgCuerpo{flex:1;display:flex;flex-direction:column;justify-content:space-evenly}
+  #v-inicio .seg,#v-inicio .anu,#v-inicio .rcm,#v-inicio .asr{max-width:none}
+  #v-inicio .gauge svg{width:230px!important}
+  #v-inicio .asr-l{max-height:none;overflow:visible}
 </style>
 </head>
 <body>
@@ -607,7 +622,7 @@
     var rg=regresion(pts),tx=pts.length<3?'Aún hay pocos meses para calcular la tendencia.':(Math.abs(rg.b)<0.3?'Tendencia del % con RC: estable':'Tendencia del % con RC: '+(rg.b>0?'▲ sube':'▼ baja')+' en promedio '+fmt1(Math.abs(rg.b))+' puntos por mes');
     if(!g.querySelector('.rc-c2'))g.innerHTML='<div class="tend-l"></div><div class="rc-c2"></div>';
     g.querySelector('.tend-l').innerHTML='<span class="leg-g"><i style="background:#fdc33e"></i>Columna dorada = contratos <b>con RC</b></span><span class="leg-g"><i style="background:#021346"></i>Columna azul = contratos <b>sin RC</b></span><span>El número sobre cada columna es la cantidad de contratos del mes.</span>';
-    columnas(g.querySelector('.rc-c2'),{datos:datos.map(function(x){return x.t?{vals:[x.rc,x.sin],rc:x.rc,sin:x.sin,t:x.t,pct:x.pct,m:x.m,y:x.y}:null}),n:N,max:Math.max.apply(null,datos.map(function(x){return Math.max(x.rc,x.sin)}).concat(1))*1.25,alto:230,colores:['#fdc33e','#021346'],grupo:true,nombres:['RC','SIN RC'],txtNom:['nom-o','nom-b'],subs:N===12?null:function(d){return [{t:d.rc+' con RC',c:'#fdc33e'},{t:d.sin+' sin RC',c:'#021346'}]},
+    columnas(g.querySelector('.rc-c2'),{datos:datos.map(function(x){return x.t?{vals:[x.rc,x.sin],rc:x.rc,sin:x.sin,t:x.t,pct:x.pct,m:x.m,y:x.y}:null}),n:N,max:Math.max.apply(null,datos.map(function(x){return Math.max(x.rc,x.sin)}).concat(1))*1.25,alto:285,colores:['#fdc33e','#021346'],grupo:true,nombres:['RC','SIN RC'],txtNom:['nom-o','nom-b'],subs:N===12?null:function(d){return [{t:d.rc+' con RC',c:'#fdc33e'},{t:d.sin+' sin RC',c:'#021346'}]},
       etiquetas:datos.map(function(x){return MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')}),activo:ia,etqBajo2:function(d,i,W){return W<420&&N===6?d.rc+'/'+d.sin:''},aria:'Contratos con RC y sin RC por mes',
       etqBarra:function(){return ''},
       tip:function(d){return '<b>'+MES_C[d.m-1].toUpperCase()+' '+d.y+'</b> · '+d.t+' contratos<br>Con RC: '+d.rc+' ('+d.pct+' %)<br>Sin RC: '+d.sin+' ('+(100-d.pct)+' %)'}});
