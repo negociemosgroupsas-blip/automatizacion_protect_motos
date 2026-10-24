@@ -280,6 +280,7 @@
   .ch-sub{fill:var(--texto,#1b2133);font-size:10.5px;font-variant-numeric:tabular-nums}
   .tend-l .leg-g,.leg-grande span{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--texto,#1b2133);margin-right:10px} .leg-g i,.leg-grande i{display:inline-block;width:14px;height:14px;border-radius:4px;margin:0!important} .leg-grande{margin:6px 0 4px!important;gap:6px!important}
   .ch-nom{font-size:10px;font-weight:800;text-anchor:middle;letter-spacing:.04em;pointer-events:none} .ch-nom.nom-o{fill:#021346} .ch-nom.nom-b{fill:#fff}
+  .diag{margin-top:8px;font-size:.74rem;color:var(--suave,#6b7280);line-height:1.5} .diag summary{cursor:pointer;color:var(--titulo,#021346);font-weight:600} .diag b{color:var(--titulo,#021346)}
 </style>
 </head>
 <body>
@@ -392,6 +393,7 @@
     var arc='M'+p0[0]+','+p0[1]+' A'+R+','+R+' 0 0 1 '+p1[0]+','+p1[1];
     cuerpo.innerHTML='<div class="gauge-w"><div class="gauge"><svg viewBox="0 0 240 150" width="240" height="150" role="img" aria-label="'+pct+' por ciento de la meta"><path d="'+arc+'" fill="none" stroke="var(--borde,#dfe3ee)" stroke-width="20" stroke-linecap="round" pathLength="100"/><path id="gArc" d="'+arc+'" fill="none" stroke="'+col+'" stroke-width="20" stroke-linecap="round" pathLength="100" stroke-dasharray="'+(first?0:Math.min(100,pct))+' 100" style="transition:stroke-dasharray 1.2s ease"/><line x1="'+t1[0]+'" y1="'+t1[1]+'" x2="'+t2[0]+'" y2="'+t2[1]+'" stroke="var(--texto,#1b2133)" stroke-width="3" stroke-linecap="round"><title>Ritmo esperado a hoy: '+esp+'</title></line><text x="120" y="98" text-anchor="middle" class="ch-big2" id="gNum">'+(first?0:metaTotal)+'</text><text x="120" y="120" text-anchor="middle" class="ch-s">de '+metaVal+' contratos</text><text x="120" y="142" text-anchor="middle" class="ch-v" style="fill:'+col+'">'+pct+' %</text></svg></div>'+
       '<div class="gauge-i"><div class="gi"><span>Ritmo esperado a hoy</span><b>'+esp+'</b></div><div class="gi"><span>Faltan</span><b>'+falta+'</b></div><div class="gi"><span>Días para cerrar</span><b>'+(dm-h.getDate())+'</b></div><div class="meta-t"><span>'+(falta?'La marca en el medidor es el ritmo esperado':'Superaste la meta por '+(metaTotal-metaVal))+' · <button class="meta-e" id="metaEd" type="button">Cambiar meta</button></span></div></div></div>';
+    var dg=window.PM_DIAG;if(dg)cuerpo.insertAdjacentHTML('beforeend','<details class="diag"><summary>¿Cómo se cuenta?</summary>Filas leídas de la hoja Protect: <b>'+dg.leidas+'</b> · con N° de contrato: <b>'+dg.conContrato+'</b> · de '+MES_TXT+': <b>'+dg.mes+'</b> · con mes o año que no reconozco: <b>'+dg.sinFecha+'</b>'+(dg.sinFecha?' (por ejemplo: '+Object.keys(dg.muestras).join(' · ')+')':'')+'.<br>Una venta es cada fila con N° de contrato (columna N) cuyo mes (columna I) y año (columna J) son los de este mes.</details>');
     if(first){var arcEl=document.getElementById('gArc'),num=document.getElementById('gNum'),t0=null;setTimeout(function(){arcEl.setAttribute('stroke-dasharray',Math.min(100,pct)+' 100')},60);
       (function paso(ts){if(!t0)t0=ts;var f=Math.min(1,(ts-t0)/1200);num.textContent=Math.round(metaTotal*f);if(f<1)requestAnimationFrame(paso)})(performance.now())}
     document.getElementById('metaEd').onclick=function(){
@@ -598,19 +600,19 @@
     var per=(mm?MES_LARGO[mm-1]+' ':'')+(yy===null?'todos los años':(mm?'':'año ')+yy);
     if(ti)ti.textContent='Ticket promedio · '+per;
     var nT=cur.FINANCIADO.n+cur.CONTADO.n,sT=cur.FINANCIADO.s+cur.CONTADO.s;
-    tot.textContent=nT?nT+' ventas con valor registrado · promedio general '+pesos(sT/nT):'No hay ventas con valor registrado en este periodo.';
-    var tipos=[['FINANCIADO','Venta financiada','#5b78c7'],['CONTADO','Venta de contado','#fdc33e']],medias=tipos.map(function(t){var c=cur[t[0]];return c.n?c.s/c.n:0}),mx=Math.max.apply(null,medias.concat(1));
+    tot.textContent=nT?nT+' ventas con valor registrado · financiadas: cuota mensual promedio · contado: valor de la venta':'No hay ventas con valor registrado en este periodo.';
+    var tipos=[['FINANCIADO','Financiada · cuota promedio','#5b78c7'],['CONTADO','De contado · valor de la venta','#fdc33e']],medias=tipos.map(function(t){var c=cur[t[0]];return c.n?c.s/c.n:0}),mx=Math.max.apply(null,medias.concat(1));
     var primera=!b.querySelector('.tk-g');
     b.innerHTML='<div class="tk-g">'+tipos.map(function(t,i){
       var c=cur[t[0]],a=ant?ant[t[0]]:{s:0,n:0},m=medias[i],am=a.n?a.s/a.n:0,d=am&&m?Math.round((m-am)/am*100):null;
       return '<div class="tk-p" style="--c:'+t[2]+'"><span class="tk-et"><i></i>'+t[1]+'</span><b class="tk-n" data-v="'+Math.round(m)+'">'+(m?(primera?'$ 0':pesos(m)):'—')+'</b>'+
-        '<small>'+(c.n?c.n+' ventas · total '+pesos(c.s):'Sin ventas con valor')+'</small>'+
+        '<small>'+(c.n?c.n+' ventas · '+(t[0]==='FINANCIADO'?'valor de la cuota mensual promedio':'valor Protect promedio'):'Sin ventas con valor')+'</small>'+
         '<div class="tk-b"><i style="width:'+(m/mx*100)+'%"></i></div>'+
         (ant?'<div class="tk-d '+(d===null?'':d>=0?'up':'dn')+'">'+(d===null?'':(d>=0?'▲ +':'▼ ')+Math.abs(d)+' % frente al '+antTxt+' ('+pesos(am)+')')+'</div>':'')+'</div>'}).join('')+'</div>';
     if(primera)[].forEach.call(b.querySelectorAll('.tk-n'),function(el){var v=+el.dataset.v;if(!v)return;var t0=null;(function paso(ts){if(!t0)t0=ts;var f=Math.min(1,(ts-t0)/1100),e=1-Math.pow(1-f,3);el.textContent=pesos(v*e);if(f<1)requestAnimationFrame(paso)})(performance.now())});
   }
   var edc=document.createElement('div');edc.className='card edc';edc.innerHTML='<h3>Edad de los clientes</h3><p class="tot" id="edTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="edPer"><label>Año <select id="edAnio"></select></label><label>Mes <select id="edMes"></select></label></div><div id="edCuerpo"></div><div class="ed-tk"><h3 id="tkTit">Ticket promedio</h3><p class="tot" id="tkTot">Se muestra al conectar Cobros.</p><div id="tkCuerpo"></div></div>';tarjetas.appendChild(edc);
-  var edAnio=String(new Date().getFullYear()),edMes='0',edDatos=null,edOk=false,MES_LARGO=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var edAnio=String(new Date().getFullYear()),edMes=String(new Date().getMonth()+1),edDatos=null,edOk=false,MES_LARGO=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   try{var ea=localStorage.getItem('pm_edad_anio'),em=localStorage.getItem('pm_edad_mes');if(ea&&(ea==='todos'||/^\d{4}$/.test(ea)))edAnio=ea;if(em&&/^(0|[1-9]|1[0-2])$/.test(em))edMes=em}catch(e){}
   document.getElementById('edMes').innerHTML='<option value="0">Todo el año</option>'+MES_LARGO.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>'}).join('');
   document.getElementById('edPer').addEventListener('change',function(){edAnio=document.getElementById('edAnio').value;edMes=document.getElementById('edMes').value;try{localStorage.setItem('pm_edad_anio',edAnio);localStorage.setItem('pm_edad_mes',edMes)}catch(e){}pintarEdad(edDatos,edOk);pintarTicket()});
@@ -712,14 +714,14 @@
       if(!r||!r.ok){nota.textContent='No se pudo leer el resumen de Cobros.';estadoCrm('El conector respondió: '+(r&&r.error?r.error:'respuesta inválida'),'#dc2626');return}
       estadoCrm('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos · '+new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}),'#1f9d55');
       window.PM_COBROS=r;document.dispatchEvent(new Event('pm-cobros'));
-      var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},tk={},cf={},eds=[],nowE=new Date(),sg={ambos:0,rc:0,ap:0,ninguno:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
+      var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},tk={},cf={},eds=[],diag={leidas:(r.contratos||[]).length,conContrato:0,mes:0,sinFecha:0,muestras:{}},nowE=new Date(),sg={ambos:0,rc:0,ap:0,ninguno:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
       (r.contratos||[]).forEach(function(x){
         if(c[x.estado]!==undefined)c[x.estado]++;
         if(x.mes===undefined)return;nuevo=true;
-        if(String(x.contrato||'').trim()){var mm=numMes(x.mes),aa=numAnio(x.anio);if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};if(x.rc==='SI')kk.rc++;else kk.sin++}
+        if(String(x.contrato||'').trim()){var mm=numMes(x.mes),aa=numAnio(x.anio);diag.conContrato++;if(!(mm&&aa)){diag.sinFecha++;if(Object.keys(diag.muestras).length<4)diag.muestras[(x.mes||'—')+' / '+(x.anio||'—')]=1}else if(mm===mesAct&&aa===anioAct)diag.mes++;if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};if(x.rc==='SI')kk.rc++;else kk.sin++}
           if(mm&&aa){var ed=Number(x.edad)||0;if(!ed&&x.fechaNacISO){var bd=new Date(x.fechaNacISO);if(!isNaN(bd))ed=Math.floor((nowE-bd)/31557600000)}if(ed>=16&&ed<=95)eds.push({k:aa*12+mm,y:aa,e:ed})}
           if(mm&&aa&&(x.forma==='CONTADO'||x.forma==='FINANCIADO')){var cc=cf[aa*12+mm]=cf[aa*12+mm]||{C:0,F:0};if(x.forma==='CONTADO')cc.C++;else cc.F++}
-          var vp=Number(x.valorProtect)||0;if(mm&&aa&&vp>0&&(x.forma==='FINANCIADO'||x.forma==='CONTADO')){var tt=tk[aa*12+mm]=tk[aa*12+mm]||{FINANCIADO:{s:0,n:0},CONTADO:{s:0,n:0}};tt[x.forma].s+=vp;tt[x.forma].n++}}
+          var vp=(x.forma==='FINANCIADO'?Number(x.valorCuota):Number(x.valorProtect))||0;if(mm&&aa&&vp>0&&(x.forma==='FINANCIADO'||x.forma==='CONTADO')){var tt=tk[aa*12+mm]=tk[aa*12+mm]||{FINANCIADO:{s:0,n:0},CONTADO:{s:0,n:0}};tt[x.forma].s+=vp;tt[x.forma].n++}}
         if(numMes(x.mes)===mesAct&&numAnio(x.anio)===anioAct){
           if(String(x.contrato||'').trim()){var as=(x.asesor||'').trim().toUpperCase()||'SIN ASESOR';ventas[as]=(ventas[as]||0)+1}
           if(String(x.contrato||'').trim()){var tr=x.rc==='SI',ta=x.ap==='SI';if(tr&&ta)sg.ambos++;else if(tr)sg.rc++;else if(ta)sg.ap++;else sg.ninguno++}
@@ -727,6 +729,7 @@
           if(x.forma==='CONTADO')cont++;
         }
       });
+      window.PM_DIAG=diag;
       var conRc=nuevo;
       pintarAsesores(ventas,nuevo);
       pintarRc(hist,nuevo);
