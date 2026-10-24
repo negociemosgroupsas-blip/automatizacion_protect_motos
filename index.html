@@ -274,6 +274,9 @@
   .cf-t{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px} .cf-t .gi b{font-size:1.2rem} .cf-t small{font-size:.75rem;color:var(--suave,#6b7280);font-weight:600}
   #v-inicio .cfc{grid-column:1/-1;order:8} #v-inicio .rcm{order:9} #v-inicio .anu{order:10}
   @media(max-width:520px){.cf-t{grid-template-columns:1fr}}
+  .cf-t{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 8px} .cf-n{background:var(--fondo,#f3f4f8);border-radius:12px;border-left:5px solid var(--c);padding:10px 14px} .cf-n span{display:block;font-size:.68rem;text-transform:uppercase;color:var(--suave,#6b7280)} .cf-n b{display:block;font-size:2rem;color:var(--titulo,#021346);font-variant-numeric:tabular-nums;line-height:1.15} .cf-n small{color:var(--suave,#6b7280);font-size:.78rem}
+  .ch-vg{font-size:11px}
+  @media(max-width:520px){.cf-t{grid-template-columns:1fr}.cf-n b{font-size:1.6rem}}
 </style>
 </head>
 <body>
@@ -382,7 +385,7 @@
     document.getElementById('metaEd').onclick=function(){
       this.parentNode.innerHTML='Meta: <input id="metaIn" type="number" min="1" value="'+metaVal+'"> <button class="meta-e" id="metaOk" type="button">Guardar</button>';
       document.getElementById('metaOk').onclick=function(){var n=parseInt(document.getElementById('metaIn').value,10);if(n>0){metaVal=n;try{localStorage.setItem(META_CLAVE,String(n))}catch(e){}}pintarMeta()}}}
-  var rcm=document.createElement('div');rcm.className='card rcm';rcm.innerHTML='<h3>RC contra sin RC, mes a mes</h3><p class="tot" id="rcTot">Se muestra al conectar Cobros.</p><div id="rcGraf"></div>';tarjetas.appendChild(rcm);
+  var rcm=document.createElement('div');rcm.className='card rcm';rcm.innerHTML='<h3>Contratos con RC, mes a mes</h3><p class="tot" id="rcTot">Se muestra al conectar Cobros.</p><div id="rcGraf"></div>';tarjetas.appendChild(rcm);
   var MES_C=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   var seg=document.createElement('div');seg.className='card seg';seg.innerHTML='<h3>Seguros por contrato · '+MES_TXT+'</h3><p class="tot" id="sgTot">Se muestra al conectar Cobros.</p><div id="sgCuerpo"></div>';tarjetas.appendChild(seg);
   var anu=document.createElement('div');anu.className='card anu';anu.innerHTML='<h3>Contratos por mes del año</h3><p class="tot" id="anTot">Se muestra al conectar Cobros.</p><div id="anCuerpo"></div>';tarjetas.appendChild(anu);
@@ -466,12 +469,16 @@
           g.appendChild(sv('rect',{x:x,y:pt+ih-hr,width:bw,height:hr,rx:d.sin?0:5,fill:'#fdc33e'}));
           if(hr>16)labs.push(stxt(xs(i),pt+ih-hr/2+4,d.rc,'ch-in-o'));
           if(hs>16)labs.push(stxt(xs(i),pt+ih-hr-hs/2+4,d.sin,'ch-in-b'));
+        }else if(o.grupo){
+          var nb=d.vals.length,gw=Math.min(30,slot*0.34),tw=gw*nb+3*(nb-1),x0=xs(i)-tw/2;
+          d.vals.forEach(function(v,gi){var hh=v/o.max*ih;g.appendChild(sv('rect',{x:x0+gi*(gw+3),y:pt+ih-hh,width:gw,height:Math.max(hh,v?2:0),rx:4,fill:o.colores[gi]}));if(v||o.verCeros)labs.push(stxt(x0+gi*(gw+3)+gw/2,pt+ih-hh-5,v,'ch-v ch-vg'))})
         }else if(o.segs){
           var acc=0;d.segs.forEach(function(c,si){if(!c)return;var hh=c/o.max*ih;g.appendChild(sv('rect',{x:x,y:pt+ih-acc-hh,width:bw,height:hh,fill:o.colores[si],rx:si===d.segs.length-1?5:0}));if(hh>15)labs.push(stxt(xs(i),pt+ih-acc-hh/2+4,c,o.txtCls?o.txtCls[si]:(si<3?'ch-in-b':'ch-in-o')));acc+=hh})
         }else{
           var h=d.v/o.max*ih;g.appendChild(sv('rect',{x:x,y:pt+ih-h,width:bw,height:Math.max(h,2),rx:5,fill:cur?'#fdc33e':'var(--btn,#021346)',stroke:cur?'#021346':'none','stroke-width':cur?1.5:0}));
         }
         svg.appendChild(g);
+        if(o.grupo)return;
         var tope=o.apilado?ys(d.rc+d.sin):o.segs?ys(d.t):ys(d.v);
         svg.appendChild(stxt(xs(i),tope-7,o.etqBarra(d,i),'ch-v'+(cur?' ch-act':''),'middle'));
       });
@@ -528,11 +535,11 @@
     var pts=[];datos.forEach(function(x,i){if(x.t)pts.push({i:i,y:x.pct})});
     var rg=regresion(pts),tx=pts.length<3?'Aún hay pocos meses para calcular la tendencia.':(Math.abs(rg.b)<0.3?'Tendencia del % con RC: estable':'Tendencia del % con RC: '+(rg.b>0?'▲ sube':'▼ baja')+' en promedio '+fmt1(Math.abs(rg.b))+' puntos por mes');
     if(!g.querySelector('.rc-c2'))g.innerHTML='<div class="rc-c2"></div><div class="tend-l"></div>';
-    g.querySelector('.tend-l').innerHTML='<span class="tend-s"></span>'+tx+' · <span class="tl-oro"></span>Con RC <span class="tl-az"></span>Sin RC · escala del % a la derecha';
-    columnas(g.querySelector('.rc-c2'),{datos:datos.map(function(x){return x.t?x:null}),n:6,max:max*1.25,apilado:true,alto:260,ejeDer:true,dmin:0,dmax:100,escalaTend:function(v){return Math.max(0,Math.min(1,v/100))},
-      etiquetas:datos.map(function(x){return MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')}),activo:5,etqBajo2:function(d,i,W){return W<600?d.rc+'/'+d.t:d.rc+' con RC de '+d.t},aria:'Contratos con y sin RC por mes, con tendencia del porcentaje',
-      etqBarra:function(d){return d.pct+' %'},tend:{pts:pts,ext:false,hasta:5},
-      tip:function(d){return '<b>'+MES_C[d.m-1].toUpperCase()+' '+d.y+'</b><br>Con RC: '+d.rc+'<br>Sin RC: '+d.sin+'<br>Total: '+d.t+' ('+d.pct+' % con RC)'}});
+    g.querySelector('.tend-l').innerHTML='Cada columna es el porcentaje de contratos del mes que llevan RC. Debajo: cuántos de cuántos.';
+    columnas(g.querySelector('.rc-c2'),{datos:datos.map(function(x){return x.t?{v:x.pct,rc:x.rc,sin:x.sin,t:x.t,pct:x.pct,m:x.m,y:x.y}:null}),n:6,max:100,alto:230,
+      etiquetas:datos.map(function(x){return MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')}),activo:5,etqBajo2:function(d,i,W){return d.rc+' de '+d.t},aria:'Porcentaje de contratos con RC por mes',
+      etqBarra:function(d){return d.pct+' %'},
+      tip:function(d){return '<b>'+MES_C[d.m-1].toUpperCase()+' '+d.y+'</b><br>Con RC: '+d.rc+'<br>Sin RC: '+d.sin+'<br>Total: '+d.t}});
   }
 
   /* ----- Seguros por contrato: dona animada ----- */
@@ -632,11 +639,12 @@
     var T=tc+tf,per=cfAnio==='todos'?'todos los años':'año '+cfAnio;
     if(!T){tot.textContent='No hay contratos registrados en '+per+'.';b.innerHTML='';return}
     tot.textContent=T+' contratos en '+per+' · '+tc+' de contado ('+Math.round(tc/T*100)+' %) · '+tf+' financiados ('+Math.round(tf/T*100)+' %)';
-    if(!b.querySelector('.cf-c'))b.innerHTML='<div class="cf-c"></div><div class="ed-leg"><span><i style="background:#fdc33e"></i>De contado</span><span><i style="background:#5b78c7"></i>Financiados</span></div><div class="cf-t"></div>';
+    if(!b.querySelector('.cf-c'))b.innerHTML='<div class="cf-t"></div><div class="cf-c"></div><div class="ed-leg"><span><i style="background:#fdc33e"></i>De contado</span><span><i style="background:#5b78c7"></i>Financiados</span></div>';
     var mxm=dm.reduce(function(p,q,ix){return q&&(!p||q.t>p.t)?Object.assign({m:ix},q):p},null);
-    b.querySelector('.cf-t').innerHTML='<div class="gi"><span>De contado</span><b>'+tc+' <small>('+Math.round(tc/T*100)+' %)</small></b></div><div class="gi"><span>Financiados</span><b>'+tf+' <small>('+Math.round(tf/T*100)+' %)</small></b></div><div class="gi"><span>Mes con más contratos</span><b>'+MES_LARGO[mxm.m]+' · '+mxm.t+'</b></div>';
-    columnas(b.querySelector('.cf-c'),{datos:dm,n:12,max:Math.max.apply(null,dm.map(function(d){return d?d.t:0}))*1.2,alto:240,etiquetas:MES_C,segs:true,colores:['#fdc33e','#5b78c7'],txtCls:['ch-in-o','ch-in-b'],activo:-1,aria:'Contratos de contado y financiados por mes',etqBarra:function(d){return d.t},
-      tip:function(d,i){return '<b>'+MES_LARGO[i]+(cfAnio==='todos'?'':' '+cfAnio)+'</b> · '+d.t+' contratos<br><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#fdc33e;margin-right:5px"></span>De contado: '+d.c+' ('+Math.round(d.c/d.t*100)+' %)<br><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#5b78c7;margin-right:5px"></span>Financiados: '+d.f+' ('+Math.round(d.f/d.t*100)+' %)'}});
+    b.querySelector('.cf-t').innerHTML='<div class="cf-n" style="--c:#fdc33e"><span>De contado</span><b>'+tc+'</b><small>'+Math.round(tc/T*100)+' % de los contratos</small></div><div class="cf-n" style="--c:#5b78c7"><span>Financiados</span><b>'+tf+'</b><small>'+Math.round(tf/T*100)+' % de los contratos</small></div><div class="cf-n" style="--c:#021346"><span>Mes con más contratos</span><b>'+MES_LARGO[mxm.m]+'</b><small>'+mxm.t+' contratos</small></div>';
+    var dg=dm.map(function(d){return d?{vals:[d.c,d.f],t:d.t,c:d.c,f:d.f}:null});
+    columnas(b.querySelector('.cf-c'),{datos:dg,n:12,max:Math.max.apply(null,dm.map(function(d){return d?Math.max(d.c,d.f):0}))*1.25,alto:230,etiquetas:MES_C,grupo:true,colores:['#fdc33e','#5b78c7'],activo:-1,aria:'Contratos de contado y financiados por mes',etqBarra:function(){return ''},
+      tip:function(d,i){return '<b>'+MES_LARGO[i]+(cfAnio==='todos'?'':' '+cfAnio)+'</b> · '+d.t+' contratos<br>De contado: '+d.c+'<br>Financiados: '+d.f}});
   }
 
   function pendiente(m){
