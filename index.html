@@ -291,6 +291,10 @@
   .cf-todos{border:1px solid var(--borde,#dfe3ee);background:var(--fondo,#f3f4f8);border-radius:999px;padding:5px 12px;font-size:.78rem;cursor:pointer;color:var(--texto,#1b2133)} .cf-todos:hover{background:var(--borde,#dfe3ee)}
   #v-inicio .card h3,#v-inicio .ruta h3{font-family:'Arial Black',Arial,sans-serif;font-size:2.3rem;font-weight:900;color:var(--azul);margin:0 0 4px;padding-left:10px;border-left:5px solid #fdc33e;line-height:1.2;letter-spacing:-.01em}
   #v-inicio .card .tot{font-size:.85rem}
+  .est-t{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:6px 0 14px} .est-k{background:var(--fondo,#f3f4f8);border-left:5px solid;border-radius:10px;padding:10px 12px}
+  .est-n{display:block;font-family:'Arial Black',Arial,sans-serif;font-size:2.4rem;line-height:1;color:var(--azul)} .est-k b{display:block;margin-top:4px;color:var(--azul)} .est-k small{color:var(--suave,#6b7280);font-size:.75rem}
+  .est-b{display:flex;height:34px;border-radius:999px;overflow:hidden;background:#e8ebf3} .est-b i{display:flex;align-items:center;justify-content:center;color:#fff;font:700 .85rem Arial;font-style:normal;transition:width 1s ease}
+  .est-l{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:.8rem;color:var(--suave,#6b7280)} .est-l i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 </style>
 </head>
 <body>
@@ -414,7 +418,7 @@
   var rcm=document.createElement('div');rcm.className='card rcm';rcm.innerHTML='<h3>Contratos con RC y sin RC, mes a mes</h3><p class="tot" id="rcTot">Se muestra al conectar Cobros.</p><div id="rcGraf"></div>';tarjetas.appendChild(rcm);
   var MES_C=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   var seg=document.createElement('div');seg.className='card seg';seg.innerHTML='<h3>Seguros por contrato · '+MES_TXT+'</h3><p class="tot" id="sgTot">Se muestra al conectar Cobros.</p><div id="sgCuerpo"></div>';tarjetas.appendChild(seg);
-  var anu=document.createElement('div');anu.className='card anu';anu.innerHTML='<h3>Contratos por mes del año</h3><p class="tot" id="anTot">Se muestra al conectar Cobros.</p><div id="anCuerpo"></div>';tarjetas.appendChild(anu);
+  var anu=document.createElement('div');anu.className='card anu';anu.innerHTML='<h3>Estado de los clientes</h3><p class="tot" id="anTot">Se muestra al conectar Cobros.</p><div id="anCuerpo"></div>';tarjetas.appendChild(anu);
 
   /* ===== Gráficas dinámicas (SVG propio, sin librerías) ===== */
   var SVGNS='http://www.w3.org/2000/svg';
@@ -533,24 +537,18 @@
   }
 
   /* ----- Contratos por mes del año: columnas + tendencia ----- */
-  function pintarAnual(hist,ok){
+  function pintarAnual(ec,ok){
     var tot=document.getElementById('anTot'),g=document.getElementById('anCuerpo');
     if(!ok){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';g.innerHTML='';return}
-    var h=new Date(),y=h.getFullYear(),mAct=h.getMonth()+1,v=[],i,max=1;
-    for(i=1;i<=mAct;i++){var k=hist[y*12+i];v.push(k?k.rc+k.sin:0);if(v[i-1]>max)max=v[i-1]}
-    var cur=v[mAct-1],prev=mAct>1?v[mAct-2]:null,txt;
-    if(prev===null)txt='Este año llevas '+cur+' contratos en el primer mes.';
-    else if(!prev)txt='Mes actual: '+cur+' contratos (el mes anterior no tuvo).';
-    else{var dif=Math.round((cur-prev)/prev*100);txt='Mes actual (en curso): '+cur+' contratos frente a '+prev+' del mes anterior · '+(dif>=0?'▲ +':'▼ ')+Math.abs(dif)+' %'}
-    tot.textContent=txt+' · año '+y;
-    var comp=[];for(i=0;i<(mAct>1?mAct-1:mAct);i++)comp.push({i:i,y:v[i]});
-    var rg=regresion(comp),pend=comp.length>=2?rg.b:0,tx=comp.length<3?'Aún hay pocos meses para calcular la tendencia.':(Math.abs(pend)<0.05?'Tendencia: estable':'Tendencia: '+(pend>0?'▲ sube':'▼ baja')+' en promedio '+fmt1(Math.abs(pend))+' contratos por mes')+' (sin contar el mes en curso)';
-    if(!g.querySelector('.an-c2')){g.innerHTML='<div class="an-c2"></div><div class="tend-l"></div>'}
-    g.querySelector('.tend-l').innerHTML='<span class="tend-s"></span>'+tx;
-    var datos=[];for(i=0;i<12;i++)datos.push(i<mAct?{v:v[i],d:(i>0&&v[i-1]>0?Math.round((v[i]-v[i-1])/v[i-1]*100):null),m:i+1}:null);
-    columnas(g.querySelector('.an-c2'),{datos:datos,n:12,max:Math.ceil(max*1.2)||1,etiquetas:MES_C,activo:mAct-1,aria:'Contratos por mes del año con línea de tendencia',
-      etqBarra:function(d){return d.v},tend:{pts:comp,ext:true,hasta:11},
-      tip:function(d,i){return '<b>'+MES_C[i].toUpperCase()+' '+y+'</b><br>'+d.v+' contratos'+(d.d===null?'':'<br>'+(d.d>=0?'▲ +':'▼ ')+Math.abs(d.d)+' % frente al mes anterior')+(i===mAct-1?'<br><i>mes en curso</i>':'')}});
+    var L=[['ACTIVO','Activos','#1f9d55','Con póliza vigente'],['FINALIZADO','Finalizados','#5b78c7','Terminaron su contrato'],['CANCELADO','Cancelados','#d64545','Se retiraron'],['OTRO','Sin estado','#c9d0e0','Falta marcar en la columna AR']],T=0,i;
+    L.forEach(function(x){T+=ec[x[0]]||0});
+    if(!T){tot.textContent='Aún no hay clientes con estado en la columna AR.';g.innerHTML='';return}
+    var pc=function(n){return Math.round(n/T*1000)/10};
+    tot.textContent='Total: '+T+' clientes · el número grande es la cantidad y el porcentaje es qué parte del total representa.';
+    g.innerHTML='<div class="est-t">'+L.filter(function(x){return x[0]!=='OTRO'||ec.OTRO}).map(function(x){var n=ec[x[0]]||0;return '<div class="est-k" style="border-left-color:'+x[2]+'"><span class="est-n">'+n+'</span><b>'+x[1]+'</b><small>'+pc(n)+' % · '+x[3]+'</small></div>'}).join('')+'</div>'
+      +'<div class="est-b" role="img" aria-label="Estado de los clientes">'+L.map(function(x){var n=ec[x[0]]||0;return n?'<i style="width:0;background:'+x[2]+'" data-w="'+(n/T*100)+'" title="'+x[1]+': '+n+'">'+(n/T>0.07?n:'')+'</i>':''}).join('')+'</div>'
+      +'<div class="est-l">'+L.filter(function(x){return ec[x[0]]}).map(function(x){return '<span><i style="background:'+x[2]+'"></i>'+x[1]+'</span>'}).join('')+'</div>';
+    setTimeout(function(){[].forEach.call(g.querySelectorAll('.est-b i'),function(e){e.style.width=e.dataset.w+'%'})},60);
   }
 
   /* ----- RC contra sin RC: columnas apiladas + tendencia del % ----- */
@@ -767,8 +765,10 @@
       estadoCrm('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos · '+new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}),'#1f9d55');
       window.PM_COBROS=r;document.dispatchEvent(new Event('pm-cobros'));
       var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},tk={},cf={},eds=[],diag={leidas:(r.contratos||[]).length,conContrato:0,mes:0,sinFecha:0,muestras:{},sinContrato:0,sc:{},formaRara:0,fr:{},rescatadas:0},nowE=new Date(),sg={ambos:0,rc:0,ap:0,ninguno:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
+      var ec={ACTIVO:0,FINALIZADO:0,CANCELADO:0,OTRO:0};
       (r.contratos||[]).forEach(function(x){
         if(c[x.estado]!==undefined)c[x.estado]++;
+        if(String(x.cliente||'').trim()){if(ec[x.estado]!==undefined&&x.estado!=='OTRO')ec[x.estado]++;else ec.OTRO++}
         if(x.mes===undefined)return;nuevo=true;var rs=mesAnio(x);
         if(!String(x.cliente||'').trim()){diag.sinContrato++;var k0=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.sc[k0]=(diag.sc[k0]||0)+1}
         if(String(x.cliente||'').trim()){var mm=rs.m,aa=rs.a;diag.conContrato++;if(rs.r)diag.rescatadas++;if(!(mm&&aa)){diag.sinFecha++;var k1=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.muestras[k1]=(diag.muestras[k1]||0)+1}else if(mm===mesAct&&aa===anioAct)diag.mes++;if(x.forma!=='CONTADO'&&x.forma!=='FINANCIADO'){diag.formaRara++;var k2=(x.forma||'(vacío)')+' · '+(MES_C[mm-1]||'?')+' '+(aa||'?');diag.fr[k2]=(diag.fr[k2]||0)+1}if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};if(x.rc==='SI')kk.rc++;else kk.sin++}
@@ -790,7 +790,7 @@
       pintarCF(cf,nuevo);
       pintarEdad(eds,nuevo&&r.contratos.some(function(x){return x.edad!==undefined}));
       pintarSeg(sg,nuevo&&r.contratos.some(function(x){return x.ap!==undefined}));
-      pintarAnual(hist,nuevo);
+      pintarAnual(ec,nuevo);
       pintarMeta(nuevo?Object.keys(ventas).reduce(function(a,k){return a+ventas[k]},0):null);
       document.getElementById('kpis').innerHTML=[['Activos',c.ACTIVO],['Finalizados',c.FINALIZADO],['Cancelados',c.CANCELADO],['Contratos',(r.contratos||[]).length],['RC este mes',nuevo?rc:'—'],['Contado este mes',nuevo?cont:'—']]
         .map(function(k){return '<div class="kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join('');
