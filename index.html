@@ -698,16 +698,19 @@
 
   // Resumen en vivo (opcional): usa la URL del conector de Cobros ya guardada en el navegador.
   var cargandoResumen=false;
+  function estadoCrm(txt,cl){var e=document.getElementById('crmEstado');if(e){e.textContent=txt;e.style.color=cl||''}}
+  var MSG_ACCESO='El conector no devolvió datos. Casi siempre es porque «Quién tiene acceso» no está en «Cualquier usuario»: en Apps Script ve a Implementar → Administrar implementaciones → ✏️ → Cualquier usuario → Nueva versión.';
   function cargarResumen(){
     if(cargandoResumen)return;cargandoResumen=true;
     var nota=document.getElementById('kpiNota'),url=null;
     var tok='PM-COBROS-2026';try{var cu=localStorage.getItem('pm_crm_url');if(cu){url=cu;tok=localStorage.getItem('pm_crm_token')||'PM-CRM-2026'}else{url=localStorage.getItem('pm_cobros_url_conector')}}catch(e){}
     if(!url){cargandoResumen=false;nota.textContent='Pega la URL del conector del CRM en «Conexiones» para ver aquí el resumen.';return}
-    var cb='pmInicio'+Date.now(),s=document.createElement('script'),t=setTimeout(fin,45000);
+    var cb='pmInicio'+Date.now(),s=document.createElement('script'),t=setTimeout(function(){if(window[cb]){fin();estadoCrm('Sin respuesta del conector (tardó más de 45 s). Revisa la URL y tu conexión.','#dc2626')}},45000);
     function fin(){clearTimeout(t);cargandoResumen=false;delete window[cb];s.remove()}
     window[cb]=function(r){
       fin();
-      if(!r||!r.ok){nota.textContent='No se pudo leer el resumen de Cobros.';return}
+      if(!r||!r.ok){nota.textContent='No se pudo leer el resumen de Cobros.';estadoCrm('El conector respondió: '+(r&&r.error?r.error:'respuesta inválida'),'#dc2626');return}
+      estadoCrm('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos · '+new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}),'#1f9d55');
       window.PM_COBROS=r;document.dispatchEvent(new Event('pm-cobros'));
       var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},tk={},cf={},eds=[],nowE=new Date(),sg={ambos:0,rc:0,ap:0,ninguno:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
       (r.contratos||[]).forEach(function(x){
@@ -737,7 +740,8 @@
         .map(function(k){return '<div class="kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join('');
       nota.textContent=conRc?'Datos de la hoja Protect al abrir la plataforma. Este mes (columnas I y J de Protect): RC = SI en la columna U; Contado = CONTADO en la columna T.':'Para ver RC y Contado del mes, configura el conector del CRM en «Conexiones» (conectores/cobros/Codigo_cobros.gs).';
     };
-    s.onerror=function(){fin();nota.textContent='No se pudo conectar con Cobros para el resumen.'};
+    s.onerror=function(){fin();nota.textContent='No se pudo conectar con Cobros para el resumen.';estadoCrm('No se pudo conectar. Revisa 1) que la URL termine en /exec y 2) que «Quién tiene acceso» esté en «Cualquier usuario» (Implementar → Administrar implementaciones → ✏️ → Cualquier usuario → Nueva versión).','#dc2626')};
+    s.onload=function(){setTimeout(function(){if(window[cb]){fin();estadoCrm(MSG_ACCESO,'#dc2626')}},400)};
     s.src=url+(url.indexOf('?')<0?'?':'&')+'action=datos&token='+encodeURIComponent(tok)+'&callback='+cb+'&_='+Date.now();
     document.head.appendChild(s);
   }
@@ -867,7 +871,7 @@
       var v=u.value.trim();
       if(v&&!/^https:\/\/script\.google\.com\//.test(v)){estado('La URL debe empezar con https://script.google.com/ y terminar en /exec.','#dc2626');return}
       try{localStorage.setItem('pm_crm_url',v);localStorage.setItem('pm_crm_token',t.value.trim())}catch(x){}
-      estado(v?'Guardado. Actualizando el Inicio…':'Guardado sin URL: el Inicio usará el conector de Cobros si existe.','#1f9d55');
+      estado(v?'Guardado. Leyendo datos del conector…':'Guardado sin URL: el Inicio usará el conector de Cobros si existe.','#1f9d55');
       if(window.PM_recargarCobros)window.PM_recargarCobros();
     });
     document.getElementById('crmProbar').addEventListener('click',function(){
@@ -875,7 +879,8 @@
       var cb='pmPing'+Date.now(),s=document.createElement('script'),tm=setTimeout(function(){fin();estado('Sin respuesta. Revisa la URL y que el acceso sea «Cualquier usuario».','#dc2626')},30000);
       function fin(){clearTimeout(tm);delete window[cb];s.remove()}
       window[cb]=function(r){fin();r&&r.ok?estado('Conectado ✔ '+(r.mensaje||''),'#1f9d55'):estado('El conector respondió: '+(r&&r.error?r.error:'respuesta inválida'),'#dc2626')};
-      s.onerror=function(){fin();estado('No se pudo conectar. Revisa la URL.','#dc2626')};
+      s.onerror=function(){fin();estado('No se pudo conectar. Revisa 1) que la URL termine en /exec y 2) que «Quién tiene acceso» esté en «Cualquier usuario» (Implementar → Administrar implementaciones → ✏️ → Cualquier usuario → Nueva versión).','#dc2626')};
+      s.onload=function(){setTimeout(function(){if(window[cb]){fin();estado('El conector no devolvió datos. Casi siempre es porque «Quién tiene acceso» no está en «Cualquier usuario»: Implementar → Administrar implementaciones → ✏️ → Cualquier usuario → Nueva versión.','#dc2626')}},400)};
       estado('Probando…');
       s.src=v+(v.indexOf('?')<0?'?':'&')+'action=ping&token='+encodeURIComponent(t.value.trim()||'PM-CRM-2026')+'&callback='+cb+'&_='+Date.now();
       document.head.appendChild(s)});
