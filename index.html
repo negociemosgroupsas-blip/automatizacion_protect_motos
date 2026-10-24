@@ -638,13 +638,13 @@
     var t=s.ambos+s.rc+s.ap+s.ninguno;
     if(!t){tot.textContent='No hay contratos en '+pf.per+'.';b.innerHTML='';return}
     var con=s.ambos+s.rc+s.ap;
-    tot.textContent=pf.per.charAt(0).toUpperCase()+pf.per.slice(1)+' · '+con+' de '+t+' contratos llevan RC o AP ('+Math.round(con/t*100)+' %) · '+s.ninguno+' no llevan ninguno';
-    var it=[['RC y AP',s.ambos,'#1f9d55'],['Solo RC',s.rc,'#fdc33e'],['Solo AP',s.ap,'#5b78c7'],['Ni RC ni AP',s.ninguno,'#021346']];
+    tot.textContent=pf.per.charAt(0).toUpperCase()+pf.per.slice(1)+' · Los '+t+' contratos llevan Protect Motos · '+con+' llevan además RC y/o AP ('+Math.round(con/t*100)+' %)';
+    var it=[['Solo Protect Motos',s.ninguno,'#021346'],['Protect + RC',s.rc,'#fdc33e'],['Protect + AP',s.ap,'#5b78c7'],['Protect + RC y AP',s.ambos,'#1f9d55']];
     var R=70,C=2*Math.PI*R,gap=it.filter(function(x){return x[1]>0}).length>1?3:0,acc=0,animar=!b._ya;
     var svg=sv('svg',{width:210,height:210,viewBox:'0 0 210 210','class':'ch-svg dona','role':'img','aria-label':'Seguros por contrato'});
     svg.appendChild(sv('circle',{cx:105,cy:105,r:R,fill:'none',stroke:'var(--borde,#dfe3ee)','stroke-width':30}));
-    var cTxt=stxt(105,106,con,'ch-big','middle'),cSub=stxt(105,126,'de '+t+' con RC o AP','ch-s','middle');
-    var restaurar=function(){cTxt.textContent=con;cSub.textContent='de '+t+' con RC o AP'};
+    var cTxt=stxt(105,106,t,'ch-big','middle'),cSub=stxt(105,126,'contratos','ch-s','middle');
+    var restaurar=function(){cTxt.textContent=t;cSub.textContent='contratos'};
     it.forEach(function(x,i){
       if(!x[1])return;
       var len=x[1]/t*C,seg=sv('circle',{cx:105,cy:105,r:R,fill:'none',stroke:x[2],'stroke-width':30,transform:'rotate(-90 105 105)','stroke-dashoffset':-acc,'class':'dona-seg'});
