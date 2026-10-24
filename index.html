@@ -292,6 +292,7 @@
   #v-inicio .card h3,#v-inicio .ruta h3{font-family:'Arial Black',Arial,sans-serif;font-size:2.3rem;font-weight:900;color:var(--azul);margin:0 0 4px;padding-left:10px;border-left:5px solid #fdc33e;line-height:1.2;letter-spacing:-.01em}
   #v-inicio .card .tot{font-size:.85rem}
   .est-t{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:6px 0 14px} .est-k{background:var(--fondo,#f3f4f8);border-left:5px solid;border-radius:10px;padding:10px 12px}
+  .est-tot{background:#021346;grid-column:1/-1;display:flex;align-items:center;gap:14px;flex-wrap:wrap} .est-k.est-tot b{color:#fdc33e;margin:0;font-size:1.15rem} .est-tot .est-n{color:#fdc33e;font-size:3rem} .est-tot small{color:#d5dcf0}
   .est-n{display:block;font-family:'Arial Black',Arial,sans-serif;font-size:2.4rem;line-height:1;color:var(--azul)} .est-k b{display:block;margin-top:4px;color:var(--azul)} .est-k small{color:var(--suave,#6b7280);font-size:.75rem}
   .est-b{display:flex;height:34px;border-radius:999px;overflow:hidden;background:#e8ebf3} .est-b i{display:flex;align-items:center;justify-content:center;color:#fff;font:700 .85rem Arial;font-style:normal;transition:width 1s ease}
   .est-l{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:.8rem;color:var(--suave,#6b7280)} .est-l i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
@@ -544,8 +545,8 @@
     L.forEach(function(x){T+=ec[x[0]]||0});
     if(!T){tot.textContent='Aún no hay clientes con estado en la columna AR.';g.innerHTML='';return}
     var pc=function(n){return Math.round(n/T*1000)/10};
-    tot.textContent='Total: '+T+' clientes · el número grande es la cantidad y el porcentaje es qué parte del total representa.';
-    g.innerHTML='<div class="est-t">'+L.filter(function(x){return x[0]!=='OTRO'||ec.OTRO}).map(function(x){var n=ec[x[0]]||0;return '<div class="est-k" style="border-left-color:'+x[2]+'"><span class="est-n">'+n+'</span><b>'+x[1]+'</b><small>'+pc(n)+' % · '+x[3]+'</small></div>'}).join('')+'</div>'
+    tot.textContent='Total: '+T+' contratos · el número grande es la cantidad y el porcentaje es qué parte del total representa.';
+    g.innerHTML='<div class="est-t"><div class="est-k est-tot" style="border-left-color:#021346"><span class="est-n">'+T+'</span><div><b>Total de contratos</b><small style="display:block">Todos los que se han vendido</small></div></div>'+L.filter(function(x){return x[0]!=='OTRO'||ec.OTRO}).map(function(x){var n=ec[x[0]]||0;return '<div class="est-k" style="border-left-color:'+x[2]+'"><span class="est-n">'+n+'</span><b>'+x[1]+'</b><small>'+pc(n)+' % · '+x[3]+'</small></div>'}).join('')+'</div>'
       +'<div class="est-b" role="img" aria-label="Estado de los clientes">'+L.map(function(x){var n=ec[x[0]]||0;return n?'<i style="width:0;background:'+x[2]+'" data-w="'+(n/T*100)+'" title="'+x[1]+': '+n+'">'+(n/T>0.07?n:'')+'</i>':''}).join('')+'</div>'
       +'<div class="est-l">'+L.filter(function(x){return ec[x[0]]}).map(function(x){return '<span><i style="background:'+x[2]+'"></i>'+x[1]+'</span>'}).join('')+'</div>';
     setTimeout(function(){[].forEach.call(g.querySelectorAll('.est-b i'),function(e){e.style.width=e.dataset.w+'%'})},60);
