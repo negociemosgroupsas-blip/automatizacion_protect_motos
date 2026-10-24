@@ -650,17 +650,17 @@
     var lst=Object.keys(anios).sort(function(a,c){return c-a}),sa=document.getElementById('cfAnio');
     sa.innerHTML='<option value="todos">Todos los años</option>'+lst.map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');
     if(cfAnio!=='todos'&&!anios[cfAnio])cfAnio=String(yAct);sa.value=cfAnio;
-    var dm=[],tc=0,tf=0,i;
-    for(i=1;i<=12;i++){var c=0,f=0;Object.keys(cfDatos).forEach(function(k){k=+k;var y=Math.floor((k-1)/12),m=k-y*12;if(m===i&&(cfAnio==='todos'||y===+cfAnio)){c+=cfDatos[k].C;f+=cfDatos[k].F}});tc+=c;tf+=f;dm.push(c+f?{segs:[c,f],t:c+f,c:c,f:f}:null)}
-    var T=tc+tf,per=cfAnio==='todos'?'todos los años':'año '+cfAnio;
+    var dm=[],tc=0,tf=0,to=0,i;
+    for(i=1;i<=12;i++){var c=0,f=0,o=0;Object.keys(cfDatos).forEach(function(k){k=+k;var y=Math.floor((k-1)/12),m=k-y*12;if(m===i&&(cfAnio==='todos'||y===+cfAnio)){c+=cfDatos[k].C;f+=cfDatos[k].F;o+=(cfDatos[k].O||0)}});tc+=c;tf+=f;to+=o;dm.push(c+f+o?{segs:[c,f],t:c+f+o,c:c,f:f,o:o}:null)}
+    var T=tc+tf+to,per=cfAnio==='todos'?'todos los años':'año '+cfAnio;
     if(!T){tot.textContent='No hay contratos registrados en '+per+'.';b.innerHTML='';return}
-    tot.textContent=T+' contratos en '+per+' · '+tc+' de contado ('+Math.round(tc/T*100)+' %) · '+tf+' financiados ('+Math.round(tf/T*100)+' %)';
+    tot.textContent=T+' contratos (nombres de cliente) en '+per+' · '+tc+' de contado · '+tf+' financiados'+(to?' · '+to+' sin forma de pago en la columna T':'');
     if(!b.querySelector('.cf-c'))b.innerHTML='<div class="cf-t"></div><div class="ed-leg leg-grande"><span><i style="background:#fdc33e"></i>Columna dorada = contratos <b>de contado</b></span><span><i style="background:#5b78c7"></i>Columna azul = contratos <b>financiados</b></span></div><div class="cf-c"></div>';
     var mxm=dm.reduce(function(p,q,ix){return q&&(!p||q.t>p.t)?Object.assign({m:ix},q):p},null);
     b.querySelector('.cf-t').innerHTML='<div class="cf-n" style="--c:#fdc33e"><span>De contado</span><b>'+tc+'</b><small>'+Math.round(tc/T*100)+' % de los contratos</small></div><div class="cf-n" style="--c:#5b78c7"><span>Financiados</span><b>'+tf+'</b><small>'+Math.round(tf/T*100)+' % de los contratos</small></div><div class="cf-n" style="--c:#021346"><span>Mes con más contratos</span><b>'+MES_LARGO[mxm.m]+'</b><small>'+mxm.t+' contratos</small></div>';
-    var dg=dm.map(function(d){return d?{vals:[d.c,d.f],t:d.t,c:d.c,f:d.f}:null});
-    columnas(b.querySelector('.cf-c'),{datos:dg,n:12,max:Math.max.apply(null,dm.map(function(d){return d?Math.max(d.c,d.f):0}))*1.25,alto:230,etiquetas:MES_C,grupo:true,nombres:['CONTADO','FINANCIADO'],txtNom:['nom-o','nom-b'],subs:function(d){return [{t:d.c+' contado',c:'#fdc33e'},{t:d.f+' financ.',c:'#5b78c7'}]},colores:['#fdc33e','#5b78c7'],activo:-1,aria:'Contratos de contado y financiados por mes',etqBarra:function(){return ''},
-      tip:function(d,i){return '<b>'+MES_LARGO[i]+(cfAnio==='todos'?'':' '+cfAnio)+'</b> · '+d.t+' contratos<br>De contado: '+d.c+'<br>Financiados: '+d.f}});
+    var dg=dm.map(function(d){return d?{vals:[d.c,d.f],t:d.t,c:d.c,f:d.f,o:d.o}:null});
+    columnas(b.querySelector('.cf-c'),{datos:dg,n:12,max:Math.max.apply(null,dm.map(function(d){return d?Math.max(d.c,d.f):0}))*1.25,alto:230,etiquetas:MES_C.map(function(m,i){return dm[i]?m+' ('+dm[i].t+')':m}),grupo:true,nombres:['CONTADO','FINANCIADO'],txtNom:['nom-o','nom-b'],subs:function(d){return [{t:d.c+' contado',c:'#fdc33e'},{t:d.f+' financ.',c:'#5b78c7'}]},colores:['#fdc33e','#5b78c7'],activo:-1,aria:'Contratos de contado y financiados por mes',etqBarra:function(){return ''},
+      tip:function(d,i){return '<b>'+MES_LARGO[i]+(cfAnio==='todos'?'':' '+cfAnio)+'</b> · '+d.t+' contratos<br>De contado: '+d.c+'<br>Financiados: '+d.f+(d.o?'<br><i>Sin forma de pago (columna T): '+d.o+'</i>':'')}});
   }
 
   function pendiente(m){
@@ -730,7 +730,7 @@
         if(!String(x.cliente||'').trim()){diag.sinContrato++;var k0=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.sc[k0]=(diag.sc[k0]||0)+1}
         if(String(x.cliente||'').trim()){var mm=rs.m,aa=rs.a;diag.conContrato++;if(rs.r)diag.rescatadas++;if(!(mm&&aa)){diag.sinFecha++;var k1=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.muestras[k1]=(diag.muestras[k1]||0)+1}else if(mm===mesAct&&aa===anioAct)diag.mes++;if(x.forma!=='CONTADO'&&x.forma!=='FINANCIADO'){diag.formaRara++;var k2=(x.forma||'(vacío)')+' · '+(MES_C[mm-1]||'?')+' '+(aa||'?');diag.fr[k2]=(diag.fr[k2]||0)+1}if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};if(x.rc==='SI')kk.rc++;else kk.sin++}
           if(mm&&aa){var ed=Number(x.edad)||0;if(!ed&&x.fechaNacISO){var bd=new Date(x.fechaNacISO);if(!isNaN(bd))ed=Math.floor((nowE-bd)/31557600000)}if(ed>=16&&ed<=95)eds.push({k:aa*12+mm,y:aa,e:ed})}
-          if(mm&&aa&&(x.forma==='CONTADO'||x.forma==='FINANCIADO')){var cc=cf[aa*12+mm]=cf[aa*12+mm]||{C:0,F:0};if(x.forma==='CONTADO')cc.C++;else cc.F++}
+          if(mm&&aa){var cc=cf[aa*12+mm]=cf[aa*12+mm]||{C:0,F:0,O:0};if(x.forma==='CONTADO')cc.C++;else if(x.forma==='FINANCIADO')cc.F++;else cc.O++}
           var vp=(x.forma==='FINANCIADO'?Number(x.valorCuota):Number(x.valorProtect))||0;if(mm&&aa&&vp>0&&(x.forma==='FINANCIADO'||x.forma==='CONTADO')){var tt=tk[aa*12+mm]=tk[aa*12+mm]||{FINANCIADO:{s:0,n:0},CONTADO:{s:0,n:0}};tt[x.forma].s+=vp;tt[x.forma].n++}}
         if(rs.m===mesAct&&rs.a===anioAct){
           if(String(x.cliente||'').trim()){var as=(x.asesor||'').trim().toUpperCase()||'SIN ASESOR';ventas[as]=(ventas[as]||0)+1}
