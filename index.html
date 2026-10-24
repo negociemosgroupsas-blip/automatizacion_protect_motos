@@ -572,7 +572,7 @@
       +(oc?'<div class="est-l"><span>+ '+oc+' contratos con otro estado (marca «Ver otros estados» para verlos)</span></div>':'')
       +'<div class="est-l">'+Lv.filter(function(x){return ec[x[0]]}).map(function(x){return '<span><i style="background:'+x[2]+'"></i>'+x[1]+'</span>'}).join('')+'</div>';
     var por={},ys={};recs.forEach(function(r){var yy=r.y||'sin año';ys[yy]=1;por[yy]=por[yy]||{ACTIVO:0,FINALIZADO:0,CANCELADO:0,ANULADO:0,O:0};if(por[yy][r.e]!==undefined)por[yy][r.e]++;else por[yy].O++});
-    g.innerHTML+='<details class="est-d"><summary>¿Cómo se cuenta? (por año de firma)</summary><table><tr><th>Año</th><th>Activos</th><th>Finalizados</th><th>Cancelados</th><th>Anulados</th><th>Otros</th></tr>'+Object.keys(ys).sort().map(function(y){var o=por[y];return '<tr><td>'+y+'</td><td>'+o.ACTIVO+'</td><td>'+o.FINALIZADO+'</td><td>'+o.CANCELADO+'</td><td>'+o.ANULADO+'</td><td>'+o.O+'</td></tr>'}).join('')+'</table><p>Cuenta las filas de la hoja Protect que tienen nombre de cliente (columna H); los anulados también se cuentan si la fila tiene número de contrato. Se agrupa según el año de la columna J y el estado de la columna AR. «sin año» = filas sin año en la columna J.</p></details>';
+    g.innerHTML+='<details class="est-d"><summary>¿Cómo se cuenta? (por año de firma)</summary><table><tr><th>Año</th><th>Activos</th><th>Finalizados</th><th>Cancelados</th><th>Anulados</th><th>Otros</th></tr>'+Object.keys(ys).sort().map(function(y){var o=por[y];return '<tr><td>'+y+'</td><td>'+o.ACTIVO+'</td><td>'+o.FINALIZADO+'</td><td>'+o.CANCELADO+'</td><td>'+o.ANULADO+'</td><td>'+o.O+'</td></tr>'}).join('')+'</table><p>Cuenta lo que dice la columna AR de la hoja Protect (ACTIVO, FINALIZADO, CANCELADO, ANULADO) en cada fila que tenga nombre de cliente, número de contrato o estado. Se agrupa según el año de la columna J y el estado de la columna AR. «sin año» = filas sin año en la columna J.</p></details>';
     setTimeout(function(){[].forEach.call(g.querySelectorAll('.est-b i'),function(e){e.style.width=e.dataset.w+'%'})},60);
   }
 
@@ -794,7 +794,7 @@
       var ec={ACTIVO:0,FINALIZADO:0,CANCELADO:0,OTRO:0},ecs=[];
       (r.contratos||[]).forEach(function(x){
         if(c[x.estado]!==undefined)c[x.estado]++;
-        var es0=normEstado(x.estado);if(String(x.cliente||'').trim()||(es0==='ANULADO'&&String(x.contrato||'').trim())){var es=es0;ec[es]=(ec[es]||0)+1;var rr=mesAnio(x);ecs.push({y:rr.a||0,m:rr.m||0,e:es,a:(x.asesor||'').trim().toUpperCase()||'SIN ASESOR'})}
+        var es0=normEstado(x.estado);if(String(x.cliente||'').trim()||String(x.contrato||'').trim()||es0!=='OTRO'){var es=es0;ec[es]=(ec[es]||0)+1;var rr=mesAnio(x);ecs.push({y:rr.a||0,m:rr.m||0,e:es,a:(x.asesor||'').trim().toUpperCase()||'SIN ASESOR'})}
         if(normEstado(x.estado)==='ANULADO')return;
         if(x.mes===undefined)return;nuevo=true;var rs=mesAnio(x);
         if(!String(x.cliente||'').trim()){diag.sinContrato++;var k0=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.sc[k0]=(diag.sc[k0]||0)+1}
