@@ -286,6 +286,8 @@
   .ch-vd{font-size:11px;font-weight:800;text-anchor:middle;font-variant-numeric:tabular-nums} .ch-vd.vd-o{fill:#021346} .ch-vd.vd-b{fill:#fff}
   .lab-an{opacity:0;animation:aparece .4s ease .8s forwards}
   @media(prefers-reduced-motion:reduce){.lab-an{animation:none;opacity:1}}
+  .cf-tn{display:flex;align-items:center;gap:6px;margin-top:4px;font-weight:700;color:var(--texto,#1b2133)!important} .cf-tn i{display:inline-block;width:22px;border-top:3px dashed #888}
+  .ch-tend-s.an{stroke-dashoffset:200;opacity:0;animation:tdib 1.2s ease .6s forwards}
 </style>
 </head>
 <body>
@@ -512,6 +514,10 @@
         if(o.tend.ext&&o.tend.hasta>ult)svg.appendChild(sv('line',{x1:xs(ult),y1:cl(ty(ult)),x2:xs(o.tend.hasta),y2:cl(ty(o.tend.hasta)),'class':'ch-tend ext'}));
         if(o.puntosTend)o.tend.pts.forEach(function(p){svg.appendChild(sv('circle',{cx:xs(p.i),cy:cl(o.escalaTend?pt+ih-o.escalaTend(p.y)*ih:ys(p.y)),r:3,fill:'#fff',stroke:'#e08a00','stroke-width':2}))});
       }
+      if(o.tendencias)o.tendencias.forEach(function(td){
+        if(!td||td.pts.length<3)return;var rg=regresion(td.pts),cl=function(y){return Math.max(pt-4,Math.min(pt+ih,y))},i0=td.pts[0].i,i1=td.pts[td.pts.length-1].i;
+        svg.appendChild(sv('line',{x1:xs(i0),y1:cl(ys(rg.a+rg.b*i0)),x2:xs(i1),y2:cl(ys(rg.a+rg.b*i1)),stroke:td.color,'stroke-width':3,'stroke-dasharray':'8 5','stroke-linecap':'round','class':an?'ch-tend-s an':'ch-tend-s'}));
+        if(td.ext&&td.hasta>i1)svg.appendChild(sv('line',{x1:xs(i1),y1:cl(ys(rg.a+rg.b*i1)),x2:xs(td.hasta),y2:cl(ys(rg.a+rg.b*td.hasta)),stroke:td.color,'stroke-width':2.5,'stroke-dasharray':'2 7','stroke-linecap':'round',opacity:.6}))});
       labs.forEach(function(t){if(an)t.setAttribute('class',(t.getAttribute('class')||'')+' lab-an');svg.appendChild(t)});
       var cw=slot;
       o.datos.forEach(function(d,i){
@@ -674,13 +680,14 @@
       var offs=3-sel.length>0&&sel.length<3?3-sel.length:0,col=function(pos){return COLS_ANIO[Math.max(0,Math.min(2,pos+offs))]},txt=function(pos){return TXT_ANIO[Math.max(0,Math.min(2,pos+offs))]};
       var dm=[],tt=sel.map(function(){return 0}),maxv=1,i;
       for(i=1;i<=12;i++){var vals=sel.map(function(y,si){var v=valor(y*12+i);tt[si]+=v;if(v>maxv)maxv=v;return v});dm.push(vals.some(function(v){return v>0})?{vals:vals,m:i-1}:null)}
+      var LIN=['#3b5bb5','#e08a00','#1f9d55'],lin=function(pos){return LIN[Math.max(0,Math.min(2,pos+offs))]},tends=sel.map(function(y,si){var pts=[],mm2;for(mm2=1;mm2<=12;mm2++){var v=valor(y*12+mm2);if(v>0&&!(y===yAct&&mm2>=mAct))pts.push({i:mm2-1,y:v})}return {pts:pts,color:lin(si),ext:y===yAct,hasta:11,pend:pts.length>=3?regresion(pts).b:null}});
       var totTodos=tt.reduce(function(p,q){return p+q},0);
       tot.textContent=totTodos?'Ventas '+tipoTxt+' por mes · '+sel.join(' · ')+' · el número dentro de cada columna es el total vendido en ese mes':'No hay ventas '+tipoTxt+' en los años elegidos.';
       var tiles='';sel.forEach(function(y,si){
         var nota='';if(y===yAct){nota='a la fecha ('+MES_LARGO[0].slice(0,3).toLowerCase()+'–'+MES_C[mAct-1]+')';var py=sel.indexOf(y-1)>=0?y-1:(anios[y-1]?y-1:null);if(py!==null){var a=0,c=0,mm;for(mm=1;mm<=mAct;mm++){a+=valor(y*12+mm);c+=valor(py*12+mm)}if(c){var d=a-c,p=Math.round(d/c*100);nota+=' · '+(d>=0?'▲ +':'▼ ')+Math.abs(d)+' ('+(d>=0?'+':'−')+Math.abs(p)+' %) frente a '+MES_C[0]+'–'+MES_C[mAct-1]+' de '+py}}}
-        tiles+='<div class="cf-n" style="--c:'+col(si)+'"><span>'+y+'</span><b>'+tt[si]+'</b><small>'+(nota||'ventas en el año')+'</small></div>'});
-      b.innerHTML='<div class="cf-t cf-t-anios">'+tiles+'</div><div class="cf-c"></div>';
-      columnas(b.querySelector('.cf-c'),{datos:dm.map(function(d){return d?{vals:d.vals,m:d.m,t:0}:null}),n:12,max:maxv*1.2,alto:260,etiquetas:MES_C,grupo:true,valDentro:true,gwMax:34,colores:sel.map(function(y,si){return col(si)}),txtVal:sel.map(function(y,si){return txt(si)==='nom-b'?'vd-b':'vd-o'}),activo:-1,aria:'Comparativo de ventas por mes y año',etqBarra:function(){return ''},
+        var pd=tends[si].pend,tx=pd===null?'Tendencia: faltan meses para calcularla':(Math.abs(pd)<0.05?'Tendencia: estable':'Tendencia: '+(pd>0?'▲ sube ':'▼ baja ')+fmt1(Math.abs(pd))+' ventas por mes');tiles+='<div class="cf-n" style="--c:'+col(si)+'"><span>'+y+'</span><b>'+tt[si]+'</b><small>'+(nota||'ventas en el año')+'</small><small class="cf-tn"><i style="border-top-color:'+tends[si].color+'"></i>'+tx+'</small></div>'});
+      b.innerHTML='<div class="cf-t cf-t-anios">'+tiles+'</div><div class="tend-l"><span class="tend-s"></span>La línea punteada de cada año es su <b>tendencia</b> (sin contar el mes en curso). Si sube, ese año va creciendo.</div><div class="cf-c"></div>';
+      columnas(b.querySelector('.cf-c'),{datos:dm.map(function(d){return d?{vals:d.vals,m:d.m,t:0}:null}),n:12,max:maxv*1.2,alto:260,etiquetas:MES_C,grupo:true,valDentro:true,gwMax:34,tendencias:tends,colores:sel.map(function(y,si){return col(si)}),txtVal:sel.map(function(y,si){return txt(si)==='nom-b'?'vd-b':'vd-o'}),activo:-1,aria:'Comparativo de ventas por mes y año',etqBarra:function(){return ''},
         tip:function(d,i){return '<b>'+MES_LARGO[i]+'</b> · ventas '+tipoTxt+'<br>'+sel.map(function(y,si){return '<span style="display:inline-block;width:9px;height:9px;border-radius:2px;border:1px solid #fff;background:'+col(si)+';margin-right:5px"></span>'+y+': <b>'+d.vals[si]+'</b>'}).join('<br>')}});
       return}
     // vista: contado y financiados de un año
