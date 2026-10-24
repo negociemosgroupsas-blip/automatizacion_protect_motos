@@ -419,7 +419,7 @@
   var rcm=document.createElement('div');rcm.className='card rcm';rcm.innerHTML='<h3>Contratos con RC y sin RC, mes a mes</h3><p class="tot" id="rcTot">Se muestra al conectar Cobros.</p><div id="rcGraf"></div>';tarjetas.appendChild(rcm);
   var MES_C=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   var seg=document.createElement('div');seg.className='card seg';seg.innerHTML='<h3>Seguros por contrato · '+MES_TXT+'</h3><p class="tot" id="sgTot">Se muestra al conectar Cobros.</p><div id="sgCuerpo"></div>';tarjetas.appendChild(seg);
-  var anu=document.createElement('div');anu.className='card anu';anu.innerHTML='<h3>Estado de los clientes</h3><p class="tot" id="anTot">Se muestra al conectar Cobros.</p><div id="anCuerpo"></div>';tarjetas.appendChild(anu);
+  var anu=document.createElement('div');anu.className='card anu';anu.innerHTML='<h3>Estado de los clientes</h3><p class="tot" id="anTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="esFil"><label>Año <select id="esAnio"></select></label><label>Mes <select id="esMes"></select></label><label>Asesor <select id="esAs"></select></label></div><div id="anCuerpo"></div>';tarjetas.appendChild(anu);
 
   /* ===== Gráficas dinámicas (SVG propio, sin librerías) ===== */
   var SVGNS='http://www.w3.org/2000/svg';
@@ -538,16 +538,31 @@
   }
 
   /* ----- Contratos por mes del año: columnas + tendencia ----- */
-  function pintarAnual(ec,ok){
-    var tot=document.getElementById('anTot'),g=document.getElementById('anCuerpo');
-    if(!ok){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';g.innerHTML='';return}
+  var esAnio='todos',esMes='0',esAs='todos',esRecs=[],esOk=false;
+  try{var q1=localStorage.getItem('pm_es_anio'),q2=localStorage.getItem('pm_es_mes');if(q1&&(q1==='todos'||/^\d{4}$/.test(q1)))esAnio=q1;if(q2&&/^(0|[1-9]|1[0-2])$/.test(q2))esMes=q2}catch(e){}
+  document.getElementById('esFil').addEventListener('change',function(){esAnio=document.getElementById('esAnio').value;esMes=document.getElementById('esMes').value;esAs=document.getElementById('esAs').value;try{localStorage.setItem('pm_es_anio',esAnio);localStorage.setItem('pm_es_mes',esMes)}catch(e){}pintarAnual(esRecs,esOk)});
+  function pintarAnual(recs,ok){
+    esRecs=recs;esOk=ok;
+    var tot=document.getElementById('anTot'),g=document.getElementById('anCuerpo'),fil=document.getElementById('esFil');
+    if(!ok){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';g.innerHTML='';fil.style.display='none';return}
+    fil.style.display='';
+    var anios={},ases={};recs.forEach(function(r){if(r.y)anios[r.y]=1;ases[r.a]=1});
+    var sa=document.getElementById('esAnio'),sm=document.getElementById('esMes'),ss=document.getElementById('esAs');
+    sa.innerHTML='<option value="todos">Todos los años</option>'+Object.keys(anios).sort(function(a,b){return b-a}).map(function(y){return '<option>'+y+'</option>'}).join('');
+    sm.innerHTML='<option value="0">Todos los meses</option>'+MES_LARGO.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>'}).join('');
+    ss.innerHTML='<option value="todos">Todos</option>'+Object.keys(ases).sort().map(function(x){return '<option>'+x+'</option>'}).join('');
+    if(esAnio!=='todos'&&!anios[esAnio])esAnio='todos';if(esAs!=='todos'&&!ases[esAs])esAs='todos';
+    sa.value=esAnio;sm.value=esMes;ss.value=esAs;
+    var ec={},sel=recs.filter(function(r){return (esAnio==='todos'||r.y===+esAnio)&&(esMes==='0'||r.m===+esMes)&&(esAs==='todos'||r.a===esAs)});
+    sel.forEach(function(r){ec[r.e]=(ec[r.e]||0)+1});
+    var per=(esMes==='0'?'':MES_LARGO[+esMes-1]+' ')+(esAnio==='todos'?(esMes==='0'?'todos los años':'de todos los años'):esAnio)+(esAs==='todos'?'':' · '+esAs);
     var L=[['ACTIVO','Activos','#1f9d55','Con póliza vigente'],['FINALIZADO','Finalizados','#5b78c7','Terminaron su contrato'],['CANCELADO','Cancelados','#d64545','Se retiraron']],T=0,i,EXTRA=['#e08a00','#8b5cf6','#0ea5a4','#b45309'],ne=0;
     Object.keys(ec).forEach(function(k){if(k==='ACTIVO'||k==='FINALIZADO'||k==='CANCELADO'||k==='OTRO'||/^ANULAD/.test(k)||!ec[k])return;var nm=k.charAt(0)+k.slice(1).toLowerCase();L.push([k,nm,EXTRA[ne++%4],'Otro estado en la columna AR'])});
     L.push(['OTRO','Sin estado','#c9d0e0','Falta marcar en la columna AR']);
     var AN=0;Object.keys(ec).forEach(function(k){if(/^ANULAD/.test(k))AN+=ec[k]||0;else T+=ec[k]||0});
-    if(!T){tot.textContent='Aún no hay clientes con estado en la columna AR.';g.innerHTML='';return}
+    if(!T){tot.textContent='No hay contratos para '+per+'.';g.innerHTML='';return}
     var pc=function(n){return Math.round(n/T*1000)/10};
-    tot.textContent='Total vendidos: '+T+' contratos'+(AN?' (sin contar '+AN+' anulados)':'')+' · el número grande es la cantidad y el porcentaje es qué parte del total representa.';
+    tot.textContent=per+' · Total vendidos: '+T+' contratos'+(AN?' (sin contar '+AN+' anulados)':'')+' · el número grande es la cantidad y el porcentaje es qué parte del total representa.';
     g.innerHTML='<div class="est-t"><div class="est-k est-tot" style="border-left-color:#021346"><span class="est-n">'+T+'</span><div><b>Total de contratos vendidos</b><small style="display:block">'+(AN?'No incluye los '+AN+' anulados':'Todos los que se han vendido')+'</small></div></div>'+L.filter(function(x){return x[0]!=='OTRO'||ec.OTRO}).map(function(x){var n=ec[x[0]]||0;return '<div class="est-k" style="border-left-color:'+x[2]+'"><span class="est-n">'+n+'</span><b>'+x[1]+'</b><small>'+pc(n)+' % · '+x[3]+'</small></div>'}).join('')+(AN?'<div class="est-k" style="border-left-color:#e08a00"><span class="est-n">'+AN+'</span><b>Anulados</b><small>No cuentan como vendidos</small></div>':'')+'</div>'
       +'<div class="est-b" role="img" aria-label="Estado de los clientes">'+L.map(function(x){var n=ec[x[0]]||0;return n?'<i style="width:0;background:'+x[2]+'" data-w="'+(n/T*100)+'" title="'+x[1]+': '+n+'">'+(n/T>0.07?n:'')+'</i>':''}).join('')+'</div>'
       +'<div class="est-l">'+L.filter(function(x){return ec[x[0]]}).map(function(x){return '<span><i style="background:'+x[2]+'"></i>'+x[1]+'</span>'}).join('')+'</div>';
@@ -768,10 +783,10 @@
       estadoCrm('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos · '+new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}),'#1f9d55');
       window.PM_COBROS=r;document.dispatchEvent(new Event('pm-cobros'));
       var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},tk={},cf={},eds=[],diag={leidas:(r.contratos||[]).length,conContrato:0,mes:0,sinFecha:0,muestras:{},sinContrato:0,sc:{},formaRara:0,fr:{},rescatadas:0},nowE=new Date(),sg={ambos:0,rc:0,ap:0,ninguno:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
-      var ec={ACTIVO:0,FINALIZADO:0,CANCELADO:0,OTRO:0};
+      var ec={ACTIVO:0,FINALIZADO:0,CANCELADO:0,OTRO:0},ecs=[];
       (r.contratos||[]).forEach(function(x){
         if(c[x.estado]!==undefined)c[x.estado]++;
-        if(String(x.cliente||'').trim()){var es=String(x.estado||'').trim().toUpperCase()||'OTRO';ec[es]=(ec[es]||0)+1}
+        if(String(x.cliente||'').trim()){var es=String(x.estado||'').trim().toUpperCase()||'OTRO';ec[es]=(ec[es]||0)+1;var rr=mesAnio(x);ecs.push({y:rr.a||0,m:rr.m||0,e:es,a:(x.asesor||'').trim().toUpperCase()||'SIN ASESOR'})}
         if(/^ANULAD/.test(String(x.estado||'').trim().toUpperCase()))return;
         if(x.mes===undefined)return;nuevo=true;var rs=mesAnio(x);
         if(!String(x.cliente||'').trim()){diag.sinContrato++;var k0=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.sc[k0]=(diag.sc[k0]||0)+1}
@@ -794,7 +809,7 @@
       pintarCF(cf,nuevo);
       pintarEdad(eds,nuevo&&r.contratos.some(function(x){return x.edad!==undefined}));
       pintarSeg(sg,nuevo&&r.contratos.some(function(x){return x.ap!==undefined}));
-      pintarAnual(ec,nuevo);
+      pintarAnual(ecs,nuevo);
       pintarMeta(nuevo?Object.keys(ventas).reduce(function(a,k){return a+ventas[k]},0):null);
       document.getElementById('kpis').innerHTML=[['Activos',c.ACTIVO],['Finalizados',c.FINALIZADO],['Cancelados',c.CANCELADO],['Contratos',(r.contratos||[]).length],['RC este mes',nuevo?rc:'—'],['Contado este mes',nuevo?cont:'—']]
         .map(function(k){return '<div class="kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join('');
