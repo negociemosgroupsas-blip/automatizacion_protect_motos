@@ -279,6 +279,7 @@
   @media(max-width:520px){.cf-t{grid-template-columns:1fr}.cf-n b{font-size:1.6rem}}
   .ch-sub{fill:var(--texto,#1b2133);font-size:10.5px;font-variant-numeric:tabular-nums}
   .tend-l .leg-g,.leg-grande span{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--texto,#1b2133);margin-right:10px} .leg-g i,.leg-grande i{display:inline-block;width:14px;height:14px;border-radius:4px;margin:0!important} .leg-grande{margin:6px 0 4px!important;gap:6px!important}
+  .ch-nom{font-size:10px;font-weight:800;text-anchor:middle;letter-spacing:.04em;pointer-events:none} .ch-nom.nom-o{fill:#021346} .ch-nom.nom-b{fill:#fff}
 </style>
 </head>
 <body>
@@ -473,7 +474,7 @@
           if(hs>16)labs.push(stxt(xs(i),pt+ih-hr-hs/2+4,d.sin,'ch-in-b'));
         }else if(o.grupo){
           var nb=d.vals.length,gw=Math.min(30,slot*0.34),tw=gw*nb+3*(nb-1),x0=xs(i)-tw/2;
-          d.vals.forEach(function(v,gi){var hh=v/o.max*ih;g.appendChild(sv('rect',{x:x0+gi*(gw+3),y:pt+ih-hh,width:gw,height:Math.max(hh,v?2:0),rx:4,fill:o.colores[gi]}));if(v||o.verCeros)labs.push(stxt(x0+gi*(gw+3)+gw/2,pt+ih-hh-5,v,'ch-v ch-vg'))})
+          d.vals.forEach(function(v,gi){var hh=v/o.max*ih;g.appendChild(sv('rect',{x:x0+gi*(gw+3),y:pt+ih-hh,width:gw,height:Math.max(hh,v?2:0),rx:4,fill:o.colores[gi]}));if(v||o.verCeros)labs.push(stxt(x0+gi*(gw+3)+gw/2,pt+ih-hh-5,v,'ch-v ch-vg'));if(o.nombres&&gw>=17&&hh>=o.nombres[gi].length*7+12){var cx=x0+gi*(gw+3)+gw/2,cy=pt+ih-hh/2,tn=stxt(cx,cy+3.5,o.nombres[gi],'ch-nom '+(o.txtNom?o.txtNom[gi]:''));tn.setAttribute('transform','rotate(-90 '+cx+' '+cy+')');labs.push(tn)}})
         }else if(o.segs){
           var acc=0;d.segs.forEach(function(c,si){if(!c)return;var hh=c/o.max*ih;g.appendChild(sv('rect',{x:x,y:pt+ih-acc-hh,width:bw,height:hh,fill:o.colores[si],rx:si===d.segs.length-1?5:0}));if(hh>15)labs.push(stxt(xs(i),pt+ih-acc-hh/2+4,c,o.txtCls?o.txtCls[si]:(si<3?'ch-in-b':'ch-in-o')));acc+=hh})
         }else{
@@ -538,7 +539,7 @@
     var rg=regresion(pts),tx=pts.length<3?'Aún hay pocos meses para calcular la tendencia.':(Math.abs(rg.b)<0.3?'Tendencia del % con RC: estable':'Tendencia del % con RC: '+(rg.b>0?'▲ sube':'▼ baja')+' en promedio '+fmt1(Math.abs(rg.b))+' puntos por mes');
     if(!g.querySelector('.rc-c2'))g.innerHTML='<div class="tend-l"></div><div class="rc-c2"></div>';
     g.querySelector('.tend-l').innerHTML='<span class="leg-g"><i style="background:#fdc33e"></i>Columna dorada = contratos <b>con RC</b></span><span class="leg-g"><i style="background:#021346"></i>Columna azul = contratos <b>sin RC</b></span><span>El número sobre cada columna es la cantidad de contratos del mes.</span>';
-    columnas(g.querySelector('.rc-c2'),{datos:datos.map(function(x){return x.t?{vals:[x.rc,x.sin],rc:x.rc,sin:x.sin,t:x.t,pct:x.pct,m:x.m,y:x.y}:null}),n:6,max:Math.max.apply(null,datos.map(function(x){return Math.max(x.rc,x.sin)}).concat(1))*1.25,alto:230,colores:['#fdc33e','#021346'],grupo:true,subs:function(d){return [{t:d.rc+' con RC',c:'#fdc33e'},{t:d.sin+' sin RC',c:'#021346'}]},
+    columnas(g.querySelector('.rc-c2'),{datos:datos.map(function(x){return x.t?{vals:[x.rc,x.sin],rc:x.rc,sin:x.sin,t:x.t,pct:x.pct,m:x.m,y:x.y}:null}),n:6,max:Math.max.apply(null,datos.map(function(x){return Math.max(x.rc,x.sin)}).concat(1))*1.25,alto:230,colores:['#fdc33e','#021346'],grupo:true,nombres:['RC','SIN RC'],txtNom:['nom-o','nom-b'],subs:function(d){return [{t:d.rc+' con RC',c:'#fdc33e'},{t:d.sin+' sin RC',c:'#021346'}]},
       etiquetas:datos.map(function(x){return MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')}),activo:5,etqBajo2:function(d,i,W){return W<420?d.rc+'/'+d.sin:''},aria:'Contratos con RC y sin RC por mes',
       etqBarra:function(){return ''},
       tip:function(d){return '<b>'+MES_C[d.m-1].toUpperCase()+' '+d.y+'</b> · '+d.t+' contratos<br>Con RC: '+d.rc+' ('+d.pct+' %)<br>Sin RC: '+d.sin+' ('+(100-d.pct)+' %)'}});
@@ -645,7 +646,7 @@
     var mxm=dm.reduce(function(p,q,ix){return q&&(!p||q.t>p.t)?Object.assign({m:ix},q):p},null);
     b.querySelector('.cf-t').innerHTML='<div class="cf-n" style="--c:#fdc33e"><span>De contado</span><b>'+tc+'</b><small>'+Math.round(tc/T*100)+' % de los contratos</small></div><div class="cf-n" style="--c:#5b78c7"><span>Financiados</span><b>'+tf+'</b><small>'+Math.round(tf/T*100)+' % de los contratos</small></div><div class="cf-n" style="--c:#021346"><span>Mes con más contratos</span><b>'+MES_LARGO[mxm.m]+'</b><small>'+mxm.t+' contratos</small></div>';
     var dg=dm.map(function(d){return d?{vals:[d.c,d.f],t:d.t,c:d.c,f:d.f}:null});
-    columnas(b.querySelector('.cf-c'),{datos:dg,n:12,max:Math.max.apply(null,dm.map(function(d){return d?Math.max(d.c,d.f):0}))*1.25,alto:230,etiquetas:MES_C,grupo:true,subs:function(d){return [{t:d.c+' contado',c:'#fdc33e'},{t:d.f+' financ.',c:'#5b78c7'}]},colores:['#fdc33e','#5b78c7'],activo:-1,aria:'Contratos de contado y financiados por mes',etqBarra:function(){return ''},
+    columnas(b.querySelector('.cf-c'),{datos:dg,n:12,max:Math.max.apply(null,dm.map(function(d){return d?Math.max(d.c,d.f):0}))*1.25,alto:230,etiquetas:MES_C,grupo:true,nombres:['CONTADO','FINANCIADO'],txtNom:['nom-o','nom-b'],subs:function(d){return [{t:d.c+' contado',c:'#fdc33e'},{t:d.f+' financ.',c:'#5b78c7'}]},colores:['#fdc33e','#5b78c7'],activo:-1,aria:'Contratos de contado y financiados por mes',etqBarra:function(){return ''},
       tip:function(d,i){return '<b>'+MES_LARGO[i]+(cfAnio==='todos'?'':' '+cfAnio)+'</b> · '+d.t+' contratos<br>De contado: '+d.c+'<br>Financiados: '+d.f}});
   }
 
