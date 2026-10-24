@@ -393,7 +393,9 @@
     var arc='M'+p0[0]+','+p0[1]+' A'+R+','+R+' 0 0 1 '+p1[0]+','+p1[1];
     cuerpo.innerHTML='<div class="gauge-w"><div class="gauge"><svg viewBox="0 0 240 150" width="240" height="150" role="img" aria-label="'+pct+' por ciento de la meta"><path d="'+arc+'" fill="none" stroke="var(--borde,#dfe3ee)" stroke-width="20" stroke-linecap="round" pathLength="100"/><path id="gArc" d="'+arc+'" fill="none" stroke="'+col+'" stroke-width="20" stroke-linecap="round" pathLength="100" stroke-dasharray="'+(first?0:Math.min(100,pct))+' 100" style="transition:stroke-dasharray 1.2s ease"/><line x1="'+t1[0]+'" y1="'+t1[1]+'" x2="'+t2[0]+'" y2="'+t2[1]+'" stroke="var(--texto,#1b2133)" stroke-width="3" stroke-linecap="round"><title>Ritmo esperado a hoy: '+esp+'</title></line><text x="120" y="98" text-anchor="middle" class="ch-big2" id="gNum">'+(first?0:metaTotal)+'</text><text x="120" y="120" text-anchor="middle" class="ch-s">de '+metaVal+' contratos</text><text x="120" y="142" text-anchor="middle" class="ch-v" style="fill:'+col+'">'+pct+' %</text></svg></div>'+
       '<div class="gauge-i"><div class="gi"><span>Ritmo esperado a hoy</span><b>'+esp+'</b></div><div class="gi"><span>Faltan</span><b>'+falta+'</b></div><div class="gi"><span>Días para cerrar</span><b>'+(dm-h.getDate())+'</b></div><div class="meta-t"><span>'+(falta?'La marca en el medidor es el ritmo esperado':'Superaste la meta por '+(metaTotal-metaVal))+' · <button class="meta-e" id="metaEd" type="button">Cambiar meta</button></span></div></div></div>';
-    var dg=window.PM_DIAG;if(dg)cuerpo.insertAdjacentHTML('beforeend','<details class="diag"><summary>¿Cómo se cuenta?</summary>Filas leídas de la hoja Protect: <b>'+dg.leidas+'</b> · con N° de contrato: <b>'+dg.conContrato+'</b> · de '+MES_TXT+': <b>'+dg.mes+'</b> · con mes o año que no reconozco: <b>'+dg.sinFecha+'</b>'+(dg.sinFecha?' (por ejemplo: '+Object.keys(dg.muestras).join(' · ')+')':'')+'.<br>Una venta es cada fila con N° de contrato (columna N) cuyo mes (columna I) y año (columna J) son los de este mes.</details>');
+    var dg=window.PM_DIAG;if(dg){var lista=function(o){return Object.keys(o).sort(function(p,q){return o[q]-o[p]}).slice(0,8).map(function(k){return k+' ('+o[k]+')'}).join(' · ')};
+      cuerpo.insertAdjacentHTML('beforeend','<details class="diag"><summary>¿Cómo se cuenta?</summary>Filas leídas de la hoja Protect: <b>'+dg.leidas+'</b> · con N° de contrato: <b>'+dg.conContrato+'</b> · de '+MES_TXT+': <b>'+dg.mes+'</b>.<br>'+
+        (dg.rescatadas?'<b>'+dg.rescatadas+'</b> filas tenían el mes o el año vacío y se ubicaron con la <b>fecha de firma</b> (columna K).<br>':'')+'<b>No se cuentan en ningún mes:</b><br>• Filas <b>sin N° de contrato</b> (columna N): <b>'+dg.sinContrato+'</b>'+(dg.sinContrato?' · mes/año que traen: '+lista(dg.sc):'')+'<br>• Filas con <b>mes o año que no reconozco</b> (columnas I y J): <b>'+dg.sinFecha+'</b>'+(dg.sinFecha?' · '+lista(dg.muestras):'')+'<br>• Filas con <b>forma de pago distinta de CONTADO o FINANCIADO</b> (columna T; solo afecta la gráfica de contado y financiados): <b>'+dg.formaRara+'</b>'+(dg.formaRara?' · '+lista(dg.fr):'')+'<br>Una venta es cada fila con N° de contrato cuyo mes (columna I) y año (columna J) son reconocidos.</details>')}
     if(first){var arcEl=document.getElementById('gArc'),num=document.getElementById('gNum'),t0=null;setTimeout(function(){arcEl.setAttribute('stroke-dasharray',Math.min(100,pct)+' 100')},60);
       (function paso(ts){if(!t0)t0=ts;var f=Math.min(1,(ts-t0)/1200);num.textContent=Math.round(metaTotal*f);if(f<1)requestAnimationFrame(paso)})(performance.now())}
     document.getElementById('metaEd').onclick=function(){
@@ -687,6 +689,13 @@
   function numMes(v){v=String(v).trim().toLowerCase();if(!v)return 0;if(/^\d+$/.test(v))return +v;
     v=v.normalize('NFD').replace(/[\u0300-\u036f]/g,'').slice(0,3);
     if(v==='set')return 9;for(var i=0;i<12;i++){if(MESES[i].slice(0,3)===v)return i+1}return 0}
+  function mesAnio(x){
+    var m=numMes(x.mes),a=numAnio(x.anio),r=false,tx=String(x.mes||''),q;
+    if(!m){q=tx.match(/^\s*(\d{1,2})\s*[\/\-]\s*(\d{2,4})\s*$/);if(q&&+q[1]>=1&&+q[1]<=12){m=+q[1];if(!a)a=numAnio(q[2])}else{q=tx.match(/^\s*(\d{4})\s*[\/\-]\s*(\d{1,2})\s*$/);if(q&&+q[2]>=1&&+q[2]<=12){m=+q[2];if(!a)a=+q[1]}}}
+    if(!a&&(q=tx.match(/(20\d{2})/)))a=+q[1];
+    if(!a&&m&&(q=tx.match(/[\-\/\.\s](\d{2})\s*$/)))a=2000+(+q[1]);
+    if((!m||!a)&&x.fechaFirmaISO&&/^\d{4}-\d{2}/.test(x.fechaFirmaISO)){if(!m){m=+x.fechaFirmaISO.slice(5,7);r=true}if(!a){a=+x.fechaFirmaISO.slice(0,4);r=true}}
+    return {m:m,a:a,r:r}}
   function numAnio(v){var n=parseInt(String(v).trim(),10);return isNaN(n)?0:(n<100?2000+n:n)}
 
   function pintarAsesores(v,ok){
@@ -714,15 +723,16 @@
       if(!r||!r.ok){nota.textContent='No se pudo leer el resumen de Cobros.';estadoCrm('El conector respondió: '+(r&&r.error?r.error:'respuesta inválida'),'#dc2626');return}
       estadoCrm('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos · '+new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}),'#1f9d55');
       window.PM_COBROS=r;document.dispatchEvent(new Event('pm-cobros'));
-      var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},tk={},cf={},eds=[],diag={leidas:(r.contratos||[]).length,conContrato:0,mes:0,sinFecha:0,muestras:{}},nowE=new Date(),sg={ambos:0,rc:0,ap:0,ninguno:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
+      var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},tk={},cf={},eds=[],diag={leidas:(r.contratos||[]).length,conContrato:0,mes:0,sinFecha:0,muestras:{},sinContrato:0,sc:{},formaRara:0,fr:{},rescatadas:0},nowE=new Date(),sg={ambos:0,rc:0,ap:0,ninguno:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
       (r.contratos||[]).forEach(function(x){
         if(c[x.estado]!==undefined)c[x.estado]++;
-        if(x.mes===undefined)return;nuevo=true;
-        if(String(x.contrato||'').trim()){var mm=numMes(x.mes),aa=numAnio(x.anio);diag.conContrato++;if(!(mm&&aa)){diag.sinFecha++;if(Object.keys(diag.muestras).length<4)diag.muestras[(x.mes||'—')+' / '+(x.anio||'—')]=1}else if(mm===mesAct&&aa===anioAct)diag.mes++;if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};if(x.rc==='SI')kk.rc++;else kk.sin++}
+        if(x.mes===undefined)return;nuevo=true;var rs=mesAnio(x);
+        if(!String(x.contrato||'').trim()){diag.sinContrato++;var k0=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.sc[k0]=(diag.sc[k0]||0)+1}
+        if(String(x.contrato||'').trim()){var mm=rs.m,aa=rs.a;diag.conContrato++;if(rs.r)diag.rescatadas++;if(!(mm&&aa)){diag.sinFecha++;var k1=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.muestras[k1]=(diag.muestras[k1]||0)+1}else if(mm===mesAct&&aa===anioAct)diag.mes++;if(x.forma!=='CONTADO'&&x.forma!=='FINANCIADO'){diag.formaRara++;var k2=(x.forma||'(vacío)')+' · '+(MES_C[mm-1]||'?')+' '+(aa||'?');diag.fr[k2]=(diag.fr[k2]||0)+1}if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};if(x.rc==='SI')kk.rc++;else kk.sin++}
           if(mm&&aa){var ed=Number(x.edad)||0;if(!ed&&x.fechaNacISO){var bd=new Date(x.fechaNacISO);if(!isNaN(bd))ed=Math.floor((nowE-bd)/31557600000)}if(ed>=16&&ed<=95)eds.push({k:aa*12+mm,y:aa,e:ed})}
           if(mm&&aa&&(x.forma==='CONTADO'||x.forma==='FINANCIADO')){var cc=cf[aa*12+mm]=cf[aa*12+mm]||{C:0,F:0};if(x.forma==='CONTADO')cc.C++;else cc.F++}
           var vp=(x.forma==='FINANCIADO'?Number(x.valorCuota):Number(x.valorProtect))||0;if(mm&&aa&&vp>0&&(x.forma==='FINANCIADO'||x.forma==='CONTADO')){var tt=tk[aa*12+mm]=tk[aa*12+mm]||{FINANCIADO:{s:0,n:0},CONTADO:{s:0,n:0}};tt[x.forma].s+=vp;tt[x.forma].n++}}
-        if(numMes(x.mes)===mesAct&&numAnio(x.anio)===anioAct){
+        if(rs.m===mesAct&&rs.a===anioAct){
           if(String(x.contrato||'').trim()){var as=(x.asesor||'').trim().toUpperCase()||'SIN ASESOR';ventas[as]=(ventas[as]||0)+1}
           if(String(x.contrato||'').trim()){var tr=x.rc==='SI',ta=x.ap==='SI';if(tr&&ta)sg.ambos++;else if(tr)sg.rc++;else if(ta)sg.ap++;else sg.ninguno++}
           if(x.rc==='SI')rc++;
