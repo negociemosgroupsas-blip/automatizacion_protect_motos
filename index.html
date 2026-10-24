@@ -541,8 +541,10 @@
   function pintarAnual(ec,ok){
     var tot=document.getElementById('anTot'),g=document.getElementById('anCuerpo');
     if(!ok){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';g.innerHTML='';return}
-    var L=[['ACTIVO','Activos','#1f9d55','Con póliza vigente'],['FINALIZADO','Finalizados','#5b78c7','Terminaron su contrato'],['CANCELADO','Cancelados','#d64545','Se retiraron'],['OTRO','Sin estado','#c9d0e0','Falta marcar en la columna AR']],T=0,i;
-    L.forEach(function(x){T+=ec[x[0]]||0});
+    var L=[['ACTIVO','Activos','#1f9d55','Con póliza vigente'],['FINALIZADO','Finalizados','#5b78c7','Terminaron su contrato'],['CANCELADO','Cancelados','#d64545','Se retiraron']],T=0,i,EXTRA=['#e08a00','#8b5cf6','#0ea5a4','#b45309'],ne=0;
+    Object.keys(ec).forEach(function(k){if(k==='ACTIVO'||k==='FINALIZADO'||k==='CANCELADO'||k==='OTRO'||!ec[k])return;var nm=k.charAt(0)+k.slice(1).toLowerCase();nm=/^anulad/i.test(k)?'Anulados':nm;L.push([k,nm,EXTRA[ne++%4],/^anulad/i.test(k)?'Contratos anulados':'Otro estado en la columna AR'])});
+    L.push(['OTRO','Sin estado','#c9d0e0','Falta marcar en la columna AR']);
+    Object.keys(ec).forEach(function(k){T+=ec[k]||0});
     if(!T){tot.textContent='Aún no hay clientes con estado en la columna AR.';g.innerHTML='';return}
     var pc=function(n){return Math.round(n/T*1000)/10};
     tot.textContent='Total: '+T+' contratos · el número grande es la cantidad y el porcentaje es qué parte del total representa.';
@@ -769,7 +771,7 @@
       var ec={ACTIVO:0,FINALIZADO:0,CANCELADO:0,OTRO:0};
       (r.contratos||[]).forEach(function(x){
         if(c[x.estado]!==undefined)c[x.estado]++;
-        if(String(x.cliente||'').trim()){if(ec[x.estado]!==undefined&&x.estado!=='OTRO')ec[x.estado]++;else ec.OTRO++}
+        if(String(x.cliente||'').trim()){var es=String(x.estado||'').trim().toUpperCase()||'OTRO';ec[es]=(ec[es]||0)+1}
         if(x.mes===undefined)return;nuevo=true;var rs=mesAnio(x);
         if(!String(x.cliente||'').trim()){diag.sinContrato++;var k0=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.sc[k0]=(diag.sc[k0]||0)+1}
         if(String(x.cliente||'').trim()){var mm=rs.m,aa=rs.a;diag.conContrato++;if(rs.r)diag.rescatadas++;if(!(mm&&aa)){diag.sinFecha++;var k1=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.muestras[k1]=(diag.muestras[k1]||0)+1}else if(mm===mesAct&&aa===anioAct)diag.mes++;if(x.forma!=='CONTADO'&&x.forma!=='FINANCIADO'){diag.formaRara++;var k2=(x.forma||'(vacío)')+' · '+(MES_C[mm-1]||'?')+' '+(aa||'?');diag.fr[k2]=(diag.fr[k2]||0)+1}if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};if(x.rc==='SI')kk.rc++;else kk.sin++}
