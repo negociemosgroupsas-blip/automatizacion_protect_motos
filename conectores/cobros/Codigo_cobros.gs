@@ -24,12 +24,6 @@ var COL = {
   VALOR_CUOTA: 17,
   PLAZO: 18,
   FORMA: 20,         // CONTADO | FINANCIADO
-  FECHA_NAC: 6,      // Fecha de nacimiento del cliente (columna F)
-  EDAD: 7,           // Edad del cliente al firmar (columna G)
-  MES: 9,            // Mes del contrato (columna I)
-  ANIO: 10,          // Año del contrato (columna J)
-  RC: 21,            // Responsabilidad Civil: SI | NO (columna U)
-  AP: 23,            // Asistencias: SI | NO (columna W)
   CELULAR: 31,
   CORREO: 32,
   DIRECCION: 33,
@@ -160,12 +154,6 @@ function leerContratos(hoja) {
       celular: String(fila[COL.CELULAR - 1] || ''),
       correo: String(fila[COL.CORREO - 1] || ''),
       direccion: String(fila[COL.DIRECCION - 1] || ''),
-      edad: Number(fila[COL.EDAD - 1]) || 0,
-      fechaNacISO: formatoISO(fila[COL.FECHA_NAC - 1]),
-      mes: valorMesAnio(fila[COL.MES - 1], 'mes'),
-      anio: valorMesAnio(fila[COL.ANIO - 1], 'anio'),
-      rc: String(fila[COL.RC - 1] || '').trim().toUpperCase(),
-      ap: String(fila[COL.AP - 1] || '').trim().toUpperCase(),
       estado: String(fila[COL.ESTADO_CLIENTE - 1] || '').trim().toUpperCase()
     });
   }
@@ -509,12 +497,6 @@ function formatoFecha(valor) {
   var fecha = (valor instanceof Date) ? valor : new Date(valor);
   if (isNaN(fecha.getTime())) return '';
   return fecha.getDate() + '/' + (fecha.getMonth() + 1) + '/' + fecha.getFullYear();
-}
-
-// Mes/año tal como están en la hoja; si la celda es una fecha, se devuelve su mes (1-12) o su año.
-function valorMesAnio(valor, tipo) {
-  if (valor instanceof Date) return String(tipo === 'mes' ? valor.getMonth() + 1 : valor.getFullYear());
-  return String(valor === null || valor === undefined ? '' : valor).trim();
 }
 
 function formatoISO(valor) {

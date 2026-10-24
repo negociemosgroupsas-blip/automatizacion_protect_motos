@@ -303,18 +303,27 @@
   <section class="vista" id="v-conciliacion"></section>
   <section class="vista" id="v-contratos"></section>
   <section class="vista" id="v-ayuda"><div class="pagina">
-    <h1>Cómo está conectado todo</h1>
-    <p class="sub">Resumen para quien administra la plataforma.</p>
+    <h1>Conexiones</h1>
+    <p class="sub">Cómo está conectado el CRM con tus hojas de Google.</p>
     <div class="caja">
-      <p><b>Abrir:</b> guarda esta carpeta completa en tu computador (con <code>index.html</code>, <code>assets/</code> y <code>modulos/</code>) y abre <code>index.html</code> con doble clic en Chrome.</p>
-      <p><b>Conectores:</b> cada módulo mantiene su propio conector de Google Apps Script y su propia URL. Se pegan una sola vez, dentro de cada módulo (barra superior → <i>Guardar</i>), y el navegador las recuerda.</p>
-      <ul>
-        <li><b>Cobros</b> → <code>Codigo_cobros.gs</code> (hojas Protect, Pagos, Gestiones).</li>
-        <li><b>Conciliación</b> → <code>Conciliacion_Consolidados.gs</code> + <code>Conciliacion_WebApp.gs</code> (hojas Protect y Consolidado).</li>
-        <li><b>Contratos</b> → conector del Automatizador (hoja Protect, RC, AP, Codigos Fasecolda).</li>
+      <h3 style="margin:0 0 6px">Conector del CRM (solo lectura)</h3>
+      <p style="margin:0 0 10px">Es un proyecto de Apps Script <b>nuevo</b> (<code>conectores/crm/Codigo_crm.gs</code>). Alimenta el Inicio: gráficas, alertas y buscador. <b>Solo lee</b> tu hoja Protect y Pagos; no escribe nada y no toca los conectores de Cobros, Conciliación ni Contratos.</p>
+      <label style="display:block;font-size:.8rem;color:var(--suave)">URL del conector del CRM (termina en /exec)</label>
+      <input id="crmUrl" type="text" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%;padding:9px 12px;border:1px solid var(--borde);border-radius:8px;margin:4px 0 8px;font-size:.85rem">
+      <label style="display:block;font-size:.8rem;color:var(--suave)">Clave (solo si la cambiaste en el código; por defecto PM-CRM-2026)</label>
+      <input id="crmTok" type="text" placeholder="PM-CRM-2026" style="width:260px;max-width:100%;padding:9px 12px;border:1px solid var(--borde);border-radius:8px;margin:4px 0 10px;font-size:.85rem">
+      <div class="f-acc" style="margin-top:0"><button id="crmGuardar" type="button">Guardar</button><button id="crmProbar" type="button" class="sec">Probar conexión</button></div>
+      <p id="crmEstado" class="nota" style="margin-top:10px">Sin conectar.</p>
+    </div>
+    <div class="caja" style="margin-top:14px">
+      <h3 style="margin:0 0 6px">Los demás conectores</h3>
+      <ul style="margin:6px 0">
+        <li><b>Cobros</b> → <code>Codigo_cobros.gs</code> (hojas Protect, Pagos, Gestiones). Su URL se guarda dentro del módulo Cobros.</li>
+        <li><b>Conciliación</b> → <code>Conciliacion_Consolidados.gs</code> + <code>Conciliacion_WebApp.gs</code>. Su URL se guarda dentro del módulo Conciliación.</li>
+        <li><b>Contratos</b> → <code>Codigo_conector.gs</code> (hoja Protect, RC, AP, Codigos Fasecolda). Su URL se guarda dentro del módulo Contratos.</li>
       </ul>
-      <p><b>Datos compartidos:</b> los tres módulos leen y escriben el mismo Google Sheet «Seguimiento Protec Motos 2026 ACTUAL», por eso lo que guarda uno (por ejemplo un contrato nuevo) lo ven los otros al pulsar «Actualizar datos».</p>
-      <p><b>No se modificó</b> ningún módulo: se muestran tal cual dentro de esta plataforma.</p>
+      <p>Todos usan el mismo Google Sheet «Seguimiento Protec Motos 2026 ACTUAL». Los tres módulos se muestran tal cual los tenías.</p>
+      <p>Las URLs se guardan en este navegador. Si cambias de computador o de navegador, hay que pegarlas de nuevo.</p>
     </div>
   </div></section>
   <div id="ficha"></div>
@@ -374,7 +383,7 @@
     if(total!==undefined)metaTotal=total;
     var cuerpo=document.getElementById('metaCuerpo'),tot=document.getElementById('metaTot');
     if(metaTotal!==null)moverMoto(metaTotal,metaVal);
-    if(metaTotal===null){tot.textContent='Para ver la meta, publica una Nueva versión del conector de Cobros.';cuerpo.innerHTML='';return}
+    if(metaTotal===null){tot.textContent='Para ver la meta, configura el conector del CRM en «Conexiones».';cuerpo.innerHTML='';return}
     var h=new Date(),dm=new Date(h.getFullYear(),h.getMonth()+1,0).getDate(),esp=Math.round(metaVal*h.getDate()/dm),pct=Math.round(metaTotal/metaVal*100),falta=Math.max(0,metaVal-metaTotal);
     var cl=metaTotal>=metaVal||metaTotal>=esp?'ok':metaTotal>=esp*0.8?'med':'bajo';
     var estado=metaTotal>=metaVal?'¡Meta cumplida!':metaTotal>=esp?'Vas al día o adelantado':'Vas por debajo del ritmo';
@@ -508,7 +517,7 @@
   /* ----- Contratos por mes del año: columnas + tendencia ----- */
   function pintarAnual(hist,ok){
     var tot=document.getElementById('anTot'),g=document.getElementById('anCuerpo');
-    if(!ok){tot.textContent='Para ver esta gráfica, publica una Nueva versión del conector de Cobros.';g.innerHTML='';return}
+    if(!ok){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';g.innerHTML='';return}
     var h=new Date(),y=h.getFullYear(),mAct=h.getMonth()+1,v=[],i,max=1;
     for(i=1;i<=mAct;i++){var k=hist[y*12+i];v.push(k?k.rc+k.sin:0);if(v[i-1]>max)max=v[i-1]}
     var cur=v[mAct-1],prev=mAct>1?v[mAct-2]:null,txt;
@@ -529,7 +538,7 @@
   /* ----- RC contra sin RC: columnas apiladas + tendencia del % ----- */
   function pintarRc(b,ok){
     var tot=document.getElementById('rcTot'),g=document.getElementById('rcGraf');
-    if(!ok){tot.textContent='Para ver esta gráfica, publica una Nueva versión del conector de Cobros.';g.innerHTML='';return}
+    if(!ok){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';g.innerHTML='';return}
     var h=new Date(),meses=[],i;
     for(i=5;i>=0;i--){var d=new Date(h.getFullYear(),h.getMonth()-i,1);meses.push({y:d.getFullYear(),m:d.getMonth()+1})}
     var datos=meses.map(function(x){var k=b[x.y*12+x.m]||{rc:0,sin:0},t=k.rc+k.sin;return {y:x.y,m:x.m,rc:k.rc,sin:k.sin,t:t,pct:t?Math.round(k.rc/t*100):0}});
@@ -548,7 +557,7 @@
   /* ----- Seguros por contrato: dona animada ----- */
   function pintarSeg(s,ok){
     var tot=document.getElementById('sgTot'),b=document.getElementById('sgCuerpo');
-    if(!ok){tot.textContent='Para ver esta gráfica, publica una Nueva versión del conector de Cobros.';b.innerHTML='';return}
+    if(!ok){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';b.innerHTML='';return}
     var t=s.ambos+s.rc+s.ap+s.ninguno;
     if(!t){tot.textContent='Todavía no hay contratos este mes.';b.innerHTML='';return}
     var con=s.ambos+s.rc+s.ap;
@@ -580,7 +589,7 @@
   function pintarTicket(tk,ok){
     if(tk){tkData=tk;tkOk=ok}
     var tot=document.getElementById('tkTot'),b=document.getElementById('tkCuerpo'),ti=document.getElementById('tkTit');if(!tot)return;
-    if(!tkOk){tot.textContent='Para ver el ticket promedio, publica una Nueva versión del conector de Cobros.';b.innerHTML='';return}
+    if(!tkOk){tot.textContent='Para ver el ticket promedio, configura el conector del CRM en «Conexiones».';b.innerHTML='';return}
     var sum=function(f){var r={FINANCIADO:{s:0,n:0},CONTADO:{s:0,n:0}};Object.keys(tkData).forEach(function(k){k=+k;var y=Math.floor((k-1)/12),m=k-y*12;if(f(y,m)){['FINANCIADO','CONTADO'].forEach(function(t){r[t].s+=tkData[k][t].s;r[t].n+=tkData[k][t].n})}});return r};
     var yy=edAnio==='todos'?null:+edAnio,mm=+edMes,cur,ant=null,antTxt='';
     if(yy===null){cur=sum(function(y,m){return mm===0||m===mm})}
@@ -608,7 +617,7 @@
   function pintarEdad(lista,ok){
     if(lista){edDatos=lista;edOk=ok}
     var tot=document.getElementById('edTot'),b=document.getElementById('edCuerpo');
-    if(!edOk){tot.textContent='Para ver la edad de los clientes, publica una Nueva versión del conector de Cobros.';b.innerHTML='';return}
+    if(!edOk){tot.textContent='Para ver la edad de los clientes, configura el conector del CRM en «Conexiones».';b.innerHTML='';return}
     var h=new Date(),yAct=h.getFullYear(),anios={};anios[yAct]=1;edDatos.forEach(function(x){anios[x.y]=1});
     var lst=Object.keys(anios).sort(function(a,b){return b-a}),sa=document.getElementById('edAnio');
     sa.innerHTML='<option value="todos">Todos los años</option>'+lst.map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');
@@ -632,7 +641,7 @@
   function pintarCF(cf,ok){
     if(cf){cfDatos=cf;cfOk=ok}
     var tot=document.getElementById('cfTot'),b=document.getElementById('cfCuerpo');
-    if(!cfOk){tot.textContent='Para ver esta gráfica, publica una Nueva versión del conector de Cobros.';b.innerHTML='';return}
+    if(!cfOk){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';b.innerHTML='';return}
     var yAct=new Date().getFullYear(),anios={};anios[yAct]=1;Object.keys(cfDatos).forEach(function(k){anios[Math.floor((+k-1)/12)]=1});
     var lst=Object.keys(anios).sort(function(a,c){return c-a}),sa=document.getElementById('cfAnio');
     sa.innerHTML='<option value="todos">Todos los años</option>'+lst.map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');
@@ -680,7 +689,7 @@
 
   function pintarAsesores(v,ok){
     var tot=document.getElementById('asrTot'),box=document.getElementById('asrBarras');
-    if(!ok){tot.textContent='Para ver las ventas por asesor, publica una Nueva versión del conector de Cobros.';return}
+    if(!ok){tot.textContent='Para ver las ventas por asesor, configura el conector del CRM en «Conexiones».';return}
     var lista=Object.keys(v).map(function(k){return [k,v[k]]}).sort(function(a,b){return b[1]-a[1]}),suma=lista.reduce(function(s,x){return s+x[1]},0),max=lista.length?lista[0][1]:1;
     tot.textContent=suma?'Contratos del mes · '+suma+' en total':'Todavía no hay contratos este mes.';
     box.className='asr-l';box.style.setProperty('--f',Math.max(1,Math.ceil(lista.length/2)));
@@ -692,8 +701,8 @@
   function cargarResumen(){
     if(cargandoResumen)return;cargandoResumen=true;
     var nota=document.getElementById('kpiNota'),url=null;
-    try{url=localStorage.getItem('pm_cobros_url_conector')}catch(e){}
-    if(!url){cargandoResumen=false;nota.textContent='Abre el módulo Cobros y guarda su URL para ver aquí el resumen de clientes.';return}
+    var tok='PM-COBROS-2026';try{var cu=localStorage.getItem('pm_crm_url');if(cu){url=cu;tok=localStorage.getItem('pm_crm_token')||'PM-CRM-2026'}else{url=localStorage.getItem('pm_cobros_url_conector')}}catch(e){}
+    if(!url){cargandoResumen=false;nota.textContent='Pega la URL del conector del CRM en «Conexiones» para ver aquí el resumen.';return}
     var cb='pmInicio'+Date.now(),s=document.createElement('script'),t=setTimeout(fin,45000);
     function fin(){clearTimeout(t);cargandoResumen=false;delete window[cb];s.remove()}
     window[cb]=function(r){
@@ -726,10 +735,10 @@
       pintarMeta(nuevo?Object.keys(ventas).reduce(function(a,k){return a+ventas[k]},0):null);
       document.getElementById('kpis').innerHTML=[['Activos',c.ACTIVO],['Finalizados',c.FINALIZADO],['Cancelados',c.CANCELADO],['Contratos',(r.contratos||[]).length],['RC este mes',nuevo?rc:'—'],['Contado este mes',nuevo?cont:'—']]
         .map(function(k){return '<div class="kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join('');
-      nota.textContent=conRc?'Datos de la hoja Protect al abrir la plataforma. Este mes (columnas I y J de Protect): RC = SI en la columna U; Contado = CONTADO en la columna T.':'Para ver RC y Contado del mes, publica una Nueva versión del conector de Cobros (conectores/cobros/Codigo_cobros.gs).';
+      nota.textContent=conRc?'Datos de la hoja Protect al abrir la plataforma. Este mes (columnas I y J de Protect): RC = SI en la columna U; Contado = CONTADO en la columna T.':'Para ver RC y Contado del mes, configura el conector del CRM en «Conexiones» (conectores/cobros/Codigo_cobros.gs).';
     };
     s.onerror=function(){fin();nota.textContent='No se pudo conectar con Cobros para el resumen.'};
-    s.src=url+(url.indexOf('?')<0?'?':'&')+'action=datos&token=PM-COBROS-2026&callback='+cb+'&_='+Date.now();
+    s.src=url+(url.indexOf('?')<0?'?':'&')+'action=datos&token='+encodeURIComponent(tok)+'&callback='+cb+'&_='+Date.now();
     document.head.appendChild(s);
   }
   cargarResumen();window.PM_recargarCobros=cargarResumen;
@@ -847,6 +856,30 @@
   function actualizarTodo(){ultimoAuto=Date.now();if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc()}
   setInterval(function(){if(!document.hidden)actualizarTodo()},60000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&Date.now()-ultimoAuto>60000)actualizarTodo()});
+
+  // Conexiones: conector del CRM
+  (function(){
+    var u=document.getElementById('crmUrl'),t=document.getElementById('crmTok'),e=document.getElementById('crmEstado');
+    try{u.value=localStorage.getItem('pm_crm_url')||'';t.value=localStorage.getItem('pm_crm_token')||''}catch(x){}
+    function estado(txt,cl){e.textContent=txt;e.style.color=cl||''}
+    if(u.value)estado('URL guardada. Pulsa «Probar conexión» para comprobarla.');
+    document.getElementById('crmGuardar').addEventListener('click',function(){
+      var v=u.value.trim();
+      if(v&&!/^https:\/\/script\.google\.com\//.test(v)){estado('La URL debe empezar con https://script.google.com/ y terminar en /exec.','#dc2626');return}
+      try{localStorage.setItem('pm_crm_url',v);localStorage.setItem('pm_crm_token',t.value.trim())}catch(x){}
+      estado(v?'Guardado. Actualizando el Inicio…':'Guardado sin URL: el Inicio usará el conector de Cobros si existe.','#1f9d55');
+      if(window.PM_recargarCobros)window.PM_recargarCobros();
+    });
+    document.getElementById('crmProbar').addEventListener('click',function(){
+      var v=u.value.trim();if(!v){estado('Pega primero la URL.','#dc2626');return}
+      var cb='pmPing'+Date.now(),s=document.createElement('script'),tm=setTimeout(function(){fin();estado('Sin respuesta. Revisa la URL y que el acceso sea «Cualquier usuario».','#dc2626')},30000);
+      function fin(){clearTimeout(tm);delete window[cb];s.remove()}
+      window[cb]=function(r){fin();r&&r.ok?estado('Conectado ✔ '+(r.mensaje||''),'#1f9d55'):estado('El conector respondió: '+(r&&r.error?r.error:'respuesta inválida'),'#dc2626')};
+      s.onerror=function(){fin();estado('No se pudo conectar. Revisa la URL.','#dc2626')};
+      estado('Probando…');
+      s.src=v+(v.indexOf('?')<0?'?':'&')+'action=ping&token='+encodeURIComponent(t.value.trim()||'PM-CRM-2026')+'&callback='+cb+'&_='+Date.now();
+      document.head.appendChild(s)});
+  })();
 })();
 </script>
 </body>

@@ -39,3 +39,11 @@ Las copias antiguas en la raíz (`Protect_Motos_Cobros.html`, `Codigo_cobros.gs`
 
 ## Actualización automática
 El Inicio (gráficas, moto, alertas y búsqueda) vuelve a leer Cobros y Conciliación cada 60 segundos mientras la pestaña está visible, y al volver a ella si pasó más de un minuto. La hora de la última lectura aparece junto a «Actualizar». Los módulos mantienen su propia actualización (Cobros: cada 1 min; Conciliación: la que elijas en su selector). Contratos no se actualiza solo para no borrar lo que se está escribiendo.
+
+
+## Conector del CRM (proyecto nuevo, solo lectura)
+Para no tocar el conector de Cobros que ya funciona, el Inicio del CRM lee sus datos de un **proyecto de Apps Script nuevo**: `conectores/crm/Codigo_crm.gs`.
+- Solo lee las hojas Protect y Pagos. No escribe, no usa Drive y no cambia los otros conectores.
+- Publicar: script.google.com → Nuevo proyecto → pegar el código → Implementar → Nueva implementación → Aplicación web (Ejecutar como: Yo · Acceso: Cualquier usuario).
+- Pegar la URL (termina en /exec) en el CRM, pestaña **Conexiones**, y pulsar *Guardar* y *Probar conexión*.
+- `conectores/cobros/Codigo_cobros.gs` quedó idéntico al original: no hay que volver a publicarlo.
