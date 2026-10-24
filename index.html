@@ -297,6 +297,7 @@
   .est-b{display:flex;height:34px;border-radius:999px;overflow:hidden;background:#e8ebf3} .est-b i{display:flex;align-items:center;justify-content:center;color:#fff;font:700 .85rem Arial;font-style:normal;transition:width 1s ease}
   .est-l{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:.8rem;color:var(--suave,#6b7280)} .est-l i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
   .es-ot{cursor:pointer;font-weight:600}
+  .est-d{margin-top:10px;font-size:.8rem;color:var(--suave,#6b7280)} .est-d summary{cursor:pointer;font-weight:600} .est-d table{border-collapse:collapse;margin:8px 0;width:100%} .est-d th,.est-d td{border-bottom:1px solid var(--borde,#dfe3ee);padding:4px 8px;text-align:right} .est-d th:first-child,.est-d td:first-child{text-align:left}
 </style>
 </head>
 <body>
@@ -570,6 +571,8 @@
       +'<div class="est-b" role="img" aria-label="Estado de los clientes">'+Lv.map(function(x){var n=ec[x[0]]||0;return n?'<i style="width:0;background:'+x[2]+'" data-w="'+(n/VS*100)+'" title="'+x[1]+': '+n+'">'+(n/T>0.07?n:'')+'</i>':''}).join('')+'</div>'
       +(oc?'<div class="est-l"><span>+ '+oc+' contratos con otro estado (marca «Ver otros estados» para verlos)</span></div>':'')
       +'<div class="est-l">'+Lv.filter(function(x){return ec[x[0]]}).map(function(x){return '<span><i style="background:'+x[2]+'"></i>'+x[1]+'</span>'}).join('')+'</div>';
+    var por={},ys={};recs.forEach(function(r){if(/^ANULAD/.test(r.e))return;var yy=r.y||'sin año';ys[yy]=1;por[yy]=por[yy]||{ACTIVO:0,FINALIZADO:0,CANCELADO:0,O:0};if(por[yy][r.e]!==undefined)por[yy][r.e]++;else por[yy].O++});
+    g.innerHTML+='<details class="est-d"><summary>¿Cómo se cuenta? (por año de firma)</summary><table><tr><th>Año</th><th>Activos</th><th>Finalizados</th><th>Cancelados</th><th>Otros</th></tr>'+Object.keys(ys).sort().map(function(y){var o=por[y];return '<tr><td>'+y+'</td><td>'+o.ACTIVO+'</td><td>'+o.FINALIZADO+'</td><td>'+o.CANCELADO+'</td><td>'+o.O+'</td></tr>'}).join('')+'</table><p>Cuenta las filas de la hoja Protect que tienen nombre de cliente (columna H), según el año de la columna J y el estado de la columna AR. «sin año» = filas sin año en la columna J.</p></details>';
     setTimeout(function(){[].forEach.call(g.querySelectorAll('.est-b i'),function(e){e.style.width=e.dataset.w+'%'})},60);
   }
 
