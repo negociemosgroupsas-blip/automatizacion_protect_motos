@@ -434,7 +434,7 @@
     document.getElementById('metaEd').onclick=function(){
       this.parentNode.innerHTML='Meta: <input id="metaIn" type="number" min="1" value="'+metaVal+'"> <button class="meta-e" id="metaOk" type="button">Guardar</button>';
       document.getElementById('metaOk').onclick=function(){var n=parseInt(document.getElementById('metaIn').value,10);if(n>0){metaVal=n;try{localStorage.setItem(META_CLAVE,String(n))}catch(e){}}pintarMeta()}}}
-  var rcm=document.createElement('div');rcm.className='card rcm';rcm.innerHTML='<h3>Contratos con RC y sin RC, mes a mes</h3><p class="tot" id="rcTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="rcFil"><label>Ver <select id="rcPer"></select></label><label>Asesor <select id="rcAs"></select></label></div><div id="rcGraf"></div>';tarjetas.appendChild(rcm);
+  var rcm=document.createElement('div');rcm.className='card rcm';rcm.innerHTML='<h3>Contratos con RC y sin RC, mes a mes</h3><p class="tot" id="rcTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="rcFil"><label>Año <select id="rcAnio"></select></label><label>Mes <select id="rcMes"></select></label><label>Mostrar <select id="rcTipo"></select></label></div><div id="rcGraf"></div>';tarjetas.appendChild(rcm);
   var MES_C=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   var seg=document.createElement('div');seg.className='card seg';seg.innerHTML='<h3>Seguros por contrato</h3><p class="tot" id="sgTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="sgFil"><label>Año <select id="sgAnio"></select></label><label>Mes <select id="sgMes"></select></label></div><div id="sgCuerpo"></div>';tarjetas.appendChild(seg);
   var anu=document.createElement('div');anu.className='card anu';anu.innerHTML='<h3>Estado de los clientes</h3><p class="tot" id="anTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="esFil"><label>Año <select id="esAnio"></select></label><label>Mes <select id="esMes"></select></label><label>Asesor <select id="esAs"></select></label><label class="es-ot"><input type="checkbox" id="esOt"> Ver otros estados</label></div><div id="anCuerpo"></div>';tarjetas.appendChild(anu);
@@ -592,40 +592,39 @@
   }
 
   /* ----- RC contra sin RC: columnas apiladas + tendencia del % ----- */
-  var rcPer='ult6',rcAs='todos',rcRecs=[],rcOk=false;
-  document.getElementById('rcFil').addEventListener('change',function(){rcPer=document.getElementById('rcPer').value;rcAs=document.getElementById('rcAs').value;pintarRc(rcRecs,rcOk)});
+  var rcY=String(new Date().getFullYear()),rcM='0',rcT='ambos',rcRecs=[],rcOk=false;
+  document.getElementById('rcFil').addEventListener('change',function(){rcY=document.getElementById('rcAnio').value;rcM=document.getElementById('rcMes').value;rcT=document.getElementById('rcTipo').value;pintarRc(rcRecs,rcOk)});
   function pintarRc(recs,ok){
     rcRecs=recs;rcOk=ok;
     var tot=document.getElementById('rcTot'),g=document.getElementById('rcGraf'),fil=document.getElementById('rcFil');
     if(!ok){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';g.innerHTML='';fil.style.display='none';return}
     fil.style.display='';
-    var h=new Date(),meses=[],i,yy={},ases={};recs.forEach(function(r){yy[Math.floor((r.k-1)/12)]=1;ases[r.a]=1});
-    var sp=document.getElementById('rcPer'),sa=document.getElementById('rcAs');
-    sp.innerHTML='<option value="ult6">Últimos 6 meses</option>'+Object.keys(yy).sort(function(a,b){return b-a}).map(function(y){return '<option value="'+y+'">Año '+y+' (12 meses)</option>'}).join('');
-    sa.innerHTML='<option value="todos">Todos</option>'+Object.keys(ases).sort().map(function(x){return '<option>'+x+'</option>'}).join('');
-    if(rcPer!=='ult6'&&!yy[rcPer])rcPer='ult6';if(rcAs!=='todos'&&!ases[rcAs])rcAs='todos';
-    sp.value=rcPer;sa.value=rcAs;
-    var b={};recs.forEach(function(r){if(rcAs!=='todos'&&r.a!==rcAs)return;var k=b[r.k]=b[r.k]||{rc:0,sin:0};if(r.rc)k.rc++;else k.sin++});
-    var N=rcPer==='ult6'?6:12;
-    if(rcPer==='ult6'){for(i=5;i>=0;i--){var d=new Date(h.getFullYear(),h.getMonth()-i,1);meses.push({y:d.getFullYear(),m:d.getMonth()+1})}}
-    else{for(i=1;i<=12;i++)meses.push({y:+rcPer,m:i})}
-    var curK=h.getFullYear()*12+h.getMonth()+1;
-    var datos=meses.map(function(x){var k=b[x.y*12+x.m]||{rc:0,sin:0},t=k.rc+k.sin;return {y:x.y,m:x.m,rc:k.rc,sin:k.sin,t:t,pct:t?Math.round(k.rc/t*100):0,fut:x.y*12+x.m>curK}});
-    var ia=rcPer==='ult6'?5:(+rcPer===h.getFullYear()?h.getMonth():-1);
-    var act=ia>=0?datos[ia]:datos.reduce(function(m,x){return x.t?x:m},datos[0]),ant=ia>0?datos[ia-1]:{t:0,rc:0,sin:0};
-    var pre=ia>=0?'Mes actual: ':'Último mes con contratos ('+MES_C[act.m-1]+'): ';
-    if(rcPer!=='ult6'){var sr=0,ss=0;datos.forEach(function(x){sr+=x.rc;ss+=x.sin});pre='Año '+rcPer+': '+sr+' con RC y '+ss+' sin RC ('+(sr+ss)+' contratos)'+(rcAs==='todos'?'':' · '+rcAs)+'. '+pre}
-    else if(rcAs!=='todos')pre=rcAs+' · '+pre;
-    var max=Math.max.apply(null,datos.map(function(x){return x.t}).concat(1));
-    tot.textContent=pre+act.rc+' con RC y '+act.sin+' sin RC ('+act.t+' contratos)'+(ant.t?' · mes anterior: '+ant.rc+' con RC y '+ant.sin+' sin RC':'');
-    var pts=[];datos.forEach(function(x,i){if(x.t)pts.push({i:i,y:x.pct})});
-    var rg=regresion(pts),tx=pts.length<3?'Aún hay pocos meses para calcular la tendencia.':(Math.abs(rg.b)<0.3?'Tendencia del % con RC: estable':'Tendencia del % con RC: '+(rg.b>0?'▲ sube':'▼ baja')+' en promedio '+fmt1(Math.abs(rg.b))+' puntos por mes');
+    var h=new Date(),yA=h.getFullYear(),yy={};yy[yA]=1;recs.forEach(function(r){yy[Math.floor((r.k-1)/12)]=1});
+    var ys=Object.keys(yy).map(Number).sort(function(a,b){return a-b});
+    var sa=document.getElementById('rcAnio'),sm=document.getElementById('rcMes'),st=document.getElementById('rcTipo');
+    sa.innerHTML='<option value="todos">Todos los años</option>'+ys.slice().reverse().map(function(y){return '<option>'+y+'</option>'}).join('');
+    sm.innerHTML='<option value="0">Todo el año</option>'+MES_LARGO.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>'}).join('');
+    st.innerHTML='<option value="ambos">Con RC y sin RC</option><option value="rc">Solo con RC</option><option value="sin">Solo sin RC</option>';
+    if(rcY!=='todos'&&!yy[rcY])rcY=String(yA);
+    sa.value=rcY;sm.value=rcM;st.value=rcT;
+    var cnt={};recs.forEach(function(r){var k=cnt[r.k]=cnt[r.k]||{rc:0,sin:0};if(r.rc)k.rc++;else k.sin++});
+    var porAnio=(rcM!=='0'||rcY==='todos'),datos=[],eti=[],i,activo=-1,mm=+rcM;
+    if(!porAnio){for(i=1;i<=12;i++){var k=cnt[+rcY*12+i]||{rc:0,sin:0};datos.push({rc:k.rc,sin:k.sin,t:k.rc+k.sin,tit:MES_LARGO[i-1]+' '+rcY});eti.push(MES_C[i-1])}if(+rcY===yA)activo=h.getMonth()}
+    else{ys.forEach(function(y){var r=0,sn=0;for(var m=1;m<=12;m++){if(mm&&m!==mm)continue;var k=cnt[y*12+m];if(k){r+=k.rc;sn+=k.sin}}datos.push({rc:r,sin:sn,t:r+sn,tit:(mm?MES_LARGO[mm-1]+' ':'Año ')+y});eti.push(String(y));if(rcY!=='todos'&&y===+rcY)activo=datos.length-1})}
+    datos.forEach(function(d){d.pct=d.t?Math.round(d.rc/d.t*100):0});
+    var N=datos.length,sr=0,ss=0;(porAnio&&rcY!=='todos'&&activo>=0?[datos[activo]]:datos).forEach(function(d){sr+=d.rc;ss+=d.sin});
+    var per=(rcM==='0'?'':MES_LARGO[mm-1]+' ')+(rcY==='todos'?(rcM==='0'?'todos los años':'de todos los años'):(rcM==='0'?'año ':'')+rcY);
+    var cur=!porAnio&&activo>=0?datos[activo]:null;
+    tot.textContent=per.charAt(0).toUpperCase()+per.slice(1)+': '+sr+' con RC y '+ss+' sin RC ('+(sr+ss)+' contratos)'+(cur&&cur.t?' · mes actual: '+cur.rc+' con RC y '+cur.sin+' sin RC':'');
+    var ver=function(d){return rcT==='rc'?[d.rc]:rcT==='sin'?[d.sin]:[d.rc,d.sin]};
+    var cols=rcT==='rc'?['#fdc33e']:rcT==='sin'?['#021346']:['#fdc33e','#021346'],nom=rcT==='rc'?['RC']:rcT==='sin'?['SIN RC']:['RC','SIN RC'],tn=rcT==='rc'?['nom-o']:rcT==='sin'?['nom-b']:['nom-o','nom-b'];
     if(!g.querySelector('.rc-c2'))g.innerHTML='<div class="tend-l"></div><div class="rc-c2"></div>';
-    g.querySelector('.tend-l').innerHTML='<span class="leg-g"><i style="background:#fdc33e"></i>Columna dorada = contratos <b>con RC</b></span><span class="leg-g"><i style="background:#021346"></i>Columna azul = contratos <b>sin RC</b></span><span>El número sobre cada columna es la cantidad de contratos del mes.</span>';
-    columnas(g.querySelector('.rc-c2'),{datos:datos.map(function(x){return x.t?{vals:[x.rc,x.sin],rc:x.rc,sin:x.sin,t:x.t,pct:x.pct,m:x.m,y:x.y}:null}),n:N,max:Math.max.apply(null,datos.map(function(x){return Math.max(x.rc,x.sin)}).concat(1))*1.25,alto:285,colores:['#fdc33e','#021346'],grupo:true,nombres:['RC','SIN RC'],txtNom:['nom-o','nom-b'],subs:N===12?null:function(d){return [{t:d.rc+' con RC',c:'#fdc33e'},{t:d.sin+' sin RC',c:'#021346'}]},
-      etiquetas:datos.map(function(x){return MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')}),activo:ia,etqBajo2:function(d,i,W){return W<420&&N===6?d.rc+'/'+d.sin:''},aria:'Contratos con RC y sin RC por mes',
+    g.querySelector('.tend-l').innerHTML=(rcT!=='sin'?'<span class="leg-g"><i style="background:#fdc33e"></i>Columna dorada = contratos <b>con RC</b></span>':'')+(rcT!=='rc'?'<span class="leg-g"><i style="background:#021346"></i>Columna azul = contratos <b>sin RC</b></span>':'')+'<span>El número sobre cada columna es la cantidad de contratos.</span>';
+    var mx=Math.max.apply(null,datos.map(function(d){return Math.max.apply(null,ver(d))}).concat(1))*1.25;
+    columnas(g.querySelector('.rc-c2'),{datos:datos.map(function(d){return d.t?{vals:ver(d),rc:d.rc,sin:d.sin,t:d.t,pct:d.pct,tit:d.tit}:null}),n:N,max:mx,alto:285,colores:cols,grupo:true,nombres:nom,txtNom:tn,subs:(N<=6&&rcT==='ambos')?function(d){return [{t:d.rc+' con RC',c:'#fdc33e'},{t:d.sin+' sin RC',c:'#021346'}]}:null,
+      etiquetas:eti,activo:activo,etqBajo2:function(){return ''},aria:'Contratos con RC y sin RC',
       etqBarra:function(){return ''},
-      tip:function(d){return '<b>'+MES_C[d.m-1].toUpperCase()+' '+d.y+'</b> · '+d.t+' contratos<br>Con RC: '+d.rc+' ('+d.pct+' %)<br>Sin RC: '+d.sin+' ('+(100-d.pct)+' %)'}});
+      tip:function(d){return '<b>'+d.tit+'</b> · '+d.t+' contratos<br>Con RC: '+d.rc+' ('+d.pct+' %)<br>Sin RC: '+d.sin+' ('+(100-d.pct)+' %)'}});
   }
 
   /* ----- Seguros por contrato: dona animada ----- */
