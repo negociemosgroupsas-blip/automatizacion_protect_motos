@@ -270,6 +270,10 @@
   #v-inicio .meta{grid-column:span 6} #v-inicio .seg{grid-column:span 6}
   @media(max-width:1180px){#v-inicio .edc .tk-g{grid-template-columns:1fr 1fr}#v-inicio .meta,#v-inicio .seg{grid-column:1/-1}}
   @media(max-width:520px){#v-inicio .edc .tk-g{grid-template-columns:1fr}}
+  .cfc{grid-column:1/-1;cursor:default;max-width:none} .cfc:hover{box-shadow:none;transform:none} .cfc h3{margin:0 0 2px} .cfc .tot{font-size:.8rem;color:var(--suave,#6b7280);margin:0 0 10px}
+  .cf-t{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px} .cf-t .gi b{font-size:1.2rem} .cf-t small{font-size:.75rem;color:var(--suave,#6b7280);font-weight:600}
+  #v-inicio .cfc{grid-column:1/-1;order:8} #v-inicio .rcm{order:9} #v-inicio .anu{order:10}
+  @media(max-width:520px){.cf-t{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -463,7 +467,7 @@
           if(hr>16)labs.push(stxt(xs(i),pt+ih-hr/2+4,d.rc,'ch-in-o'));
           if(hs>16)labs.push(stxt(xs(i),pt+ih-hr-hs/2+4,d.sin,'ch-in-b'));
         }else if(o.segs){
-          var acc=0;d.segs.forEach(function(c,si){if(!c)return;var hh=c/o.max*ih;g.appendChild(sv('rect',{x:x,y:pt+ih-acc-hh,width:bw,height:hh,fill:o.colores[si],rx:si===d.segs.length-1?5:0}));if(hh>15)labs.push(stxt(xs(i),pt+ih-acc-hh/2+4,c,si===0||si===1||si===2?'ch-in-b':'ch-in-o'));acc+=hh})
+          var acc=0;d.segs.forEach(function(c,si){if(!c)return;var hh=c/o.max*ih;g.appendChild(sv('rect',{x:x,y:pt+ih-acc-hh,width:bw,height:hh,fill:o.colores[si],rx:si===d.segs.length-1?5:0}));if(hh>15)labs.push(stxt(xs(i),pt+ih-acc-hh/2+4,c,o.txtCls?o.txtCls[si]:(si<3?'ch-in-b':'ch-in-o')));acc+=hh})
         }else{
           var h=d.v/o.max*ih;g.appendChild(sv('rect',{x:x,y:pt+ih-h,width:bw,height:Math.max(h,2),rx:5,fill:cur?'#fdc33e':'var(--btn,#021346)',stroke:cur?'#021346':'none','stroke-width':cur?1.5:0}));
         }
@@ -610,6 +614,31 @@
     b.innerHTML='<div class="ed-g"><div class="ed-big"><span>Rango de edad que más nos compra</span><b>'+etq[top]+' años</b><small>'+cont[top]+' de '+n+' clientes · '+Math.round(cont[top]/n*100)+' %</small></div><div class="ed-dos"><div class="gi"><span>Edad más frecuente</span><b>'+moda+' años</b></div><div class="gi"><span>Edad promedio</span><b>'+fmt1(prom)+' años</b></div></div></div>';
   }
 
+
+  var cfc=document.createElement('div');cfc.className='card cfc';cfc.innerHTML='<h3>Contratos de contado y financiados</h3><p class="tot" id="cfTot">Se muestra al conectar Cobros.</p><div class="ed-per"><label>Año <select id="cfAnio"></select></label></div><div id="cfCuerpo"></div>';tarjetas.appendChild(cfc);
+  var cfAnio=String(new Date().getFullYear()),cfDatos=null,cfOk=false;
+  try{var ca=localStorage.getItem('pm_cf_anio');if(ca&&(ca==='todos'||/^\d{4}$/.test(ca)))cfAnio=ca}catch(e){}
+  document.getElementById('cfAnio').addEventListener('change',function(){cfAnio=this.value;try{localStorage.setItem('pm_cf_anio',cfAnio)}catch(e){}pintarCF()});
+  function pintarCF(cf,ok){
+    if(cf){cfDatos=cf;cfOk=ok}
+    var tot=document.getElementById('cfTot'),b=document.getElementById('cfCuerpo');
+    if(!cfOk){tot.textContent='Para ver esta gráfica, publica una Nueva versión del conector de Cobros.';b.innerHTML='';return}
+    var yAct=new Date().getFullYear(),anios={};anios[yAct]=1;Object.keys(cfDatos).forEach(function(k){anios[Math.floor((+k-1)/12)]=1});
+    var lst=Object.keys(anios).sort(function(a,c){return c-a}),sa=document.getElementById('cfAnio');
+    sa.innerHTML='<option value="todos">Todos los años</option>'+lst.map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');
+    if(cfAnio!=='todos'&&!anios[cfAnio])cfAnio=String(yAct);sa.value=cfAnio;
+    var dm=[],tc=0,tf=0,i;
+    for(i=1;i<=12;i++){var c=0,f=0;Object.keys(cfDatos).forEach(function(k){k=+k;var y=Math.floor((k-1)/12),m=k-y*12;if(m===i&&(cfAnio==='todos'||y===+cfAnio)){c+=cfDatos[k].C;f+=cfDatos[k].F}});tc+=c;tf+=f;dm.push(c+f?{segs:[c,f],t:c+f,c:c,f:f}:null)}
+    var T=tc+tf,per=cfAnio==='todos'?'todos los años':'año '+cfAnio;
+    if(!T){tot.textContent='No hay contratos registrados en '+per+'.';b.innerHTML='';return}
+    tot.textContent=T+' contratos en '+per+' · '+tc+' de contado ('+Math.round(tc/T*100)+' %) · '+tf+' financiados ('+Math.round(tf/T*100)+' %)';
+    if(!b.querySelector('.cf-c'))b.innerHTML='<div class="cf-c"></div><div class="ed-leg"><span><i style="background:#fdc33e"></i>De contado</span><span><i style="background:#5b78c7"></i>Financiados</span></div><div class="cf-t"></div>';
+    var mxm=dm.reduce(function(p,q,ix){return q&&(!p||q.t>p.t)?Object.assign({m:ix},q):p},null);
+    b.querySelector('.cf-t').innerHTML='<div class="gi"><span>De contado</span><b>'+tc+' <small>('+Math.round(tc/T*100)+' %)</small></b></div><div class="gi"><span>Financiados</span><b>'+tf+' <small>('+Math.round(tf/T*100)+' %)</small></b></div><div class="gi"><span>Mes con más contratos</span><b>'+MES_LARGO[mxm.m]+' · '+mxm.t+'</b></div>';
+    columnas(b.querySelector('.cf-c'),{datos:dm,n:12,max:Math.max.apply(null,dm.map(function(d){return d?d.t:0}))*1.2,alto:240,etiquetas:MES_C,segs:true,colores:['#fdc33e','#5b78c7'],txtCls:['ch-in-o','ch-in-b'],activo:-1,aria:'Contratos de contado y financiados por mes',etqBarra:function(d){return d.t},
+      tip:function(d,i){return '<b>'+MES_LARGO[i]+(cfAnio==='todos'?'':' '+cfAnio)+'</b> · '+d.t+' contratos<br><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#fdc33e;margin-right:5px"></span>De contado: '+d.c+' ('+Math.round(d.c/d.t*100)+' %)<br><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#5b78c7;margin-right:5px"></span>Financiados: '+d.f+' ('+Math.round(d.f/d.t*100)+' %)'}});
+  }
+
   function pendiente(m){
     return '<div class="pagina"><h1>'+m.ico+' '+m.nombre+'</h1><p class="sub">Este módulo aún no está instalado.</p>'+
       '<div class="caja">Para activarlo, copia el HTML del Automatizador de Contratos como <code>'+m.src+'</code> '+
@@ -660,12 +689,13 @@
       fin();
       if(!r||!r.ok){nota.textContent='No se pudo leer el resumen de Cobros.';return}
       window.PM_COBROS=r;document.dispatchEvent(new Event('pm-cobros'));
-      var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},tk={},eds=[],nowE=new Date(),sg={ambos:0,rc:0,ap:0,ninguno:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
+      var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},tk={},cf={},eds=[],nowE=new Date(),sg={ambos:0,rc:0,ap:0,ninguno:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
       (r.contratos||[]).forEach(function(x){
         if(c[x.estado]!==undefined)c[x.estado]++;
         if(x.mes===undefined)return;nuevo=true;
         if(String(x.contrato||'').trim()){var mm=numMes(x.mes),aa=numAnio(x.anio);if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};if(x.rc==='SI')kk.rc++;else kk.sin++}
           if(mm&&aa){var ed=Number(x.edad)||0;if(!ed&&x.fechaNacISO){var bd=new Date(x.fechaNacISO);if(!isNaN(bd))ed=Math.floor((nowE-bd)/31557600000)}if(ed>=16&&ed<=95)eds.push({k:aa*12+mm,y:aa,e:ed})}
+          if(mm&&aa&&(x.forma==='CONTADO'||x.forma==='FINANCIADO')){var cc=cf[aa*12+mm]=cf[aa*12+mm]||{C:0,F:0};if(x.forma==='CONTADO')cc.C++;else cc.F++}
           var vp=Number(x.valorProtect)||0;if(mm&&aa&&vp>0&&(x.forma==='FINANCIADO'||x.forma==='CONTADO')){var tt=tk[aa*12+mm]=tk[aa*12+mm]||{FINANCIADO:{s:0,n:0},CONTADO:{s:0,n:0}};tt[x.forma].s+=vp;tt[x.forma].n++}}
         if(numMes(x.mes)===mesAct&&numAnio(x.anio)===anioAct){
           if(String(x.contrato||'').trim()){var as=(x.asesor||'').trim().toUpperCase()||'SIN ASESOR';ventas[as]=(ventas[as]||0)+1}
@@ -678,6 +708,7 @@
       pintarAsesores(ventas,nuevo);
       pintarRc(hist,nuevo);
       pintarTicket(tk,nuevo);
+      pintarCF(cf,nuevo);
       pintarEdad(eds,nuevo&&r.contratos.some(function(x){return x.edad!==undefined}));
       pintarSeg(sg,nuevo&&r.contratos.some(function(x){return x.ap!==undefined}));
       pintarAnual(hist,nuevo);
