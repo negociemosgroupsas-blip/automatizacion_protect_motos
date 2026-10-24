@@ -558,11 +558,11 @@
     sel.forEach(function(r){ec[r.e]=(ec[r.e]||0)+1});
     var per=(esMes==='0'?'':MES_LARGO[+esMes-1]+' ')+(esAnio==='todos'?(esMes==='0'?'todos los años':'de todos los años'):esAnio)+(esAs==='todos'?'':' · '+esAs);
     var L=[['ACTIVO','Activos','#1f9d55','Con póliza vigente'],['FINALIZADO','Finalizados','#5b78c7','Terminaron su contrato'],['CANCELADO','Cancelados','#d64545','Se retiraron']],T=0,i,EXTRA=['#e08a00','#8b5cf6','#0ea5a4','#b45309'],ne=0;
-    Object.keys(ec).forEach(function(k){if(k==='ACTIVO'||k==='FINALIZADO'||k==='CANCELADO'||k==='OTRO'||/^ANULAD/.test(k)||!ec[k])return;var nm=k.charAt(0)+k.slice(1).toLowerCase();L.push([k,nm,EXTRA[ne++%4],'Otro estado en la columna AR'])});
+    Object.keys(ec).forEach(function(k){if(k==='ACTIVO'||k==='FINALIZADO'||k==='CANCELADO'||k==='OTRO'||k==='ANULADO'||!ec[k])return;var nm=k.charAt(0)+k.slice(1).toLowerCase();L.push([k,nm,EXTRA[ne++%4],'Otro estado en la columna AR'])});
     L.push(['OTRO','Sin estado','#c9d0e0','Falta marcar en la columna AR']);
     var Lv=esOtros?L:L.slice(0,3),oc=0;if(!esOtros)L.slice(3).forEach(function(x){oc+=ec[x[0]]||0});
     var VS=0;Lv.forEach(function(x){VS+=ec[x[0]]||0});VS=VS||1;
-    var AN=0;Object.keys(ec).forEach(function(k){if(/^ANULAD/.test(k))AN+=ec[k]||0;else T+=ec[k]||0});
+    var AN=0;Object.keys(ec).forEach(function(k){if(k==='ANULADO')AN+=ec[k]||0;else T+=ec[k]||0});
     if(!T){tot.textContent='No hay contratos para '+per+'.';g.innerHTML='';return}
     var pc=function(n){return Math.round(n/T*1000)/10};
     tot.textContent=per+' · Total vendidos: '+T+' contratos'+(AN?' (sin contar '+AN+' anulados)':'')+' · el número grande es la cantidad y el porcentaje es qué parte del total representa.';
@@ -571,7 +571,7 @@
       +(oc?'<div class="est-l"><span>+ '+oc+' contratos con otro estado (marca «Ver otros estados» para verlos)</span></div>':'')
       +'<div class="est-l">'+Lv.filter(function(x){return ec[x[0]]}).map(function(x){return '<span><i style="background:'+x[2]+'"></i>'+x[1]+'</span>'}).join('')+'</div>';
     var por={},ys={};recs.forEach(function(r){var yy=r.y||'sin año';ys[yy]=1;por[yy]=por[yy]||{ACTIVO:0,FINALIZADO:0,CANCELADO:0,ANULADO:0,O:0};if(por[yy][r.e]!==undefined)por[yy][r.e]++;else por[yy].O++});
-    g.innerHTML+='<details class="est-d"><summary>¿Cómo se cuenta? (por año de firma)</summary><table><tr><th>Año</th><th>Activos</th><th>Finalizados</th><th>Cancelados</th><th>Anulados</th><th>Otros</th></tr>'+Object.keys(ys).sort().map(function(y){var o=por[y];return '<tr><td>'+y+'</td><td>'+o.ACTIVO+'</td><td>'+o.FINALIZADO+'</td><td>'+o.CANCELADO+'</td><td>'+o.ANULADO+'</td><td>'+o.O+'</td></tr>'}).join('')+'</table><p>Cuenta lo que dice la columna AR de la hoja Protect (ACTIVO, FINALIZADO, CANCELADO, ANULADO) en cada fila que tenga nombre de cliente, número de contrato o estado. Se agrupa según el año de la columna J y el estado de la columna AR. «sin año» = filas sin año en la columna J.</p></details>';
+    g.innerHTML+='<details class="est-d"><summary>¿Cómo se cuenta? (por año de firma)</summary><table><tr><th>Año</th><th>Activos</th><th>Finalizados</th><th>Cancelados</th><th>Anulados</th><th>Otros</th></tr>'+Object.keys(ys).sort().map(function(y){var o=por[y];return '<tr><td>'+y+'</td><td>'+o.ACTIVO+'</td><td>'+o.FINALIZADO+'</td><td>'+o.CANCELADO+'</td><td>'+o.ANULADO+'</td><td>'+o.O+'</td></tr>'}).join('')+'</table><p>Igual que el botón Cobros: cuenta el texto exacto de la columna AR (ACTIVO, FINALIZADO, CANCELADO, ANULADO) de todas las filas con cliente o contrato. Se agrupa según el año de la columna J y el estado de la columna AR. «sin año» = filas sin año en la columna J.</p></details>';
     setTimeout(function(){[].forEach.call(g.querySelectorAll('.est-b i'),function(e){e.style.width=e.dataset.w+'%'})},60);
   }
 
@@ -754,7 +754,7 @@
   function numMes(v){v=String(v).trim().toLowerCase();if(!v)return 0;if(/^\d+$/.test(v))return +v;
     v=v.normalize('NFD').replace(/[\u0300-\u036f]/g,'').slice(0,3);
     if(v==='set')return 9;for(var i=0;i<12;i++){if(MESES[i].slice(0,3)===v)return i+1}return 0}
-  function normEstado(v){var t=String(v||'').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');if(!t)return 'OTRO';if(/^ACTIV/.test(t))return 'ACTIVO';if(/^FINALI[SZ]/.test(t))return 'FINALIZADO';if(/^CANCEL/.test(t))return 'CANCELADO';if(/^ANULA/.test(t))return 'ANULADO';return t}
+  function normEstado(v){var t=String(v||'').trim().toUpperCase();return t||'OTRO'}  /* igual que Cobros: texto exacto de la columna AR */
   function mesAnio(x){
     var m=numMes(x.mes),a=numAnio(x.anio),r=false,tx=String(x.mes||''),q;
     if(!m){q=tx.match(/^\s*(\d{1,2})\s*[\/\-]\s*(\d{2,4})\s*$/);if(q&&+q[1]>=1&&+q[1]<=12){m=+q[1];if(!a)a=numAnio(q[2])}else{q=tx.match(/^\s*(\d{4})\s*[\/\-]\s*(\d{1,2})\s*$/);if(q&&+q[2]>=1&&+q[2]<=12){m=+q[2];if(!a)a=+q[1]}}}
