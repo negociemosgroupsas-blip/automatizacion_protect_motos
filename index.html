@@ -288,6 +288,7 @@
   @media(prefers-reduced-motion:reduce){.lab-an{animation:none;opacity:1}}
   .cf-tn{display:flex;align-items:center;gap:6px;margin-top:4px;font-weight:700;color:var(--texto,#1b2133)!important} .cf-tn i{display:inline-block;width:22px;border-top:3px dashed #888}
   .ch-tend-s.an{stroke-dashoffset:200;opacity:0;animation:tdib 1.2s ease .6s forwards}
+  .cf-todos{border:1px solid var(--borde,#dfe3ee);background:var(--fondo,#f3f4f8);border-radius:999px;padding:5px 12px;font-size:.78rem;cursor:pointer;color:var(--texto,#1b2133)} .cf-todos:hover{background:var(--borde,#dfe3ee)}
 </style>
 </head>
 <body>
@@ -654,12 +655,13 @@
     '<label id="cfLTipo">Tipo de venta <select id="cfTipo"><option value="todas">Todas</option><option value="contado">Solo de contado</option><option value="financiadas">Solo financiadas</option></select></label>'+
     '<label id="cfLAnio">Año <select id="cfAnio"></select></label></div><div class="cf-chips" id="cfChips"></div><div id="cfCuerpo"></div>';tarjetas.appendChild(cfc);
   var cfVista='anios',cfTipo='todas',cfAnio=String(new Date().getFullYear()),cfSel=null,cfDatos=null,cfOk=false,
-      COLS_ANIO=['#9fb8e8','#fdc33e','#021346'],TXT_ANIO=['nom-o','nom-o','nom-b'];
+      PAL=['#021346','#fdc33e','#9fb8e8','#5b78c7','#e08a00','#d5dcf0'],PALT=['nom-b','nom-o','nom-o','nom-b','nom-o','nom-o'];
   try{var v1=localStorage.getItem('pm_cf_vista');if(v1==='anios'||v1==='tipos')cfVista=v1;var v2=localStorage.getItem('pm_cf_tipo');if(v2==='todas'||v2==='contado'||v2==='financiadas')cfTipo=v2;var ca=localStorage.getItem('pm_cf_anio');if(ca&&(ca==='todos'||/^\d{4}$/.test(ca)))cfAnio=ca;var cs=JSON.parse(localStorage.getItem('pm_cf_anios')||'null');if(Array.isArray(cs))cfSel=cs.map(Number)}catch(e){}
   function cfGuardar(){try{localStorage.setItem('pm_cf_vista',cfVista);localStorage.setItem('pm_cf_tipo',cfTipo);localStorage.setItem('pm_cf_anio',cfAnio);localStorage.setItem('pm_cf_anios',JSON.stringify(cfSel||[]))}catch(e){}}
   document.getElementById('cfVista').addEventListener('change',function(){cfVista=this.value;cfGuardar();pintarCF()});
   document.getElementById('cfTipo').addEventListener('change',function(){cfTipo=this.value;cfGuardar();pintarCF()});
   document.getElementById('cfAnio').addEventListener('change',function(){cfAnio=this.value;cfGuardar();pintarCF()});
+  document.getElementById('cfChips').addEventListener('click',function(ev){var bt=ev.target.closest('.cf-todos');if(!bt)return;var yA=new Date().getFullYear(),all=Object.keys(cfDatos||{}).map(function(k){return Math.floor((+k-1)/12)});all.push(yA);all=all.filter(function(v,i,a){return a.indexOf(v)===i}).sort();cfSel=bt.dataset.a==='todos'?all:[yA];cfGuardar();pintarCF()});
   document.getElementById('cfChips').addEventListener('change',function(){var ch=[].slice.call(document.querySelectorAll('#cfChips input:checked')).map(function(i){return +i.value}).sort();if(!ch.length){pintarCF();return}cfSel=ch;cfGuardar();pintarCF()});
   function pintarCF(cf,ok){
     if(cf){cfDatos=cf;cfOk=ok}
@@ -676,18 +678,17 @@
     if(cfVista==='anios'){
       var sel=(cfSel&&cfSel.length?cfSel:lst.slice(-3)).filter(function(y){return anios[y]}).sort(function(a,c){return a-c});
       if(!sel.length)sel=lst.slice(-3);
-      chips.innerHTML=lst.map(function(y){var pos=sel.indexOf(y),col=pos<0?'#c9d0e0':COLS_ANIO[Math.max(0,Math.min(2,pos+(3-sel.length>0&&sel.length<3?3-sel.length:0)))];return '<label class="cf-chip'+(pos<0?' off':'')+'"><input type="checkbox" value="'+y+'"'+(pos<0?'':' checked')+'><i style="background:'+col+'"></i>'+y+'</label>'}).join('')+'<span class="cf-ayuda">Marca o desmarca los años que quieres comparar</span>';
-      var offs=3-sel.length>0&&sel.length<3?3-sel.length:0,col=function(pos){return COLS_ANIO[Math.max(0,Math.min(2,pos+offs))]},txt=function(pos){return TXT_ANIO[Math.max(0,Math.min(2,pos+offs))]};
+      var nS=sel.length,col=function(pos){return PAL[(nS-1-pos)%6]},txt=function(pos){return PALT[(nS-1-pos)%6]};
+      chips.innerHTML=lst.map(function(y){var pos=sel.indexOf(y);return '<label class="cf-chip'+(pos<0?' off':'')+'"><input type="checkbox" value="'+y+'"'+(pos<0?'':' checked')+'><i style="background:'+(pos<0?'#c9d0e0':col(pos))+'"></i>'+y+'</label>'}).join('')+'<button type="button" class="cf-todos" data-a="todos">Todos los años</button><button type="button" class="cf-todos" data-a="actual">Solo '+yAct+'</button>';
       var dm=[],tt=sel.map(function(){return 0}),maxv=1,i;
       for(i=1;i<=12;i++){var vals=sel.map(function(y,si){var v=valor(y*12+i);tt[si]+=v;if(v>maxv)maxv=v;return v});dm.push(vals.some(function(v){return v>0})?{vals:vals,m:i-1}:null)}
-      var LIN=['#3b5bb5','#e08a00','#1f9d55'],lin=function(pos){return LIN[Math.max(0,Math.min(2,pos+offs))]},tends=sel.map(function(y,si){var pts=[],mm2;for(mm2=1;mm2<=12;mm2++){var v=valor(y*12+mm2);if(v>0&&!(y===yAct&&mm2>=mAct))pts.push({i:mm2-1,y:v})}return {pts:pts,color:lin(si),ext:y===yAct,hasta:11,pend:pts.length>=3?regresion(pts).b:null}});
       var totTodos=tt.reduce(function(p,q){return p+q},0);
       tot.textContent=totTodos?'Ventas '+tipoTxt+' por mes · '+sel.join(' · ')+' · el número dentro de cada columna es el total vendido en ese mes':'No hay ventas '+tipoTxt+' en los años elegidos.';
       var tiles='';sel.forEach(function(y,si){
         var nota='';if(y===yAct){nota='a la fecha ('+MES_LARGO[0].slice(0,3).toLowerCase()+'–'+MES_C[mAct-1]+')';var py=sel.indexOf(y-1)>=0?y-1:(anios[y-1]?y-1:null);if(py!==null){var a=0,c=0,mm;for(mm=1;mm<=mAct;mm++){a+=valor(y*12+mm);c+=valor(py*12+mm)}if(c){var d=a-c,p=Math.round(d/c*100);nota+=' · '+(d>=0?'▲ +':'▼ ')+Math.abs(d)+' ('+(d>=0?'+':'−')+Math.abs(p)+' %) frente a '+MES_C[0]+'–'+MES_C[mAct-1]+' de '+py}}}
-        var pd=tends[si].pend,tx=pd===null?'Tendencia: faltan meses para calcularla':(Math.abs(pd)<0.05?'Tendencia: estable':'Tendencia: '+(pd>0?'▲ sube ':'▼ baja ')+fmt1(Math.abs(pd))+' ventas por mes');tiles+='<div class="cf-n" style="--c:'+col(si)+'"><span>'+y+'</span><b>'+tt[si]+'</b><small>'+(nota||'ventas en el año')+'</small><small class="cf-tn"><i style="border-top-color:'+tends[si].color+'"></i>'+tx+'</small></div>'});
-      b.innerHTML='<div class="cf-t cf-t-anios">'+tiles+'</div><div class="tend-l"><span class="tend-s"></span>La línea punteada de cada año es su <b>tendencia</b> (sin contar el mes en curso). Si sube, ese año va creciendo.</div><div class="cf-c"></div>';
-      columnas(b.querySelector('.cf-c'),{datos:dm.map(function(d){return d?{vals:d.vals,m:d.m,t:0}:null}),n:12,max:maxv*1.2,alto:260,etiquetas:MES_C,grupo:true,valDentro:true,gwMax:34,tendencias:tends,colores:sel.map(function(y,si){return col(si)}),txtVal:sel.map(function(y,si){return txt(si)==='nom-b'?'vd-b':'vd-o'}),activo:-1,aria:'Comparativo de ventas por mes y año',etqBarra:function(){return ''},
+        tiles+='<div class="cf-n" style="--c:'+col(si)+'"><span>'+y+'</span><b>'+tt[si]+'</b><small>'+(nota||'ventas en el año')+'</small></div>'});
+      b.innerHTML='<div class="cf-t cf-t-anios">'+tiles+'</div><div class="cf-c"></div>';
+      columnas(b.querySelector('.cf-c'),{datos:dm.map(function(d){return d?{vals:d.vals,m:d.m,t:0}:null}),n:12,max:maxv*1.2,alto:260,etiquetas:MES_C,grupo:true,valDentro:true,gwMax:34,colores:sel.map(function(y,si){return col(si)}),txtVal:sel.map(function(y,si){return txt(si)==='nom-b'?'vd-b':'vd-o'}),activo:-1,aria:'Comparativo de ventas por mes y año',etqBarra:function(){return ''},
         tip:function(d,i){return '<b>'+MES_LARGO[i]+'</b> · ventas '+tipoTxt+'<br>'+sel.map(function(y,si){return '<span style="display:inline-block;width:9px;height:9px;border-radius:2px;border:1px solid #fff;background:'+col(si)+';margin-right:5px"></span>'+y+': <b>'+d.vals[si]+'</b>'}).join('<br>')}});
       return}
     // vista: contado y financiados de un año
