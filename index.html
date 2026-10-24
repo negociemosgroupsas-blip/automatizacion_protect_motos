@@ -387,7 +387,7 @@
   });
 
   document.getElementById('subInicio').textContent='Mes en curso: '+MES_TXT+' · usa el buscador de arriba para consultar un cliente';
-  var asr=document.createElement('div');asr.className='card asr';asr.innerHTML='<h3>Ventas por asesor · '+MES_TXT+'</h3><p class="tot" id="asrTot">Se muestra al conectar Cobros (contratos del mes por asesor).</p><div id="asrBarras"></div>';tarjetas.appendChild(asr);
+  var asr=document.createElement('div');asr.className='card asr';asr.innerHTML='<h3>Ventas por asesor</h3><p class="tot" id="asrTot">Se muestra al conectar Cobros (contratos por asesor).</p><div class="ed-per" id="asFil"><label>Año <select id="asAnio"></select></label><label>Mes <select id="asMes"></select></label></div><div id="asrBarras"></div>';tarjetas.appendChild(asr);
   var meta=document.createElement('div');meta.className='card meta';meta.id='metaCard';meta.innerHTML='<h3>Meta de contratos · '+MES_TXT+'</h3><p class="tot" id="metaTot">Se muestra al conectar Cobros.</p><div id="metaCuerpo"></div>';var pg=tarjetas.parentNode;pg.insertBefore(meta,pg.querySelector('.sec-t'));
   var ruta=document.createElement('div');ruta.className='ruta';ruta.innerHTML='<h3>Ruta a la meta · '+MES_TXT+'</h3><p id="rutaTxt">Se muestra al conectar Cobros · toca la moto</p><div class="ruta-pista"><div class="ruta-via"></div><div class="ruta-rec" id="rutaRec"></div><div class="ruta-ritmo" id="rutaRit" style="left:0%"><span id="rutaRitTx"></span></div><div class="ruta-hito" id="h25" style="left:25%"><span>25 %</span></div><div class="ruta-hito" id="h50" style="left:50%"><span>50 %</span></div><div class="ruta-hito" id="h75" style="left:75%"><span>75 %</span></div><div class="ruta-hito meta" style="left:calc(100% - 3px)"><span id="rutaMeta">105</span></div><div class="moto-tag" id="rutaTag" style="left:clamp(75px,3%,calc(100% - 75px))">Contrato 0 de 105</div><div class="globo" id="rutaGlobo" style="left:0%"></div><button class="moto" id="rutaMoto" style="left:clamp(75px,3%,calc(100% - 75px))" type="button" aria-label="Moto de avance a la meta"><svg viewBox="0 0 220 110" aria-hidden="true">  <g class="viento" stroke="#8fa3d8" stroke-width="2" stroke-linecap="round" opacity=".55"><path d="M4 52h24"/><path d="M0 64h18"/><path d="M8 76h16"/></g>  <g class="rueda"><circle cx="62" cy="88" r="15" fill="#0b1433" stroke="#cdd6ee" stroke-width="3"/><circle cx="62" cy="88" r="8" fill="none" stroke="#fdc33e" stroke-width="2.5"/><path d="M62 75v26M49 88h26M53 79l18 18M71 79 53 97" stroke="#9fb0cf" stroke-width="1.3"/></g>  <g class="rueda"><circle cx="170" cy="88" r="15" fill="#0b1433" stroke="#cdd6ee" stroke-width="3"/><circle cx="170" cy="88" r="8" fill="none" stroke="#fdc33e" stroke-width="2.5"/><path d="M170 75v26M157 88h26M161 79l18 18M179 79 161 97" stroke="#9fb0cf" stroke-width="1.3"/></g>  <!-- horquilla y escudo delantero -->  <path d="M170 88 160 40" stroke="#e8ecf8" stroke-width="5" stroke-linecap="round"/>  <path d="M138 78c8-2 14-12 16-30l8-8 8 4c-1 18-6 34-14 40l-12-2z" fill="#fdc33e"/>  <path d="M152 52h12" stroke="#021346" stroke-width="2" opacity=".5"/>  <!-- guardabarro delantero -->  <path d="M154 76c8-6 24-6 32 0l-3 4c-8-4-18-4-26 0z" fill="#fdc33e"/>  <!-- piso -->  <path d="M104 76h38l4 6H106z" fill="#021346"/>  <path d="M106 80h38" stroke="#fdc33e" stroke-width="2"/>  <!-- carroceria trasera con el nombre -->  <path d="M42 70c-2-14 10-24 28-24h44c4 0 6 3 6 6v18c0 4-2 6-6 6H70c-10 0-20 2-28-6z" fill="#fdc33e"/>  <text x="80" y="66" font-size="11.5" font-weight="900" text-anchor="middle" fill="#021346" font-family="Arial Black,Arial,sans-serif" letter-spacing=".5">PROTECT</text>  <path d="M46 72c8 4 14 3 24 3" stroke="#021346" stroke-width="2" fill="none" opacity=".35"/>  <!-- asiento -->  <path d="M60 40c0-4 6-6 14-6h40c4 0 6 2 6 5s-3 6-7 6H68c-5 0-8-2-8-5z" fill="#021346"/>  <!-- manubrio y faro -->  <path d="M162 40l-4-14h-8" stroke="#e8ecf8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>  <path d="M164 44c5 0 9 2 9 6h-10z" fill="#fff"/>  <path d="M158 22 168 34" stroke="#9fd5ff" stroke-width="3" opacity=".8" stroke-linecap="round"/>  <!-- piloto -->  <path d="M96 34 106 14" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>  <path d="M108 18 150 28" stroke="#e8ecf8" stroke-width="6" stroke-linecap="round"/><circle cx="150" cy="28" r="3.5" fill="#ffffff"/>  <path d="M94 38 124 50 130 74" stroke="#f3f5fb" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M128 77h14" stroke="#cdd6ee" stroke-width="6" stroke-linecap="round"/>  <circle cx="108" cy="3" r="11" fill="#ffffff"/><path d="M109-2h12v8h-12z" fill="#021346"/><path d="M98 6h22" stroke="#fdc33e" stroke-width="2" opacity=".9"/></svg></button></div>';
   pg.insertBefore(ruta,pg.firstChild);
@@ -436,7 +436,7 @@
       document.getElementById('metaOk').onclick=function(){var n=parseInt(document.getElementById('metaIn').value,10);if(n>0){metaVal=n;try{localStorage.setItem(META_CLAVE,String(n))}catch(e){}}pintarMeta()}}}
   var rcm=document.createElement('div');rcm.className='card rcm';rcm.innerHTML='<h3>Contratos con RC y sin RC, mes a mes</h3><p class="tot" id="rcTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="rcFil"><label>Ver <select id="rcPer"></select></label><label>Asesor <select id="rcAs"></select></label></div><div id="rcGraf"></div>';tarjetas.appendChild(rcm);
   var MES_C=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  var seg=document.createElement('div');seg.className='card seg';seg.innerHTML='<h3>Seguros por contrato · '+MES_TXT+'</h3><p class="tot" id="sgTot">Se muestra al conectar Cobros.</p><div id="sgCuerpo"></div>';tarjetas.appendChild(seg);
+  var seg=document.createElement('div');seg.className='card seg';seg.innerHTML='<h3>Seguros por contrato</h3><p class="tot" id="sgTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="sgFil"><label>Año <select id="sgAnio"></select></label><label>Mes <select id="sgMes"></select></label></div><div id="sgCuerpo"></div>';tarjetas.appendChild(seg);
   var anu=document.createElement('div');anu.className='card anu';anu.innerHTML='<h3>Estado de los clientes</h3><p class="tot" id="anTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="esFil"><label>Año <select id="esAnio"></select></label><label>Mes <select id="esMes"></select></label><label>Asesor <select id="esAs"></select></label><label class="es-ot"><input type="checkbox" id="esOt"> Ver otros estados</label></div><div id="anCuerpo"></div>';tarjetas.appendChild(anu);
 
   /* ===== Gráficas dinámicas (SVG propio, sin librerías) ===== */
@@ -629,13 +629,17 @@
   }
 
   /* ----- Seguros por contrato: dona animada ----- */
-  function pintarSeg(s,ok){
-    var tot=document.getElementById('sgTot'),b=document.getElementById('sgCuerpo');
-    if(!ok){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';b.innerHTML='';return}
+  function pintarSeg(recs,ok){
+    sgRecs=recs;sgOk=ok;
+    var tot=document.getElementById('sgTot'),b=document.getElementById('sgCuerpo'),fil=document.getElementById('sgFil');
+    if(!ok){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';b.innerHTML='';fil.style.display='none';return}
+    fil.style.display='';
+    var pf=periodoTarjeta('sg',recs,function(){pintarSeg(sgRecs,sgOk)}),s={ambos:0,rc:0,ap:0,ninguno:0};
+    pf.l.forEach(function(r){if(r.rc&&r.ap)s.ambos++;else if(r.rc)s.rc++;else if(r.ap)s.ap++;else s.ninguno++});
     var t=s.ambos+s.rc+s.ap+s.ninguno;
-    if(!t){tot.textContent='Todavía no hay contratos este mes.';b.innerHTML='';return}
+    if(!t){tot.textContent='No hay contratos en '+pf.per+'.';b.innerHTML='';return}
     var con=s.ambos+s.rc+s.ap;
-    tot.textContent=con+' de '+t+' contratos llevan RC o AP ('+Math.round(con/t*100)+' %) · '+s.ninguno+' no llevan ninguno';
+    tot.textContent=pf.per.charAt(0).toUpperCase()+pf.per.slice(1)+' · '+con+' de '+t+' contratos llevan RC o AP ('+Math.round(con/t*100)+' %) · '+s.ninguno+' no llevan ninguno';
     var it=[['RC y AP',s.ambos,'#1f9d55'],['Solo RC',s.rc,'#fdc33e'],['Solo AP',s.ap,'#5b78c7'],['Ni RC ni AP',s.ninguno,'#021346']];
     var R=70,C=2*Math.PI*R,gap=it.filter(function(x){return x[1]>0}).length>1?3:0,acc=0,animar=!b._ya;
     var svg=sv('svg',{width:210,height:210,viewBox:'0 0 210 210','class':'ch-svg dona','role':'img','aria-label':'Seguros por contrato'});
@@ -798,11 +802,29 @@
     return {m:m,a:a,r:r}}
   function numAnio(v){var n=parseInt(String(v).trim(),10);return isNaN(n)?0:(n<100?2000+n:n)}
 
-  function pintarAsesores(v,ok){
-    var tot=document.getElementById('asrTot'),box=document.getElementById('asrBarras');
-    if(!ok){tot.textContent='Para ver las ventas por asesor, configura el conector del CRM en «Conexiones».';return}
+  var PF={as:{y:String(new Date().getFullYear()),m:String(new Date().getMonth()+1)},sg:{y:String(new Date().getFullYear()),m:String(new Date().getMonth()+1)}};
+  /* Filtros de año y mes de una tarjeta: devuelve los registros del período elegido y su nombre */
+  function periodoTarjeta(p,recs,repintar){
+    var yA=new Date().getFullYear(),ys={};ys[yA]=1;recs.forEach(function(r){ys[Math.floor((r.k-1)/12)]=1});
+    var sa=document.getElementById(p+'Anio'),sm=document.getElementById(p+'Mes'),st=PF[p];
+    if(!sa._ok){sa._ok=1;document.getElementById(p+'Fil').addEventListener('change',function(){st.y=sa.value;st.m=sm.value;repintar()})}
+    sa.innerHTML='<option value="todos">Todos los años</option>'+Object.keys(ys).sort(function(a,b){return b-a}).map(function(y){return '<option>'+y+'</option>'}).join('');
+    sm.innerHTML='<option value="0">Todo el año</option>'+MES_LARGO.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>'}).join('');
+    if(st.y!=='todos'&&!ys[st.y])st.y=String(yA);
+    sa.value=st.y;sm.value=st.m;
+    var l=recs.filter(function(r){var y=Math.floor((r.k-1)/12),m=r.k-y*12;return (st.y==='todos'||y===+st.y)&&(st.m==='0'||m===+st.m)});
+    return {l:l,per:(st.m==='0'?'':MES_LARGO[+st.m-1]+' ')+(st.y==='todos'?(st.m==='0'?'todos los años':'de todos los años'):(st.m==='0'?'año ':'')+st.y)};
+  }
+  var asRecs=[],asOk=false,sgRecs=[],sgOk=false;
+  function pintarAsesores(recs,ok){
+    asRecs=recs;asOk=ok;
+    var tot=document.getElementById('asrTot'),box=document.getElementById('asrBarras'),fil=document.getElementById('asFil');
+    if(!ok){tot.textContent='Para ver las ventas por asesor, configura el conector del CRM en «Conexiones».';fil.style.display='none';return}
+    fil.style.display='';
+    var pf=periodoTarjeta('as',recs,function(){pintarAsesores(asRecs,asOk)}),v={};
+    pf.l.forEach(function(r){v[r.a]=(v[r.a]||0)+1});
     var lista=Object.keys(v).map(function(k){return [k,v[k]]}).sort(function(a,b){return b[1]-a[1]}),suma=lista.reduce(function(s,x){return s+x[1]},0),max=lista.length?lista[0][1]:1;
-    tot.textContent=suma?'Contratos del mes · '+suma+' en total':'Todavía no hay contratos este mes.';
+    tot.textContent=suma?pf.per.charAt(0).toUpperCase()+pf.per.slice(1)+' · '+suma+' contratos en total':'No hay contratos en '+pf.per+'.';
     box.className='asr-l';box.style.setProperty('--f',Math.max(1,Math.ceil(lista.length/2)));
     box.innerHTML=lista.map(function(x,i){return '<div class="fila-a'+(i===0?' top':'')+'"><span class="rk">'+(i+1)+'</span><span class="nm" title="'+x[0]+': '+x[1]+' contratos">'+x[0]+'</span><div class="pista"><div class="barra" style="width:'+Math.round(x[1]/max*100)+'%"></div></div><b>'+x[1]+'</b><span class="pc">'+Math.round(x[1]/suma*100)+' %</span></div>'}).join('');
   }
@@ -831,7 +853,7 @@
         if(normEstado(x.estado)==='ANULADO')return;
         if(x.mes===undefined)return;nuevo=true;var rs=mesAnio(x);
         if(!String(x.cliente||'').trim()){diag.sinContrato++;var k0=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.sc[k0]=(diag.sc[k0]||0)+1}
-        if(String(x.cliente||'').trim()){var mm=rs.m,aa=rs.a;diag.conContrato++;if(rs.r)diag.rescatadas++;if(!(mm&&aa)){diag.sinFecha++;var k1=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.muestras[k1]=(diag.muestras[k1]||0)+1}else if(mm===mesAct&&aa===anioAct)diag.mes++;if(x.forma!=='CONTADO'&&x.forma!=='FINANCIADO'){diag.formaRara++;var k2=(x.forma||'(vacío)')+' · '+(MES_C[mm-1]||'?')+' '+(aa||'?');diag.fr[k2]=(diag.fr[k2]||0)+1}if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};rcs.push({k:aa*12+mm,rc:x.rc==='SI',a:(x.asesor||'').trim().toUpperCase()||'SIN ASESOR'});if(x.rc==='SI')kk.rc++;else kk.sin++}
+        if(String(x.cliente||'').trim()){var mm=rs.m,aa=rs.a;diag.conContrato++;if(rs.r)diag.rescatadas++;if(!(mm&&aa)){diag.sinFecha++;var k1=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.muestras[k1]=(diag.muestras[k1]||0)+1}else if(mm===mesAct&&aa===anioAct)diag.mes++;if(x.forma!=='CONTADO'&&x.forma!=='FINANCIADO'){diag.formaRara++;var k2=(x.forma||'(vacío)')+' · '+(MES_C[mm-1]||'?')+' '+(aa||'?');diag.fr[k2]=(diag.fr[k2]||0)+1}if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};rcs.push({k:aa*12+mm,rc:x.rc==='SI',ap:x.ap==='SI',a:(x.asesor||'').trim().toUpperCase()||'SIN ASESOR'});if(x.rc==='SI')kk.rc++;else kk.sin++}
           if(mm&&aa){var ed=Number(x.edad)||0;if(!ed&&x.fechaNacISO){var bd=new Date(x.fechaNacISO);if(!isNaN(bd))ed=Math.floor((nowE-bd)/31557600000)}if(ed>=16&&ed<=95)eds.push({k:aa*12+mm,y:aa,e:ed})}
           if(mm&&aa){var cc=cf[aa*12+mm]=cf[aa*12+mm]||{C:0,F:0,O:0};if(x.forma==='CONTADO')cc.C++;else if(x.forma==='FINANCIADO')cc.F++;else cc.O++}
           var vp=(x.forma==='FINANCIADO'?Number(x.valorCuota):Number(x.valorProtect))||0;if(mm&&aa&&vp>0&&(x.forma==='FINANCIADO'||x.forma==='CONTADO')){var tt=tk[aa*12+mm]=tk[aa*12+mm]||{FINANCIADO:{s:0,n:0},CONTADO:{s:0,n:0}};tt[x.forma].s+=vp;tt[x.forma].n++}}
@@ -844,12 +866,12 @@
       });
       window.PM_DIAG=diag;
       var conRc=nuevo;
-      pintarAsesores(ventas,nuevo);
+      pintarAsesores(rcs,nuevo);
       pintarRc(rcs,nuevo);
       pintarTicket(tk,nuevo);
       pintarCF(cf,nuevo);
       pintarEdad(eds,nuevo&&r.contratos.some(function(x){return x.edad!==undefined}));
-      pintarSeg(sg,nuevo&&r.contratos.some(function(x){return x.ap!==undefined}));
+      pintarSeg(rcs,nuevo&&r.contratos.some(function(x){return x.ap!==undefined}));
       pintarAnual(ecs,nuevo);
       pintarMeta(nuevo?Object.keys(ventas).reduce(function(a,k){return a+ventas[k]},0):null);
       document.getElementById('kpis').innerHTML=[['Activos',c.ACTIVO],['Finalizados',c.FINALIZADO],['Cancelados',c.CANCELADO],['Contratos',(r.contratos||[]).length],['RC este mes',nuevo?rc:'—'],['Contado este mes',nuevo?cont:'—']]
