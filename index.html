@@ -541,8 +541,7 @@
 
   /* ----- Contratos por mes del año: columnas + tendencia ----- */
   var esOtros=false,esAnio='todos',esMes='0',esAs='todos',esRecs=[],esOk=false;
-  try{var q1=localStorage.getItem('pm_es_anio'),q2=localStorage.getItem('pm_es_mes');if(q1&&(q1==='todos'||/^\d{4}$/.test(q1)))esAnio=q1;if(q2&&/^(0|[1-9]|1[0-2])$/.test(q2))esMes=q2}catch(e){}
-  document.getElementById('esFil').addEventListener('change',function(){esAnio=document.getElementById('esAnio').value;esMes=document.getElementById('esMes').value;esAs=document.getElementById('esAs').value;esOtros=document.getElementById('esOt').checked;try{localStorage.setItem('pm_es_anio',esAnio);localStorage.setItem('pm_es_mes',esMes)}catch(e){}pintarAnual(esRecs,esOk)});
+  document.getElementById('esFil').addEventListener('change',function(){esAnio=document.getElementById('esAnio').value;esMes=document.getElementById('esMes').value;esAs=document.getElementById('esAs').value;esOtros=document.getElementById('esOt').checked;pintarAnual(esRecs,esOk)});
   function pintarAnual(recs,ok){
     esRecs=recs;esOk=ok;
     var tot=document.getElementById('anTot'),g=document.getElementById('anCuerpo'),fil=document.getElementById('esFil');
