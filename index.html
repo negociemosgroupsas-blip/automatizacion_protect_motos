@@ -419,7 +419,7 @@
     document.getElementById('metaEd').onclick=function(){
       this.parentNode.innerHTML='Meta: <input id="metaIn" type="number" min="1" value="'+metaVal+'"> <button class="meta-e" id="metaOk" type="button">Guardar</button>';
       document.getElementById('metaOk').onclick=function(){var n=parseInt(document.getElementById('metaIn').value,10);if(n>0){metaVal=n;try{localStorage.setItem(META_CLAVE,String(n))}catch(e){}}pintarMeta()}}}
-  var rcm=document.createElement('div');rcm.className='card rcm';rcm.innerHTML='<h3>Contratos con RC y sin RC, mes a mes</h3><p class="tot" id="rcTot">Se muestra al conectar Cobros.</p><div id="rcGraf"></div>';tarjetas.appendChild(rcm);
+  var rcm=document.createElement('div');rcm.className='card rcm';rcm.innerHTML='<h3>Contratos con RC y sin RC, mes a mes</h3><p class="tot" id="rcTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="rcFil"><label>Ver <select id="rcPer"></select></label><label>Asesor <select id="rcAs"></select></label></div><div id="rcGraf"></div>';tarjetas.appendChild(rcm);
   var MES_C=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   var seg=document.createElement('div');seg.className='card seg';seg.innerHTML='<h3>Seguros por contrato · '+MES_TXT+'</h3><p class="tot" id="sgTot">Se muestra al conectar Cobros.</p><div id="sgCuerpo"></div>';tarjetas.appendChild(seg);
   var anu=document.createElement('div');anu.className='card anu';anu.innerHTML='<h3>Estado de los clientes</h3><p class="tot" id="anTot">Se muestra al conectar Cobros.</p><div class="ed-per" id="esFil"><label>Año <select id="esAnio"></select></label><label>Mes <select id="esMes"></select></label><label>Asesor <select id="esAs"></select></label><label class="es-ot"><input type="checkbox" id="esOt"> Ver otros estados</label></div><div id="anCuerpo"></div>';tarjetas.appendChild(anu);
@@ -577,20 +577,38 @@
   }
 
   /* ----- RC contra sin RC: columnas apiladas + tendencia del % ----- */
-  function pintarRc(b,ok){
-    var tot=document.getElementById('rcTot'),g=document.getElementById('rcGraf');
-    if(!ok){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';g.innerHTML='';return}
-    var h=new Date(),meses=[],i;
-    for(i=5;i>=0;i--){var d=new Date(h.getFullYear(),h.getMonth()-i,1);meses.push({y:d.getFullYear(),m:d.getMonth()+1})}
-    var datos=meses.map(function(x){var k=b[x.y*12+x.m]||{rc:0,sin:0},t=k.rc+k.sin;return {y:x.y,m:x.m,rc:k.rc,sin:k.sin,t:t,pct:t?Math.round(k.rc/t*100):0}});
-    var act=datos[5],ant=datos[4],max=Math.max.apply(null,datos.map(function(x){return x.t}).concat(1));
-    tot.textContent='Mes actual: '+act.rc+' con RC y '+act.sin+' sin RC ('+act.t+' contratos)'+(ant.t?' · mes anterior: '+ant.rc+' con RC y '+ant.sin+' sin RC':'');
+  var rcPer='ult6',rcAs='todos',rcRecs=[],rcOk=false;
+  document.getElementById('rcFil').addEventListener('change',function(){rcPer=document.getElementById('rcPer').value;rcAs=document.getElementById('rcAs').value;pintarRc(rcRecs,rcOk)});
+  function pintarRc(recs,ok){
+    rcRecs=recs;rcOk=ok;
+    var tot=document.getElementById('rcTot'),g=document.getElementById('rcGraf'),fil=document.getElementById('rcFil');
+    if(!ok){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';g.innerHTML='';fil.style.display='none';return}
+    fil.style.display='';
+    var h=new Date(),meses=[],i,yy={},ases={};recs.forEach(function(r){yy[Math.floor((r.k-1)/12)]=1;ases[r.a]=1});
+    var sp=document.getElementById('rcPer'),sa=document.getElementById('rcAs');
+    sp.innerHTML='<option value="ult6">Últimos 6 meses</option>'+Object.keys(yy).sort(function(a,b){return b-a}).map(function(y){return '<option value="'+y+'">Año '+y+' (12 meses)</option>'}).join('');
+    sa.innerHTML='<option value="todos">Todos</option>'+Object.keys(ases).sort().map(function(x){return '<option>'+x+'</option>'}).join('');
+    if(rcPer!=='ult6'&&!yy[rcPer])rcPer='ult6';if(rcAs!=='todos'&&!ases[rcAs])rcAs='todos';
+    sp.value=rcPer;sa.value=rcAs;
+    var b={};recs.forEach(function(r){if(rcAs!=='todos'&&r.a!==rcAs)return;var k=b[r.k]=b[r.k]||{rc:0,sin:0};if(r.rc)k.rc++;else k.sin++});
+    var N=rcPer==='ult6'?6:12;
+    if(rcPer==='ult6'){for(i=5;i>=0;i--){var d=new Date(h.getFullYear(),h.getMonth()-i,1);meses.push({y:d.getFullYear(),m:d.getMonth()+1})}}
+    else{for(i=1;i<=12;i++)meses.push({y:+rcPer,m:i})}
+    var curK=h.getFullYear()*12+h.getMonth()+1;
+    var datos=meses.map(function(x){var k=b[x.y*12+x.m]||{rc:0,sin:0},t=k.rc+k.sin;return {y:x.y,m:x.m,rc:k.rc,sin:k.sin,t:t,pct:t?Math.round(k.rc/t*100):0,fut:x.y*12+x.m>curK}});
+    var ia=rcPer==='ult6'?5:(+rcPer===h.getFullYear()?h.getMonth():-1);
+    var act=ia>=0?datos[ia]:datos.reduce(function(m,x){return x.t?x:m},datos[0]),ant=ia>0?datos[ia-1]:{t:0,rc:0,sin:0};
+    var pre=ia>=0?'Mes actual: ':'Último mes con contratos ('+MES_C[act.m-1]+'): ';
+    if(rcPer!=='ult6'){var sr=0,ss=0;datos.forEach(function(x){sr+=x.rc;ss+=x.sin});pre='Año '+rcPer+': '+sr+' con RC y '+ss+' sin RC ('+(sr+ss)+' contratos)'+(rcAs==='todos'?'':' · '+rcAs)+'. '+pre}
+    else if(rcAs!=='todos')pre=rcAs+' · '+pre;
+    var max=Math.max.apply(null,datos.map(function(x){return x.t}).concat(1));
+    tot.textContent=pre+act.rc+' con RC y '+act.sin+' sin RC ('+act.t+' contratos)'+(ant.t?' · mes anterior: '+ant.rc+' con RC y '+ant.sin+' sin RC':'');
     var pts=[];datos.forEach(function(x,i){if(x.t)pts.push({i:i,y:x.pct})});
     var rg=regresion(pts),tx=pts.length<3?'Aún hay pocos meses para calcular la tendencia.':(Math.abs(rg.b)<0.3?'Tendencia del % con RC: estable':'Tendencia del % con RC: '+(rg.b>0?'▲ sube':'▼ baja')+' en promedio '+fmt1(Math.abs(rg.b))+' puntos por mes');
     if(!g.querySelector('.rc-c2'))g.innerHTML='<div class="tend-l"></div><div class="rc-c2"></div>';
     g.querySelector('.tend-l').innerHTML='<span class="leg-g"><i style="background:#fdc33e"></i>Columna dorada = contratos <b>con RC</b></span><span class="leg-g"><i style="background:#021346"></i>Columna azul = contratos <b>sin RC</b></span><span>El número sobre cada columna es la cantidad de contratos del mes.</span>';
-    columnas(g.querySelector('.rc-c2'),{datos:datos.map(function(x){return x.t?{vals:[x.rc,x.sin],rc:x.rc,sin:x.sin,t:x.t,pct:x.pct,m:x.m,y:x.y}:null}),n:6,max:Math.max.apply(null,datos.map(function(x){return Math.max(x.rc,x.sin)}).concat(1))*1.25,alto:230,colores:['#fdc33e','#021346'],grupo:true,nombres:['RC','SIN RC'],txtNom:['nom-o','nom-b'],subs:function(d){return [{t:d.rc+' con RC',c:'#fdc33e'},{t:d.sin+' sin RC',c:'#021346'}]},
-      etiquetas:datos.map(function(x){return MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')}),activo:5,etqBajo2:function(d,i,W){return W<420?d.rc+'/'+d.sin:''},aria:'Contratos con RC y sin RC por mes',
+    columnas(g.querySelector('.rc-c2'),{datos:datos.map(function(x){return x.t?{vals:[x.rc,x.sin],rc:x.rc,sin:x.sin,t:x.t,pct:x.pct,m:x.m,y:x.y}:null}),n:N,max:Math.max.apply(null,datos.map(function(x){return Math.max(x.rc,x.sin)}).concat(1))*1.25,alto:230,colores:['#fdc33e','#021346'],grupo:true,nombres:['RC','SIN RC'],txtNom:['nom-o','nom-b'],subs:N===12?null:function(d){return [{t:d.rc+' con RC',c:'#fdc33e'},{t:d.sin+' sin RC',c:'#021346'}]},
+      etiquetas:datos.map(function(x){return MES_C[x.m-1]+(x.m===1?' '+String(x.y).slice(2):'')}),activo:ia,etqBajo2:function(d,i,W){return W<420&&N===6?d.rc+'/'+d.sin:''},aria:'Contratos con RC y sin RC por mes',
       etqBarra:function(){return ''},
       tip:function(d){return '<b>'+MES_C[d.m-1].toUpperCase()+' '+d.y+'</b> · '+d.t+' contratos<br>Con RC: '+d.rc+' ('+d.pct+' %)<br>Sin RC: '+d.sin+' ('+(100-d.pct)+' %)'}});
   }
@@ -726,7 +744,7 @@
     var mxm=dm2.reduce(function(p,q,ix){return q&&(!p||q.t>p.t)?Object.assign({m:ix},q):p},null);
     b.innerHTML='<div class="cf-t"><div class="cf-n" style="--c:#fdc33e"><span>De contado</span><b>'+tc+'</b><small>'+Math.round(tc/T*100)+' % de los contratos</small></div><div class="cf-n" style="--c:#5b78c7"><span>Financiados</span><b>'+tf+'</b><small>'+Math.round(tf/T*100)+' % de los contratos</small></div><div class="cf-n" style="--c:#021346"><span>Mes con más contratos</span><b>'+MES_LARGO[mxm.m]+'</b><small>'+mxm.t+' contratos</small></div></div><div class="ed-leg leg-grande"><span><i style="background:#fdc33e"></i>Columna dorada = contratos <b>de contado</b></span><span><i style="background:#5b78c7"></i>Columna azul = contratos <b>financiados</b></span></div><div class="cf-c"></div>';
     var dg=dm2.map(function(d){return d?{vals:[d.c,d.f],t:d.t,c:d.c,f:d.f,o:d.o}:null});
-    columnas(b.querySelector('.cf-c'),{datos:dg,n:12,max:Math.max.apply(null,dm2.map(function(d){return d?Math.max(d.c,d.f):0}))*1.25,alto:230,etiquetas:MES_C.map(function(m,ix){return dm2[ix]?m+' ('+dm2[ix].t+')':m}),grupo:true,nombres:['CONTADO','FINANCIADO'],txtNom:['nom-o','nom-b'],subs:function(d){return [{t:d.c+' contado',c:'#fdc33e'},{t:d.f+' financ.',c:'#5b78c7'}]},colores:['#fdc33e','#5b78c7'],activo:-1,aria:'Contratos de contado y financiados por mes',etqBarra:function(){return ''},
+    columnas(b.querySelector('.cf-c'),{datos:dg,n:12,max:Math.max.apply(null,dm2.map(function(d){return d?Math.max(d.c,d.f):0}))*1.25,alto:230,etiquetas:MES_C.map(function(m,ix){return dm2[ix]?m+' ('+dm2[ix].t+')':m}),grupo:true,nombres:['CONTADO','FINANCIADO'],txtNom:['nom-o','nom-b'],subs:N===12?null:function(d){return [{t:d.c+' contado',c:'#fdc33e'},{t:d.f+' financ.',c:'#5b78c7'}]},colores:['#fdc33e','#5b78c7'],activo:-1,aria:'Contratos de contado y financiados por mes',etqBarra:function(){return ''},
       tip:function(d,ix){return '<b>'+MES_LARGO[ix]+(cfAnio==='todos'?'':' '+cfAnio)+'</b> · '+d.t+' contratos<br>De contado: '+d.c+'<br>Financiados: '+d.f+(d.o?'<br><i>Sin forma de pago (columna T): '+d.o+'</i>':'')}});
   }
   function pendiente(m){
@@ -791,14 +809,14 @@
       estadoCrm('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos · '+new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}),'#1f9d55');
       window.PM_COBROS=r;document.dispatchEvent(new Event('pm-cobros'));
       var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},tk={},cf={},eds=[],diag={leidas:(r.contratos||[]).length,conContrato:0,mes:0,sinFecha:0,muestras:{},sinContrato:0,sc:{},formaRara:0,fr:{},rescatadas:0},nowE=new Date(),sg={ambos:0,rc:0,ap:0,ninguno:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;
-      var ec={ACTIVO:0,FINALIZADO:0,CANCELADO:0,OTRO:0},ecs=[];
+      var ec={ACTIVO:0,FINALIZADO:0,CANCELADO:0,OTRO:0},ecs=[],rcs=[];
       (r.contratos||[]).forEach(function(x){
         if(c[x.estado]!==undefined)c[x.estado]++;
         var es0=normEstado(x.estado);if(String(x.cliente||'').trim()||String(x.contrato||'').trim()||es0!=='OTRO'){var es=es0;ec[es]=(ec[es]||0)+1;var rr=mesAnio(x);ecs.push({y:rr.a||0,m:rr.m||0,e:es,a:(x.asesor||'').trim().toUpperCase()||'SIN ASESOR'})}
         if(normEstado(x.estado)==='ANULADO')return;
         if(x.mes===undefined)return;nuevo=true;var rs=mesAnio(x);
         if(!String(x.cliente||'').trim()){diag.sinContrato++;var k0=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.sc[k0]=(diag.sc[k0]||0)+1}
-        if(String(x.cliente||'').trim()){var mm=rs.m,aa=rs.a;diag.conContrato++;if(rs.r)diag.rescatadas++;if(!(mm&&aa)){diag.sinFecha++;var k1=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.muestras[k1]=(diag.muestras[k1]||0)+1}else if(mm===mesAct&&aa===anioAct)diag.mes++;if(x.forma!=='CONTADO'&&x.forma!=='FINANCIADO'){diag.formaRara++;var k2=(x.forma||'(vacío)')+' · '+(MES_C[mm-1]||'?')+' '+(aa||'?');diag.fr[k2]=(diag.fr[k2]||0)+1}if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};if(x.rc==='SI')kk.rc++;else kk.sin++}
+        if(String(x.cliente||'').trim()){var mm=rs.m,aa=rs.a;diag.conContrato++;if(rs.r)diag.rescatadas++;if(!(mm&&aa)){diag.sinFecha++;var k1=(x.mes||'(vacío)')+' / '+(x.anio||'(vacío)');diag.muestras[k1]=(diag.muestras[k1]||0)+1}else if(mm===mesAct&&aa===anioAct)diag.mes++;if(x.forma!=='CONTADO'&&x.forma!=='FINANCIADO'){diag.formaRara++;var k2=(x.forma||'(vacío)')+' · '+(MES_C[mm-1]||'?')+' '+(aa||'?');diag.fr[k2]=(diag.fr[k2]||0)+1}if(mm&&aa){var kk=hist[aa*12+mm]=hist[aa*12+mm]||{rc:0,sin:0};rcs.push({k:aa*12+mm,rc:x.rc==='SI',a:(x.asesor||'').trim().toUpperCase()||'SIN ASESOR'});if(x.rc==='SI')kk.rc++;else kk.sin++}
           if(mm&&aa){var ed=Number(x.edad)||0;if(!ed&&x.fechaNacISO){var bd=new Date(x.fechaNacISO);if(!isNaN(bd))ed=Math.floor((nowE-bd)/31557600000)}if(ed>=16&&ed<=95)eds.push({k:aa*12+mm,y:aa,e:ed})}
           if(mm&&aa){var cc=cf[aa*12+mm]=cf[aa*12+mm]||{C:0,F:0,O:0};if(x.forma==='CONTADO')cc.C++;else if(x.forma==='FINANCIADO')cc.F++;else cc.O++}
           var vp=(x.forma==='FINANCIADO'?Number(x.valorCuota):Number(x.valorProtect))||0;if(mm&&aa&&vp>0&&(x.forma==='FINANCIADO'||x.forma==='CONTADO')){var tt=tk[aa*12+mm]=tk[aa*12+mm]||{FINANCIADO:{s:0,n:0},CONTADO:{s:0,n:0}};tt[x.forma].s+=vp;tt[x.forma].n++}}
@@ -812,7 +830,7 @@
       window.PM_DIAG=diag;
       var conRc=nuevo;
       pintarAsesores(ventas,nuevo);
-      pintarRc(hist,nuevo);
+      pintarRc(rcs,nuevo);
       pintarTicket(tk,nuevo);
       pintarCF(cf,nuevo);
       pintarEdad(eds,nuevo&&r.contratos.some(function(x){return x.edad!==undefined}));
