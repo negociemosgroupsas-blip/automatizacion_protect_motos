@@ -971,8 +971,16 @@ $("copyBtn").addEventListener("click",function(){
 function printDoc(which){
   document.body.classList.remove("print-caratula","print-constancia","print-ap","print-cliente","print-otrosi");
   document.body.classList.add("print-"+which);
-  window.print();
-  setTimeout(function(){document.body.classList.remove("print-caratula","print-constancia","print-ap","print-cliente","print-otrosi");},600);
+  /* Dentro del CRM el módulo va en un marco: el nombre del PDF lo toma el título de la página principal, así que se lo enviamos. */
+  var enMarco=false;try{enMarco=window.parent!==window;}catch(e){}
+  if(enMarco){try{window.parent.postMessage({pmTitulo:document.title},"*");}catch(e){}}
+  setTimeout(function(){
+    window.print();
+    setTimeout(function(){
+      document.body.classList.remove("print-caratula","print-constancia","print-ap","print-cliente","print-otrosi");
+      if(enMarco){try{window.parent.postMessage({pmTitulo:null},"*");}catch(e){}}
+    },600);
+  },enMarco?200:0);
 }
 window.printDoc=printDoc;
 

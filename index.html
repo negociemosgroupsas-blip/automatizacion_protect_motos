@@ -1023,6 +1023,9 @@
       document.head.appendChild(s)});
   })();
 })();
+
+  /* El módulo Contratos nombra sus PDF con el título de la página: lo recibimos y lo ponemos mientras se imprime */
+  (function(){var base=null;window.addEventListener('message',function(ev){var d=ev.data;if(!d||typeof d!=='object'||!('pmTitulo' in d))return;if(typeof d.pmTitulo==='string'&&d.pmTitulo){if(base===null)base=document.title;document.title=d.pmTitulo}else if(base!==null){document.title=base;base=null}})})();
 </script>
 </body>
 </html>
