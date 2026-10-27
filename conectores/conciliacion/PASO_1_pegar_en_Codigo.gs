@@ -212,7 +212,8 @@ function CONC_leerProtect(hoja) {
         plazo: CONC_aNumero(f[CONC_P_INFO.PLAZO - 1]),
         forma: CONC_texto(f[CONC_P_INFO.FORMA - 1]).toUpperCase(),
         celular: CONC_texto(f[CONC_P_INFO.CELULAR - 1]),
-        estadoCliente: CONC_texto(f[CONC_P_INFO.ESTADO_CLIENTE - 1]).toUpperCase()
+        // Si el nombre del cliente dice "Anulado" (contrato anulado) y la columna AR está vacía, se trata como anulado
+        estadoCliente: (CONC_texto(f[CONC_P_INFO.ESTADO_CLIENTE - 1]) === '' && /^\s*anulad[oa]\s*$/i.test(CONC_texto(cliente))) ? 'ANULADO' : CONC_texto(f[CONC_P_INFO.ESTADO_CLIENTE - 1]).toUpperCase()
       }
     });
   }
