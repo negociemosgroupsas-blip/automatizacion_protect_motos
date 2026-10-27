@@ -303,7 +303,7 @@
   .dcard{background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;padding:14px 16px;min-width:0}
   .dcard h3{margin:0 0 2px;font-size:.98rem;color:var(--azul);border-left:4px solid var(--dorado-claro);padding-left:9px;line-height:1.2}
   .dcard .d-sub{font-size:.76rem;color:var(--texto-suave);margin:2px 0 8px;min-height:1.1em}
-  .dcard.c8{grid-column:span 8} .dcard.c4{grid-column:span 4}
+  .dcard.c12{grid-column:1/-1} .dcard.c8{grid-column:span 8} .dcard.c4{grid-column:span 4}
   .dcard .d-sel{float:right;border:1px solid var(--borde);border-radius:8px;padding:3px 6px;font-size:.78rem;background:#fff}
   .d-leg{display:flex;gap:14px;flex-wrap:wrap;font-size:.76rem;color:var(--texto-suave);margin:0 0 4px} .d-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
   .dona-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center}
@@ -317,7 +317,11 @@
   .g-parts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
   .g-parts div{background:var(--fondo);border-radius:10px;padding:8px 10px;border-left:4px solid} .g-parts b{display:block;font-size:1.2rem;color:var(--azul)} .g-parts span{font-size:.7rem;color:var(--texto-suave)}
   #tipD{position:fixed;display:none;background:#13223f;color:#fff;border-radius:8px;padding:7px 10px;font-size:.78rem;pointer-events:none;z-index:50;box-shadow:0 4px 14px rgba(0,0,0,.25)}
-  @media(max-width:1000px){.dcard.c8,.dcard.c4{grid-column:1/-1}}
+    .tipo-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px}
+  .tipo-k{display:flex;align-items:center;gap:14px;background:var(--fondo);border-radius:12px;padding:12px 16px;border-left:6px solid}
+  .tipo-k .em{font-size:2.2rem;line-height:1} .tipo-k b{display:block;font-size:1.9rem;color:var(--azul);line-height:1.05} .tipo-k span{font-size:.78rem;color:var(--texto-suave)} .tipo-k em{display:block;font-style:normal;font-size:.85rem;color:#1f9d55;font-weight:700;margin-top:2px}
+  .tipo-band{display:flex;height:30px;border-radius:999px;overflow:hidden;background:#e8ebf3} .tipo-band i{display:flex;align-items:center;justify-content:center;color:#fff;font:700 .8rem Arial;font-style:normal}
+  @media(max-width:1000px){.dcard.c8,.dcard.c4{grid-column:1/-1} .tipo-row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -353,10 +357,11 @@
     <div class="dcard c8"><h3>Vendidos y ganancia mes a mes</h3><p class="d-sub" id="dSub1"></p>
       <div class="d-leg"><span><i style="background:#13223f"></i>Columnas: SOAT vendidos</span><span><i style="background:#1f9d55"></i>Línea: ganancia</span></div><div id="dCombo"></div></div>
     <div class="dcard c4"><h3>¿Cómo pagan?</h3><p class="d-sub" id="dSub2"></p>
-      <select class="d-sel" id="dPorQue"><option value="forma">Forma de pago</option><option value="tipo">Tipo de vehículo</option></select><div id="dDona"></div></div>
+      <div id="dDona"></div></div>
     <div class="dcard c8"><h3>Ganancia acumulada del año</h3><p class="d-sub" id="dSub3"></p>
       <div class="d-leg"><span><i style="background:#1f9d55"></i>Este año</span><span><i style="background:#b8c0d4"></i>Año anterior</span></div><div id="dAcum"></div></div>
     <div class="dcard c4"><h3>Renovaciones</h3><p class="d-sub" id="dSub4"></p><div id="dGauge"></div></div>
+    <div class="dcard c12"><h3>Motos contra carros</h3><p class="d-sub" id="dSub5"></p><div id="dTipo"></div></div>
   </div>
   <div id="tipD"></div>
 
@@ -639,6 +644,16 @@
     var base = ren+nor+pen;
     document.getElementById('dSub4').textContent = base ? 'De '+base+' SOAT que ya vencieron' : 'Aún no hay SOAT vencidos';
     dibujarMedidor(document.getElementById('dGauge'), ren, nor, pen);
+    // ---- 5) Motos contra carros ----
+    var tp = {Moto:{n:0,g:0,c:'#13223f',e:'🏍️'},Carro:{n:0,g:0,c:'#d6a417',e:'🚗'}}, otros = 0, tt = 0;
+    estado.soat.forEach(function(s){ var d = parsearISO(s.fechaISO); if(!d) return; if(dashY!=='todos' && d.getFullYear()!==+dashY) return;
+      var k = /carro|camioneta|auto/i.test(s.tipo||'') ? 'Carro' : (/moto/i.test(s.tipo||'') ? 'Moto' : null);
+      if(!k){ otros++; return; } tp[k].n++; tp[k].g += Number(s.ganancia)||0; tt++; });
+    document.getElementById('dSub5').textContent = tt ? tt+' SOAT vendidos'+(otros?' ('+otros+' sin tipo de vehículo)':'') : 'Sin ventas en el período';
+    var pc = function(n){ return tt ? Math.round(n/tt*100) : 0; };
+    document.getElementById('dTipo').innerHTML = '<div class="tipo-row">'+['Moto','Carro'].map(function(k){ var o = tp[k];
+      return '<div class="tipo-k" style="border-color:'+o.c+'"><div class="em">'+o.e+'</div><div><b>'+o.n+'</b><span>'+(k==='Moto'?'Motos':'Carros')+' · '+pc(o.n)+' % de los SOAT</span><em>Ganancia '+dinero(o.g)+(o.n?' · '+dinero(o.g/o.n)+' c/u':'')+'</em></div></div>'; }).join('')+'</div>'+
+      (tt ? '<div class="tipo-band">'+['Moto','Carro'].map(function(k){ var o = tp[k]; return o.n ? '<i style="width:'+(o.n/tt*100)+'%;background:'+o.c+'">'+(pc(o.n)>=10 ? (k==='Moto'?'Motos ':'Carros ')+pc(o.n)+' %' : '')+'</i>' : ''; }).join('')+'</div>' : '');
   }
 
   function dibujarCombo(box, datos, etq){
@@ -699,7 +714,6 @@
     box.firstChild.appendChild(v);
   }
   document.getElementById('dashAnio').addEventListener('change', function(){ dashY = this.value; pintarTablero(); });
-  document.getElementById('dPorQue').addEventListener('change', function(){ dashPor = this.value; pintarTablero(); });
   var rsz = null; window.addEventListener('resize', function(){ clearTimeout(rsz); rsz = setTimeout(function(){ if(estado.soat.length) pintarTablero(); }, 200); });
 
   // ---------- Eventos ----------
