@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Protect Motos — SOAT</title>
+<title>SOAT</title>
 <style>
   :root{
     --azul:#13223f;
@@ -301,8 +301,8 @@
 <header>
   <div class="marca">
     <div>
-      <h1>Protect Motos · SOAT</h1>
-      <p>Ventas de SOAT y avisos de renovación — Medellín</p>
+      <h1>SOAT</h1>
+      <p>Ventas y renovaciones</p>
     </div>
   </div>
   <div class="barra-conector">
@@ -365,7 +365,7 @@
         <button data-f="todos" class="act">Todos</button><button data-f="vigente">Vigentes</button><button data-f="renovar">Por renovar</button><button data-f="vencido">Vencidos</button><button data-f="renovado">Renovados</button>
       </div>
       <table>
-        <thead><tr><th>Cliente</th><th>Cédula</th><th>Placa</th><th>Vehículo</th><th>Inicio</th><th>Vence</th><th>Valor</th><th>Pago</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Cédula</th><th>Placa</th><th>Vehículo</th><th>Inicio</th><th>Vence</th><th>Valor</th><th>Ganancia</th><th>Pago</th><th>Estado</th></tr></thead>
         <tbody id="cuerpoTodos"></tbody>
       </table>
       <div class="vacio" id="vacioTodos" style="display:none;">No hay SOAT para mostrar.</div>
@@ -516,7 +516,7 @@
     tot = filas.length; filas = filas.slice(0,300);
     cuerpo.innerHTML = filas.map(function(x){
       var s = x.s, e = ETQ[x.i.tipo];
-      return '<tr><td data-etiqueta="Cliente"><strong>'+esc(s.cliente)+'</strong></td><td data-etiqueta="Cédula">'+esc(s.cedula)+'</td><td data-etiqueta="Placa">'+esc(s.placa)+'</td><td data-etiqueta="Vehículo">'+vehiculo(s)+'</td><td data-etiqueta="Inicio">'+esc(s.inicio)+'</td><td data-etiqueta="Vence">'+esc(s.vence)+'</td><td data-etiqueta="Valor">'+(s.valor?dinero(s.valor):'—')+'</td><td data-etiqueta="Pago">'+esc(s.forma)+'</td><td data-etiqueta="Estado"><span class="tag '+e[0]+'">'+e[1]+'</span></td></tr>';
+      return '<tr><td data-etiqueta="Cliente"><strong>'+esc(s.cliente)+'</strong></td><td data-etiqueta="Cédula">'+esc(s.cedula)+'</td><td data-etiqueta="Placa">'+esc(s.placa)+'</td><td data-etiqueta="Vehículo">'+vehiculo(s)+'</td><td data-etiqueta="Inicio">'+esc(s.inicio)+'</td><td data-etiqueta="Vence">'+esc(s.vence)+'</td><td data-etiqueta="Valor">'+(s.valor?dinero(s.valor):'—')+'</td><td data-etiqueta="Ganancia"><strong>'+(s.ganancia?dinero(s.ganancia):'—')+'</strong></td><td data-etiqueta="Pago">'+esc(s.forma)+'</td><td data-etiqueta="Estado"><span class="tag '+e[0]+'">'+e[1]+'</span></td></tr>';
     }).join('');
     document.getElementById('vacioTodos').style.display = tot ? 'none' : 'block';
     document.getElementById('notaTodos').textContent = tot>300 ? 'Se muestran 300 de '+tot+'. Usa el buscador para encontrar uno específico.' : '';
