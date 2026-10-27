@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Protect Motos — SOAT</title>
+<style>
+  :root{
+    --azul:#13223f;
+    --azul-claro:#1c3050;
+    --dorado:#d6a417;
+    --dorado-claro:#f0c94a;
+    --fondo:#f4f5f7;
+    --tarjeta:#ffffff;
+    --texto:#1f2430;
+    --texto-suave:#6b7280;
+    --borde:#e3e6eb;
+    --verde:#1f9d55;
+    --verde-bg:#e7f8ee;
+    --naranja:#d97706;
+    --naranja-bg:#fff3e0;
+    --rojo:#dc2626;
+    --rojo-bg:#fdeaea;
+    --azulinfo:#2563eb;
+    --azulinfo-bg:#eaf1fd;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--fondo);
+    color:var(--texto);
+  }
+  header{
+    background:linear-gradient(135deg,var(--azul),var(--azul-claro));
+    color:#fff;
+    padding:18px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  header .marca{display:flex;align-items:center;gap:12px;}
+  header .marca img{height:42px;border-radius:6px;}
+  header h1{font-size:1.25rem;margin:0;font-weight:700;letter-spacing:.3px;}
+  header p{margin:2px 0 0;font-size:.8rem;color:#cbd3e6;}
+  .barra-conector{display:flex;align-items:center;gap:8px;font-size:.8rem;flex-wrap:wrap;}
+  .barra-conector input{
+    background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.3);
+    color:#fff;
+    border-radius:6px;
+    padding:6px 10px;
+    font-size:.78rem;
+    width:300px;
+    max-width:60vw;
+  }
+  .barra-conector input::placeholder{color:#c3cae0;}
+  .btn{
+    border:none;
+    border-radius:8px;
+    padding:8px 14px;
+    font-size:.85rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:filter .15s;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn:active{filter:brightness(.95);}
+  .btn-oro{background:var(--dorado);color:var(--azul);}
+  .btn-azul{background:var(--azul);color:#fff;}
+  .btn-verde{background:var(--verde);color:#fff;}
+  .btn-rojo{background:var(--rojo);color:#fff;}
+  .btn-gris{background:#eceef1;color:var(--texto);}
+  .btn-sm{padding:5px 10px;font-size:.75rem;border-radius:6px;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  main{padding:20px;max-width:1400px;margin:0 auto;}
+
+  .estado-conexion{
+    font-size:.78rem;
+    padding:8px 12px;
+    border-radius:8px;
+    margin-bottom:16px;
+    display:none;
+  }
+  .estado-conexion.ok{display:block;background:var(--verde-bg);color:var(--verde);}
+  .estado-conexion.error{display:block;background:var(--rojo-bg);color:var(--rojo);}
+  .estado-conexion.cargando{display:block;background:var(--azulinfo-bg);color:var(--azulinfo);}
+
+  .contadores{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:12px;
+    margin-bottom:24px;
+  }
+  .tarjeta-contador{
+    background:var(--tarjeta);
+    border-radius:12px;
+    padding:14px 16px;
+    border:1px solid var(--borde);
+    box-shadow:0 1px 2px rgba(0,0,0,.03);
+    cursor:pointer;
+    transition:box-shadow .15s, transform .1s, border-color .15s;
+    user-select:none;
+  }
+  .tarjeta-contador:hover{box-shadow:0 3px 12px rgba(19,34,63,.14);transform:translateY(-1px);}
+  .tarjeta-contador.activo{border-color:var(--azul);box-shadow:0 0 0 2px var(--azul) inset;}
+  .tarjeta-contador .valor{font-size:1.5rem;font-weight:800;color:var(--azul);}
+  .tarjeta-contador .etiqueta{font-size:.72rem;color:var(--texto-suave);margin-top:2px;text-transform:uppercase;letter-spacing:.4px;}
+  .tarjeta-contador.destacado .valor{color:var(--dorado);}
+  .tarjeta-contador.alerta .valor{color:var(--rojo);}
+
+  .filtro-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:#eaf0fb;
+    color:var(--azul);
+    padding:5px 8px 5px 12px;
+    border-radius:999px;
+    font-size:.78rem;
+    font-weight:700;
+  }
+  .filtro-chip button{
+    background:rgba(19,34,63,.1);
+    border:none;
+    color:var(--azul);
+    cursor:pointer;
+    font-weight:700;
+    font-size:.8rem;
+    line-height:1;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .filtro-chip button:hover{background:rgba(19,34,63,.2);}
+
+  section.panel{
+    background:var(--tarjeta);
+    border-radius:14px;
+    border:1px solid var(--borde);
+    margin-bottom:22px;
+    overflow:hidden;
+  }
+  section.panel > .cabecera{
+    padding:14px 18px;
+    border-bottom:1px solid var(--borde);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  section.panel > .cabecera h2{margin:0;font-size:1.02rem;color:var(--azul);}
+  section.panel > .cabecera .sub{font-size:.78rem;color:var(--texto-suave);}
+  .contenido-panel{padding:14px 18px;}
+
+  .cabecera-clic{cursor:pointer;user-select:none;}
+  .cabecera-clic:hover{background:#fafbfc;}
+
+  table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  thead th{
+    text-align:left;
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+    color:var(--texto-suave);
+    padding:8px 10px;
+    border-bottom:2px solid var(--borde);
+    white-space:nowrap;
+  }
+  tbody td{padding:9px 10px;border-bottom:1px solid var(--borde);vertical-align:middle;}
+  tbody tr:hover{background:#fafbfc;}
+  .acciones-fila{display:flex;gap:6px;flex-wrap:wrap;}
+
+  .semaforo{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:3px 9px;
+    border-radius:999px;
+    font-size:.72rem;
+    font-weight:700;
+    white-space:nowrap;
+  }
+  .semaforo.verde{background:var(--verde-bg);color:var(--verde);}
+  .semaforo.naranja{background:var(--naranja-bg);color:var(--naranja);}
+  .semaforo.rojo{background:var(--rojo-bg);color:var(--rojo);}
+  .semaforo.finalizado{background:#e9e9ef;color:#4b4f5a;}
+  .semaforo .punto{width:8px;height:8px;border-radius:50%;background:currentColor;}
+
+  .vacio{padding:26px;text-align:center;color:var(--texto-suave);font-size:.85rem;}
+
+  .caja-busqueda{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  .caja-busqueda input{
+    flex:1;
+    min-width:220px;
+    padding:9px 12px;
+    border-radius:8px;
+    border:1px solid var(--borde);
+    font-size:.85rem;
+  }
+
+  .ficha-cliente{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:10px;
+    margin-bottom:16px;
+    padding:14px;
+    background:#f8f9fb;
+    border-radius:10px;
+  }
+  .ficha-cliente .campo .etiqueta{font-size:.68rem;text-transform:uppercase;color:var(--texto-suave);letter-spacing:.3px;}
+  .ficha-cliente .campo .valor{font-size:.9rem;font-weight:600;color:var(--texto);}
+
+  .tarjeta-poliza + .tarjeta-poliza{margin-top:22px;padding-top:22px;border-top:2px dashed var(--borde);}
+
+  .modal-fondo{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(19,34,63,.55);
+    align-items:center;justify-content:center;
+    z-index:100;
+    padding:16px;
+  }
+  .modal-fondo.abierto{display:flex;}
+  .modal{
+    background:#fff;
+    border-radius:14px;
+    width:100%;
+    max-width:420px;
+    padding:20px;
+    max-height:90vh;
+    overflow-y:auto;
+  }
+  .modal h3{margin:0 0 4px;color:var(--azul);}
+  .modal .sub{font-size:.8rem;color:var(--texto-suave);margin-bottom:14px;}
+  .campo-form{margin-bottom:12px;}
+  .campo-form label{display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--texto);}
+  .campo-form input, .campo-form select, .campo-form textarea{
+    width:100%;
+    padding:9px 10px;
+    border-radius:8px;
+    border:1px solid var(--borde);
+    font-size:.85rem;
+    font-family:inherit;
+  }
+  .modal-acciones{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+  .zona-pegar{
+    margin-top:8px;
+    padding:12px;
+    border:2px dashed var(--borde);
+    border-radius:8px;
+    text-align:center;
+    font-size:.8rem;
+    color:var(--texto-suave);
+    cursor:text;
+  }
+  .zona-pegar:focus{outline:none;border-color:var(--azul);color:var(--azul);}
+
+  .msg-modal{font-size:.8rem;padding:8px 10px;border-radius:8px;margin-top:10px;display:none;}
+  .msg-modal.ok{display:block;background:var(--verde-bg);color:var(--verde);}
+  .msg-modal.error{display:block;background:var(--rojo-bg);color:var(--rojo);}
+  .msg-modal.aviso{display:block;background:var(--naranja-bg);color:var(--naranja);}
+
+  footer{text-align:center;padding:20px;color:var(--texto-suave);font-size:.75rem;}
+
+  @media (max-width:640px){
+    header{padding:14px 16px;}
+    .barra-conector input{width:100%;max-width:100%;}
+    main{padding:12px;}
+    table, thead, tbody, th, td, tr{display:block;}
+    thead{display:none;}
+    tbody tr{
+      border:1px solid var(--borde);
+      border-radius:10px;
+      margin-bottom:10px;
+      padding:8px 10px;
+    }
+    tbody td{border:none;padding:5px 2px;display:flex;justify-content:space-between;gap:10px;}
+    tbody td::before{content:attr(data-etiqueta);font-weight:700;color:var(--texto-suave);font-size:.7rem;text-transform:uppercase;}
+  }
+</style>
+<style>
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+  .chips button{border:1px solid var(--borde);background:#fff;border-radius:999px;padding:6px 14px;font-size:.82rem;cursor:pointer;color:var(--texto)}
+  .chips button.act{background:var(--azul);color:#fff;border-color:var(--azul)}
+  .tag{display:inline-block;border-radius:999px;padding:2px 10px;font-size:.74rem;font-weight:700}
+  .tag.vig{background:var(--verde-bg);color:var(--verde)} .tag.ren{background:#fff4dd;color:#b45309} .tag.env{background:#e6efff;color:#1d4ed8}
+  .tag.ven{background:#fde8e8;color:#b91c1c} .tag.hecho{background:#e8eefc;color:#13223f} .tag.no{background:#eee;color:#555}
+  .nota-sm{font-size:.78rem;color:var(--texto-suave);margin:6px 0 0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marca">
+    <div>
+      <h1>Protect Motos · SOAT</h1>
+      <p>Ventas de SOAT y avisos de renovación — Medellín</p>
+    </div>
+  </div>
+  <div class="barra-conector">
+    <input type="text" id="inputUrlConector" placeholder="Pega aquí la URL del conector de SOAT (Apps Script)">
+    <button class="btn btn-oro" id="btnGuardarUrl">Guardar</button>
+    <button class="btn btn-azul" id="btnRecargar">Actualizar datos</button>
+    <span style="color:#cbd3e6;font-size:.72rem;">🔄 Se actualiza solo cada 1 min</span>
+  </div>
+</header>
+
+<main>
+  <div class="estado-conexion" id="estadoConexion"></div>
+
+  <div class="contadores">
+    <div class="tarjeta-contador alerta" data-ir="panelRenovar" title="Ver los SOAT por renovar"><div class="valor" id="cRenovar">–</div><div class="etiqueta">SOAT por renovar (≤8 días)</div></div>
+    <div class="tarjeta-contador" data-ir="panelEnviadas" title="Ver renovaciones con mensaje enviado"><div class="valor" id="cEnviadas">–</div><div class="etiqueta">Mensajes enviados, esperando respuesta</div></div>
+    <div class="tarjeta-contador" data-ir="panelTodos" title="Ver todos los SOAT"><div class="valor" id="cVigentes">–</div><div class="etiqueta">SOAT vigentes</div></div>
+    <div class="tarjeta-contador destacado"><div class="valor" id="cVentasMes">–</div><div class="etiqueta">Vendidos este mes</div></div>
+    <div class="tarjeta-contador destacado"><div class="valor" id="cGananciaMes">–</div><div class="etiqueta">Ganancia del mes</div></div>
+  </div>
+
+  <section class="panel" id="panelRenovar">
+    <div class="cabecera">
+      <h2>Por renovar</h2>
+      <span class="sub">Vence en 8 días o menos (también los que vencieron hace menos de 30 días)</span>
+    </div>
+    <div class="contenido-panel">
+      <table>
+        <thead><tr><th>Cliente</th><th>Celular</th><th>Placa</th><th>Vehículo</th><th>Vence</th><th>Días</th><th>Acciones</th></tr></thead>
+        <tbody id="cuerpoRenovar"></tbody>
+      </table>
+      <div class="vacio" id="vacioRenovar" style="display:none;">No hay SOAT próximos a vencer. 🎉</div>
+    </div>
+  </section>
+
+  <section class="panel" id="panelEnviadas">
+    <div class="cabecera">
+      <h2>Mensajes enviados</h2>
+      <span class="sub">Ya se les escribió — esperando su respuesta</span>
+    </div>
+    <div class="contenido-panel">
+      <table>
+        <thead><tr><th>Cliente</th><th>Celular</th><th>Placa</th><th>Vence</th><th>Días</th><th>Enviado</th><th>Acciones</th></tr></thead>
+        <tbody id="cuerpoEnviadas"></tbody>
+      </table>
+      <div class="vacio" id="vacioEnviadas" style="display:none;">No hay mensajes esperando respuesta.</div>
+    </div>
+  </section>
+
+  <section class="panel" id="panelTodos">
+    <div class="cabecera">
+      <h2>Todos los SOAT</h2>
+      <span class="sub">Busca por cédula, placa, nombre o celular</span>
+    </div>
+    <div class="contenido-panel">
+      <div class="caja-busqueda">
+        <input type="text" id="inputBusqueda" placeholder="Cédula, placa, nombre o celular...">
+      </div>
+      <div class="chips" id="chipsEstado">
+        <button data-f="todos" class="act">Todos</button><button data-f="vigente">Vigentes</button><button data-f="renovar">Por renovar</button><button data-f="vencido">Vencidos</button><button data-f="renovado">Renovados</button>
+      </div>
+      <table>
+        <thead><tr><th>Cliente</th><th>Cédula</th><th>Placa</th><th>Vehículo</th><th>Inicio</th><th>Vence</th><th>Valor</th><th>Pago</th><th>Estado</th></tr></thead>
+        <tbody id="cuerpoTodos"></tbody>
+      </table>
+      <div class="vacio" id="vacioTodos" style="display:none;">No hay SOAT para mostrar.</div>
+      <p class="nota-sm" id="notaTodos"></p>
+    </div>
+  </section>
+</main>
+
+<footer>Protect Motos © <span id="anioActual"></span> — SOAT</footer>
+
+<script>
+(function(){
+  "use strict";
+  var TOKEN = 'PM-SOAT-2026';
+  var CLAVE_URL = 'pm_soat_url_conector';
+  var DIAS_AVISO = 8, DIAS_VENCIDO_VISIBLE = 30, AUTO_MS = 60000, TIMEOUT_MS = 60000;
+  var ACC_ENVIADO = 'Mensaje de renovación enviado', ACC_RENOVO = 'Renovó', ACC_NO = 'No renovará';
+  var estado = { soat: [], gestiones: [], url: localStorage.getItem(CLAVE_URL) || '', filtro: 'todos', q: '' };
+
+  function hoy(){ var d = new Date(); d.setHours(0,0,0,0); return d; }
+  function parsearISO(iso){ if(!iso) return null; var p = iso.split('-'); if(p.length!==3) return null; var d = new Date(+p[0], +p[1]-1, +p[2]); d.setHours(0,0,0,0); return d; }
+  function fechaCO(d){ return d ? d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear() : '—'; }
+  function dinero(v){ v = Math.round(Number(v)||0); return '$'+String(v).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+  function esc(t){ var d = document.createElement('div'); d.textContent = t==null?'':String(t); return d.innerHTML; }
+  function numeroWA(c){ var d = String(c||'').replace(/\D/g,''); if(d.indexOf('57')===0 && d.length>10) return d; return '57'+d; }
+  function claveSoat(s){ return s.placa+'|'+s.venceISO; }
+  function dias(s){ var f = parsearISO(s.venceISO); return f ? Math.round((f.getTime()-hoy().getTime())/86400000) : null; }
+
+  // ---------- Estado de cada SOAT ----------
+  function ultimaGestion(clave){
+    var r = null;
+    estado.gestiones.forEach(function(g){ if(g.clave===clave && (!r || (g.fechaISO||'') >= (r.fechaISO||''))) r = g; });
+    return r;
+  }
+  // Un SOAT está "renovado" si la misma placa tiene otro registro con vencimiento posterior
+  function renovadoAuto(s){
+    return estado.soat.some(function(o){ return o !== s && o.placa===s.placa && o.venceISO && s.venceISO && o.venceISO > s.venceISO; });
+  }
+  function infoSoat(s){
+    var d = dias(s), g = ultimaGestion(claveSoat(s)), acc = g ? g.accion : '';
+    var tipo;
+    if(renovadoAuto(s) || acc===ACC_RENOVO) tipo = 'renovado';
+    else if(acc===ACC_NO) tipo = 'norenovara';
+    else if(d===null) tipo = 'vigente';
+    else if(d < -DIAS_VENCIDO_VISIBLE) tipo = 'vencido';
+    else if(d <= DIAS_AVISO) tipo = (acc===ACC_ENVIADO) ? 'enviado' : 'renovar';
+    else tipo = 'vigente';
+    return { d: d, g: g, tipo: tipo };
+  }
+  var ETQ = { vigente:['vig','Vigente'], renovar:['ren','Por renovar'], enviado:['env','Mensaje enviado'], vencido:['ven','Vencido'], renovado:['hecho','Renovado'], norenovara:['no','No renovará'] };
+
+  // ---------- JSONP ----------
+  var n = 0;
+  function llamar(params){
+    return new Promise(function(ok, fail){
+      if(!estado.url){ fail(new Error('Primero pega y guarda la URL del conector de SOAT.')); return; }
+      var cb = 'pm_soat_'+Date.now()+'_'+(++n), s = document.createElement('script'), listo = false;
+      var t = setTimeout(function(){ if(listo) return; listo = true; limpiar(); fail(new Error('El conector no respondió a tiempo. Revisa la URL o tu conexión.')); }, TIMEOUT_MS);
+      function limpiar(){ clearTimeout(t); delete window[cb]; if(s.parentNode) s.parentNode.removeChild(s); }
+      window[cb] = function(r){ if(listo) return; listo = true; limpiar(); ok(r); };
+      s.onerror = function(){ if(listo) return; listo = true; limpiar(); fail(new Error('No se pudo conectar. Revisa que la URL termine en /exec y que el acceso sea «Cualquier usuario».')); };
+      s.onload = function(){ setTimeout(function(){ if(!listo && window[cb]){ listo = true; limpiar(); fail(new Error('El conector respondió algo que no es válido. Publica el código como «Nueva versión» con acceso «Cualquier usuario».')); } }, 400); };
+      var q = 'token='+encodeURIComponent(TOKEN)+'&callback='+cb+'&_='+Date.now();
+      Object.keys(params).forEach(function(k){ q += '&'+k+'='+encodeURIComponent(params[k]); });
+      s.src = estado.url + (estado.url.indexOf('?')>-1?'&':'?') + q;
+      document.head.appendChild(s);
+    });
+  }
+
+  var elEstado = document.getElementById('estadoConexion'), tEstado = null;
+  function mostrar(tipo, texto){
+    elEstado.className = 'estado-conexion '+tipo; elEstado.textContent = texto;
+    if(tEstado){ clearTimeout(tEstado); tEstado = null; }
+    if(tipo==='ok') tEstado = setTimeout(function(){ elEstado.className='estado-conexion'; elEstado.textContent=''; }, 6000);
+  }
+
+  var enCarga = false;
+  function cargar(silencioso){
+    if(enCarga) return; enCarga = true;
+    if(!silencioso) mostrar('cargando','Cargando los SOAT…');
+    llamar({action:'datos'}).then(function(r){
+      enCarga = false;
+      if(!r || !r.ok){ mostrar('error', (r && r.error) ? r.error : 'Respuesta inválida del conector.'); return; }
+      estado.soat = r.soat || []; estado.gestiones = r.gestiones || [];
+      pintar();
+      if(!silencioso) mostrar('ok','Datos al día ✔ ('+estado.soat.length+' SOAT)');
+    }).catch(function(e){ enCarga = false; mostrar('error', e.message); });
+  }
+
+  // ---------- Pintar ----------
+  function pintar(){
+    var renovar = [], enviadas = [], vigentes = 0, ventasMes = 0, ganMes = 0, h = hoy();
+    estado.soat.forEach(function(s){
+      var i = infoSoat(s);
+      if(i.tipo==='renovar') renovar.push({s:s,i:i});
+      else if(i.tipo==='enviado') enviadas.push({s:s,i:i});
+      if(i.tipo==='vigente' && (i.d===null || i.d>DIAS_AVISO)) vigentes++;
+      var f = parsearISO(s.fechaISO);
+      if(f && f.getFullYear()===h.getFullYear() && f.getMonth()===h.getMonth()){ ventasMes++; ganMes += Number(s.ganancia)||0; }
+    });
+    renovar.sort(function(a,b){ return a.i.d-b.i.d; }); enviadas.sort(function(a,b){ return a.i.d-b.i.d; });
+    document.getElementById('cRenovar').textContent = renovar.length;
+    document.getElementById('cEnviadas').textContent = enviadas.length;
+    document.getElementById('cVigentes').textContent = vigentes;
+    document.getElementById('cVentasMes').textContent = ventasMes;
+    document.getElementById('cGananciaMes').textContent = dinero(ganMes);
+    pintarFilas('cuerpoRenovar','vacioRenovar',renovar,false);
+    pintarFilas('cuerpoEnviadas','vacioEnviadas',enviadas,true);
+    pintarTodos();
+  }
+
+  function etqDias(d){ return d<0 ? ('Venció hace '+Math.abs(d)+(Math.abs(d)===1?' día':' días')) : d===0 ? 'Vence hoy' : d===1 ? 'Mañana' : ('En '+d+' días'); }
+  function semaforo(d){ return '<span class="semaforo '+(d<0?'rojo':d<=3?'naranja':'verde')+'"><span class="punto"></span>'+etqDias(d)+'</span>'; }
+  function vehiculo(s){ return esc((s.tipo||'')+(s.cilindraje?' '+s.cilindraje+' cc':'')); }
+
+  function pintarFilas(idCuerpo, idVacio, lista, enviadas){
+    var cuerpo = document.getElementById(idCuerpo), vacio = document.getElementById(idVacio);
+    cuerpo.innerHTML = '';
+    vacio.style.display = lista.length ? 'none' : 'block';
+    lista.forEach(function(x){
+      var s = x.s, i = x.i, tr = document.createElement('tr');
+      var acciones = '<div class="acciones-fila"><button class="btn btn-verde btn-sm" data-a="wa">WhatsApp</button>'+
+        (enviadas ? '' : '<button class="btn btn-gris btn-sm" data-a="env">Ya envié mensaje</button>')+
+        '<button class="btn btn-azul btn-sm" data-a="ren">Renovó</button><button class="btn btn-rojo btn-sm" data-a="no">No renovará</button></div>';
+      tr.innerHTML = '<td data-etiqueta="Cliente"><strong>'+esc(s.cliente)+'</strong></td><td data-etiqueta="Celular">'+esc(s.celular)+'</td><td data-etiqueta="Placa">'+esc(s.placa)+'</td>'+
+        (enviadas ? '' : '<td data-etiqueta="Vehículo">'+vehiculo(s)+'</td>')+
+        '<td data-etiqueta="Vence">'+esc(s.vence)+'</td><td data-etiqueta="Días">'+semaforo(i.d)+'</td>'+
+        (enviadas ? '<td data-etiqueta="Enviado">'+esc(i.g ? i.g.fecha : '')+'</td>' : '')+
+        '<td data-etiqueta="Acciones">'+acciones+'</td>';
+      tr.querySelector('[data-a="wa"]').addEventListener('click', function(){ abrirWA(s); });
+      var be = tr.querySelector('[data-a="env"]'); if(be) be.addEventListener('click', function(e){ gestionar(s, ACC_ENVIADO, e.currentTarget); });
+      tr.querySelector('[data-a="ren"]').addEventListener('click', function(e){ if(confirm('¿Confirmas que '+s.cliente+' ya renovó el SOAT de la placa '+s.placa+'?')) gestionar(s, ACC_RENOVO, e.currentTarget); });
+      tr.querySelector('[data-a="no"]').addEventListener('click', function(e){ if(confirm('¿Confirmas que '+s.cliente+' NO va a renovar el SOAT de la placa '+s.placa+'?')) gestionar(s, ACC_NO, e.currentTarget); });
+      cuerpo.appendChild(tr);
+    });
+  }
+
+  function pintarTodos(){
+    var q = estado.q.toLowerCase().trim(), cuerpo = document.getElementById('cuerpoTodos'), tot = 0, mostrados = 0, filas = [];
+    estado.soat.forEach(function(s){
+      var i = infoSoat(s), f = estado.filtro;
+      var grupo = (i.tipo==='enviado') ? 'renovar' : (i.tipo==='norenovara' ? 'renovado' : i.tipo);
+      if(f!=='todos' && grupo!==f) return;
+      if(q && (s.cliente+' '+s.cedula+' '+s.placa+' '+s.celular).toLowerCase().indexOf(q)<0) return;
+      filas.push({s:s,i:i});
+    });
+    filas.sort(function(a,b){ return (b.s.venceISO||'').localeCompare(a.s.venceISO||''); });
+    tot = filas.length; filas = filas.slice(0,300);
+    cuerpo.innerHTML = filas.map(function(x){
+      var s = x.s, e = ETQ[x.i.tipo];
+      return '<tr><td data-etiqueta="Cliente"><strong>'+esc(s.cliente)+'</strong></td><td data-etiqueta="Cédula">'+esc(s.cedula)+'</td><td data-etiqueta="Placa">'+esc(s.placa)+'</td><td data-etiqueta="Vehículo">'+vehiculo(s)+'</td><td data-etiqueta="Inicio">'+esc(s.inicio)+'</td><td data-etiqueta="Vence">'+esc(s.vence)+'</td><td data-etiqueta="Valor">'+(s.valor?dinero(s.valor):'—')+'</td><td data-etiqueta="Pago">'+esc(s.forma)+'</td><td data-etiqueta="Estado"><span class="tag '+e[0]+'">'+e[1]+'</span></td></tr>';
+    }).join('');
+    document.getElementById('vacioTodos').style.display = tot ? 'none' : 'block';
+    document.getElementById('notaTodos').textContent = tot>300 ? 'Se muestran 300 de '+tot+'. Usa el buscador para encontrar uno específico.' : '';
+  }
+
+  // ---------- Acciones ----------
+  function abrirWA(s){
+    var d = parsearISO(s.venceISO), veh = /carro|camioneta|auto/i.test(s.tipo||'') ? 'carro' : 'moto';
+    var msg = 'Hola, '+s.cliente+' 😊\nTe escribimos de Protect Motos porque el SOAT de tu '+veh+' de placa '+s.placa+' vence el '+fechaCO(d)+'.\n\nQueremos ayudarte a renovarlo a tiempo para que sigas protegido y sin multas.\n\n¿Quieres que te ayudemos con la renovación? 💙💛';
+    window.open('https://wa.me/'+numeroWA(s.celular)+'?text='+encodeURIComponent(msg), '_blank');
+  }
+  function quienRegistra(){
+    var r = localStorage.getItem('pm_cobros_registrado_por') || localStorage.getItem('pm_soat_registrado_por') || '';
+    if(!r){ r = (prompt('¿Con qué nombre quieres que quede el registro? (ej. tu nombre)') || '').trim(); if(r) localStorage.setItem('pm_soat_registrado_por', r); }
+    return r;
+  }
+  function gestionar(s, accion, btn){
+    var por = quienRegistra(); if(btn) btn.disabled = true;
+    var g = { fecha: fechaCO(hoy()), fechaISO: (function(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); })(new Date()), clave: claveSoat(s), cedula: s.cedula, cliente: s.cliente, placa: s.placa, accion: accion, registradoPor: por };
+    llamar({action:'registrarGestion', clave:g.clave, cedula:s.cedula, cliente:s.cliente, placa:s.placa, accion:accion, registradoPor:por}).then(function(r){
+      if(!r || !r.ok){ mostrar('error', (r && r.error) ? r.error : 'No se pudo registrar.'); if(btn) btn.disabled = false; return; }
+      estado.gestiones.push(g); pintar();
+      mostrar('ok', accion===ACC_ENVIADO ? 'Anotado ✔ Pasó a «Mensajes enviados».' : 'Anotado ✔');
+    }).catch(function(e){ mostrar('error', e.message); if(btn) btn.disabled = false; });
+  }
+
+  // ---------- Eventos ----------
+  var inUrl = document.getElementById('inputUrlConector'); inUrl.value = estado.url;
+  document.getElementById('btnGuardarUrl').addEventListener('click', function(){
+    var u = inUrl.value.trim();
+    if(!/^https:\/\/script\.google\.com\//.test(u)){ mostrar('error','La URL debe empezar con https://script.google.com/ y terminar en /exec.'); return; }
+    estado.url = u; localStorage.setItem(CLAVE_URL, u); mostrar('ok','URL guardada ✔'); cargar(false);
+  });
+  document.getElementById('btnRecargar').addEventListener('click', function(){ cargar(false); });
+  document.getElementById('inputBusqueda').addEventListener('input', function(){ estado.q = this.value; pintarTodos(); });
+  document.getElementById('chipsEstado').addEventListener('click', function(ev){
+    var b = ev.target.closest('button'); if(!b) return;
+    [].forEach.call(this.querySelectorAll('button'), function(x){ x.classList.remove('act'); }); b.classList.add('act');
+    estado.filtro = b.dataset.f; pintarTodos();
+  });
+  [].forEach.call(document.querySelectorAll('[data-ir]'), function(el){ el.style.cursor='pointer'; el.addEventListener('click', function(){ var p = document.getElementById(el.dataset.ir); if(p) p.scrollIntoView({behavior:'smooth',block:'start'}); }); });
+  document.getElementById('anioActual').textContent = new Date().getFullYear();
+
+  if(estado.url){ cargar(false); } else { mostrar('error','Primero pega la URL del conector de SOAT arriba y pulsa «Guardar».'); }
+  setInterval(function(){ if(estado.url && !document.hidden) cargar(true); }, AUTO_MS);
+})();
+</script>
+</body>
+</html>

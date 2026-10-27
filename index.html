@@ -314,6 +314,9 @@
   #v-inicio .seg,#v-inicio .anu,#v-inicio .rcm,#v-inicio .asr{max-width:none}
   #v-inicio .gauge svg{width:230px!important}
   #v-inicio .asr-l{max-height:none;overflow:visible}
+  .soat-aviso{display:block;grid-column:1/-1;order:1;background:#fff4dd;border:1px solid #f0c94a;border-left:6px solid #d6a417;border-radius:12px;padding:12px 16px;color:#5a4300;text-decoration:none;font-size:.9rem}
+  .soat-aviso b{color:#13223f;font-size:1rem;margin-right:8px} .soat-aviso u{margin-left:10px;font-weight:700;color:#13223f} .soat-aviso:hover{background:#ffedc2}
+  .soat-aviso[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -327,6 +330,7 @@
   <div id="vistas">
   <section class="vista" id="v-inicio"><div class="pagina">
     <h1>Inicio</h1><p class="sub" id="subInicio">Resumen del mes · usa el buscador de arriba para consultar un cliente</p>
+    <a class="soat-aviso" id="soatAviso" href="#soat" hidden></a>
     <h2 class="sec-t">Alertas de conciliación</h2>
     <div class="alertas" id="alertas"><div class="nota">Abre Conciliación y guarda su URL para ver aquí las alertas.</div></div>
     <div class="grid" id="tarjetas"></div>
@@ -335,6 +339,7 @@
   </div></section>
   <section class="vista" id="v-cobros"></section>
   <section class="vista" id="v-conciliacion"></section>
+  <section class="vista" id="v-soat"></section>
   <section class="vista" id="v-contratos"></section>
   <section class="vista" id="v-ayuda"><div class="pagina">
     <h1>Conexiones</h1>
@@ -371,13 +376,14 @@
     {id:'inicio',   nombre:'Inicio',        ico:'🏠'},
     {id:'cobros',   nombre:'Cobros',        ico:'💰', src:'modulos/cobros.html',        disponible:true,  desc:'Cuotas pendientes, registro de pagos, renovaciones, historial y WhatsApp.'},
     {id:'conciliacion',nombre:'Conciliación',ico:'✅', src:'modulos/conciliacion.html',  disponible:true,  desc:'Cruza los contratos de Protect con la lista de pagos de contabilidad (Consolidado).'},
+    {id:'soat',    nombre:'SOAT',         ico:'🛡️', src:'modulos/soat.html',          disponible:true,  desc:'Ventas de SOAT y aviso 8 días antes de cada renovación.'},
     {id:'contratos',nombre:'Contratos',     ico:'📄', src:'modulos/contratos.html',     disponible:true , desc:'Automatizador: cotiza, genera e imprime el contrato y lo guarda en el Sheet.'},
     {id:'ayuda',    nombre:'Conexiones',    ico:'⚙️'}
   ];
   var menu=document.getElementById('menu'), tarjetas=document.getElementById('tarjetas');
   MODULOS.forEach(function(m){
     var li=document.createElement('li');
-    li.innerHTML='<a href="#'+m.id+'" data-id="'+m.id+'"><span class="ico">'+m.ico+'</span>'+m.nombre+(m.disponible===false?'<span class="tag">PRÓXIMO</span>':'')+'</a>';
+    li.innerHTML='<a href="#'+m.id+'" data-id="'+m.id+'"><span class="ico">'+m.ico+'</span>'+m.nombre+(m.disponible===false?'<span class="tag">PRÓXIMO</span>':'')+(m.id==='soat'?'<span class="tag" id="soatBadge" hidden></span>':'')+'</a>';
     menu.appendChild(li);
     if(false&&m.desc){
       var a=document.createElement('a');a.className='card';a.href='#'+m.id;
@@ -993,9 +999,40 @@
   document.addEventListener('pm-cobros',function(){COB=window.PM_COBROS;marcarHora();if(document.activeElement===q)buscar()});
   if(window.PM_COBROS)COB=window.PM_COBROS;
   $('btnRec').addEventListener('click',function(){if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc()});
-  cargarConc();
+  cargarConc();cargarSoat();
   var ultimoAuto=Date.now();
-  function actualizarTodo(){ultimoAuto=Date.now();if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc()}
+  /* ----- SOAT: aviso de renovaciones (≤ 8 días) en el menú y en el Inicio ----- */
+  var cargandoSoat=false;
+  function cargarSoat(){
+    if(cargandoSoat)return;
+    var u=url('pm_soat_url_conector'),av=$('soatAviso'),bd=$('soatBadge');
+    if(!/^https:\/\/script\.google\.com\//.test(u)){av.hidden=true;bd.hidden=true;return}
+    cargandoSoat=true;
+    var cb='pmSoat'+Date.now(),s=document.createElement('script'),t=setTimeout(fin,90000);
+    function fin(){clearTimeout(t);cargandoSoat=false;delete window[cb];s.remove()}
+    window[cb]=function(r){fin();
+      if(!r||!r.ok){av.hidden=true;bd.hidden=true;return}
+      var h=new Date();h.setHours(0,0,0,0);
+      var ult={};(r.gestiones||[]).forEach(function(g){if(!ult[g.clave]||(g.fechaISO||'')>=(ult[g.clave].fechaISO||''))ult[g.clave]=g});
+      var n=0,primeros=[];
+      (r.soat||[]).forEach(function(x){
+        if(!x.venceISO)return;
+        var p=x.venceISO.split('-'),f=new Date(+p[0],+p[1]-1,+p[2]),d=Math.round((f-h)/86400000);
+        if(d>8||d<-30)return;
+        if((r.soat||[]).some(function(o){return o!==x&&o.placa===x.placa&&o.venceISO>x.venceISO}))return;
+        var g=ult[x.placa+'|'+x.venceISO],a=g?g.accion:'';
+        if(a==='Renovó'||a==='No renovará'||a==='Mensaje de renovación enviado')return;
+        n++;if(primeros.length<3)primeros.push(x.cliente.split(' ').slice(0,2).join(' ')+' ('+x.placa+')');
+      });
+      bd.hidden=!n;bd.textContent=n;
+      av.hidden=!n;
+      if(n)av.innerHTML='<b>🛡️ '+n+' SOAT por renovar</b> <span>vencen en 8 días o menos · '+esc(primeros.join(', '))+(n>3?' y más…':'')+'</span> <u>Abrir SOAT →</u>';
+    };
+    s.onerror=function(){fin()};
+    s.src=u+(u.indexOf('?')<0?'?':'&')+'action=datos&token=PM-SOAT-2026&callback='+cb+'&_='+Date.now();
+    document.head.appendChild(s);
+  }
+  function actualizarTodo(){ultimoAuto=Date.now();if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc();cargarSoat()}
   setInterval(function(){if(!document.hidden)actualizarTodo()},60000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&Date.now()-ultimoAuto>60000)actualizarTodo()});
 
