@@ -317,6 +317,8 @@
   .soat-aviso{display:block;grid-column:1/-1;order:1;background:#fff4dd;border:1px solid #f0c94a;border-left:6px solid #d6a417;border-radius:12px;padding:12px 16px;color:#5a4300;text-decoration:none;font-size:.9rem}
   .soat-aviso b{color:#13223f;font-size:1rem;margin-right:8px} .soat-aviso u{margin-left:10px;font-weight:700;color:#13223f} .soat-aviso:hover{background:#ffedc2}
   .soat-aviso[hidden]{display:none}
+  #v-inicio .svc{grid-column:1/-1;order:10;max-width:none}
+  .ch-in-w{fill:#fff;font-size:11px;font-weight:700;text-anchor:middle} .ch-gan{fill:#1f9d55;font-size:11px;font-weight:800;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:3px} .ch-eje-v{fill:#1f9d55}
 </style>
 </head>
 <body>
@@ -456,6 +458,7 @@
     el._fn=fn;var w=Math.max(260,el.clientWidth);el._w=w;fn(w);
     if(!el._ro&&window.ResizeObserver){el._ro=new ResizeObserver(function(){var nw=Math.max(260,el.clientWidth);if(Math.abs(nw-el._w)>24){el._w=nw;el._fn(nw)}});el._ro.observe(el)}
   }
+  window.PMG={sv:sv,stxt:stxt,enAncho:enAncho,verTip:verTip,ocultarTip:ocultarTip,MES_C:MES_C};   /* para las gráficas del segundo bloque (SOAT) */
   function curva(p){
     var d='M'+p[0][0]+','+p[0][1],i;
     for(i=0;i<p.length-1;i++){var a=p[i-1]||p[i],b=p[i],c=p[i+1],e=p[i+2]||c;
@@ -1001,6 +1004,61 @@
   $('btnRec').addEventListener('click',function(){if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc()});
   cargarConc();cargarSoat();
   var ultimoAuto=Date.now();
+  var sv=PMG.sv,stxt=PMG.stxt,enAncho=PMG.enAncho,verTip=PMG.verTip,ocultarTip=PMG.ocultarTip,MES_C=PMG.MES_C;
+  /* ----- SOAT: vendidos (columnas) y ganancia (línea), con filtros de año y mes ----- */
+  var svc=document.createElement('div');svc.className='card svc';svc.id='svCard';svc.hidden=true;
+  svc.innerHTML='<h3>SOAT: vendidos y ganancia</h3><p class="tot" id="svTot"></p><div class="ed-per" id="svFil"><label>Año <select id="svAnio"></select></label><label>Mes <select id="svMes"></select></label></div><div class="tend-l" id="svLeg"></div><div id="svGraf"></div>';
+  tarjetas.appendChild(svc);
+  var MESES_SV=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var soatRecs=[],svY=String(new Date().getFullYear()),svM='0';
+  document.getElementById('svFil').addEventListener('change',function(){svY=$('svAnio').value;svM=$('svMes').value;pintarSoatG()});
+  function dineroC(v){v=Math.round(Number(v)||0);return '$'+String(v).replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
+  function dineroK(v){v=Number(v)||0;if(v>=1e6)return '$'+(v/1e6).toFixed(1).replace('.',',')+' M';if(v>=1e3)return '$'+Math.round(v/1e3)+' mil';return '$'+Math.round(v)}
+  function pintarSoatG(){
+    var card=$('svCard');if(!soatRecs.length){card.hidden=true;return}card.hidden=false;
+    var h=new Date(),yA=h.getFullYear(),mA=h.getMonth()+1,ys={};ys[yA]=1;soatRecs.forEach(function(r){ys[r.y]=1});
+    var lista=Object.keys(ys).map(Number).sort(function(a,b){return a-b}),sa=$('svAnio'),sm=$('svMes');
+    sa.innerHTML='<option value="todos">Todos los años</option>'+lista.slice().reverse().map(function(y){return '<option>'+y+'</option>'}).join('');
+    sm.innerHTML='<option value="0">Todo el año</option>'+MESES_SV.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>'}).join('');
+    if(svY!=='todos'&&!ys[svY])svY=String(yA);
+    sa.value=svY;sm.value=svM;
+    var cnt={};soatRecs.forEach(function(r){var k=cnt[r.y*12+r.m]=cnt[r.y*12+r.m]||{n:0,g:0};k.n++;k.g+=r.g});
+    var mm=+svM,porAnio=(mm!==0||svY==='todos'),datos=[],eti=[],activo=-1,i;
+    if(!porAnio){for(i=1;i<=12;i++){var k=cnt[+svY*12+i]||{n:0,g:0};datos.push(+svY===yA&&i>mA?null:{n:k.n,g:k.g,tit:MESES_SV[i-1]+' '+svY});eti.push(MES_C[i-1])}if(+svY===yA)activo=mA-1}
+    else{lista.forEach(function(y){var n=0,g=0;for(var m=1;m<=12;m++){if(mm&&m!==mm)continue;var k=cnt[y*12+m];if(k){n+=k.n;g+=k.g}}datos.push({n:n,g:g,tit:(mm?MESES_SV[mm-1]+' ':'Año ')+y});eti.push(String(y));if(svY!=='todos'&&y===+svY)activo=datos.length-1})}
+    var vis=(porAnio&&svY!=='todos'&&activo>=0)?[datos[activo]]:datos,N=0,G=0;vis.forEach(function(d){if(d){N+=d.n;G+=d.g}});
+    var per=(mm?MESES_SV[mm-1]+' ':'')+(svY==='todos'?(mm?'de todos los años':'todos los años'):(mm?'':'año ')+svY),cmp='';
+    if(svY!=='todos'&&!mm){var py=+svY-1,pn=0,tope=(+svY===yA)?mA:12;for(i=1;i<=tope;i++){var kp=cnt[py*12+i];if(kp)pn+=kp.n}
+      var tn=0;for(i=1;i<=tope;i++){var kt=cnt[+svY*12+i];if(kt)tn+=kt.n}
+      if(pn)cmp=' · '+(tn>=pn?'▲ +':'▼ ')+Math.abs(Math.round((tn-pn)/pn*100))+' % frente a '+py+(+svY===yA?' (mismo período)':'')}
+    $('svTot').textContent=per.charAt(0).toUpperCase()+per.slice(1)+': '+N+' SOAT vendidos · ganancia '+dineroC(G)+(N?' · '+dineroC(G/N)+' por SOAT':'')+cmp;
+    $('svLeg').innerHTML='<span class="leg-g"><i style="background:#021346"></i>Columnas = <b>SOAT vendidos</b> (el número va en cada columna)</span><span class="leg-g"><i style="background:#1f9d55"></i>Línea verde = <b>ganancia</b> en pesos</span>';
+    var maxN=Math.max.apply(null,datos.map(function(d){return d?d.n:0}).concat(1))*1.25,maxG=Math.max.apply(null,datos.map(function(d){return d?d.g:0}).concat(1))*1.25,n=datos.length;
+    enAncho($('svGraf'),function(W){
+      var H=280,pl=12,pr=62,pt=34,pb=30,iw=W-pl-pr,ih=H-pt-pb,slot=iw/n,bw=Math.min(46,slot*0.6),an=!$('svGraf')._dib;
+      var svg=sv('svg',{width:W,height:H,viewBox:'0 0 '+W+' '+H,'class':'ch-svg','role':'img','aria-label':'SOAT vendidos y ganancia'});
+      var xs=function(j){return pl+slot*(j+.5)},yN=function(v){return pt+ih-(v/maxN)*ih},yG=function(v){return pt+ih-(v/maxG)*ih};
+      [0,.5,1].forEach(function(f){var y=pt+ih-f*ih;svg.appendChild(sv('line',{x1:pl,x2:W-pr,y1:y,y2:y,'class':'ch-g'}));svg.appendChild(stxt(W-pr+6,y+4,dineroK(maxG*f),'ch-eje ch-eje-v','start'))});
+      var guia=sv('rect',{x:0,y:pt-4,width:slot,height:ih+4,'class':'ch-col-guia',style:'display:none'});svg.appendChild(guia);
+      var pts=[],labs=[];
+      datos.forEach(function(d,j){
+        if(!d)return;var cur=j===activo,hh=d.n/maxN*ih;
+        var g=sv('g',{'class':an?'ch-bar an':'ch-bar',style:an?'animation-delay:'+(j*0.06)+'s':''});
+        g.appendChild(sv('rect',{x:xs(j)-bw/2,y:pt+ih-hh,width:bw,height:Math.max(hh,d.n?2:0),rx:5,fill:cur?'#fdc33e':'#021346',stroke:cur?'#021346':'none','stroke-width':cur?1.5:0}));
+        svg.appendChild(g);
+        if(d.n){if(hh>=20)labs.push(stxt(xs(j),pt+ih-hh+15,d.n,cur?'ch-in-o':'ch-in-w'));else labs.push(stxt(xs(j),pt+ih-hh-6,d.n,'ch-v'))}
+        pts.push({x:xs(j),y:yG(d.g),g:d.g,j:j});
+      });
+      for(var j2=0;j2<n;j2++)svg.appendChild(stxt(xs(j2),H-11,String(eti[j2]).charAt(0).toUpperCase()+String(eti[j2]).slice(1),'ch-s'+(j2===activo?' ch-act':''),'middle'));
+      if(pts.length>1)svg.appendChild(sv('polyline',{points:pts.map(function(p){return p.x+','+p.y}).join(' '),fill:'none',stroke:'#1f9d55','stroke-width':3,'stroke-linejoin':'round','stroke-linecap':'round'}));
+      pts.forEach(function(p){svg.appendChild(sv('circle',{cx:p.x,cy:p.y,r:4.5,fill:'#fff',stroke:'#1f9d55','stroke-width':2.5}));if(p.g)svg.appendChild(stxt(p.x,p.y-10,dineroK(p.g),'ch-gan'))});
+      labs.forEach(function(t){svg.appendChild(t)});
+      datos.forEach(function(d,j){if(!d)return;var rr=sv('rect',{x:pl+slot*j,y:0,width:slot,height:H,fill:'transparent','class':'ch-hit'});
+        var ir=function(ev){guia.setAttribute('x',pl+slot*j);guia.style.display='';verTip(ev,'<b>'+d.tit+'</b><br>'+d.n+' SOAT vendidos<br>Ganancia: '+dineroC(d.g)+(d.n?'<br>'+dineroC(d.g/d.n)+' por SOAT':''))};
+        rr.addEventListener('mousemove',ir);rr.addEventListener('click',ir);rr.addEventListener('mouseleave',function(){guia.style.display='none';ocultarTip()});svg.appendChild(rr)});
+      var bx=$('svGraf');bx.innerHTML='';bx.appendChild(svg);bx._dib=true;
+    });
+  }
   /* ----- SOAT: aviso de renovaciones (≤ 8 días) en el menú y en el Inicio ----- */
   var cargandoSoat=false;
   function cargarSoat(){
@@ -1024,6 +1082,7 @@
         if(a==='Renovó'||a==='No renovará'||a==='Mensaje de renovación enviado')return;
         n++;if(primeros.length<3)primeros.push(x.cliente.split(' ').slice(0,2).join(' ')+' ('+x.placa+')');
       });
+      soatRecs=(r.soat||[]).filter(function(x){return /^\d{4}-\d{2}/.test(x.fechaISO||'')}).map(function(x){return {y:+x.fechaISO.slice(0,4),m:+x.fechaISO.slice(5,7),g:Number(x.ganancia)||0}});pintarSoatG();
       bd.hidden=!n;bd.textContent=n;
       av.hidden=!n;
       if(n)av.innerHTML='<b>🛡️ '+n+' SOAT por renovar</b> <span>vencen en 8 días o menos · '+esc(primeros.join(', '))+(n>3?' y más…':'')+'</span> <u>Abrir SOAT →</u>';
