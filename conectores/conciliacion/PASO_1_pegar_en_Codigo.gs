@@ -706,6 +706,8 @@ function CONC_aplicarAjusteManual(f, p, ajustes, filasAsignadas) {
   }
   var aj = ajustes && ajustes[f.claveAjuste];
   if (!aj) return;
+  // Un contrato anulado no se consolida: un ajuste manual viejo ("Falta", "Directo"…) no debe taparlo
+  if (f.estado === CONC_ESTADO.NO_APLICA && aj.decision !== 'Nota') return;
   f.ajuste = { decision: aj.decision, nota: aj.nota || '', fecha: aj.fecha || '' };
   var nota = aj.nota ? ' Nota: ' + aj.nota : '';
   if (aj.decision === 'Nota') {
