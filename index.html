@@ -319,6 +319,9 @@
   .soat-aviso[hidden]{display:none}
   #v-inicio .svc{grid-column:1/-1;order:10;max-width:none}
   .ch-in-w{fill:#fff;font-size:11px;font-weight:700;text-anchor:middle} .ch-gan{fill:#1f9d55;font-size:11px;font-weight:800;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:3px} .ch-eje-v{fill:#1f9d55}
+  #v-inicio .svc{order:9!important} #v-inicio .anu{order:10!important}
+  .sv-d .t-s{fill:#6b7280;font-size:11px} .sv-d .t-v{fill:#13223f;font-size:12px;font-weight:700} .sv-d .t-w{fill:#fff;font-size:11px;font-weight:700}
+  .sv-d .t-g{fill:#1f9d55;font-size:11px;font-weight:800;paint-order:stroke;stroke:#fff;stroke-width:3px} .sv-d .t-ge{fill:#1f9d55;font-size:10px;font-weight:700}
 </style>
 </head>
 <body>
@@ -1007,7 +1010,7 @@
   var sv=PMG.sv,stxt=PMG.stxt,enAncho=PMG.enAncho,verTip=PMG.verTip,ocultarTip=PMG.ocultarTip,MES_C=PMG.MES_C;
   /* ----- SOAT: vendidos (columnas) y ganancia (línea), con filtros de año y mes ----- */
   var svc=document.createElement('div');svc.className='card svc';svc.id='svCard';svc.hidden=true;
-  svc.innerHTML='<h3>SOAT: vendidos y ganancia</h3><p class="tot" id="svTot"></p><div class="ed-per" id="svFil"><label>Año <select id="svAnio"></select></label><label>Mes <select id="svMes"></select></label></div><div class="tend-l" id="svLeg"></div><div id="svGraf"></div>';
+  svc.innerHTML='<h3>SOAT: vendidos y ganancia mes a mes</h3><p class="tot" id="svTot"></p><div class="ed-per" id="svFil"><label>Año <select id="svAnio"></select></label><label>Mes <select id="svMes"></select></label></div><div class="tend-l" id="svLeg"></div><div id="svGraf"></div>';
   tarjetas.appendChild(svc);
   var MESES_SV=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   var soatRecs=[],svY=String(new Date().getFullYear()),svM='0';
@@ -1032,31 +1035,31 @@
       var tn=0;for(i=1;i<=tope;i++){var kt=cnt[+svY*12+i];if(kt)tn+=kt.n}
       if(pn)cmp=' · '+(tn>=pn?'▲ +':'▼ ')+Math.abs(Math.round((tn-pn)/pn*100))+' % frente a '+py+(+svY===yA?' (mismo período)':'')}
     $('svTot').textContent=per.charAt(0).toUpperCase()+per.slice(1)+': '+N+' SOAT vendidos · ganancia '+dineroC(G)+(N?' · '+dineroC(G/N)+' por SOAT':'')+cmp;
-    $('svLeg').innerHTML='<span class="leg-g"><i style="background:#021346"></i>Columnas = <b>SOAT vendidos</b> (el número va en cada columna)</span><span class="leg-g"><i style="background:#1f9d55"></i>Línea verde = <b>ganancia</b> en pesos</span>';
+    $('svLeg').innerHTML='<span class="leg-g"><i style="background:#021346"></i>Columnas: <b>SOAT vendidos</b></span><span class="leg-g"><i style="background:#1f9d55"></i>Línea: <b>ganancia</b></span>';
     var maxN=Math.max.apply(null,datos.map(function(d){return d?d.n:0}).concat(1))*1.25,maxG=Math.max.apply(null,datos.map(function(d){return d?d.g:0}).concat(1))*1.25,n=datos.length;
-    enAncho($('svGraf'),function(W){
-      var H=280,pl=12,pr=62,pt=34,pb=30,iw=W-pl-pr,ih=H-pt-pb,slot=iw/n,bw=Math.min(46,slot*0.6),an=!$('svGraf')._dib;
-      var svg=sv('svg',{width:W,height:H,viewBox:'0 0 '+W+' '+H,'class':'ch-svg','role':'img','aria-label':'SOAT vendidos y ganancia'});
-      var xs=function(j){return pl+slot*(j+.5)},yN=function(v){return pt+ih-(v/maxN)*ih},yG=function(v){return pt+ih-(v/maxG)*ih};
-      [0,.5,1].forEach(function(f){var y=pt+ih-f*ih;svg.appendChild(sv('line',{x1:pl,x2:W-pr,y1:y,y2:y,'class':'ch-g'}));svg.appendChild(stxt(W-pr+6,y+4,dineroK(maxG*f),'ch-eje ch-eje-v','start'))});
-      var guia=sv('rect',{x:0,y:pt-4,width:slot,height:ih+4,'class':'ch-col-guia',style:'display:none'});svg.appendChild(guia);
-      var pts=[],labs=[];
-      datos.forEach(function(d,j){
-        if(!d)return;var cur=j===activo,hh=d.n/maxN*ih;
-        var g=sv('g',{'class':an?'ch-bar an':'ch-bar',style:an?'animation-delay:'+(j*0.06)+'s':''});
-        g.appendChild(sv('rect',{x:xs(j)-bw/2,y:pt+ih-hh,width:bw,height:Math.max(hh,d.n?2:0),rx:5,fill:cur?'#fdc33e':'#021346',stroke:cur?'#021346':'none','stroke-width':cur?1.5:0}));
-        svg.appendChild(g);
-        if(d.n){if(hh>=20)labs.push(stxt(xs(j),pt+ih-hh+15,d.n,cur?'ch-in-o':'ch-in-w'));else labs.push(stxt(xs(j),pt+ih-hh-6,d.n,'ch-v'))}
-        pts.push({x:xs(j),y:yG(d.g),g:d.g,j:j});
-      });
-      for(var j2=0;j2<n;j2++)svg.appendChild(stxt(xs(j2),H-11,String(eti[j2]).charAt(0).toUpperCase()+String(eti[j2]).slice(1),'ch-s'+(j2===activo?' ch-act':''),'middle'));
-      if(pts.length>1)svg.appendChild(sv('polyline',{points:pts.map(function(p){return p.x+','+p.y}).join(' '),fill:'none',stroke:'#1f9d55','stroke-width':3,'stroke-linejoin':'round','stroke-linecap':'round'}));
-      pts.forEach(function(p){svg.appendChild(sv('circle',{cx:p.x,cy:p.y,r:4.5,fill:'#fff',stroke:'#1f9d55','stroke-width':2.5}));if(p.g)svg.appendChild(stxt(p.x,p.y-10,dineroK(p.g),'ch-gan'))});
-      labs.forEach(function(t){svg.appendChild(t)});
-      datos.forEach(function(d,j){if(!d)return;var rr=sv('rect',{x:pl+slot*j,y:0,width:slot,height:H,fill:'transparent','class':'ch-hit'});
-        var ir=function(ev){guia.setAttribute('x',pl+slot*j);guia.style.display='';verTip(ev,'<b>'+d.tit+'</b><br>'+d.n+' SOAT vendidos<br>Ganancia: '+dineroC(d.g)+(d.n?'<br>'+dineroC(d.g/d.n)+' por SOAT':''))};
-        rr.addEventListener('mousemove',ir);rr.addEventListener('click',ir);rr.addEventListener('mouseleave',function(){guia.style.display='none';ocultarTip()});svg.appendChild(rr)});
-      var bx=$('svGraf');bx.innerHTML='';bx.appendChild(svg);bx._dib=true;
+    dibujarComboSoat($('svGraf'),datos,eti,activo);
+  }
+  /* Gráfica de columnas + línea (igual a la del módulo SOAT) */
+  var NSV='http://www.w3.org/2000/svg';
+  function EL(tag,a,txt){var e=document.createElementNS(NSV,tag);for(var k in (a||{}))e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e}
+  function dibujarComboSoat(box,datos,etq,activo){
+    enAncho(box,function(W){
+      var H=250,pl=10,pr=56,pt=28,pb=26,iw=W-pl-pr,ih=H-pt-pb,n=datos.length,slot=iw/n,bw=Math.min(40,slot*0.6);
+      var maxN=Math.max.apply(null,datos.map(function(d){return d?d.n:0}).concat(1))*1.25,maxG=Math.max.apply(null,datos.map(function(d){return d?d.g:0}).concat(1))*1.25;
+      var v=EL('svg',{width:W,height:H,viewBox:'0 0 '+W+' '+H,'class':'ch-svg sv-d'}),xs=function(j){return pl+slot*(j+.5)},yG=function(x){return pt+ih-x/maxG*ih};
+      [0,.5,1].forEach(function(f){var y=pt+ih-f*ih;v.appendChild(EL('line',{x1:pl,x2:W-pr,y1:y,y2:y,'class':'ch-g'}));v.appendChild(EL('text',{x:W-pr+6,y:y+4,'class':'t-ge'},dineroK(maxG*f)))});
+      var pts=[];
+      datos.forEach(function(d,j){if(!d)return;var hh=d.n/maxN*ih,cur=j===activo;
+        v.appendChild(EL('rect',{x:xs(j)-bw/2,y:pt+ih-hh,width:bw,height:Math.max(hh,d.n?2:0),rx:5,fill:cur?'#f0c94a':'#13223f',stroke:cur?'#13223f':'none','stroke-width':cur?1.5:0}));
+        if(d.n){if(hh>=20)v.appendChild(EL('text',{x:xs(j),y:pt+ih-hh+15,'text-anchor':'middle','class':cur?'t-v':'t-w'},d.n));else v.appendChild(EL('text',{x:xs(j),y:pt+ih-hh-6,'text-anchor':'middle','class':'t-v'},d.n))}
+        pts.push({x:xs(j),y:yG(d.g),g:d.g})});
+      for(var j=0;j<n;j++)v.appendChild(EL('text',{x:xs(j),y:H-8,'text-anchor':'middle','class':'t-s'},String(etq[j]).charAt(0).toUpperCase()+String(etq[j]).slice(1)));
+      if(pts.length>1)v.appendChild(EL('polyline',{points:pts.map(function(p){return p.x+','+p.y}).join(' '),fill:'none',stroke:'#1f9d55','stroke-width':3,'stroke-linejoin':'round','stroke-linecap':'round'}));
+      pts.forEach(function(p){v.appendChild(EL('circle',{cx:p.x,cy:p.y,r:4.5,fill:'#fff',stroke:'#1f9d55','stroke-width':2.5}));if(p.g)v.appendChild(EL('text',{x:p.x,y:p.y-10,'text-anchor':'middle','class':'t-g'},dineroK(p.g)))});
+      datos.forEach(function(d,j){if(!d)return;var r=EL('rect',{x:pl+slot*j,y:0,width:slot,height:H,fill:'transparent','class':'ch-hit'});
+        var ir=function(ev){verTip(ev,'<b>'+d.tit+'</b><br>'+d.n+' SOAT vendidos<br>Ganancia: '+dineroC(d.g)+(d.n?'<br>'+dineroC(d.g/d.n)+' por SOAT':''))};
+        r.addEventListener('mousemove',ir);r.addEventListener('click',ir);r.addEventListener('mouseleave',ocultarTip);v.appendChild(r)});
+      box.innerHTML='';box.appendChild(v);
     });
   }
   /* ----- SOAT: aviso de renovaciones (≤ 8 días) en el menú y en el Inicio ----- */
@@ -1091,6 +1094,7 @@
     s.src=u+(u.indexOf('?')<0?'?':'&')+'action=datos&token=PM-SOAT-2026&callback='+cb+'&_='+Date.now();
     document.head.appendChild(s);
   }
+  window.addEventListener('storage',function(ev){if(ev.key==='pm_soat_url_conector')setTimeout(cargarSoat,300)});
   function actualizarTodo(){ultimoAuto=Date.now();if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc();cargarSoat()}
   setInterval(function(){if(!document.hidden)actualizarTodo()},60000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&Date.now()-ultimoAuto>60000)actualizarTodo()});
