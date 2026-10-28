@@ -2,18 +2,27 @@
  * PROTECT MOTOS — Conector de SOAT (histórico)
  * Publicar como Aplicación web (Implementar > Nueva implementación > Aplicación web).
  * Ejecutar como: "Yo".  Quién tiene acceso: "Cualquier usuario".
+ *
+ * Lo usa el módulo SOAT del CRM (modulos/soat.html). Acciones:
+ *   datos            -> devuelve { ok, soat: [...], gestiones: [...] }
+ *   registrarGestion -> anota "Mensaje de renovación enviado", "Renovó" o "No renovará"
  */
 
 // ==================== CONFIGURACIÓN ====================
 var TOKEN = 'PM-SOAT-2026';
 var SHEET_ID = '1wHUsGVjzOIjHgsTsi1Nj1z_EQlLyR3evXwFduVv0viU';
 var HOJA_SOAT = 'Soat';
+var HOJA_GESTIONES = 'Gestiones';
 
-// Encabezados esperados (fila 1). El orden en la hoja no importa, pero los nombres sí.
+// Encabezados obligatorios de la hoja Soat (fila 1). El orden no importa; mayúsculas y tildes tampoco.
 var ENCABEZADOS_SOAT = [
-  'Fecha', '#', 'Cliente', 'Cédula', 'Placa', 'Tipo vehículo', 'Cilindraje',
-  'Fecha inicio', 'Fecha vencimiento', 'Valor SOAT', 'Ganancia',
-  'Total consignado', 'Forma de pago'
+  'Fecha', 'Cliente', 'Cédula', 'Placa', 'Tipo vehículo', 'Cilindraje',
+  'Fecha inicio', 'Fecha vencimiento', 'Valor SOAT', 'Ganancia', 'Forma de pago'
+];
+// Opcional: si existe una columna "Celular" también se entrega.
+
+var ENCABEZADOS_GESTIONES = [
+  'Fecha de gestión', 'Clave', 'Cédula', 'Cliente', 'Placa', 'Acción', 'Registrado por'
 ];
 
 // ==================== PUNTO DE ENTRADA ====================
@@ -24,13 +33,13 @@ function doGet(e) {
 
   try {
     if (params.token !== TOKEN) {
-      salida = { ok: false, error: 'Token inválido. El panel envió: "' + (params.token || '(vacío)') + '"' };
+      salida = { ok: false, error: 'Token inválido.' };
     } else {
-      var accion = params.action || 'soat';
-      if (accion === 'soat' || accion === 'datos') {
-        salida = accionSoat();
-      } else if (accion === 'registrarSoat') {
-        salida = accionRegistrarSoat(params);
+      var accion = params.action || 'datos';
+      if (accion === 'datos' || accion === 'soat') {
+        salida = accionDatos();
+      } else if (accion === 'registrarGestion') {
+        salida = accionRegistrarGestion(params);
       } else {
         salida = { ok: false, error: 'Acción desconocida: ' + accion };
       }
@@ -54,11 +63,15 @@ function responder(objeto, callback) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ==================== ACCIÓN: LEER SOAT ====================
-function accionSoat() {
+// ==================== ACCIÓN: DATOS ====================
+function accionDatos() {
+  return { ok: true, soat: leerSoat(), gestiones: leerGestiones() };
+}
+
+function leerSoat() {
   var hoja = hojaSoat();
   var ultimaFila = hoja.getLastRow();
-  if (ultimaFila < 2) return { ok: true, soat: [] };
+  if (ultimaFila < 2) return [];
 
   var datos = hoja.getRange(1, 1, ultimaFila, hoja.getLastColumn()).getValues();
   var idx = mapaEncabezados(datos[0]);
@@ -71,42 +84,58 @@ function accionSoat() {
     if (!placa && !cliente) continue; // fila vacía
 
     resultado.push({
-      fecha: formatoFecha(valor(fila, idx['fecha'])),
-      fechaISO: formatoISO(valor(fila, idx['fecha'])),
-      numero: texto(fila, idx['#']),
       cliente: cliente,
       cedula: texto(fila, idx['cedula']),
       placa: placa,
       tipo: texto(fila, idx['tipo vehiculo']).toUpperCase(),
       cilindraje: texto(fila, idx['cilindraje']),
-      inicio: formatoFecha(valor(fila, idx['fecha inicio'])),
-      inicioISO: formatoISO(valor(fila, idx['fecha inicio'])),
-      vencimiento: formatoFecha(valor(fila, idx['fecha vencimiento'])),
-      vencimientoISO: formatoISO(valor(fila, idx['fecha vencimiento'])),
-      valorSoat: numero(fila, idx['valor soat']),
+      celular: idx['celular'] !== undefined ? texto(fila, idx['celular']).replace(/\D/g, '') : '',
+      fecha: formatoFecha(fila[idx['fecha']]),
+      fechaISO: formatoISO(fila[idx['fecha']]),
+      inicio: formatoFecha(fila[idx['fecha inicio']]),
+      inicioISO: formatoISO(fila[idx['fecha inicio']]),
+      vence: formatoFecha(fila[idx['fecha vencimiento']]),
+      venceISO: formatoISO(fila[idx['fecha vencimiento']]),
+      valor: numero(fila, idx['valor soat']),
       ganancia: numero(fila, idx['ganancia']),
-      totalConsignado: numero(fila, idx['total consignado']),
-      formaPago: texto(fila, idx['forma de pago'])
+      forma: texto(fila, idx['forma de pago'])
     });
   }
-  return { ok: true, soat: resultado };
+  return resultado;
 }
 
-// ==================== ACCIÓN: REGISTRAR SOAT ====================
-function accionRegistrarSoat(params) {
-  var placa = String(params.placa || '').trim().toUpperCase().replace(/\s+/g, '');
-  var cliente = String(params.cliente || '').trim();
-  var cedula = String(params.cedula || '').trim();
-  var inicio = parsearFecha(String(params.inicio || '').trim());
-  var vencimiento = parsearFecha(String(params.vencimiento || '').trim());
-  var valorSoat = Number(params.valorSoat || 0);
-  var ganancia = Number(params.ganancia || 0);
+function leerGestiones() {
+  var hoja = SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_GESTIONES);
+  if (!hoja) return [];
+  var ultimaFila = hoja.getLastRow();
+  if (ultimaFila < 2) return [];
 
-  if (!placa) return { ok: false, error: 'Falta la placa.' };
-  if (!cliente) return { ok: false, error: 'Falta el cliente.' };
-  if (!inicio) return { ok: false, error: 'Falta la fecha de inicio.' };
-  if (!vencimiento) return { ok: false, error: 'Falta la fecha de vencimiento.' };
-  if (!valorSoat || valorSoat <= 0) return { ok: false, error: 'El valor del SOAT debe ser mayor a 0.' };
+  var datos = hoja.getRange(2, 1, ultimaFila - 1, 7).getValues();
+  var resultado = [];
+  for (var i = 0; i < datos.length; i++) {
+    var fila = datos[i];
+    var clave = String(fila[1] || '').trim();
+    if (!clave) continue;
+    resultado.push({
+      fecha: formatoFecha(fila[0]),
+      fechaISO: formatoISO(fila[0]),
+      clave: clave,
+      cedula: String(fila[2] || ''),
+      cliente: String(fila[3] || ''),
+      placa: String(fila[4] || ''),
+      accion: String(fila[5] || ''),
+      registradoPor: String(fila[6] || '')
+    });
+  }
+  return resultado;
+}
+
+// ==================== ACCIÓN: REGISTRAR GESTIÓN ====================
+function accionRegistrarGestion(params) {
+  var clave = String(params.clave || '').trim();
+  var accion = String(params.accion || '').trim();
+  if (!clave) return { ok: false, error: 'Falta la clave del SOAT (placa|vencimiento).' };
+  if (!accion) return { ok: false, error: 'Falta la acción.' };
 
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(15000)) {
@@ -114,45 +143,23 @@ function accionRegistrarSoat(params) {
   }
 
   try {
-    var hoja = hojaSoat();
-    var ultimaFila = hoja.getLastRow();
-    var datos = hoja.getRange(1, 1, Math.max(ultimaFila, 1), hoja.getLastColumn()).getValues();
-    var idx = mapaEncabezados(datos[0]);
-
-    // Evitar duplicado: misma placa con el mismo inicio de vigencia.
-    for (var i = 1; i < datos.length; i++) {
-      var placaFila = texto(datos[i], idx['placa']).toUpperCase().replace(/\s+/g, '');
-      if (placaFila === placa && formatoISO(valor(datos[i], idx['fecha inicio'])) === formatoISO(inicio)) {
-        return { ok: false, error: 'Ya existe un SOAT para ' + placa + ' con esa fecha de inicio.' };
-      }
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var hoja = ss.getSheetByName(HOJA_GESTIONES);
+    if (!hoja) {
+      hoja = ss.insertSheet(HOJA_GESTIONES);
+      hoja.appendRow(ENCABEZADOS_GESTIONES);
     }
-
-    var consecutivo = 0;
-    for (var j = 1; j < datos.length; j++) {
-      var n = Number(valor(datos[j], idx['#']));
-      if (n > consecutivo) consecutivo = n;
-    }
-
-    var nueva = [];
-    for (var c = 0; c < datos[0].length; c++) nueva.push('');
-    poner(nueva, idx['fecha'], new Date());
-    poner(nueva, idx['#'], consecutivo + 1);
-    poner(nueva, idx['cliente'], cliente);
-    poner(nueva, idx['cedula'], cedula);
-    poner(nueva, idx['placa'], placa);
-    poner(nueva, idx['tipo vehiculo'], String(params.tipo || '').trim().toUpperCase());
-    poner(nueva, idx['cilindraje'], String(params.cilindraje || '').trim());
-    poner(nueva, idx['fecha inicio'], inicio);
-    poner(nueva, idx['fecha vencimiento'], vencimiento);
-    poner(nueva, idx['valor soat'], valorSoat);
-    poner(nueva, idx['ganancia'], ganancia);
-    poner(nueva, idx['total consignado'], valorSoat + ganancia);
-    poner(nueva, idx['forma de pago'], String(params.formaPago || '').trim());
-
-    hoja.appendRow(nueva);
-    return { ok: true, mensaje: 'SOAT registrado correctamente.' };
+    hoja.appendRow([
+      new Date(), clave,
+      String(params.cedula || '').trim(),
+      String(params.cliente || '').trim(),
+      String(params.placa || '').trim(),
+      accion,
+      String(params.registradoPor || '').trim()
+    ]);
+    return { ok: true, mensaje: 'Gestión registrada correctamente.' };
   } catch (err) {
-    return { ok: false, error: 'No se pudo registrar el SOAT: ' + err.message };
+    return { ok: false, error: 'No se pudo registrar la gestión: ' + err.message };
   } finally {
     lock.releaseLock();
   }
@@ -168,10 +175,10 @@ function hojaSoat() {
   return hoja;
 }
 
-// Normaliza un encabezado: minúsculas, sin tildes ni espacios extra.
+// Normaliza un encabezado: minúsculas, sin tildes, sin caracteres raros.
 function normalizar(t) {
   return String(t || '').toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/\s+/g, ' ')
     .replace(/[^a-z0-9# ]/g, '')
     .trim();
@@ -192,15 +199,16 @@ function mapaEncabezados(filaEncabezados) {
   return idx;
 }
 
-function valor(fila, i) { return fila[i]; }
-function texto(fila, i) { return String(fila[i] === undefined || fila[i] === null ? '' : fila[i]).trim(); }
+function texto(fila, i) {
+  return String(fila[i] === undefined || fila[i] === null ? '' : fila[i]).trim();
+}
+
 function numero(fila, i) {
   var v = fila[i];
   if (typeof v === 'number') return v;
   var limpio = String(v || '').replace(/[^0-9.\-]/g, '');
   return Number(limpio || 0);
 }
-function poner(fila, i, v) { if (i !== undefined) fila[i] = v; }
 
 function formatoFecha(v) {
   if (!v) return '';
@@ -216,14 +224,4 @@ function formatoISO(v) {
   var mes = ('0' + (f.getMonth() + 1)).slice(-2);
   var dia = ('0' + f.getDate()).slice(-2);
   return f.getFullYear() + '-' + mes + '-' + dia;
-}
-
-function parsearFecha(t) {
-  if (!t) return null;
-  var iso = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (iso) return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
-  var es = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (es) return new Date(Number(es[3]), Number(es[2]) - 1, Number(es[1]));
-  var f = new Date(t);
-  return isNaN(f.getTime()) ? null : f;
 }
