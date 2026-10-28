@@ -6,7 +6,7 @@
 
 // ==================== CONFIGURACIÓN ====================
 var TOKEN = 'PM-CRM-2026';
-var SHEET_ID = 'PEGA_AQUI_EL_ID_DEL_GOOGLE_SHEET';
+var SHEET_ID = '1wHUsGVjzOIjHgsTsi1Nj1z_EQlLyR3evXwFduVv0viU';
 var HOJA_SOAT = 'Soat';
 
 // Encabezados esperados (fila 1). El orden en la hoja no importa, pero los nombres sí.
