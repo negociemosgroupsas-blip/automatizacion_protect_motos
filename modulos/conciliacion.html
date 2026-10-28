@@ -869,9 +869,11 @@
     descargar(rows, q ? 'busqueda_clientes_' : (lista === 'cons' && soloMenos ? 'consolidados_pagaron_de_menos_' : lista === 'cons' && soloRevisar ? 'consolidados_revisar_valor_Protect_' : lista === 'cons' ? 'clientes_consolidados_' : lista === 'directo' ? 'clientes_pagaron_directo_' : lista === 'noaplica' ? 'clientes_anulados_' : 'clientes_faltan_por_consolidar_'));
   });
   function descargar(rows, prefijo) {
-    var cab = ['Cédula', 'Nombre completo', '# Contrato', 'Placa', 'Fila en Consolidado', 'Valor pagado a Dugo Motos', 'Valor pagado en Consolidado (C)', 'Valor pagado en Consolidado (D)', 'Diferencia', 'Estado', 'Nota', 'Asesor', 'Celular'];
-    var filas = rows.map(function (f) { var e = f.extra || {};
-      return [f.cedula, nombre(f), f.contrato, f.placa, f.filaCons, f.pagado, f.c, f.d, f.dif, f.estado + (f.revisado ? ' · revisado' : '') + (f.valor === 'Pagó de menos' && !f.revisado ? ' · pagó de menos' : ''), nota(f), e.asesor, e.celular]; });
+    var cab = ['Cédula', 'Nombre completo', '# Contrato', 'Placa', 'Fila en Consolidado', 'Valor pagado a Dugo Motos', 'Valor pagado en Consolidado (C)', 'Valor pagado en Consolidado (D)', 'Diferencia', 'Estado', 'Nota', 'Asesor', 'Celular', 'Fecha de firma', 'Mes', 'Año'];
+    var MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    var fechaMesAnio = function (t) { var m = String(t || '').match(/^\s*(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\s*$/); if (!m) return ['', '']; var mes = +m[2], an = +m[3]; if (an < 100) an += 2000; return mes >= 1 && mes <= 12 ? [MESES[mes - 1], an] : ['', '']; };
+    var filas = rows.map(function (f) { var e = f.extra || {}, ma = fechaMesAnio(e.fechaFirma);
+      return [f.cedula, nombre(f), f.contrato, f.placa, f.filaCons, f.pagado, f.c, f.d, f.dif, f.estado + (f.revisado ? ' · revisado' : '') + (f.valor === 'Pagó de menos' && !f.revisado ? ' · pagó de menos' : ''), nota(f), e.asesor, e.celular, e.fechaFirma || '', ma[0], ma[1]]; });
     var csv = [cab].concat(filas).map(function (r) { return r.map(function (v) { v = v === null || v === undefined ? '' : String(v); return '"' + v.replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
     var h = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
     var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
