@@ -5,7 +5,7 @@
  */
 
 // ==================== CONFIGURACIÓN ====================
-var TOKEN = 'PM-COBROS-2026';
+var TOKEN = 'PM-CRM-2026';
 var SHEET_ID = 'PEGA_AQUI_EL_ID_DEL_GOOGLE_SHEET';
 var HOJA_SOAT = 'Soat';
 
