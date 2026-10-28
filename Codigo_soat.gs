@@ -27,7 +27,7 @@ function doGet(e) {
       salida = { ok: false, error: 'Token inválido. El panel envió: "' + (params.token || '(vacío)') + '"' };
     } else {
       var accion = params.action || 'soat';
-      if (accion === 'soat') {
+      if (accion === 'soat' || accion === 'datos') {
         salida = accionSoat();
       } else if (accion === 'registrarSoat') {
         salida = accionRegistrarSoat(params);
