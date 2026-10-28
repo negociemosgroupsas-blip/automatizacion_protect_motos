@@ -5,7 +5,7 @@
  */
 
 // ==================== CONFIGURACIÓN ====================
-var TOKEN = 'PM-CRM-2026';
+var TOKEN = 'PM-SOAT-2026';
 var SHEET_ID = '1wHUsGVjzOIjHgsTsi1Nj1z_EQlLyR3evXwFduVv0viU';
 var HOJA_SOAT = 'Soat';
 
@@ -24,7 +24,7 @@ function doGet(e) {
 
   try {
     if (params.token !== TOKEN) {
-      salida = { ok: false, error: 'Token inválido.' };
+      salida = { ok: false, error: 'Token inválido. El panel envió: "' + (params.token || '(vacío)') + '"' };
     } else {
       var accion = params.action || 'soat';
       if (accion === 'soat') {
