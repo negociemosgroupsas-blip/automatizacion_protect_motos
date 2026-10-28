@@ -170,10 +170,11 @@ function hojaSoat() {
 
 // Normaliza un encabezado: minúsculas, sin tildes ni espacios extra.
 function normalizar(t) {
-  return String(t || '').trim().toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/\s+/g, ' ');
-}
+  return String(t || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/[^a-z0-9# ]/g, '')
+    .trim();
 
 function mapaEncabezados(filaEncabezados) {
   var idx = {};
