@@ -1392,7 +1392,7 @@
     if(info && info.cuotaPendiente){
       mensaje =
         'Hola, '+c.cliente+' 😊\n'+
-        'Te recordamos de Protect Motos que tienes pendiente tu cuota'+(c.valorCuota ? ' de '+formatoDinero(c.valorCuota) : '')+', con fecha de pago el '+formatoFechaCO(info.cuotaPendiente.fechaVence)+'. '+
+        'Te recordamos de Protect Motos que tienes pendiente tu cuota'+(c.valorCuota ? ' de '+formatoDinero(c.valorCuota) : '')+', con fecha de pago el día '+info.cuotaPendiente.fechaVence.getDate()+'. '+
         'Págala a tiempo para que sigas protegido con tu póliza.\n\n'+
         clausula+'\n\n'+
         cuenta+'\n\n'+
