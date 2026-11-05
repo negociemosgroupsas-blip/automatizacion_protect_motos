@@ -2076,6 +2076,8 @@
       campoFicha('Cliente', encontrado.cliente)+
       campoFicha('Cédula', encontrado.cedula)+
       campoFicha('Placa', encontrado.placa)+
+      campoSiNo('Lleva RC', valorExtra(encontrado,'rc'))+
+      campoSiNo('Lleva AP', valorExtra(encontrado,'ap'))+
       campoFicha('Contrato', encontrado.contrato)+
       campoFicha('Forma', encontrado.forma)+
       campoFicha('Estado', encontrado.estado)+
@@ -2193,6 +2195,29 @@
       reactivarCliente(encontrado, e.currentTarget);
     });
   }
+
+  // RC y AP: no vienen del conector de Cobros; los envía el Inicio del CRM (conector del CRM) por mensaje.
+  var extrasCRM = {};
+  function valorExtra(c, campo){
+    if(c && c[campo]!==undefined) return String(c[campo]||'').trim().toUpperCase()==='SI' ? 'SI' : 'NO';
+    var e = extrasCRM[c && c.contrato];
+    if(!e) return null;
+    return String(e[campo]||'').trim().toUpperCase()==='SI' ? 'SI' : 'NO';
+  }
+  function campoSiNo(etiqueta, v){
+    var html = v===null ? '<span style="color:var(--texto-suave);font-weight:500" title="Conecta el conector del CRM en «Conexiones» para ver este dato">—</span>'
+      : v==='SI' ? '<span style="display:inline-block;background:var(--verde-bg);color:var(--verde);border-radius:999px;padding:1px 12px;font-weight:700">Sí</span>'
+      : '<span style="display:inline-block;background:#eef0f4;color:#4b5563;border-radius:999px;padding:1px 12px;font-weight:700">No</span>';
+    return '<div class="campo"><div class="etiqueta">'+etiqueta+'</div><div class="valor">'+html+'</div></div>';
+  }
+  window.addEventListener('message', function(ev){
+    var d = ev.data;
+    if(!d || typeof d!=='object' || !d.pmExtras) return;
+    extrasCRM = d.pmExtras;
+    var q = document.getElementById('inputBusqueda');
+    if(q && q.value.trim() && !hayModalAbierto()) buscarCliente();
+  });
+  try{ window.parent.postMessage({pmCobrosListo:true}, '*'); }catch(e){}
 
   function campoFicha(etiqueta, valor){
     return '<div class="campo"><div class="etiqueta">'+etiqueta+'</div><div class="valor">'+escapeHtml(valor)+'</div></div>';
