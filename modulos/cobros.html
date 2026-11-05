@@ -1385,31 +1385,25 @@
   }
 
   function abrirWhatsAppCobro(c, info){
+    // Recordatorio corto y amable (no de cobro): invita a no dejar vencer la cuota y avisa de la cláusula de los 5 días de mora.
     var mensaje;
+    var cuenta = DATOS_PAGO.banco+' · '+DATOS_PAGO.tipoCuenta+' N° '+DATOS_PAGO.numeroCuenta+'\n'+'Titular: '+DATOS_PAGO.titular;
+    var clausula = '⚠️ Recuerda: si pasan 5 días de mora, la póliza se cancela.';
     if(info && info.cuotaPendiente){
       mensaje =
-        'Hola, '+c.cliente+'\n'+
-        'Te escribimos de Protect Motos, la póliza de tu motocicleta, para recordarte que tienes pendiente la cuota #'+info.cuotaPendiente.numero+' de tu póliza.\n\n'+
-        (c.valorCuota ? 'Valor de la cuota: '+formatoDinero(c.valorCuota)+'\n' : '')+
-        'Fecha de pago: '+formatoFechaCO(info.cuotaPendiente.fechaVence)+'\n\n'+
-        'Puedes realizar el pago a la siguiente cuenta:\n'+
-        'Banco: '+DATOS_PAGO.banco+'\n'+
-        'Cuenta de '+DATOS_PAGO.tipoCuenta+' N°: '+DATOS_PAGO.numeroCuenta+'\n'+
-        'Titular: '+DATOS_PAGO.titular+'\n'+
-        'Teléfono: '+DATOS_PAGO.telefono+'\n\n'+
-        'Cuando realices el pago, por favor envíanos el comprobante por este medio para poder registrarlo.\n\n'+
-        '¡Muchas gracias!';
+        'Hola, '+c.cliente+' 😊\n'+
+        'Te recordamos de Protect Motos que tu cuota #'+info.cuotaPendiente.numero+(c.valorCuota ? ' ('+formatoDinero(c.valorCuota)+')' : '')+' vence el '+formatoFechaCO(info.cuotaPendiente.fechaVence)+'. '+
+        'Págala a tiempo para que sigas protegido con tu póliza.\n\n'+
+        clausula+'\n\n'+
+        cuenta+'\n\n'+
+        'Envíanos el comprobante por aquí. ¡Gracias! 💙💛';
     } else {
       mensaje =
-        'Hola, '+c.cliente+'\n'+
-        'Te escribimos de Protect Motos, la póliza de tu motocicleta, para saber cómo va todo con tu cuota.\n\n'+
-        'Si deseas realizar el pago, puedes hacerlo a la siguiente cuenta:\n'+
-        'Banco: '+DATOS_PAGO.banco+'\n'+
-        'Cuenta de '+DATOS_PAGO.tipoCuenta+' N°: '+DATOS_PAGO.numeroCuenta+'\n'+
-        'Titular: '+DATOS_PAGO.titular+'\n'+
-        'Teléfono: '+DATOS_PAGO.telefono+'\n\n'+
-        'Cuando realices el pago, por favor envíanos el comprobante por este medio para poder registrarlo.\n\n'+
-        '¡Muchas gracias!';
+        'Hola, '+c.cliente+' 😊\n'+
+        'Te escribimos de Protect Motos para recordarte que no se te pase el pago de tu póliza y así sigas protegido.\n\n'+
+        clausula+'\n\n'+
+        cuenta+'\n\n'+
+        'Envíanos el comprobante por aquí. ¡Gracias! 💙💛';
     }
     var url = 'https://wa.me/'+numeroWhatsApp(c.celular)+'?text='+encodeURIComponent(mensaje);
     window.open(url,'_blank');
