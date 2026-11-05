@@ -2082,6 +2082,7 @@
       campoFicha('Cuotas pagadas', info.cuotasPagadas+' / '+encontrado.plazo)+
       campoFicha('Saldo pendiente', formatoDinero(info.saldo))+
       campoFicha('Celular', encontrado.celular)+
+      campoFicha('Correo', encontrado.correo || ((extrasCRM[encontrado.contrato]||{}).correo) || '—')+
     '</div>';
 
     html += '<div style="margin-bottom:10px;"><span class="semaforo '+sem.clase+'"><span class="punto"></span>'+sem.texto+'</span></div>';

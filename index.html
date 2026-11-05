@@ -985,7 +985,7 @@
     var pagos=pagosDe(c),f=concDe(c),fin=c.forma==='FINANCIADO'&&c.plazo>0,pag=fin?cuotasPagadas(c,pagos):0;
     var h='<div class="f-caja"><button class="f-cerrar" id="fx" type="button" aria-label="Cerrar">✕</button>'+
       '<h2>'+esc(c.cliente||'(sin nombre)')+'</h2><div>'+badgeEstado(c.estado)+'<span class="bd">'+esc(c.forma||'')+'</span>'+(c.rc!==undefined?(c.rc==='SI'?'<span class="bd a">Lleva RC</span>':'<span class="bd">Sin RC</span>')+(c.ap==='SI'?'<span class="bd a">Lleva AP</span>':'<span class="bd">Sin AP</span>'):'')+badgeConc(f)+'</div>'+
-      '<h4>Contrato</h4><div class="f-dat">'+d('Cédula',c.cedula)+d('Placa',c.placa)+(c.rc!==undefined?d('Lleva RC',c.rc==='SI'?'Sí':'No')+d('Lleva AP',c.ap==='SI'?'Sí':'No'):'')+d('N° contrato',c.contrato)+d('Asesor',c.asesor)+d('Celular',c.celular)+d('Fecha de firma',c.fechaFirma)+d('Vence póliza',c.fin)+d('Mes / año',[c.mes,c.anio].filter(Boolean).join(' / '))+
+      '<h4>Contrato</h4><div class="f-dat">'+d('Cédula',c.cedula)+d('Placa',c.placa)+(c.rc!==undefined?d('Lleva RC',c.rc==='SI'?'Sí':'No')+d('Lleva AP',c.ap==='SI'?'Sí':'No'):'')+d('N° contrato',c.contrato)+d('Asesor',c.asesor)+d('Celular',c.celular)+d('Correo',c.correo||'—')+d('Fecha de firma',c.fechaFirma)+d('Vence póliza',c.fin)+d('Mes / año',[c.mes,c.anio].filter(Boolean).join(' / '))+
       (fin?d('Valor cuota',c.valorCuota?pesos(c.valorCuota):'No registrado')+d('Plazo',c.plazo+' cuotas')+d('Cuotas pagadas',pag+' / '+c.plazo)+d('Saldo estimado',c.valorCuota?pesos(Math.max(0,c.plazo-pag)*c.valorCuota):'No registrado'):d('Valor Protect',c.valorProtect?pesos(c.valorProtect):''))+'</div>';
     h+='<h4>Pagos registrados ('+pagos.length+')</h4>';
     h+=pagos.length?'<div class="f-scroll"><table class="f-tabla"><tr><th>Fecha</th><th>Cuota</th><th>Valor</th><th>Nota</th></tr>'+pagos.map(function(p){return '<tr><td>'+esc(p.fechaPago)+'</td><td>'+esc(p.cuota)+'</td><td>'+pesos(p.valorPagado)+'</td><td>'+esc(p.nota)+'</td></tr>'}).join('')+'</table></div>':'<div class="nota">'+(fin?'Sin pagos en la hoja Pagos (la cuota 1 se da por pagada al firmar).':'Contrato de contado: no tiene cuotas.')+'</div>';
@@ -1098,7 +1098,7 @@
   /* RC y AP para la ficha del módulo Cobros (su conector no los trae): se le envían por mensaje */
   function enviarExtrasCobros(){
     var fr=document.querySelector('#v-cobros iframe');if(!fr||!fr.contentWindow||!window.PM_COBROS)return;
-    var m={};(window.PM_COBROS.contratos||[]).forEach(function(c){if(c.rc!==undefined&&c.contrato)m[c.contrato]={rc:c.rc,ap:c.ap}});
+    var m={};(window.PM_COBROS.contratos||[]).forEach(function(c){if(c.rc!==undefined&&c.contrato)m[c.contrato]={rc:c.rc,ap:c.ap,correo:c.correo||''}});
     try{fr.contentWindow.postMessage({pmExtras:m},'*')}catch(e){}
   }
   document.addEventListener('pm-cobros',enviarExtrasCobros);
