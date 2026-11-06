@@ -931,7 +931,7 @@
     aplicarTema(m.id==='inicio');
   }
   window.aplicarTema0=function(){aplicarTema()};window.aplicarTemaX=aplicarTema;
-  function temaPref(){try{return localStorage.getItem('pm_tema_inicio')==='claro'?'claro':'oscuro'}catch(e){return 'oscuro'}}
+  function temaPref(){try{return localStorage.getItem('pm_tema_inicio')==='oscuro'?'oscuro':'claro'}catch(e){return 'claro'}}
   function aplicarTema(enInicio){
     var p=temaPref();if(enInicio===undefined)enInicio=!!(document.getElementById('v-inicio')&&document.getElementById('v-inicio').classList.contains('activa'));
     document.body.classList.toggle('tema-inicio',enInicio&&p==='oscuro');document.body.classList.toggle('inicio-claro',enInicio&&p==='claro');
@@ -1324,7 +1324,7 @@
   }
   $('gAnio').addEventListener('change',aplicarGlobal);$('gMes').addEventListener('change',aplicarGlobal);
   $('gReset').addEventListener('click',restablecerGlobal);
-  $('gTema').addEventListener('click',function(){try{localStorage.setItem('pm_tema_inicio',(localStorage.getItem('pm_tema_inicio')==='claro')?'oscuro':'claro')}catch(e){}if(window.aplicarTemaX)window.aplicarTemaX();window.dispatchEvent(new Event('resize'))});
+  $('gTema').addEventListener('click',function(){try{localStorage.setItem('pm_tema_inicio',(localStorage.getItem('pm_tema_inicio')==='oscuro')?'claro':'oscuro')}catch(e){}if(window.aplicarTemaX)window.aplicarTemaX();window.dispatchEvent(new Event('resize'))});
   if(window.aplicarTema0)window.aplicarTema0();
   setInterval(llenarGlobal,4000);setTimeout(llenarGlobal,1500);
   pintarKpis();
