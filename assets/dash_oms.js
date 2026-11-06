@@ -148,6 +148,7 @@
       '.od-grid12{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}',
       '.od-card{background:#fff;border:1px solid #e3e6eb;border-radius:14px;padding:14px 16px;min-width:0} .od-card h3{margin:0 0 2px;font-size:.98rem;color:#13223f;border-left:4px solid #f0c94a;padding-left:9px;line-height:1.2;font-family:inherit}',
       '.od-card .od-sub{font-size:.76rem;color:#6b7280;margin:2px 0 8px;min-height:1.1em} .od-c8{grid-column:span 8} .od-c4{grid-column:span 4} .od-c6{grid-column:span 6}',
+      '.od-fil{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 8px} .od-fil label{display:flex;align-items:center;gap:6px;font-size:.76rem;color:#6b7280} .od-fil select{border:1px solid #e3e6eb;background:#fff;border-radius:8px;padding:4px 8px;font-size:.8rem;color:#1f2430;cursor:pointer}',
       '.od-leg2{display:flex;gap:14px;flex-wrap:wrap;font-size:.76rem;color:#6b7280;margin:0 0 4px} .od-leg2 i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}',
       '.od-dona{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center} .od-leg{display:grid;gap:7px;min-width:150px;flex:1;font-size:.82rem}',
       '.od-leg div{display:grid;grid-template-columns:12px 1fr auto auto;gap:8px;align-items:center} .od-leg i{width:12px;height:12px;border-radius:4px} .od-leg b{font-size:.95rem;color:#13223f} .od-leg .p{color:#6b7280;font-size:.76rem;min-width:34px;text-align:right}',
@@ -166,87 +167,117 @@
     document.head.appendChild(s);
   }
 
+  var ST = {};     // filtros de cada tarjeta, por tablero
+  var TOP = {};    // selección del filtro de arriba («todo el tablero»)
+  function porDefecto(yA) { return { combo: { y: String(yA), m: '0' }, forma: { y: String(yA), m: '0' }, acum: { y: String(yA) }, med: { y: String(yA) }, estados: { y: 'todos', m: '0' }, veh: { y: String(yA), m: '0' } }; }
+  function opcionesAnio(lista) { return '<option value="todos">Todos los años</option>' + lista.map(function (y) { return '<option>' + y + '</option>'; }).join(''); }
+  var OPC_MES = '<option value="0">Todo el año</option>' + MESES.map(function (m, i) { return '<option value="' + (i + 1) + '">' + m + '</option>'; }).join('');
+  function filtro(k, lista, conMes) { return '<div class="od-fil" data-k="' + k + '"><label>Año <select data-f="y">' + opcionesAnio(lista) + '</select></label>' + (conMes ? '<label>Mes <select data-f="m">' + OPC_MES + '</select></label>' : '') + '</div>'; }
+  function pasa(x, st) {   // ¿el cliente se vendió en el año y mes elegidos?
+    if (!x.ini) return false;
+    if (st.y !== 'todos' && x.ini.getFullYear() !== +st.y) return false;
+    if (st.m && st.m !== '0' && x.ini.getMonth() + 1 !== +st.m) return false;
+    return true;
+  }
+
   function render(root, datos) {
     css();
     var clientes = (datos && datos.clientes) || [], gest = (datos && datos.gestiones) || [];
-    if (root.id) LAST[root.id] = datos;
+    var id = root.id || (root.id = 'od' + Math.random().toString(36).slice(2, 7));
+    LAST[id] = datos;
     var a = analizar(clientes, gest), h = hoy(), yA = h.getFullYear(), mA = h.getMonth();
     var ys = {}; ys[yA] = 1; a.forEach(function (x) { if (x.ini) ys[x.ini.getFullYear()] = 1; });
     var lista = Object.keys(ys).map(Number).sort(function (p, q) { return q - p; });
-    var id = root.id || (root.id = 'od' + Math.random().toString(36).slice(2, 7));
-    var Y = YEARSEL[id] || String(yA); if (Y !== 'todos' && !ys[Y]) Y = String(yA); YEARSEL[id] = Y;
+    var S = ST[id] = ST[id] || porDefecto(yA), top = TOP[id] = TOP[id] || { y: '', m: '' };
+    Object.keys(S).forEach(function (k) { if (S[k].y !== 'todos' && !ys[S[k].y]) S[k].y = String(yA); });
 
-    // KPIs
+    // KPIs (no dependen de los filtros)
     var activos = 0, mes = 0, valMes = 0, porRenovar = 0, enviados = 0;
     a.forEach(function (x) {
       if (x.c.estado === 'ACTIVO' && x.tipo !== 'renovado' && x.tipo !== 'vencido' && x.tipo !== 'norenovara') activos++;
       if (x.ini && x.ini.getFullYear() === yA && x.ini.getMonth() === mA) { mes++; valMes += x.valor; }
       if (x.tipo === 'renovar') porRenovar++; else if (x.tipo === 'enviado') enviados++;
     });
-    // renovaciones (clientes cuyo año ya se cumplió)
+    // renovaciones: clientes cuyo año ya se cumplió (filtro de la tarjeta Renovaciones)
     var ren = 0, nor = 0, pen = 0;
     a.forEach(function (x) {
-      if (!x.fin || x.fin >= h || x.tipo === 'cancelado') return; if (Y !== 'todos' && x.fin.getFullYear() !== +Y) return;
+      if (!x.fin || x.fin >= h || x.tipo === 'cancelado') return; if (S.med.y !== 'todos' && x.fin.getFullYear() !== +S.med.y) return;
       if (x.tipo === 'renovado') ren++; else if (x.tipo === 'norenovara' || x.tipo === 'vencido') nor++; else pen++;
     });
     var baseR = ren + nor + pen, tasa = baseR ? Math.round(ren / baseR * 100) : 0;
+    // la tasa de la tarjeta de arriba usa todos los años
+    var rA = 0, nA = 0, pA = 0;
+    a.forEach(function (x) { if (!x.fin || x.fin >= h || x.tipo === 'cancelado') return; if (x.tipo === 'renovado') rA++; else if (x.tipo === 'norenovara' || x.tipo === 'vencido') nA++; else pA++; });
+    var tasaTodos = (rA + nA + pA) ? Math.round(rA / (rA + nA + pA) * 100) : null;
 
     root.innerHTML =
-      '<div class="od-top"><h2>Tablero de Clientes OMS</h2><label>Año <select class="od-y"><option value="todos">Todos los años</option>' + lista.map(function (y) { return '<option>' + y + '</option>'; }).join('') + '</select></label></div>' +
+      '<div class="od-top"><h2>Tablero de Clientes OMS</h2><div class="od-fil od-fil-top"><label>Año <select class="od-y"><option value="">Cada tarjeta</option>' + opcionesAnio(lista) + '</select></label><label>Mes <select class="od-m"><option value="">Cada tarjeta</option>' + OPC_MES + '</select></label></div></div>' +
       '<div class="od-kpis">' +
         '<div class="od-k"><b>' + activos + '</b><span>Clientes vigentes</span></div>' +
         '<div class="od-k"><b>' + mes + '</b><span>Nuevos este mes</span></div>' +
         '<div class="od-k vd"><b>' + corto(valMes) + '</b><span>Valor vendido del mes</span></div>' +
         '<div class="od-k' + (porRenovar ? ' al' : '') + '"><b>' + porRenovar + '</b><span>Por renovar (≤' + DIAS_AVISO + ' días)</span></div>' +
         '<div class="od-k"><b>' + enviados + '</b><span>Mensajes enviados</span></div>' +
-        '<div class="od-k"><b>' + (baseR ? tasa + ' %' : '—') + '</b><span>Tasa de renovación</span></div>' +
+        '<div class="od-k"><b>' + (tasaTodos === null ? '—' : tasaTodos + ' %') + '</b><span>Tasa de renovación</span></div>' +
       '</div>' +
       '<div class="od-grid12">' +
-        '<div class="od-card od-c8"><h3>Clientes nuevos y valor vendido</h3><p class="od-sub" data-s="1"></p><div class="od-leg2"><span><i style="background:#13223f"></i>Columnas: clientes nuevos</span><span><i style="background:#1f9d55"></i>Línea: valor vendido</span></div><div data-g="combo"></div></div>' +
-        '<div class="od-card od-c4"><h3>Contado o financiado</h3><p class="od-sub" data-s="2"></p><div data-g="forma"></div></div>' +
-        '<div class="od-card od-c8"><h3>Valor vendido acumulado del año</h3><p class="od-sub" data-s="3"></p><div class="od-leg2"><span><i style="background:#1f9d55"></i>Este año</span><span><i style="background:#b8c0d4"></i>Año anterior</span></div><div data-g="acum"></div></div>' +
-        '<div class="od-card od-c4"><h3>Renovaciones</h3><p class="od-sub" data-s="4"></p><div data-g="med"></div></div>' +
-        '<div class="od-card od-c6"><h3>Estado de los clientes</h3><p class="od-sub" data-s="5"></p><div data-g="estados"></div></div>' +
-        '<div class="od-card od-c6"><h3>Vehículos más vendidos</h3><p class="od-sub" data-s="6"></p><div data-g="veh"></div></div>' +
+        '<div class="od-card od-c8"><h3>Clientes nuevos y valor vendido</h3><p class="od-sub" data-s="1"></p>' + filtro('combo', lista, true) + '<div class="od-leg2"><span><i style="background:#13223f"></i>Columnas: clientes nuevos</span><span><i style="background:#1f9d55"></i>Línea: valor vendido</span></div><div data-g="combo"></div></div>' +
+        '<div class="od-card od-c4"><h3>Contado o financiado</h3><p class="od-sub" data-s="2"></p>' + filtro('forma', lista, true) + '<div data-g="forma"></div></div>' +
+        '<div class="od-card od-c8"><h3>Valor vendido acumulado del año</h3><p class="od-sub" data-s="3"></p>' + filtro('acum', lista, false) + '<div class="od-leg2"><span><i style="background:#1f9d55"></i>Este año</span><span><i style="background:#b8c0d4"></i>Año anterior</span></div><div data-g="acum"></div></div>' +
+        '<div class="od-card od-c4"><h3>Renovaciones</h3><p class="od-sub" data-s="4"></p>' + filtro('med', lista, false) + '<div data-g="med"></div></div>' +
+        '<div class="od-card od-c6"><h3>Estado de los clientes</h3><p class="od-sub" data-s="5"></p>' + filtro('estados', lista, true) + '<div data-g="estados"></div></div>' +
+        '<div class="od-card od-c6"><h3>Vehículos más vendidos</h3><p class="od-sub" data-s="6"></p>' + filtro('veh', lista, true) + '<div data-g="veh"></div></div>' +
       '</div>';
-    var sel = root.querySelector('.od-y'); sel.value = Y;
-    sel.addEventListener('change', function () { YEARSEL[id] = sel.value; render(root, datos); });
     var q = function (s) { return root.querySelector(s); };
 
-    // 1) combo
-    var porMes = {}; a.forEach(function (x) { if (!x.ini) return; var k = x.ini.getFullYear() * 12 + x.ini.getMonth(); var o = porMes[k] = porMes[k] || { n: 0, g: 0 }; o.n++; o.g += x.valor; });
-    var datosC = [], etq = [], act = -1, totN = 0, totG = 0, i;
-    if (Y === 'todos') { lista.slice().reverse().forEach(function (y) { var n = 0, g = 0; for (var m = 0; m < 12; m++) { var o = porMes[y * 12 + m]; if (o) { n += o.n; g += o.g; } } datosC.push({ n: n, g: g, t: 'Año ' + y }); etq.push(String(y)); totN += n; totG += g; if (y === yA) act = datosC.length - 1; }); }
-    else for (i = 0; i < 12; i++) { var o2 = porMes[+Y * 12 + i] || { n: 0, g: 0 }, fut = (+Y === yA && i > mA); datosC.push(fut ? null : { n: o2.n, g: o2.g, t: MESES[i] + ' ' + Y }); etq.push(MC[i]); if (!fut) { totN += o2.n; totG += o2.g; } if (+Y === yA) act = mA; }
+    // valores de los filtros + eventos
+    Object.keys(S).forEach(function (k) {
+      var f = root.querySelector('.od-fil[data-k="' + k + '"]'); if (!f) return;
+      var sy = f.querySelector('[data-f="y"]'), sm = f.querySelector('[data-f="m"]'); sy.value = S[k].y; if (sm) sm.value = S[k].m || '0';
+      f.addEventListener('change', function (ev) { var t = ev.target; if (!t.dataset.f) return; S[k][t.dataset.f] = t.value; render(root, datos); });
+    });
+    var ty = q('.od-y'), tm = q('.od-m'); ty.value = top.y; tm.value = top.m;
+    q('.od-fil-top').addEventListener('change', function () {
+      top.y = ty.value; top.m = tm.value;
+      Object.keys(S).forEach(function (k) { if (top.y !== '') S[k].y = top.y; if (top.m !== '' && S[k].m !== undefined) S[k].m = top.m; });
+      render(root, datos);
+    });
+
+    // 1) clientes nuevos y valor vendido
+    var C = S.combo, mm = +C.m, porMes = {}; a.forEach(function (x) { if (!x.ini) return; var k = x.ini.getFullYear() * 12 + x.ini.getMonth(); var o = porMes[k] = porMes[k] || { n: 0, g: 0 }; o.n++; o.g += x.valor; });
+    var datosC = [], etq = [], act = -1, totN = 0, totG = 0, i, porAnio = (mm !== 0 || C.y === 'todos');
+    if (!porAnio) { for (i = 0; i < 12; i++) { var o2 = porMes[+C.y * 12 + i] || { n: 0, g: 0 }, fut = (+C.y === yA && i > mA); datosC.push(fut ? null : { n: o2.n, g: o2.g, t: MESES[i] + ' ' + C.y }); etq.push(MC[i]); if (!fut) { totN += o2.n; totG += o2.g; } } if (+C.y === yA) act = mA; }
+    else { lista.slice().reverse().forEach(function (y) { var n = 0, g = 0; for (var m = 0; m < 12; m++) { if (mm && m + 1 !== mm) continue; var o = porMes[y * 12 + m]; if (o) { n += o.n; g += o.g; } } datosC.push({ n: n, g: g, t: (mm ? MESES[mm - 1] + ' ' : 'Año ') + y }); etq.push(String(y)); if (C.y === 'todos' || y === +C.y) { totN += n; totG += g; } if (y === yA) act = datosC.length - 1; }); }
     q('[data-s="1"]').textContent = totN + ' clientes nuevos · ' + pesos(totG) + (totN ? ' · ' + pesos(totG / totN) + ' por cliente' : '');
     combo(q('[data-g="combo"]'), datosC, etq, act);
 
-    // 2) contado / financiado
-    var cf = {}, nF = 0; a.forEach(function (x) { if (!x.ini) return; if (Y !== 'todos' && x.ini.getFullYear() !== +Y) return; var k = x.forma === 'FINANCIADO' ? 'Financiado' : x.forma === 'CONTADO' ? 'Contado' : 'Sin dato'; cf[k] = (cf[k] || 0) + 1; nF++; });
+    // 2) contado o financiado
+    var cf = {}, nF = 0; a.forEach(function (x) { if (!pasa(x, S.forma)) return; var k = x.forma === 'FINANCIADO' ? 'Financiado' : x.forma === 'CONTADO' ? 'Contado' : 'Sin dato'; cf[k] = (cf[k] || 0) + 1; nF++; });
     var pal = { Financiado: '#13223f', Contado: '#d6a417', 'Sin dato': '#b8c0d4' };
     q('[data-s="2"]').textContent = nF ? nF + ' clientes' : 'Sin ventas en el período';
     dona(q('[data-g="forma"]'), Object.keys(cf).sort(function (p, r) { return cf[r] - cf[p]; }).map(function (k) { return { l: k, n: cf[k], c: pal[k] }; }), nF);
 
-    // 3) acumulado
-    var yv = Y === 'todos' ? yA : +Y, A = [], B = [], ca = 0, cb = 0;
+    // 3) valor acumulado del año
+    var yv = S.acum.y === 'todos' ? yA : +S.acum.y, A = [], B = [], ca = 0, cb = 0;
     for (i = 0; i < 12; i++) { var oa = porMes[yv * 12 + i], ob = porMes[(yv - 1) * 12 + i]; ca += oa ? oa.g : 0; cb += ob ? ob.g : 0; A.push(yv === yA && i > mA ? null : ca); B.push(cb); }
     var u = 0; A.forEach(function (x, ix) { if (x !== null) u = ix; });
     q('[data-s="3"]').textContent = yv + ': ' + pesos(A[u] || 0) + (B[u] ? ' · ' + ((A[u] || 0) >= B[u] ? '▲ +' : '▼ ') + Math.abs(Math.round(((A[u] || 0) - B[u]) / B[u] * 100)) + ' % frente a ' + (yv - 1) + ' (mismo período)' : '');
     acumulada(q('[data-g="acum"]'), A, B, yv);
 
-    // 4) medidor
+    // 4) renovaciones
     q('[data-s="4"]').textContent = baseR ? 'De ' + baseR + ' clientes que ya cumplieron su año' : 'Aún no hay clientes que hayan cumplido su año';
     medidor(q('[data-g="med"]'), ren, nor, pen);
 
-    // 5) estados
-    q('[data-s="5"]').textContent = a.length + ' clientes en total';
-    estados(q('[data-g="estados"]'), a);
+    // 5) estado de los clientes
+    var aE = a.filter(function (x) { return pasa(x, S.estados); });
+    q('[data-s="5"]').textContent = aE.length + ' clientes' + (S.estados.y === 'todos' && S.estados.m === '0' ? ' en total' : ' en el período');
+    estados(q('[data-g="estados"]'), aE);
 
-    // 6) vehículos
-    var vc = {}, nv = 0; a.forEach(function (x) { if (!x.ini || !x.veh) return; if (Y !== 'todos' && x.ini.getFullYear() !== +Y) return; var k = x.veh.toUpperCase().replace(/\s+/g, ' '); vc[k] = (vc[k] || 0) + 1; nv++; });
-    var top = Object.keys(vc).sort(function (p, r) { return vc[r] - vc[p]; }).slice(0, 6).map(function (k) { return { l: k, n: vc[k] }; });
-    q('[data-s="6"]').textContent = nv ? 'Los ' + top.length + ' más vendidos de ' + nv + ' clientes' : 'Sin ventas en el período';
-    barrasH(q('[data-g="veh"]'), top, nv || 1);
+    // 6) vehículos más vendidos
+    var vc = {}, nv = 0; a.forEach(function (x) { if (!x.veh || !pasa(x, S.veh)) return; var k = x.veh.toUpperCase().replace(/\s+/g, ' '); vc[k] = (vc[k] || 0) + 1; nv++; });
+    var tp = Object.keys(vc).sort(function (p, r) { return vc[r] - vc[p]; }).slice(0, 6).map(function (k) { return { l: k, n: vc[k] }; });
+    q('[data-s="6"]').textContent = nv ? 'Los ' + tp.length + ' más vendidos de ' + nv + ' clientes' : 'Sin ventas en el período';
+    barrasH(q('[data-g="veh"]'), tp, nv || 1);
   }
 
   function resumen(clientes, gestiones) {
@@ -255,7 +286,14 @@
     return { porRenovar: r, enviados: e, lista: a };
   }
 
-  function setYear(root, y) { if (!root || !root.id || !LAST[root.id]) return; YEARSEL[root.id] = String(y); render(root, LAST[root.id]); }
+  function aplicar(root, y, m) {   // pone el año y/o el mes en todas las tarjetas del tablero
+    if (!root || !root.id || !LAST[root.id]) return;
+    var S = ST[root.id]; if (!S) { render(root, LAST[root.id]); S = ST[root.id]; }
+    Object.keys(S).forEach(function (k) { if (y !== '' && y != null) S[k].y = String(y); if (m !== '' && m != null && S[k].m !== undefined) S[k].m = String(m); });
+    render(root, LAST[root.id]);
+  }
+  function setYear(root, y) { aplicar(root, y, null); }
+  function reset(root) { if (!root || !root.id || !LAST[root.id]) return; delete ST[root.id]; delete TOP[root.id]; render(root, LAST[root.id]); }
 
-  window.PMDashOMS = { render: render, setYear: setYear, resumen: resumen, analizar: analizar, DIAS_AVISO: DIAS_AVISO, ACC_ENV: ACC_ENV, ACC_REN: ACC_REN, ACC_NO: ACC_NO };
+  window.PMDashOMS = { render: render, setYear: setYear, setPeriodo: aplicar, reset: reset, resumen: resumen, analizar: analizar, DIAS_AVISO: DIAS_AVISO, ACC_ENV: ACC_ENV, ACC_REN: ACC_REN, ACC_NO: ACC_NO };
 })();

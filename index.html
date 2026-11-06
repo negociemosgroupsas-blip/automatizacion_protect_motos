@@ -436,6 +436,7 @@
   body.inicio-claro #v-inicio .card:hover{box-shadow:0 6px 18px rgba(30,50,100,.08);transform:none}
   body.inicio-claro .est-tot{background:linear-gradient(135deg,#312e81,#6d28d9)!important}
   body.inicio-claro .od-k,body.inicio-claro .od-card{box-shadow:0 6px 18px rgba(30,50,100,.08)}
+  .cf-ley{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin:0 0 8px;font-size:.84rem;color:var(--texto,#1f2430)} .cf-ley span{display:inline-flex;align-items:center;gap:7px} .cf-ley i{display:inline-block;width:14px;height:14px;border-radius:4px} .cf-ley-t{font-size:.78rem;color:var(--suave,#6b7280)}
 </style>
 <script src="assets/dash_oms.js"></script>
 </head>
@@ -856,7 +857,7 @@
   }
 
 
-  var cfc=document.createElement('div');cfc.className='card cfc';cfc.innerHTML='<h3>Ventas: comparativo por año, contado y financiados</h3><p class="tot" id="cfTot">Se muestra al conectar Cobros.</p>'+
+  var cfc=document.createElement('div');cfc.className='card cfc';cfc.innerHTML='<h3>Ventas: comparativo por año, contado y financiados</h3><p class="tot" id="cfTot">Se muestra al conectar Cobros.</p><div class="cf-ley" id="cfLey"></div>'+
     '<div class="ed-per"><label>Ver <select id="cfVista"><option value="anios">Comparar años</option><option value="tipos">Contado y financiados</option></select></label>'+
     '<label id="cfLTipo">Tipo de venta <select id="cfTipo"><option value="todas">Todas</option><option value="contado">Solo de contado</option><option value="financiadas">Solo financiadas</option></select></label>'+
     '<label id="cfLAnio">Año <select id="cfAnio"></select></label></div><div class="cf-chips" id="cfChips"></div><div id="cfCuerpo"></div>';tarjetas.appendChild(cfc);
@@ -876,7 +877,7 @@
     var yAct=new Date().getFullYear(),mAct=new Date().getMonth()+1,anios={};anios[yAct]=1;Object.keys(cfDatos).forEach(function(k){anios[Math.floor((+k-1)/12)]=1});
     var lst=Object.keys(anios).map(Number).sort(function(a,c){return a-c});
     document.getElementById('cfVista').value=cfVista;document.getElementById('cfTipo').value=cfTipo;
-    document.getElementById('cfLTipo').style.display=cfVista==='anios'?'':'none';document.getElementById('cfLAnio').style.display=cfVista==='tipos'?'':'none';
+    document.getElementById('cfLTipo').style.display=cfVista==='anios'?'':'none';(function(){var l=document.getElementById('cfLey');if(l)l.innerHTML=cfVista==='tipos'?'<span><i style="background:#fdc33e"></i><b>Dorado = De contado</b></span><span><i style="background:#5b78c7"></i><b>Azul = Financiados</b></span>':'<span class="cf-ley-t">En esta vista cada color es un <b>año</b> (los de las casillas de abajo). Para ver <b>contado y financiados</b> por separado, cambia «Ver» a <b>Contado y financiados</b>.</span>'})();document.getElementById('cfLAnio').style.display=cfVista==='tipos'?'':'none';
     var sa=document.getElementById('cfAnio');sa.innerHTML='<option value="todos">Todos los años</option>'+lst.slice().reverse().map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');
     if(cfAnio!=='todos'&&!anios[cfAnio])cfAnio=String(yAct);sa.value=cfAnio;
     var tipoTxt=cfTipo==='contado'?'de contado':cfTipo==='financiadas'?'financiadas':'(todas)';
@@ -907,7 +908,7 @@
     var mxm=dm2.reduce(function(p,q,ix){return q&&(!p||q.t>p.t)?Object.assign({m:ix},q):p},null);
     b.innerHTML='<div class="cf-t"><div class="cf-n" style="--c:#fdc33e"><span>De contado</span><b>'+tc+'</b><small>'+Math.round(tc/T*100)+' % de los contratos</small></div><div class="cf-n" style="--c:#5b78c7"><span>Financiados</span><b>'+tf+'</b><small>'+Math.round(tf/T*100)+' % de los contratos</small></div><div class="cf-n" style="--c:#021346"><span>Mes con más contratos</span><b>'+MES_LARGO[mxm.m]+'</b><small>'+mxm.t+' contratos</small></div></div><div class="ed-leg leg-grande"><span><i style="background:#fdc33e"></i>Columna dorada = contratos <b>de contado</b></span><span><i style="background:#5b78c7"></i>Columna azul = contratos <b>financiados</b></span></div><div class="cf-c"></div>';
     var dg=dm2.map(function(d){return d?{vals:[d.c,d.f],t:d.t,c:d.c,f:d.f,o:d.o}:null});
-    columnas(b.querySelector('.cf-c'),{datos:dg,n:12,max:Math.max.apply(null,dm2.map(function(d){return d?Math.max(d.c,d.f):0}))*1.25,alto:230,etiquetas:MES_C.map(function(m,ix){return dm2[ix]?m+' ('+dm2[ix].t+')':m}),grupo:true,nombres:['CONTADO','FINANCIADO'],txtNom:['nom-o','nom-b'],subs:N===12?null:function(d){return [{t:d.c+' contado',c:'#fdc33e'},{t:d.f+' financ.',c:'#5b78c7'}]},colores:['#fdc33e','#5b78c7'],activo:-1,aria:'Contratos de contado y financiados por mes',etqBarra:function(){return ''},
+    columnas(b.querySelector('.cf-c'),{datos:dg,n:12,max:Math.max.apply(null,dm2.map(function(d){return d?Math.max(d.c,d.f):0}))*1.25,alto:230,etiquetas:MES_C.map(function(m,ix){return dm2[ix]?m+' ('+dm2[ix].t+')':m}),grupo:true,nombres:['CONTADO','FINANCIADO'],txtNom:['nom-o','nom-b'],subs:function(d){return [{t:d.c+' contado',c:'#fdc33e'},{t:d.f+' financ.',c:'#5b78c7'}]},colores:['#fdc33e','#5b78c7'],activo:-1,aria:'Contratos de contado y financiados por mes',etqBarra:function(){return ''},
       tip:function(d,ix){return '<b>'+MES_LARGO[ix]+(cfAnio==='todos'?'':' '+cfAnio)+'</b> · '+d.t+' contratos<br>De contado: '+d.c+'<br>Financiados: '+d.f+(d.o?'<br><i>Sin forma de pago (columna T): '+d.o+'</i>':'')}});
   }
   function pendiente(m){
@@ -1307,12 +1308,12 @@
     var y=$('gAnio').value,m=$('gMes').value;
     PARES.forEach(function(p){if(y!=='')poner(p[0],y);if(m!=='')poner(p[1],m)});
     if(y!=='')poner('cfAnio',y);
-    if(y!==''&&window.PMDashOMS&&$('omsDash')&&!$('omsDash').hidden)PMDashOMS.setYear($('omsDash'),y);
+    if((y!==''||m!=='')&&window.PMDashOMS&&$('omsDash')&&!$('omsDash').hidden)PMDashOMS.setPeriodo($('omsDash'),y,m);
   }
   function restablecerGlobal(){
     var A=String(new Date().getFullYear()),M=String(new Date().getMonth()+1);
     [['asAnio',A],['asMes',M],['sgAnio',A],['sgMes',M],['edAnio',A],['edMes',M],['rcAnio',A],['rcMes','0'],['esAnio','todos'],['esMes','0'],['svAnio',A],['svMes','0'],['cfAnio',A]].forEach(function(p){poner(p[0],p[1])});
-    if(window.PMDashOMS&&$('omsDash')&&!$('omsDash').hidden)PMDashOMS.setYear($('omsDash'),A);
+    if(window.PMDashOMS&&$('omsDash')&&!$('omsDash').hidden)PMDashOMS.reset($('omsDash'));
     $('gAnio').value='';$('gMes').value='';
   }
   function llenarGlobal(){
