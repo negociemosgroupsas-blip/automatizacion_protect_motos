@@ -322,7 +322,10 @@
   #v-inicio .svc{order:9!important} #v-inicio .anu{order:10!important}
   .sv-d .t-s{fill:#6b7280;font-size:11px} .sv-d .t-v{fill:#13223f;font-size:12px;font-weight:700} .sv-d .t-w{fill:#fff;font-size:11px;font-weight:700}
   .sv-d .t-g{fill:#1f9d55;font-size:11px;font-weight:800;paint-order:stroke;stroke:#fff;stroke-width:3px} .sv-d .t-ge{fill:#1f9d55;font-size:10px;font-weight:700}
+  #v-inicio .oms-wrap{grid-column:1/-1;order:11} #v-inicio .oms-wrap[hidden]{display:none}
+  #v-inicio .soat-aviso{order:1}
 </style>
+<script src="assets/dash_oms.js"></script>
 </head>
 <body>
 <nav>
@@ -336,9 +339,11 @@
   <section class="vista" id="v-inicio"><div class="pagina">
     <h1>Inicio</h1><p class="sub" id="subInicio">Resumen del mes · usa el buscador de arriba para consultar un cliente</p>
     <a class="soat-aviso" id="soatAviso" href="#soat" hidden></a>
+    <a class="soat-aviso" id="omsAviso" href="#oms" hidden></a>
     <h2 class="sec-t">Alertas de conciliación</h2>
     <div class="alertas" id="alertas"><div class="nota">Abre Conciliación y guarda su URL para ver aquí las alertas.</div></div>
     <div class="grid" id="tarjetas"></div>
+    <div class="oms-wrap" id="omsDash" hidden></div>
     <div class="kpis" id="kpis" hidden style="display:none"></div>
     <div class="nota" id="kpiNota" hidden></div>
   </div></section>
@@ -390,7 +395,7 @@
   var menu=document.getElementById('menu'), tarjetas=document.getElementById('tarjetas');
   MODULOS.forEach(function(m){
     var li=document.createElement('li');
-    li.innerHTML='<a href="#'+m.id+'" data-id="'+m.id+'"><span class="ico">'+m.ico+'</span>'+m.nombre+(m.disponible===false?'<span class="tag">PRÓXIMO</span>':'')+(m.id==='soat'?'<span class="tag" id="soatBadge" hidden></span>':'')+'</a>';
+    li.innerHTML='<a href="#'+m.id+'" data-id="'+m.id+'"><span class="ico">'+m.ico+'</span>'+m.nombre+(m.disponible===false?'<span class="tag">PRÓXIMO</span>':'')+(m.id==='soat'?'<span class="tag" id="soatBadge" hidden></span>':'')+(m.id==='oms'?'<span class="tag" id="omsBadge" hidden></span>':'')+'</a>';
     menu.appendChild(li);
     if(false&&m.desc){
       var a=document.createElement('a');a.className='card';a.href='#'+m.id;
@@ -991,9 +996,9 @@
     var h='<div class="f-caja"><button class="f-cerrar" id="fx" type="button" aria-label="Cerrar">✕</button>'+
       '<h2>'+esc(c.cliente||'(sin nombre)')+'</h2><div>'+(om?'<span class="bd a">Cliente OMS</span>':'')+badgeEstado(c.estado)+'<span class="bd">'+esc(c.forma||'')+'</span>'+(!om&&c.rc!==undefined?(c.rc==='SI'?'<span class="bd a">Lleva RC</span>':'<span class="bd">Sin RC</span>')+(c.ap==='SI'?'<span class="bd a">Lleva AP</span>':'<span class="bd">Sin AP</span>'):'')+badgeConc(f)+'</div>'+
       '<h4>Contrato</h4><div class="f-dat">'+d('Cédula',c.cedula)+d(om?'Vehículo':'Placa',c.placa)+(!om&&c.rc!==undefined?d('Lleva RC',c.rc==='SI'?'Sí':'No')+d('Lleva AP',c.ap==='SI'?'Sí':'No'):'')+d(om?'Referencia':'N° contrato',c.contrato)+d('Asesor',c.asesor)+d('Celular',c.celular)+d('Correo',c.correo||'—')+d(om?'Fecha de inicio':'Fecha de firma',c.fechaFirma)+d('Vence póliza',c.fin)+(om?'':d('Mes / año',[c.mes,c.anio].filter(Boolean).join(' / ')))+
-      (fin?d('Valor cuota',c.valorCuota?pesos(c.valorCuota):'No registrado')+d('Plazo',c.plazo+' cuotas')+d('Cuotas pagadas',pag+' / '+c.plazo)+d('Saldo estimado',c.valorCuota?pesos(Math.max(0,c.plazo-pag)*c.valorCuota):'No registrado'):d('Valor Protect',c.valorProtect?pesos(c.valorProtect):''))+'</div>';
-    h+='<h4>Pagos registrados ('+pagos.length+')</h4>';
-    h+=pagos.length?'<div class="f-scroll"><table class="f-tabla"><tr><th>Fecha</th><th>Cuota</th><th>Valor</th><th>Nota</th></tr>'+pagos.map(function(p){return '<tr><td>'+esc(p.fechaPago)+'</td><td>'+esc(p.cuota)+'</td><td>'+pesos(p.valorPagado)+'</td><td>'+esc(p.nota)+'</td></tr>'}).join('')+'</table></div>':'<div class="nota">'+(fin?'Sin pagos en la hoja Pagos (la cuota 1 se da por pagada al firmar).':'Contrato de contado: no tiene cuotas.')+'</div>';
+      (om?d('Compra',c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma)+d('Valor',c.valorProtect?pesos(c.valorProtect):'')+d('Cumple su año',c.fin):fin?d('Valor cuota',c.valorCuota?pesos(c.valorCuota):'No registrado')+d('Plazo',c.plazo+' cuotas')+d('Cuotas pagadas',pag+' / '+c.plazo)+d('Saldo estimado',c.valorCuota?pesos(Math.max(0,c.plazo-pag)*c.valorCuota):'No registrado'):d('Valor Protect',c.valorProtect?pesos(c.valorProtect):''))+'</div>';
+    if(!om){h+='<h4>Pagos registrados ('+pagos.length+')</h4>';
+    h+=pagos.length?'<div class="f-scroll"><table class="f-tabla"><tr><th>Fecha</th><th>Cuota</th><th>Valor</th><th>Nota</th></tr>'+pagos.map(function(p){return '<tr><td>'+esc(p.fechaPago)+'</td><td>'+esc(p.cuota)+'</td><td>'+pesos(p.valorPagado)+'</td><td>'+esc(p.nota)+'</td></tr>'}).join('')+'</table></div>':'<div class="nota">'+(fin?'Sin pagos en la hoja Pagos (la cuota 1 se da por pagada al firmar).':'Contrato de contado: no tiene cuotas.')+'</div>';}
     if(!om){h+='<h4>Consolidación</h4>';
     if(CON===null)h+='<div class="nota">Abre Conciliación y guarda su URL para ver este dato.</div>';
     else if(!f)h+='<div class="nota">Este contrato no aparece en la conciliación.</div>';
@@ -1113,18 +1118,28 @@
   function cargarOms(){
     if(cargandoOms)return;
     var u=url('pm_oms_url_conector');
-    if(!/^https:\/\/script\.google\.com\//.test(u)){OMS=null;return}
+    if(!/^https:\/\/script\.google\.com\//.test(u)){OMS=null;pintarOms();return}
     cargandoOms=true;
     var cb='pmOms'+Date.now(),s=document.createElement('script'),t=setTimeout(fin,90000);
     function fin(){clearTimeout(t);cargandoOms=false;delete window[cb];s.remove()}
     window[cb]=function(r){fin();
       if(!r||!r.ok)return;
       OMS={contratos:(r.contratos||[]).map(function(c){c.origen='OMS';return c}),pagos:r.pagos||[],gestiones:r.gestiones||[]};
+      pintarOms();
       if(document.activeElement===q&&norm(q.value).length>=2)buscar()};
     s.onerror=function(){fin()};
     s.src=u+(u.indexOf('?')<0?'?':'&')+'action=datos&token=PM-OMS-2026&callback='+cb+'&_='+Date.now();
     document.head.appendChild(s);
   }
+  function pintarOms(){
+    var dash=$('omsDash'),av=$('omsAviso'),bd=$('omsBadge');
+    if(!OMS||!window.PMDashOMS){dash.hidden=true;av.hidden=true;bd.hidden=true;return}
+    dash.hidden=false;PMDashOMS.render(dash,{clientes:OMS.contratos,gestiones:OMS.gestiones});
+    var rs=PMDashOMS.resumen(OMS.contratos,OMS.gestiones),n=rs.porRenovar,nombres=rs.lista.filter(function(x){return x.tipo==='renovar'}).slice(0,3).map(function(x){return String(x.c.cliente||'').split(' ').slice(0,2).join(' ')+' ('+x.veh+')'});
+    bd.hidden=!n;bd.textContent=n;av.hidden=!n;
+    if(n)av.innerHTML='<b>🏍️ '+n+' cliente'+(n>1?'s':'')+' OMS por renovar</b> <span>cumplen su año en 8 días o menos · '+esc(nombres.join(', '))+(n>3?' y más…':'')+'</span> <u>Abrir Clientes OMS →</u>';
+  }
+  window.addEventListener('resize',function(){if(OMS)pintarOms()});
   window.addEventListener('storage',function(ev){if(ev.key==='pm_oms_url_conector')setTimeout(cargarOms,300)});
   function actualizarTodo(){ultimoAuto=Date.now();if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc();cargarSoat();cargarOms()}
   setInterval(function(){if(!document.hidden)actualizarTodo()},60000);

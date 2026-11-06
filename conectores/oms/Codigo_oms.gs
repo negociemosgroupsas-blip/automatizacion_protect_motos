@@ -9,8 +9,8 @@
  *   4) Copia la URL que termina en /exec y pégala en el botón «Clientes OMS» del CRM.
  *
  * Lee la hoja de clientes (columnas: Nombre completo, Cedula, Vehiculo, Valor a pagar, Celular, Compra, Fecha inicio,
- * Fecha fin, Estado). Guarda los pagos en la pestaña «Pagos_OMS» y las gestiones en «Gestiones_OMS» (se crean solas).
- * Cambiar el estado escribe en la columna «Estado» de la hoja de clientes. No toca ninguna otra hoja.
+ * Fecha fin, Estado). NO cobra: sirve para avisar la renovación al año. Guarda los avisos (mensaje enviado, renovó,
+ * no renovará) en la pestaña «Gestiones_OMS» (se crea sola). No toca ninguna otra hoja.
  */
 
 // ==================== CONFIGURACIÓN ====================
@@ -18,7 +18,6 @@ var TOKEN = 'PM-OMS-2026';
 var SHEET_ID = '';                 // ID del Google Sheet (lo que está en su URL entre /d/ y /edit). Si lo dejas vacío, se busca por nombre (SHEET_NOMBRE).
 var SHEET_NOMBRE = 'Historico polizas'; // nombre exacto del Google Sheet de clientes OMS
 var HOJA_CLIENTES = 'Clientes OMS'; // nombre de la pestaña de clientes; si no existe se usa la que tenga las columnas Cedula y Fecha fin (o la primera)
-var HOJA_PAGOS = 'Pagos_OMS';
 var HOJA_GESTIONES = 'Gestiones_OMS';
 var FILA_ENCABEZADOS = 1;          // fila donde están los títulos
 var PLAZO_POR_DEFECTO = 12;        // cuotas de un cliente FINANCIADO si la hoja no trae plazo (se calcula con Fecha inicio y Fecha fin)
@@ -44,9 +43,7 @@ var COLS_OPC = [
   { clave: 'direccion',nombres: ['direccion'] }
 ];
 
-var ENCABEZADOS_PAGOS = ['Fecha de pago', 'Referencia', 'Cédula', 'Cliente', 'N° de cuota', 'Valor pagado', 'Comprobante / nota', 'Registrado por'];
 var ENCABEZADOS_GESTIONES = ['Fecha de gestión', 'Referencia', 'Cédula', 'Cliente', 'Acción', 'Registrado por'];
-var CARPETA_COMPROBANTES = 'Comprobantes de pago OMS';
 
 // ==================== PUNTO DE ENTRADA ====================
 function doGet(e) {
@@ -58,7 +55,6 @@ function doGet(e) {
     } else {
       var accion = params.action || 'datos';
       if (accion === 'datos') salida = accionDatos();
-      else if (accion === 'registrarPago') salida = accionRegistrarPago(params);
       else if (accion === 'estado') salida = accionCambiarEstado(params);
       else if (accion === 'registrarGestion') salida = accionRegistrarGestion(params);
       else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de Clientes OMS activo', version: 'oms-1' };
@@ -68,20 +64,6 @@ function doGet(e) {
     salida = { ok: false, error: 'Error en el servidor: ' + err.message };
   }
   return responder(salida, params.callback);
-}
-
-// Solo para subir la imagen del comprobante (no cabe en una URL de GET).
-function doPost(e) {
-  var salida;
-  try {
-    var body = (e && e.postData && e.postData.contents) ? JSON.parse(e.postData.contents) : {};
-    if (body.token !== TOKEN) salida = { ok: false, error: 'Token inválido.' };
-    else if (body.action === 'subirComprobante') salida = accionSubirComprobante(body);
-    else salida = { ok: false, error: 'Acción desconocida: ' + body.action };
-  } catch (err) {
-    salida = { ok: false, error: 'Error en el servidor: ' + err.message };
-  }
-  return responder(salida, null);
 }
 
 function responder(objeto, callback) {
@@ -111,7 +93,7 @@ function abrirSS() {
 function accionDatos() {
   var ss = abrirSS();
   var hoja = hojaClientes(ss);
-  return { ok: true, contratos: leerClientes(hoja).lista, pagos: leerPagos(ss.getSheetByName(HOJA_PAGOS)), gestiones: leerGestiones(ss.getSheetByName(HOJA_GESTIONES)) };
+  return { ok: true, contratos: leerClientes(hoja).lista, pagos: [], gestiones: leerGestiones(ss.getSheetByName(HOJA_GESTIONES)) };
 }
 
 // Devuelve cada cliente con el mismo formato que usa el módulo de Cobros.
@@ -156,20 +138,6 @@ function leerClientes(hoja) {
   return { lista: lista, mapa: mapa, idx: idx };
 }
 
-function leerPagos(hoja) {
-  if (!hoja) return [];
-  var n = hoja.getLastRow();
-  if (n < 2) return [];
-  var d = hoja.getRange(2, 1, n - 1, 8).getValues(), out = [];
-  for (var i = 0; i < d.length; i++) {
-    var ref = texto(d[i][1]);
-    if (!ref) continue;
-    out.push({ fechaPago: fmt(aFecha(d[i][0])), fechaPagoISO: iso(aFecha(d[i][0])), contrato: ref, cedula: texto(d[i][2]), cliente: texto(d[i][3]),
-      cuota: texto(d[i][4]), valorPagado: Number(d[i][5] || 0), nota: texto(d[i][6]), registradoPor: texto(d[i][7]) });
-  }
-  return out;
-}
-
 function leerGestiones(hoja) {
   if (!hoja) return [];
   var n = hoja.getLastRow();
@@ -201,91 +169,6 @@ function accionRegistrarGestion(p) {
   } finally { lock.releaseLock(); }
 }
 
-// ==================== PAGOS ====================
-function accionRegistrarPago(p) {
-  var ref = texto(p.contrato), cuota = texto(p.cuota), valor = Number(p.valor || 0);
-  if (!ref) return { ok: false, error: 'Falta la referencia del cliente.' };
-  if (!cuota) return { ok: false, error: 'Falta el número de cuota.' };
-  if (!valor || valor <= 0) return { ok: false, error: 'El valor pagado debe ser mayor a 0.' };
-  var fechaPago = parsearFecha(texto(p.fecha)) || new Date();
-  var lock = LockService.getScriptLock();
-  if (!lock.tryLock(15000)) return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
-  try {
-    var ss = abrirSS();
-    var hojaPagos = ss.getSheetByName(HOJA_PAGOS);
-    if (!hojaPagos) { hojaPagos = ss.insertSheet(HOJA_PAGOS); hojaPagos.appendRow(ENCABEZADOS_PAGOS); hojaPagos.getRange(1, 1, 1, ENCABEZADOS_PAGOS.length).setFontWeight('bold'); }
-    hojaPagos.appendRow([fechaPago, ref, texto(p.cedula), texto(p.cliente), cuota, valor, texto(p.nota), texto(p.registradoPor)]);
-
-    // Si con este pago el cliente financiado completó todas las cuotas, pasa a Finalizado (la cuota 1 se da por pagada al comprar)
-    var finalizado = false, hoja = hojaClientes(ss), info = leerClientes(hoja), c = info.mapa[ref];
-    if (c && c.forma === 'FINANCIADO' && c.estado === 'ACTIVO' && c.plazo > 0) {
-      if (contarCuotasPagadas(hojaPagos, ref, c.plazo) + 1 >= c.plazo) { escribirEstado(hoja, info.idx, c.fila, 'FINALIZADO'); finalizado = true; }
-    }
-    return { ok: true, mensaje: 'Pago registrado correctamente.', finalizado: finalizado };
-  } catch (err) {
-    return { ok: false, error: 'No se pudo registrar el pago: ' + err.message };
-  } finally { lock.releaseLock(); }
-}
-
-function contarCuotasPagadas(hojaPagos, ref, plazo) {
-  var n = hojaPagos.getLastRow();
-  if (n < 2) return 0;
-  var d = hojaPagos.getRange(2, 1, n - 1, 8).getValues(), pagadas = {};
-  for (var i = 0; i < d.length; i++) {
-    if (texto(d[i][1]) !== ref) continue;
-    var nums = extraerNumerosCuota(texto(d[i][4]));
-    for (var j = 0; j < nums.length; j++) if (nums[j] >= 1 && nums[j] <= plazo) pagadas[nums[j]] = true;
-  }
-  return Object.keys(pagadas).length;
-}
-
-function extraerNumerosCuota(t) {
-  var nums = [];
-  t = String(t || '').replace(/,/g, ' ');
-  var rt = t.trim().match(/^(\d+)\s*a\s*(\d+)$/i);
-  if (rt) { for (var k = parseInt(rt[1], 10); k <= parseInt(rt[2], 10); k++) nums.push(k); return nums; }
-  t.split(/\s+/).filter(function (x) { return x !== ''; }).forEach(function (parte) {
-    var r = parte.match(/^(\d+)-(\d+)$/);
-    if (r) { for (var n = parseInt(r[1], 10); n <= parseInt(r[2], 10); n++) nums.push(n); }
-    else { var s = parte.match(/\d+/g); if (s) s.forEach(function (x) { nums.push(parseInt(x, 10)); }); }
-  });
-  return nums;
-}
-
-// ==================== COMPROBANTES ====================
-function accionSubirComprobante(b) {
-  var ref = texto(b.contrato);
-  if (!ref) return { ok: false, error: 'Falta la referencia del cliente.' };
-  if (!b.datosBase64) return { ok: false, error: 'No se recibió ninguna imagen.' };
-  var lock = LockService.getScriptLock();
-  if (!lock.tryLock(15000)) return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
-  try {
-    var bytes = Utilities.base64Decode(b.datosBase64), nombre = texto(b.nombreArchivo) || 'comprobante';
-    var ext = (nombre.match(/\.[a-zA-Z0-9]+$/) || [''])[0], partes = [];
-    if (texto(b.cuota)) partes.push('Cuota ' + texto(b.cuota));
-    var ff = fechaParaNombre(texto(b.fecha)); if (ff) partes.push(ff);
-    if (!partes.length) partes.push('comprobante');
-    var blob = Utilities.newBlob(bytes, texto(b.tipoMime) || 'image/jpeg', partes.join(' - ') + ext);
-    var archivo = carpetaCliente(texto(b.cedula) || ref, texto(b.cliente)).createFile(blob);
-    archivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    return { ok: true, url: 'https://drive.google.com/file/d/' + archivo.getId() + '/view' };
-  } catch (err) {
-    return { ok: false, error: 'No se pudo subir el comprobante: ' + err.message };
-  } finally { lock.releaseLock(); }
-}
-
-function carpetaCliente(clave, cliente) {
-  var it = DriveApp.getFoldersByName(CARPETA_COMPROBANTES), raiz = it.hasNext() ? it.next() : DriveApp.createFolder(CARPETA_COMPROBANTES);
-  var sub = raiz.getFolders();
-  while (sub.hasNext()) { var f = sub.next(); if (f.getName().indexOf(clave + ' - ') === 0) return f; }
-  return raiz.createFolder(clave + ' - ' + (cliente || 'Cliente'));
-}
-
-// Selecciónala en el editor y pulsa «Ejecutar» una vez para que Google pida el permiso de Drive.
-function pruebaDrive() {
-  Logger.log(accionSubirComprobante({ contrato: 'PRUEBA', nombreArchivo: 'prueba.txt', tipoMime: 'text/plain', datosBase64: Utilities.base64Encode('prueba') }));
-}
-
 // ==================== ESTADO ====================
 function accionCambiarEstado(p) {
   var ref = texto(p.contrato), nuevo = texto(p.nuevoEstado).toUpperCase();
@@ -315,7 +198,7 @@ function hojaClientes(ss) {
   var clave = function (t) { return String(t).toLowerCase().replace(/[^a-z0-9]/g, ''); }, hojas = ss.getSheets(), i;
   for (i = 0; i < hojas.length; i++) if (clave(hojas[i].getName()) === clave(HOJA_CLIENTES)) return hojas[i];
   for (i = 0; i < hojas.length; i++) {
-    if (hojas[i].getName() === HOJA_PAGOS || hojas[i].getName() === HOJA_GESTIONES || hojas[i].getLastColumn() < 3) continue;
+    if (hojas[i].getName() === HOJA_GESTIONES || hojas[i].getLastColumn() < 3) continue;
     var enc = hojas[i].getRange(FILA_ENCABEZADOS, 1, 1, hojas[i].getLastColumn()).getDisplayValues()[0].map(normalizar);
     if (enc.indexOf('cedula') >= 0 && (enc.indexOf('fecha fin') >= 0 || enc.indexOf('fecha final') >= 0)) return hojas[i];
   }
