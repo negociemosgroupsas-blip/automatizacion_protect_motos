@@ -149,6 +149,7 @@
       '.od-card{background:#fff;border:1px solid #e3e6eb;border-radius:14px;padding:14px 16px;min-width:0} .od-card h3{margin:0 0 2px;font-size:.98rem;color:#13223f;border-left:4px solid #f0c94a;padding-left:9px;line-height:1.2;font-family:inherit}',
       '.od-card .od-sub{font-size:.76rem;color:#6b7280;margin:2px 0 8px;min-height:1.1em} .od-c8{grid-column:span 8} .od-c4{grid-column:span 4} .od-c6{grid-column:span 6}',
       '.od-fil{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 8px} .od-fil label{display:flex;align-items:center;gap:6px;font-size:.76rem;color:#6b7280} .od-fil select{border:1px solid #e3e6eb;background:#fff;border-radius:8px;padding:4px 8px;font-size:.8rem;color:#1f2430;cursor:pointer}',
+      '.od-ayuda{margin:0 0 6px;font-size:.78rem;color:#6b7a99;line-height:1.35;padding-right:34px}',
       '.od-leg2{display:flex;gap:14px;flex-wrap:wrap;font-size:.76rem;color:#6b7280;margin:0 0 4px} .od-leg2 i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}',
       '.od-dona{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center} .od-leg{display:grid;gap:7px;min-width:150px;flex:1;font-size:.82rem}',
       '.od-leg div{display:grid;grid-template-columns:12px 1fr auto auto;gap:8px;align-items:center} .od-leg i{width:12px;height:12px;border-radius:4px} .od-leg b{font-size:.95rem;color:#13223f} .od-leg .p{color:#6b7280;font-size:.76rem;min-width:34px;text-align:right}',
@@ -165,6 +166,43 @@
       '@media(max-width:1000px){.od-c8,.od-c4,.od-c6{grid-column:1/-1}}'
     ].join('\n');
     document.head.appendChild(s);
+  }
+
+
+  /* ---------- Ayuda ⓘ (la usan también las tarjetas del Inicio) ---------- */
+  var ayDone = false, ayPop = null, ayTimer = null;
+  function ayCss() {
+    if (document.getElementById('ay-css')) return;
+    var st = document.createElement('style'); st.id = 'ay-css';
+    st.textContent = [
+      '.ay-c{position:relative}',
+      '.ay-i{position:absolute;right:12px;top:12px;width:26px;height:26px;border-radius:50%;border:1px solid rgba(120,140,190,.5);background:rgba(120,140,190,.14);color:#6b7a99;font-size:.9rem;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:3;font-family:Georgia,serif;font-style:italic}',
+      '.ay-i:hover,.ay-i:focus{background:#fdc33e;color:#1a1200;border-color:#fdc33e;outline:none}',
+      '.ay-sub{margin:0 0 6px;font-size:.78rem;color:#6b7a99;line-height:1.35;padding-right:34px}',
+      '#ayPop{position:fixed;display:none;z-index:9999;max-width:300px;background:#13223f;color:#eef2ff;border:1px solid #3b4f8f;border-radius:12px;padding:10px 12px;font-size:.8rem;line-height:1.45;box-shadow:0 10px 28px rgba(0,0,0,.4)}',
+      '#ayPop b{color:#fdc33e;display:block;margin-bottom:3px}'
+    ].join('\n');
+    document.head.appendChild(st);
+  }
+  function ayBoton(titulo, info) { return '<button type="button" class="ay-i" aria-label="Cómo se lee esta gráfica" data-t="' + esc(titulo) + '" data-info="' + esc(info) + '">i</button>'; }
+  function ayWire() {
+    ayCss();
+    if (ayDone) return; ayDone = true;
+    ayPop = document.createElement('div'); ayPop.id = 'ayPop'; document.body.appendChild(ayPop);
+    function mostrar(b) {
+      clearTimeout(ayTimer);
+      ayPop.innerHTML = '<b>' + esc(b.getAttribute('data-t') || 'Cómo se lee') + '</b>' + esc(b.getAttribute('data-info') || '');
+      ayPop.style.display = 'block';
+      var r = b.getBoundingClientRect(), w = ayPop.offsetWidth, x = Math.min(window.innerWidth - w - 10, Math.max(10, r.right - w)), y = r.bottom + 8;
+      if (y + ayPop.offsetHeight > window.innerHeight - 10) y = Math.max(10, r.top - ayPop.offsetHeight - 8);
+      ayPop.style.left = x + 'px'; ayPop.style.top = y + 'px';
+    }
+    function ocultar() { ayTimer = setTimeout(function () { ayPop.style.display = 'none'; }, 120); }
+    document.addEventListener('mouseover', function (ev) { var b = ev.target.closest && ev.target.closest('.ay-i'); if (b) mostrar(b); });
+    document.addEventListener('mouseout', function (ev) { var b = ev.target.closest && ev.target.closest('.ay-i'); if (b) ocultar(); });
+    document.addEventListener('focusin', function (ev) { var b = ev.target.closest && ev.target.closest('.ay-i'); if (b) mostrar(b); });
+    document.addEventListener('focusout', function (ev) { var b = ev.target.closest && ev.target.closest('.ay-i'); if (b) ocultar(); });
+    document.addEventListener('click', function (ev) { var b = ev.target.closest && ev.target.closest('.ay-i'); if (b) { mostrar(b); return; } ayPop.style.display = 'none'; });
   }
 
   var ST = {};     // filtros de cada tarjeta, por tablero
@@ -221,14 +259,16 @@
         '<div class="od-k"><b>' + (tasaTodos === null ? '—' : tasaTodos + ' %') + '</b><span>Tasa de renovación</span></div>' +
       '</div>' +
       '<div class="od-grid12">' +
-        '<div class="od-card od-c8"><h3>Clientes nuevos y valor vendido</h3><p class="od-sub" data-s="1"></p>' + filtro('combo', lista, true) + '<div class="od-leg2"><span><i style="background:#13223f"></i>Columnas: clientes nuevos</span><span><i style="background:#1f9d55"></i>Línea: valor vendido</span></div><div data-g="combo"></div></div>' +
-        '<div class="od-card od-c4"><h3>Contado o financiado</h3><p class="od-sub" data-s="2"></p>' + filtro('forma', lista, true) + '<div data-g="forma"></div></div>' +
-        '<div class="od-card od-c8"><h3>Valor vendido acumulado del año</h3><p class="od-sub" data-s="3"></p>' + filtro('acum', lista, false) + '<div class="od-leg2"><span><i style="background:#1f9d55"></i>Este año</span><span><i style="background:#b8c0d4"></i>Año anterior</span></div><div data-g="acum"></div></div>' +
-        '<div class="od-card od-c4"><h3>Renovaciones</h3><p class="od-sub" data-s="4"></p>' + filtro('med', lista, false) + '<div data-g="med"></div></div>' +
-        '<div class="od-card od-c6"><h3>Estado de los clientes</h3><p class="od-sub" data-s="5"></p>' + filtro('estados', lista, true) + '<div data-g="estados"></div></div>' +
-        '<div class="od-card od-c6"><h3>Vehículos más vendidos</h3><p class="od-sub" data-s="6"></p>' + filtro('veh', lista, true) + '<div data-g="veh"></div></div>' +
+        '<div class="od-card od-c8 ay-c"><h3>OMS: clientes nuevos y valor vendido</h3>' + ayBoton('OMS: clientes nuevos y valor vendido','Sale de la hoja de clientes OMS: cada cliente cuenta en el mes de su fecha de inicio. El valor es lo que figura en «Valor a pagar» (en financiados, por las cuotas del año).') + '<p class="od-ayuda">Clientes nuevos de cada mes (columnas) y el valor vendido (línea).</p><p class="od-sub" data-s="1"></p>' + filtro('combo', lista, true) + '<div class="od-leg2"><span><i style="background:#13223f"></i>Columnas: clientes nuevos</span><span><i style="background:#1f9d55"></i>Línea: valor vendido</span></div><div data-g="combo"></div></div>' +
+        '<div class="od-card od-c4 ay-c"><h3>OMS: ¿contado o financiado?</h3>' + ayBoton('OMS: ¿contado o financiado?','Sale de la columna Compra de la hoja OMS. Usa el año y el mes de la fecha de inicio.') + '<p class="od-ayuda">Cómo pagaron los clientes OMS del período.</p><p class="od-sub" data-s="2"></p>' + filtro('forma', lista, true) + '<div data-g="forma"></div></div>' +
+        '<div class="od-card od-c8 ay-c"><h3>OMS: valor vendido acumulado</h3>' + ayBoton('OMS: valor vendido acumulado','La línea verde es este año y la punteada gris el año anterior en el mismo período. Si sube más rápido, vendemos más.') + '<p class="od-ayuda">Suma mes a mes del valor vendido, contra el año anterior.</p><p class="od-sub" data-s="3"></p>' + filtro('acum', lista, false) + '<div class="od-leg2"><span><i style="background:#1f9d55"></i>Este año</span><span><i style="background:#b8c0d4"></i>Año anterior</span></div><div data-g="acum"></div></div>' +
+        '<div class="od-card od-c4 ay-c"><h3>OMS: renovaciones</h3>' + ayBoton('OMS: renovaciones','Cuenta los clientes cuya fecha fin ya pasó. Renovó = hay un registro nuevo del mismo cliente y vehículo, o lo marcaste «Renovó». Sin respuesta = aún no se sabe.') + '<p class="od-ayuda">Qué parte de los clientes que cumplieron su año renovó.</p><p class="od-sub" data-s="4"></p>' + filtro('med', lista, false) + '<div data-g="med"></div></div>' +
+        '<div class="od-card od-c6 ay-c"><h3>OMS: ¿cuántos clientes están activos?</h3>' + ayBoton('OMS: ¿cuántos clientes están activos?','Sale de la columna Estado de la hoja OMS. Puedes filtrar por la fecha de inicio.') + '<p class="od-ayuda">Activos, cancelados y finalizados de OMS.</p><p class="od-sub" data-s="5"></p>' + filtro('estados', lista, true) + '<div data-g="estados"></div></div>' +
+        '<div class="od-card od-c6 ay-c"><h3>OMS: vehículos más vendidos</h3>' + ayBoton('OMS: vehículos más vendidos','Cuenta la columna Vehículo de la hoja OMS. Muestra los 6 primeros.') + '<p class="od-ayuda">Los modelos que más se venden en el período.</p><p class="od-sub" data-s="6"></p>' + filtro('veh', lista, true) + '<div data-g="veh"></div></div>' +
       '</div>';
     var q = function (s) { return root.querySelector(s); };
+    ayWire();
+    [].forEach.call(root.querySelectorAll('.od-card'), function (c) { c.setAttribute('data-buscar', (c.textContent || '').toLowerCase().slice(0, 400)); });
 
     // valores de los filtros + eventos
     Object.keys(S).forEach(function (k) {
@@ -295,5 +335,6 @@
   function setYear(root, y) { aplicar(root, y, null); }
   function reset(root) { if (!root || !root.id || !LAST[root.id]) return; delete ST[root.id]; delete TOP[root.id]; render(root, LAST[root.id]); }
 
+  window.PMAyuda = { wire: ayWire, boton: ayBoton, css: ayCss };
   window.PMDashOMS = { render: render, setYear: setYear, setPeriodo: aplicar, reset: reset, resumen: resumen, analizar: analizar, DIAS_AVISO: DIAS_AVISO, ACC_ENV: ACC_ENV, ACC_REN: ACC_REN, ACC_NO: ACC_NO };
 })();

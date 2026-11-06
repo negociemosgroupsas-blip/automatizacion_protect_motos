@@ -437,6 +437,30 @@
   body.inicio-claro .est-tot{background:linear-gradient(135deg,#312e81,#6d28d9)!important}
   body.inicio-claro .od-k,body.inicio-claro .od-card{box-shadow:0 6px 18px rgba(30,50,100,.08)}
   .cf-ley{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin:0 0 8px;font-size:.84rem;color:var(--texto,#1f2430)} .cf-ley span{display:inline-flex;align-items:center;gap:7px} .cf-ley i{display:inline-block;width:14px;height:14px;border-radius:4px} .cf-ley-t{font-size:.78rem;color:var(--suave,#6b7280)}
+
+  /* ===== Claridad: barra de accesos, buscador de gráficas, secciones plegables y ayuda ⓘ ===== */
+  .in-nav{grid-column:1/-1;order:2;position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between;padding:8px 10px;border-radius:14px;backdrop-filter:blur(8px);background:rgba(15,24,52,.88);border:1px solid #26376a;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+  .in-chips{display:flex;gap:6px;flex-wrap:wrap}
+  .in-chips a{color:#c4d1ee;text-decoration:none;font-size:.8rem;font-weight:700;padding:6px 12px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+  .in-chips a:hover{background:#25366a;color:#fff} .in-chips a.act{background:#fdc33e;color:#1a1200}
+  #inBusca{flex:0 1 270px;min-width:160px;padding:7px 12px;border-radius:999px;border:1px solid #2f4284;background:#0d1530;color:#e8eefc;font-size:.82rem}
+  #inBusca::placeholder{color:#8ea2cd} #inBusca:focus{outline:2px solid #fdc33e;border-color:transparent}
+  body.inicio-claro .in-nav{background:rgba(255,255,255,.92);border-color:#dbe3f1;box-shadow:0 6px 16px rgba(30,50,100,.10)}
+  body.inicio-claro .in-chips a{color:#3a4a6e} body.inicio-claro .in-chips a:hover{background:#e6ecf8;color:#13223f} body.inicio-claro .in-chips a.act{background:#13223f;color:#fff}
+  body.inicio-claro #inBusca{background:#f4f6fb;color:#1f2430;border-color:#d3dcee} body.inicio-claro #inBusca::placeholder{color:#7a88a8}
+  .in-sec,#inKpis{scroll-margin-top:72px} .in-sec{cursor:pointer;user-select:none} .in-sec em{font-style:normal;margin-left:auto;font-size:.85rem;opacity:.7;transition:transform .15s} .in-sec:hover{color:#fff}
+  body.inicio-claro .in-sec:hover{color:#13223f}
+  #v-inicio .pagina.cierra-ventas [data-sec="ventas"]:not(.in-sec),#v-inicio .pagina.cierra-clientes [data-sec="clientes"]:not(.in-sec),#v-inicio .pagina.cierra-conc [data-sec="conc"]:not(.in-sec),#v-inicio .pagina.cierra-soat [data-sec="soat"]:not(.in-sec),#v-inicio .pagina.cierra-oms [data-sec="oms"]:not(.in-sec){display:none!important}
+  #v-inicio .pagina.cierra-ventas #sec-ventas em,#v-inicio .pagina.cierra-clientes #sec-clientes em,#v-inicio .pagina.cierra-conc #sec-conc em,#v-inicio .pagina.cierra-soat #sec-soat em,#v-inicio .pagina.cierra-oms #sec-oms em{transform:rotate(-90deg)}
+  #v-inicio .pagina.buscando [data-sec]{display:block!important} #v-inicio .pagina.buscando .alertas[data-sec]{display:grid!important}
+  #v-inicio .pagina.buscando [data-sec].oculta-b,#v-inicio .pagina .oculta-b{display:none!important}
+  #v-inicio .ay-c>h3{padding-right:40px} #v-inicio .card h3 .ic{margin-right:7px;font-family:system-ui,"Segoe UI Emoji",sans-serif;font-size:.95em}
+  #v-inicio .ruta .ay-i{top:10px;right:12px;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.4);color:#dbe3f5}
+  #v-inicio .card.ay-c>.ay-sub,#v-inicio .ay-c>.ay-sub{color:var(--suave,#6b7280)}
+  body.tema-inicio .ay-i{color:#c4d1ee;background:rgba(160,180,230,.14);border-color:rgba(160,180,230,.45)}
+  body.tema-inicio .od-ayuda,body.tema-inicio .ay-sub{color:#a3b4d8}
+  body.inicio-claro .od-ayuda,body.inicio-claro .ay-sub{color:#5f6f93}
+  @media(max-width:760px){.in-nav{position:static;flex-direction:column;align-items:stretch} .in-chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px} #inBusca{flex:1 1 auto;width:100%}}
 </style>
 <script src="assets/dash_oms.js"></script>
 </head>
@@ -460,12 +484,18 @@
         <span id="gUlt"></span>
       </div>
     </div>
+    <div class="in-nav" id="inNav">
+      <div class="in-chips" id="inChips">
+        <a href="#" data-to="inKpis">Resumen</a><a href="#" data-to="sec-ventas">Ventas y contratos</a><a href="#" data-to="sec-clientes">Clientes y seguros</a><a href="#" data-to="sec-conc">Conciliación</a><a href="#" data-to="sec-soat">SOAT</a><a href="#" data-to="sec-oms">Clientes OMS</a>
+      </div>
+      <input type="search" id="inBusca" placeholder="Buscar gráfica… (ej. asesor, RC, SOAT)" aria-label="Buscar gráfica">
+    </div>
     <div class="in-kpis" id="inKpis"></div>
-    <div class="in-sec" style="order:4"><i></i>Ventas y contratos</div>
-    <div class="in-sec" style="order:8"><i></i>Clientes y seguros</div>
-    <div class="in-sec" style="order:13"><i></i>Conciliación de pagos</div>
-    <div class="in-sec" style="order:15"><i></i>SOAT</div>
-    <div class="in-sec" style="order:17"><i></i>Clientes OMS</div>
+    <div class="in-sec" id="sec-ventas" data-sec="ventas" style="order:4"><i></i>Ventas y contratos<em>▾</em></div>
+    <div class="in-sec" id="sec-clientes" data-sec="clientes" style="order:8"><i></i>Clientes y seguros<em>▾</em></div>
+    <div class="in-sec" id="sec-conc" data-sec="conc" style="order:13"><i></i>Conciliación de pagos<em>▾</em></div>
+    <div class="in-sec" id="sec-soat" data-sec="soat" style="order:15"><i></i>SOAT<em>▾</em></div>
+    <div class="in-sec" id="sec-oms" data-sec="oms" style="order:17"><i></i>Clientes OMS<em>▾</em></div>
     <h1 style="display:none">Inicio</h1><p class="sub" id="subInicio">Resumen del mes · usa el buscador de arriba para consultar un cliente</p>
     <h2 class="sec-t">Alertas de conciliación</h2>
     <div class="alertas" id="alertas"><div class="nota">Abre Conciliación y guarda su URL para ver aquí las alertas.</div></div>
@@ -1329,6 +1359,60 @@
   if(window.aplicarTema0)window.aplicarTema0();
   setInterval(llenarGlobal,4000);setTimeout(llenarGlobal,1500);
   pintarKpis();
+  /* ===== Claridad de cada gráfica: título simple, qué responde, ⓘ cómo se lee, accesos y buscador ===== */
+  var TARJETAS=[
+    ['.ruta:not(.ruta-hito)','¿Cómo vamos con la meta del mes?','🏍️','','La moto avanza según los contratos del mes contra la meta (105). La línea punteada con «hoy» marca el ritmo que deberíamos llevar a esta fecha. Toca la moto para ver el detalle.','ventas',1],
+    ['.card.meta','Avance de la meta de contratos','🎯','Cuántos contratos llevamos este mes y cuántos faltan para la meta.','Cuenta los contratos de Protect con cliente en el mes actual (columnas I y J de la hoja). No cuenta los anulados. La marca del medidor es el ritmo esperado a hoy. Puedes cambiar la meta con «Cambiar meta».','ventas',1],
+    ['.asr','¿Quién vende más?','🏆','Contratos firmados por cada asesor en el período elegido.','Cada barra es un asesor (columna B de Protect) y el número es cuántos contratos firmó. El porcentaje es su parte del total. El primero va en dorado.','ventas',1],
+    ['.cfc','Contratos mes a mes, por año','📊','Total de contratos de cada mes y comparación entre años; también contado y financiados.','Vista «Comparar años»: un color por año y el número de cada columna es el total del mes. Vista «Contado y financiados»: dorado = contado, azul = financiados. Sale de las columnas I, J y T de Protect. No cuenta anulados.','ventas',1],
+    ['.seg','¿Qué protección llevan los contratos?','🛡️','Reparte los contratos según lleven solo Protect, RC, AP o varias.','Todos los contratos llevan Protect Motos. RC sale de la columna U y AP de la columna W de la hoja (SI = lo lleva). Cambia el año y el mes con los filtros.','clientes',1],
+    ['.rcm','Contratos con RC y sin RC, mes a mes','🧾','Cuántos contratos de cada mes llevan RC y cuántos no.','Columna dorada = contratos con RC, celeste = sin RC. Con «Mostrar» puedes ver solo uno de los dos. Sale de la columna U de Protect.','clientes',1],
+    ['.edc','¿Quién nos compra? Edad y ticket promedio','👥','Rango de edad que más compra y valor promedio de cada venta.','La edad sale de la columna G (o de la fecha de nacimiento). En financiados el ticket es la cuota mensual promedio; en contado, el valor de la venta.','clientes',1],
+    ['.anu','¿Cuántos clientes están activos?','✅','Activos, finalizados, cancelados y anulados de Protect.','Cuenta el texto de la columna AR de la hoja, igual que el botón Cobros. Los anulados se muestran aparte y no cuentan como vendidos. Con «¿Cómo se cuenta?» ves el detalle por año.','clientes',1],
+    ['.svc','SOAT: cuántos vendemos y cuánto ganamos','🛡️','SOAT vendidos por mes (columnas) y su ganancia (línea verde).','Sale de la hoja Soat: cada SOAT cuenta en el mes de su fecha de venta. La escala verde de la derecha es la ganancia.','soat',1]
+  ];
+  function aclarar(){
+    if(window.PMAyuda)PMAyuda.wire();
+    TARJETAS.forEach(function(t){
+      var c=document.querySelector('#v-inicio '+t[0]);if(!c||c.dataset.aclarado)return;
+      c.dataset.aclarado='1';c.classList.add('ay-c');c.setAttribute('data-sec',t[5]);
+      var h=c.querySelector('h3');
+      if(h){
+        var suf=(h.textContent.match(/\s·\s.+$/)||[''])[0];     // conserva «· Noviembre 2026» si lo tenía
+        h.innerHTML='<span class="ic">'+t[2]+'</span>'+t[1].replace(/&/g,'&amp;')+(suf?'<span style="font-weight:600;opacity:.8">'+suf.replace(/&/g,'&amp;')+'</span>':'');
+        if(t[3]){var p=document.createElement('p');p.className='ay-sub';p.textContent=t[3];h.parentNode.insertBefore(p,h.nextSibling)}
+      }
+      var b=document.createElement('span');b.innerHTML=PMAyuda.boton(t[1],t[4]);c.insertBefore(b.firstChild,c.firstChild);
+      c.setAttribute('data-buscar',(t[1]+' '+t[3]+' '+t[4]).toLowerCase());
+    });
+    var al=document.querySelector('#v-inicio .alertas');if(al){al.setAttribute('data-sec','conc');al.setAttribute('data-buscar','conciliación pagos consolidados faltan por consolidar pagaron de menos')}
+    var om=$('omsDash');if(om)om.setAttribute('data-sec','oms');
+  }
+  aclarar();
+  /* accesos rápidos */
+  var chips=$('inChips');
+  if(chips)chips.addEventListener('click',function(ev){var a=ev.target.closest('a');if(!a)return;ev.preventDefault();var d=document.getElementById(a.dataset.to);if(!d)return;
+    var cl=d.dataset&&d.dataset.sec?'cierra-'+d.dataset.sec:'';if(cl)$('v-inicio').querySelector('.pagina').classList.remove(cl);
+    d.scrollIntoView({behavior:'smooth',block:'start'})});
+  /* resalta el acceso de la sección que se está viendo */
+  var vi=$('v-inicio');
+  vi.addEventListener('scroll',function(){
+    var ids=['inKpis','sec-ventas','sec-clientes','sec-conc','sec-soat','sec-oms'],act=ids[0],top=vi.getBoundingClientRect().top+90;
+    ids.forEach(function(i){var e=document.getElementById(i);if(e&&e.getBoundingClientRect().top<=top)act=i});
+    [].forEach.call(chips.querySelectorAll('a'),function(a){a.classList.toggle('act',a.dataset.to===act)})});
+  /* secciones plegables */
+  [].forEach.call(document.querySelectorAll('#v-inicio .in-sec[data-sec]'),function(h){h.addEventListener('click',function(){$('v-inicio').querySelector('.pagina').classList.toggle('cierra-'+h.dataset.sec)})});
+  /* buscador de gráficas */
+  var busca=$('inBusca');
+  function filtrarGraficas(){
+    var q=norm(busca.value),pg=$('v-inicio').querySelector('.pagina');
+    pg.classList.toggle('buscando',!!q);
+    [].forEach.call(pg.querySelectorAll('[data-buscar]'),function(e){var ok=!q||norm(e.getAttribute('data-buscar')).indexOf(q)>-1;e.classList.toggle('oculta-b',!ok)});
+    var kp=$('inKpis');if(kp)kp.classList.toggle('oculta-b',!!q);
+    if(q){var p=pg.querySelector('[data-buscar]:not(.oculta-b)');if(p)p.scrollIntoView({behavior:'smooth',block:'center'})}
+  }
+  busca.addEventListener('input',filtrarGraficas);
+  setInterval(function(){if(busca.value)filtrarGraficas()},3000);
   function actualizarTodo(){ultimoAuto=Date.now();if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc();cargarSoat();cargarOms()}
   setInterval(function(){if(!document.hidden)actualizarTodo()},60000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&Date.now()-ultimoAuto>60000)actualizarTodo()});
