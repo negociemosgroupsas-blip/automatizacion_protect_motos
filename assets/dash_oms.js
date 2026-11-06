@@ -147,7 +147,7 @@
       '.od-k{background:#fff;border:1px solid #e3e6eb;border-radius:14px;padding:12px 14px;border-top:3px solid #d6a417} .od-k b{display:block;font-size:1.7rem;color:#13223f;line-height:1.1} .od-k span{font-size:.72rem;color:#6b7280;text-transform:uppercase;letter-spacing:.3px} .od-k.al{border-top-color:#d64545} .od-k.al b{color:#d64545} .od-k.vd{border-top-color:#1f9d55}',
       '.od-grid12{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}',
       '.od-card{background:#fff;border:1px solid #e3e6eb;border-radius:14px;padding:14px 16px;min-width:0} .od-card h3{margin:0 0 2px;font-size:.98rem;color:#13223f;border-left:4px solid #f0c94a;padding-left:9px;line-height:1.2;font-family:inherit}',
-      '.od-card .od-sub{font-size:.76rem;color:#6b7280;margin:2px 0 8px;min-height:1.1em} .od-c8{grid-column:span 8} .od-c4{grid-column:span 4} .od-c6{grid-column:span 6}',
+      '.od-card .od-sub{font-size:.76rem;color:#6b7280;margin:2px 0 8px;min-height:1.1em} .od-c8{grid-column:span 8} .od-c4{grid-column:span 4} .od-c6{grid-column:span 6} .od-c12{grid-column:1/-1}',
       '.od-fil{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 8px} .od-fil label{display:flex;align-items:center;gap:6px;font-size:.76rem;color:#6b7280} .od-fil select{border:1px solid #e3e6eb;background:#fff;border-radius:8px;padding:4px 8px;font-size:.8rem;color:#1f2430;cursor:pointer}',
       '.od-ayuda{margin:0 0 6px;font-size:.78rem;color:#6b7a99;line-height:1.35;padding-right:34px}',
       '.od-leg2{display:flex;gap:14px;flex-wrap:wrap;font-size:.76rem;color:#6b7280;margin:0 0 4px} .od-leg2 i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}',
@@ -163,7 +163,7 @@
       '.od-rank{display:grid;gap:8px} .od-r{display:grid;grid-template-columns:18px minmax(80px,150px) 1fr 30px 38px;gap:8px;align-items:center;font-size:.82rem} .od-rk{color:#6b7280;text-align:right;font-size:.75rem} .od-rn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#13223f}',
       '.od-rp{background:#e8ebf3;border-radius:999px;height:12px;overflow:hidden} .od-rb{height:100%;border-radius:999px} .od-r b{color:#13223f;text-align:right} .od-rq{color:#6b7280;font-size:.74rem;text-align:right}',
       '.od-tip{position:fixed;display:none;background:#13223f;color:#fff;border-radius:8px;padding:7px 10px;font-size:.78rem;pointer-events:none;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.25)}',
-      '@media(max-width:1000px){.od-c8,.od-c4,.od-c6{grid-column:1/-1}}'
+      '@media(max-width:1000px){.od-c8,.od-c4,.od-c6,.od-c12{grid-column:1/-1}}'
     ].join('\n');
     document.head.appendChild(s);
   }
@@ -261,10 +261,9 @@
       '<div class="od-grid12">' +
         '<div class="od-card od-c8 ay-c"><h3>OMS: clientes nuevos y valor vendido</h3>' + ayBoton('OMS: clientes nuevos y valor vendido','Sale de la hoja de clientes OMS: cada cliente cuenta en el mes de su fecha de inicio. El valor es lo que figura en «Valor a pagar» (en financiados, por las cuotas del año).') + '<p class="od-ayuda">Clientes nuevos de cada mes (columnas) y el valor vendido (línea).</p><p class="od-sub" data-s="1"></p>' + filtro('combo', lista, true) + '<div class="od-leg2"><span><i style="background:#13223f"></i>Columnas: clientes nuevos</span><span><i style="background:#1f9d55"></i>Línea: valor vendido</span></div><div data-g="combo"></div></div>' +
         '<div class="od-card od-c4 ay-c"><h3>OMS: ¿contado o financiado?</h3>' + ayBoton('OMS: ¿contado o financiado?','Sale de la columna Compra de la hoja OMS. Usa el año y el mes de la fecha de inicio.') + '<p class="od-ayuda">Cómo pagaron los clientes OMS del período.</p><p class="od-sub" data-s="2"></p>' + filtro('forma', lista, true) + '<div data-g="forma"></div></div>' +
-        '<div class="od-card od-c8 ay-c"><h3>OMS: valor vendido acumulado</h3>' + ayBoton('OMS: valor vendido acumulado','La línea verde es este año y la punteada gris el año anterior en el mismo período. Si sube más rápido, vendemos más.') + '<p class="od-ayuda">Suma mes a mes del valor vendido, contra el año anterior.</p><p class="od-sub" data-s="3"></p>' + filtro('acum', lista, false) + '<div class="od-leg2"><span><i style="background:#1f9d55"></i>Este año</span><span><i style="background:#b8c0d4"></i>Año anterior</span></div><div data-g="acum"></div></div>' +
+        '<div class="od-card od-c8 ay-c"><h3>OMS: vehículos más vendidos</h3>' + ayBoton('OMS: vehículos más vendidos','Cuenta la columna Vehículo de la hoja OMS. Muestra los 6 primeros.') + '<p class="od-ayuda">Los modelos que más se venden en el período.</p><p class="od-sub" data-s="6"></p>' + filtro('veh', lista, true) + '<div data-g="veh"></div></div>' +
         '<div class="od-card od-c4 ay-c"><h3>OMS: renovaciones</h3>' + ayBoton('OMS: renovaciones','Cuenta los clientes cuya fecha fin ya pasó. Renovó = hay un registro nuevo del mismo cliente y vehículo, o lo marcaste «Renovó». Sin respuesta = aún no se sabe.') + '<p class="od-ayuda">Qué parte de los clientes que cumplieron su año renovó.</p><p class="od-sub" data-s="4"></p>' + filtro('med', lista, false) + '<div data-g="med"></div></div>' +
-        '<div class="od-card od-c6 ay-c"><h3>OMS: ¿cuántos clientes están activos?</h3>' + ayBoton('OMS: ¿cuántos clientes están activos?','Sale de la columna Estado de la hoja OMS. Puedes filtrar por la fecha de inicio.') + '<p class="od-ayuda">Activos, cancelados y finalizados de OMS.</p><p class="od-sub" data-s="5"></p>' + filtro('estados', lista, true) + '<div data-g="estados"></div></div>' +
-        '<div class="od-card od-c6 ay-c"><h3>OMS: vehículos más vendidos</h3>' + ayBoton('OMS: vehículos más vendidos','Cuenta la columna Vehículo de la hoja OMS. Muestra los 6 primeros.') + '<p class="od-ayuda">Los modelos que más se venden en el período.</p><p class="od-sub" data-s="6"></p>' + filtro('veh', lista, true) + '<div data-g="veh"></div></div>' +
+        '<div class="od-card od-c12 ay-c"><h3>OMS: ¿cuántos clientes están activos?</h3>' + ayBoton('OMS: ¿cuántos clientes están activos?','Sale de la columna Estado de la hoja OMS. Puedes filtrar por la fecha de inicio.') + '<p class="od-ayuda">Activos, cancelados y finalizados de OMS.</p><p class="od-sub" data-s="5"></p>' + filtro('estados', lista, true) + '<div data-g="estados"></div></div>' +
       '</div>';
     var q = function (s) { return root.querySelector(s); };
     ayWire();
@@ -296,13 +295,6 @@
     var pal = { Financiado: '#13223f', Contado: '#d6a417', 'Sin dato': '#b8c0d4' };
     q('[data-s="2"]').textContent = nF ? nF + ' clientes' : 'Sin ventas en el período';
     dona(q('[data-g="forma"]'), Object.keys(cf).sort(function (p, r) { return cf[r] - cf[p]; }).map(function (k) { return { l: k, n: cf[k], c: pal[k] }; }), nF);
-
-    // 3) valor acumulado del año
-    var yv = S.acum.y === 'todos' ? yA : +S.acum.y, A = [], B = [], ca = 0, cb = 0;
-    for (i = 0; i < 12; i++) { var oa = porMes[yv * 12 + i], ob = porMes[(yv - 1) * 12 + i]; ca += oa ? oa.g : 0; cb += ob ? ob.g : 0; A.push(yv === yA && i > mA ? null : ca); B.push(cb); }
-    var u = 0; A.forEach(function (x, ix) { if (x !== null) u = ix; });
-    q('[data-s="3"]').textContent = yv + ': ' + pesos(A[u] || 0) + (B[u] ? ' · ' + ((A[u] || 0) >= B[u] ? '▲ +' : '▼ ') + Math.abs(Math.round(((A[u] || 0) - B[u]) / B[u] * 100)) + ' % frente a ' + (yv - 1) + ' (mismo período)' : '');
-    acumulada(q('[data-g="acum"]'), A, B, yv);
 
     // 4) renovaciones
     q('[data-s="4"]').textContent = baseR ? 'De ' + baseR + ' clientes que ya cumplieron su año' : 'Aún no hay clientes que hayan cumplido su año';
