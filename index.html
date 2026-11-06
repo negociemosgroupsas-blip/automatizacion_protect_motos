@@ -468,6 +468,28 @@
   .cf-ay-h label{font-size:.74rem;color:var(--suave,#6b7280);display:flex;align-items:center;gap:6px} .cf-ay-h select{border:1px solid var(--borde,#e3e6eb);background:var(--tarjeta,#fff);color:var(--texto,#1f2430);border-radius:8px;padding:4px 8px;font-size:.8rem}
   body.tema-inicio .cf-ay{background:#1b2850}
   @media(max-width:560px){.cf-ays{grid-template-columns:1fr}}
+
+  .in-rep{position:relative} #gRep{background:#34d399!important;color:#04251a!important}
+  .in-repm{position:absolute;right:0;top:calc(100% + 8px);z-index:30;min-width:330px;background:#13223f;color:#eef2ff;border:1px solid #3b4f8f;border-radius:14px;padding:10px;box-shadow:0 14px 34px rgba(0,0,0,.45);display:grid;gap:4px}
+  .in-repm[hidden]{display:none} .in-repm b{padding:4px 8px;color:#fdc33e} .in-repm small{padding:2px 8px;color:#a3b4d8} .in-repm hr{border:0;border-top:1px solid #2a3b70;margin:4px 0;width:100%}
+  .in-repm button{background:transparent!important;color:#eef2ff!important;text-align:left;border:0;border-radius:9px;padding:8px 10px!important;font-size:.84rem!important;font-weight:600;cursor:pointer;white-space:nowrap} .in-repm button:hover{background:#25366a!important}
+  @media print{
+    @page{size:A4 landscape;margin:10mm}
+    html,body{height:auto!important;background:#fff!important;display:block!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    nav,#top,.in-nav,.in-fil,.ay-i,.ruta,.in-sec em,#ficha,#pmTip,.od-tip,#ayPop,.cf-chips,.cf-todos,.oms-wrap .od-top .od-fil{display:none!important}
+    main,#vistas{display:block!important;height:auto!important;position:static!important}
+    .vista{display:none!important;position:static!important} #v-inicio.activa{display:block!important;overflow:visible!important;background:#fff!important}
+    #v-inicio .pagina{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;gap:8px!important;height:auto!important;overflow:visible!important;padding:0!important;max-width:none!important;zoom:.62}
+    #v-inicio #tarjetas{display:contents!important}
+    #v-inicio .card,#v-inicio .oms-wrap,.od-card,.od-k,.in-k,.al{break-inside:avoid;page-break-inside:avoid}
+    .in-head{display:block!important;margin-bottom:2px} .in-head .in-fil{display:none!important}
+    .in-kpis{display:grid!important;grid-template-columns:repeat(5,1fr)!important}
+    #v-inicio .cfc,#v-inicio .vmc,#v-inicio .anu,#v-inicio .svc,#v-inicio .alertas,#v-inicio .oms-wrap{grid-column:1/-1!important}
+    #v-inicio .meta{grid-column:span 4!important} #v-inicio .asr{grid-column:span 8!important}
+    #v-inicio .seg,#v-inicio .edc{grid-column:span 4!important} #v-inicio .rcm{grid-column:span 8!important}
+    .in-sec{break-after:avoid;color:#13223f!important}
+    #v-inicio .pagina[class*="cierra-"] [data-sec]:not(.in-sec){display:block!important}
+  }
 </style>
 <script src="assets/dash_oms.js"></script>
 </head>
@@ -487,6 +509,7 @@
         <label>Año <select id="gAnio"><option value="">Cada tarjeta</option></select></label>
         <label>Mes <select id="gMes"><option value="">Cada tarjeta</option></select></label>
         <button type="button" id="gReset" title="Devuelve cada tarjeta a su filtro de siempre">Restablecer</button>
+        <div class="in-rep"><button type="button" id="gRep" title="Descargar reportes para tus jefes">⬇ Reportes</button><div class="in-repm" id="gRepM" hidden></div></div>
         <button type="button" id="gTema" class="in-tema" title="Cambiar entre fondo oscuro y fondo claro">☀️ Fondo claro</button>
         <span id="gUlt"></span>
       </div>
@@ -1131,7 +1154,7 @@
       pintarSeg(rcs,nuevo&&r.contratos.some(function(x){return x.ap!==undefined}));
       pintarAnual(ecs,nuevo);
       pintarMeta(nuevo?Object.keys(ventas).reduce(function(a,k){return a+ventas[k]},0):null);
-      var PMK=window.PMK=window.PMK||{};PMK.ok=nuevo;PMK.contratos=nuevo?Object.keys(ventas).reduce(function(a,k){return a+ventas[k]},0):null;PMK.activos=c.ACTIVO;PMK.rc=rc;PMK.cont=cont;PMK.finalizados=c.FINALIZADO;PMK.cancelados=c.CANCELADO;if(window.pintarKpis)window.pintarKpis();
+      window.PM_REP={rcs:rcs,ecs:ecs,cf:cf};var PMK=window.PMK=window.PMK||{};PMK.ok=nuevo;PMK.contratos=nuevo?Object.keys(ventas).reduce(function(a,k){return a+ventas[k]},0):null;PMK.activos=c.ACTIVO;PMK.rc=rc;PMK.cont=cont;PMK.finalizados=c.FINALIZADO;PMK.cancelados=c.CANCELADO;if(window.pintarKpis)window.pintarKpis();
       document.getElementById('kpis').innerHTML=[['Activos',c.ACTIVO],['Finalizados',c.FINALIZADO],['Cancelados',c.CANCELADO],['Contratos',(r.contratos||[]).length],['RC este mes',nuevo?rc:'—'],['Contado este mes',nuevo?cont:'—']]
         .map(function(k){return '<div class="kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join('');
       nota.textContent=conRc?'Datos de la hoja Protect al abrir la plataforma. Este mes (columnas I y J de Protect): RC = SI en la columna U; Contado = CONTADO en la columna T.':'Para ver RC y Contado del mes, configura el conector del CRM en «Conexiones» (conectores/cobros/Codigo_cobros.gs).';
@@ -1487,6 +1510,53 @@
   }
   busca.addEventListener('input',filtrarGraficas);
   setInterval(function(){if(busca.value)filtrarGraficas()},3000);
+  /* ===== Reportes para descargar: Excel (CSV) y PDF del panel ===== */
+  var MESN=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  function csvDescarga(nombre,filas){
+    var txt='﻿'+filas.map(function(r){return r.map(function(v){v=v==null?'':String(v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(';')}).join('\r\n');
+    var f=new Date(),z=function(n){return ('0'+n).slice(-2)},a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'}));
+    a.download=nombre+'_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.csv';document.body.appendChild(a);a.click();a.remove();
+  }
+  function repAviso(t){var u=$('gUlt');if(u){u.textContent=t;setTimeout(pintarKpis,4000)}}
+  var REPORTES=[
+    ['📊 Ventas por mes y año (contado y financiados)',function(){var R=window.PM_REP;if(!R||!R.cf)return null;var f=[['Año','Mes','Contratos','De contado','Financiados','Sin forma de pago']];
+      Object.keys(R.cf).map(Number).sort(function(a,b){return a-b}).forEach(function(k){var y=Math.floor((k-1)/12),m=k-y*12,o=R.cf[k];f.push([y,MESN[m-1],o.C+o.F+(o.O||0),o.C,o.F,o.O||0])});return ['ventas_por_mes_y_anio',f]}],
+    ['🏆 Ventas por asesor (por mes y año)',function(){var R=window.PM_REP;if(!R||!R.rcs)return null;var c={};R.rcs.forEach(function(r){var k=r.k+'|'+r.a;c[k]=(c[k]||0)+1});
+      var f=[['Año','Mes','Asesor','Contratos']];Object.keys(c).sort(function(a,b){var x=a.split('|'),y=b.split('|');return (+x[0]-+y[0])||(x[1]<y[1]?-1:1)}).forEach(function(k){var p=k.split('|'),kk=+p[0],y=Math.floor((kk-1)/12);f.push([y,MESN[kk-y*12-1],p[1],c[k]])});return ['ventas_por_asesor',f]}],
+    ['🛡️ Seguros por mes (RC y AP)',function(){var R=window.PM_REP;if(!R||!R.rcs)return null;var c={};R.rcs.forEach(function(r){var o=c[r.k]=c[r.k]||{t:0,rc:0,ap:0,ambos:0,solo:0};o.t++;if(r.rc)o.rc++;if(r.ap)o.ap++;if(r.rc&&r.ap)o.ambos++;if(!r.rc&&!r.ap)o.solo++});
+      var f=[['Año','Mes','Contratos','Con RC','Sin RC','Con AP','Con RC y AP','Solo Protect Motos']];Object.keys(c).map(Number).sort(function(a,b){return a-b}).forEach(function(k){var y=Math.floor((k-1)/12),o=c[k];f.push([y,MESN[k-y*12-1],o.t,o.rc,o.t-o.rc,o.ap,o.ambos,o.solo])});return ['seguros_RC_y_AP_por_mes',f]}],
+    ['✅ Estado de los clientes (Protect)',function(){var R=window.PM_REP;if(!R||!R.ecs)return null;var c={};R.ecs.forEach(function(r){var k=(r.y||0)+'|'+(r.m||0)+'|'+r.e;c[k]=(c[k]||0)+1});
+      var f=[['Año de firma','Mes','Estado','Cantidad']];Object.keys(c).sort().forEach(function(k){var p=k.split('|');f.push([p[0]||'sin año',p[1]>0?MESN[p[1]-1]:'sin mes',p[2],c[k]])});return ['estado_de_clientes',f]}],
+    ['🛡️ SOAT por mes (vendidos y ganancia)',function(){if(!soatRecs||!soatRecs.length)return null;var c={};soatRecs.forEach(function(r){var k=r.y*12+r.m,o=c[k]=c[k]||{n:0,g:0};o.n++;o.g+=r.g});
+      var f=[['Año','Mes','SOAT vendidos','Ganancia']];Object.keys(c).map(Number).sort(function(a,b){return a-b}).forEach(function(k){var y=Math.floor((k-1)/12);f.push([y,MESN[k-y*12-1],c[k].n,Math.round(c[k].g)])});return ['soat_por_mes',f]}],
+    ['🏍️ Clientes OMS: pólizas por mes y por moto',function(){if(!OMS||!OMS.contratos.length)return null;var m={},v={};OMS.contratos.forEach(function(c){var d=(c.fechaFirmaISO||'').split('-');if(d.length<3)return;var k=d[0]+'|'+(+d[1]);m[k]=(m[k]||0)+1;var vk=d[0]+'|'+String(c.placa||'(sin dato)').toUpperCase().trim();v[vk]=(v[vk]||0)+1});
+      var f=[['PÓLIZAS VENDIDAS POR MES'],['Año','Mes','Pólizas']];Object.keys(m).sort(function(a,b){var x=a.split('|'),y=b.split('|');return (+x[0]-+y[0])||(+x[1]-+y[1])}).forEach(function(k){var p=k.split('|');f.push([p[0],MESN[p[1]-1],m[k]])});
+      f.push([]);f.push(['PÓLIZAS POR MOTO']);f.push(['Año','Moto','Pólizas']);Object.keys(v).sort(function(a,b){var x=a.split('|'),y=b.split('|');return (+x[0]-+y[0])||(v[b]-v[a])}).forEach(function(k){var p=k.split('|');f.push([p[0],p[1],v[k]])});return ['clientes_OMS',f]}],
+    ['📋 Resumen ejecutivo (tarjetas de arriba)',function(){var K=window.PMK||{};if(K.contratos==null&&K.activos==null)return null;var h=new Date(),meta=(window.PMG&&PMG.getMeta)?PMG.getMeta():105;
+      return ['resumen_ejecutivo',[['Indicador','Valor'],['Fecha del reporte',h.toLocaleDateString('es-CO')],['Contratos del mes',K.contratos==null?'':K.contratos],['Meta de contratos',meta],['Contratos del mes con RC',K.rc==null?'':K.rc],['SOAT vendidos del mes',K.soatMes==null?'':K.soatMes],['Ganancia SOAT del mes',K.soatGan==null?'':Math.round(K.soatGan)],['Clientes activos',K.activos==null?'':K.activos],['Clientes finalizados',K.finalizados==null?'':K.finalizados],['Clientes cancelados',K.cancelados==null?'':K.cancelados],['Faltan por consolidar',K.faltaConc==null?'':K.faltaConc],['Clientes OMS',K.omsTotal==null?'':K.omsTotal]]]}]
+  ];
+  function repMenu(){
+    var m=$('gRepM');
+    m.innerHTML='<b>Descargar para tus jefes</b><button type="button" data-pdf="1">🖨️ Panel completo en PDF</button><hr><small>Excel (se abre con doble clic):</small>'+REPORTES.map(function(r,i){return '<button type="button" data-i="'+i+'">'+r[0]+'</button>'}).join('');
+  }
+  repMenu();
+  $('gRep').addEventListener('click',function(ev){ev.stopPropagation();$('gRepM').hidden=!$('gRepM').hidden});
+  document.addEventListener('click',function(ev){if(!ev.target.closest('.in-rep'))$('gRepM').hidden=true});
+  $('gRepM').addEventListener('click',function(ev){
+    var b=ev.target.closest('button');if(!b)return;$('gRepM').hidden=true;
+    if(b.dataset.pdf){imprimirPanel();return}
+    var r=REPORTES[+b.dataset.i],res=r[1]();
+    if(!res){repAviso('Ese reporte aún no tiene datos: configura su conector en «Conexiones» y espera a que cargue.');return}
+    csvDescarga(res[0],res[1]);repAviso('Descargado ✔ '+res[0]+'.csv');
+  });
+  function imprimirPanel(){
+    var b=document.body,tenia=b.classList.contains('tema-inicio'),clar=b.classList.contains('inicio-claro');
+    b.classList.remove('tema-inicio');b.classList.add('inicio-claro','imprimiendo');
+    var t=document.title;document.title='Reporte Protect Motos '+new Date().toLocaleDateString('es-CO').replace(/\//g,'-');
+    setTimeout(function(){window.print();setTimeout(function(){b.classList.remove('imprimiendo');b.classList.toggle('tema-inicio',tenia);b.classList.toggle('inicio-claro',clar);document.title=t;window.dispatchEvent(new Event('resize'))},300)},400);
+    window.dispatchEvent(new Event('resize'));
+  }
   function actualizarTodo(){ultimoAuto=Date.now();if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc();cargarSoat();cargarOms()}
   setInterval(function(){if(!document.hidden)actualizarTodo()},60000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&Date.now()-ultimoAuto>60000)actualizarTodo()});
