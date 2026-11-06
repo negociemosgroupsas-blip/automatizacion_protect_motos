@@ -421,6 +421,21 @@
     #v-inicio .alertas{order:14!important} #v-inicio .svc{order:16!important} #v-inicio .oms-wrap{order:18!important}
   }
   @media(max-width:640px){.in-kpis{grid-template-columns:repeat(2,minmax(0,1fr))} .in-kt b{font-size:1.6rem} .in-head{align-items:flex-start}}
+
+  /* ===== Variante CLARA del panel ejecutivo (misma distribución, fondo claro) ===== */
+  #gTema{background:#25366a!important;color:#fff!important}
+  body.inicio-claro #gTema{background:#13223f!important}
+  body.inicio-claro #v-inicio{background:linear-gradient(180deg,#e9eef8 0,#f5f7fb 380px,#f5f7fb 100%)}
+  body.inicio-claro .in-tit h2{color:#13223f} body.inicio-claro .in-tit p{color:#5f6f93}
+  body.inicio-claro .in-fil{background:#fff;border-color:#dbe3f1;box-shadow:0 4px 14px rgba(30,50,100,.07)}
+  body.inicio-claro .in-fil label{color:#5f6f93} body.inicio-claro .in-fil select{background:#f4f6fb;color:#1f2430;border-color:#d3dcee} body.inicio-claro .in-fil #gUlt{color:#7a88a8}
+  body.inicio-claro .in-sec{color:#5f6f93} body.inicio-claro .in-sec::after{background:linear-gradient(90deg,#cfd8ea,transparent)} body.inicio-claro .in-sec i{box-shadow:0 0 8px #fdc33e88}
+  body.inicio-claro .in-k{box-shadow:0 10px 22px rgba(30,50,100,.18)}
+  body.inicio-claro #v-inicio .card,body.inicio-claro #v-inicio .al{background:#fff;border:1px solid #e1e7f2;border-top:3px solid var(--acc,#d6a417);border-radius:16px;box-shadow:0 6px 18px rgba(30,50,100,.08)}
+  body.inicio-claro #v-inicio .al{border-top-width:1px;border-left:5px solid var(--borde)} body.inicio-claro .al.rojo{border-left-color:#dc2626} body.inicio-claro .al.nar{border-left-color:#d97706} body.inicio-claro .al.verde{border-left-color:#1f9d55}
+  body.inicio-claro #v-inicio .card:hover{box-shadow:0 6px 18px rgba(30,50,100,.08);transform:none}
+  body.inicio-claro .est-tot{background:linear-gradient(135deg,#312e81,#6d28d9)!important}
+  body.inicio-claro .od-k,body.inicio-claro .od-card{box-shadow:0 6px 18px rgba(30,50,100,.08)}
 </style>
 <script src="assets/dash_oms.js"></script>
 </head>
@@ -440,6 +455,7 @@
         <label>Año <select id="gAnio"><option value="">Cada tarjeta</option></select></label>
         <label>Mes <select id="gMes"><option value="">Cada tarjeta</option></select></label>
         <button type="button" id="gReset" title="Devuelve cada tarjeta a su filtro de siempre">Restablecer</button>
+        <button type="button" id="gTema" class="in-tema" title="Cambiar entre fondo oscuro y fondo claro">☀️ Fondo claro</button>
         <span id="gUlt"></span>
       </div>
     </div>
@@ -914,7 +930,14 @@
     }
     var so=document.getElementById('solo');so.style.display=m.src&&m.disponible?'inline':'none';if(m.src)so.href=m.src;
     document.title=(m.id==='inicio'?'':m.nombre+' · ')+'CRM Protect Motos';
-    document.body.classList.toggle('tema-inicio',m.id==='inicio');
+    aplicarTema(m.id==='inicio');
+  }
+  window.aplicarTema0=function(){aplicarTema()};window.aplicarTemaX=aplicarTema;
+  function temaPref(){try{return localStorage.getItem('pm_tema_inicio')==='claro'?'claro':'oscuro'}catch(e){return 'oscuro'}}
+  function aplicarTema(enInicio){
+    var p=temaPref();if(enInicio===undefined)enInicio=!!(document.getElementById('v-inicio')&&document.getElementById('v-inicio').classList.contains('activa'));
+    document.body.classList.toggle('tema-inicio',enInicio&&p==='oscuro');document.body.classList.toggle('inicio-claro',enInicio&&p==='claro');
+    var b=document.getElementById('gTema');if(b)b.textContent=p==='claro'?'🌙 Fondo oscuro':'☀️ Fondo claro';
   }
   window.addEventListener('hashchange',function(){mostrar(location.hash.slice(1))});
   mostrar(location.hash.slice(1)||'inicio');
@@ -1304,6 +1327,8 @@
   }
   $('gAnio').addEventListener('change',aplicarGlobal);$('gMes').addEventListener('change',aplicarGlobal);
   $('gReset').addEventListener('click',restablecerGlobal);
+  $('gTema').addEventListener('click',function(){try{localStorage.setItem('pm_tema_inicio',(localStorage.getItem('pm_tema_inicio')==='claro')?'oscuro':'claro')}catch(e){}if(window.aplicarTemaX)window.aplicarTemaX();window.dispatchEvent(new Event('resize'))});
+  if(window.aplicarTema0)window.aplicarTema0();
   setInterval(llenarGlobal,4000);setTimeout(llenarGlobal,1500);
   pintarKpis();
   function actualizarTodo(){ultimoAuto=Date.now();if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc();cargarSoat();cargarOms()}
