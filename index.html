@@ -494,6 +494,7 @@
   .in-repm .rep-modo button{text-align:center;white-space:normal;font-size:.78rem!important;padding:7px 6px!important;border:1px solid transparent} .in-repm .rep-modo button.on{background:#fdc33e!important;color:#1a1200!important;border-color:#fdc33e}
   .in-inf{display:none;grid-column:1/-1} .in-inf h2{margin:0 0 4px;font-size:1.2rem;color:#13223f} .in-inf h4{margin:8px 0 2px;color:#13223f;font-size:.95rem} .in-inf p{margin:0;font-size:.85rem;color:#374151;line-height:1.4}
   @media print{.in-inf{display:block!important;background:#fff;border:1px solid #e1e7f2;border-radius:10px;padding:10px 14px;margin-bottom:6px}}
+  .rep-per{margin:2px 0 4px;padding:6px 8px;background:#0d1530;border-radius:10px} .rep-per label{display:flex;align-items:center;gap:8px;font-size:.78rem;color:#a3b4d8} .rep-per select{flex:1;background:#13223f;color:#eef2ff;border:1px solid #3b4f8f;border-radius:8px;padding:5px 8px;font-size:.82rem}
 </style>
 <script src="assets/dash_oms.js"></script>
 <script src="assets/pptxgen.bundle.js"></script>
@@ -1518,6 +1519,21 @@
   setInterval(function(){if(busca.value)filtrarGraficas()},3000);
   /* ===== Reportes para descargar: Excel (CSV) y PDF del panel ===== */
   var MESN=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  /* Período de los reportes: histórico (todos los años) o un año en particular */
+  function anioSel(){try{return localStorage.getItem('pm_rep_anio')||''}catch(e){return ''}}
+  function anioTxt(){var y=anioSel();return y?'año '+y:'histórico (todos los años)'}
+  function filtrarAnio(filas,col,y,titulos){
+    if(!y||col==null)return filas;var out=[filas[0]];
+    for(var i=1;i<filas.length;i++){var v=filas[i][col],m=String(v==null?'':v).match(/(?:^|\D)(20\d{2})(?:\D|$)/);if(m){if(m[1]===y)out.push(filas[i])}else if(titulos)out.push(filas[i])}
+    return out;
+  }
+  var YC_INI=[0,0,0,0,0,0,null],TIT_INI=[0,0,0,0,0,1,0];
+  function llenaAnios(){
+    var sel=$('gRepAnio');if(!sel)return;var ys={};ys[new Date().getFullYear()]=1;
+    var R=window.PM_REP;if(R&&R.cf)Object.keys(R.cf).forEach(function(k){ys[Math.floor((+k-1)/12)]=1});
+    if(soatRecs)soatRecs.forEach(function(r){ys[r.y]=1});if(OMS)OMS.contratos.forEach(function(c){var y=+(c.fechaFirmaISO||'').slice(0,4);if(y)ys[y]=1});
+    var act=anioSel();sel.innerHTML='<option value="">Histórico (todos los años)</option>'+Object.keys(ys).sort(function(a,b){return b-a}).map(function(y){return '<option value="'+y+'">Solo '+y+'</option>'}).join('');sel.value=act;if(sel.value!==act)sel.value='';
+  }
   /* Modo de descarga: solo datos, o datos + texto que explica el reporte */
   function modoTexto(){try{return localStorage.getItem('pm_rep_texto')==='1'}catch(e){return false}}
   var DESC_INI=[
@@ -1531,7 +1547,7 @@
   ];
   function conCabecera(filas,d){
     if(!modoTexto()||!d)return filas;
-    var f=new Date();return [['REPORTE: '+d[0]],['Fecha del reporte',f.toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})],['Qué muestra',d[1]],['Cómo leerlo',d[2]],['Importante','Estas cifras salen de las hojas de Google Sheets de Protect Motos al momento de descargar el reporte.'],[]].concat(filas);
+    var f=new Date();return [['REPORTE: '+d[0]],['Fecha del reporte',f.toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})],['Período',anioTxt()],['Qué muestra',d[1]],['Cómo leerlo',d[2]],['Importante','Estas cifras salen de las hojas de Google Sheets de Protect Motos al momento de descargar el reporte.'],[]].concat(filas);
   }
   function csvDescarga(nombre,filas){
     var txt='﻿'+filas.map(function(r){return r.map(function(v){v=v==null?'':String(v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(';')}).join('\r\n');
@@ -1559,12 +1575,14 @@
   ];
   function repMenu(){
     var m=$('gRepM');
-    m.innerHTML='<b>Descarga de reportes</b><div class="rep-modo" id="gModo"><button type="button" data-modo="0">📄 Solo datos</button><button type="button" data-modo="1">📝 Datos + texto que explica</button></div><button type="button" data-pdf="1">🖨️ Panel completo en PDF</button><button type="button" data-inf="1">📝 Informe escrito (explicación en texto)</button><button type="button" data-ppt="1">📽️ Presentación en PowerPoint</button><button type="button" data-todo="1" style="color:#fdc33e">📦 Descargar TODOS los reportes (ZIP)</button><hr><small>Excel (se abre con doble clic):</small>'+REPORTES.map(function(r,i){return '<button type="button" data-i="'+i+'">'+r[0]+'</button>'}).join('');
+    m.innerHTML='<b>Descarga de reportes</b><div class="rep-per"><label>Período <select id="gRepAnio"><option value="">Histórico (todos los años)</option></select></label></div><div class="rep-modo" id="gModo"><button type="button" data-modo="0">📄 Solo datos</button><button type="button" data-modo="1">📝 Datos + texto que explica</button></div><button type="button" data-pdf="1">🖨️ Panel completo en PDF</button><button type="button" data-inf="1">📝 Informe escrito (explicación en texto)</button><button type="button" data-ppt="1">📽️ Presentación en PowerPoint</button><button type="button" data-todo="1" style="color:#fdc33e">📦 Descargar TODOS los reportes (ZIP)</button><hr><small>Excel (se abre con doble clic):</small>'+REPORTES.map(function(r,i){return '<button type="button" data-i="'+i+'">'+r[0]+'</button>'}).join('');
   }
   repMenu();
   function pintaModo(){[].forEach.call(document.querySelectorAll('#gModo button'),function(b){b.classList.toggle('on',(b.dataset.modo==='1')===modoTexto())})}
-  pintaModo();
-  $('gRep').addEventListener('click',function(ev){ev.stopPropagation();$('gRepM').hidden=!$('gRepM').hidden});
+  pintaModo();llenaAnios();
+  $('gRep').addEventListener('click',function(ev){ev.stopPropagation();llenaAnios();$('gRepM').hidden=!$('gRepM').hidden});
+  $('gRepAnio').addEventListener('change',function(){try{localStorage.setItem('pm_rep_anio',this.value)}catch(e){}});
+  $('gRepAnio').addEventListener('click',function(ev){ev.stopPropagation()});
   document.addEventListener('click',function(ev){if(!ev.target.closest('.in-rep'))$('gRepM').hidden=true});
   $('gRepM').addEventListener('click',function(ev){
     var b=ev.target.closest('button');if(!b)return;
@@ -1576,52 +1594,61 @@
     if(b.dataset.todo){descargarTodo();return}
     var r=REPORTES[+b.dataset.i],res=r[1]();
     if(!res){repAviso('Ese reporte aún no tiene datos: configura su conector en «Conexiones» y espera a que cargue.');return}
-    csvDescarga(res[0],conCabecera(res[1],DESC_INI[+b.dataset.i]));repAviso('Descargado ✔ '+res[0]+'.csv'+(modoTexto()?' (con explicación)':''));
+    var fl=filtrarAnio(res[1],YC_INI[+b.dataset.i],anioSel(),TIT_INI[+b.dataset.i]);if(fl.length<2){repAviso('No hay datos de '+anioTxt()+' en ese reporte.');return}
+    csvDescarga(res[0]+(anioSel()?'_'+anioSel():'_historico'),conCabecera(fl,DESC_INI[+b.dataset.i]));repAviso('Descargado ✔ '+res[0]+'.csv ('+anioTxt()+(modoTexto()?', con explicación':'')+')');
   });
   /* ===== Informe escrito: explica los números con palabras (solo hechos que salen de los datos) ===== */
   function informeBloques(){
     var R=window.PM_REP,K=window.PMK||{};if(!R||!R.cf)return null;
-    var h=new Date(),yA=h.getFullYear(),mA=h.getMonth()+1,dia=h.getDate(),dm=new Date(yA,mA,0).getDate(),meta=(window.PMG&&PMG.getMeta)?PMG.getMeta():105;
+    var h=new Date(),yC=h.getFullYear(),mC=h.getMonth()+1,dia=h.getDate(),dm=new Date(yC,mC,0).getDate(),meta=(window.PMG&&PMG.getMeta)?PMG.getMeta():105;
+    var HIST=!anioSel(),yA=HIST?yC:+anioSel(),esAct=HIST||yA===yC,mA=(yA===yC)?mC:12;
+    var yok=function(y){return HIST||y===yA},per=HIST?'en todos los años (histórico)':'en '+yA;
     var mn=function(m){return MESN[m-1].toLowerCase()},nf=function(n){return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,'.')},pc=function(a,b){return b?Math.round(a/b*100):0};
     var tot=function(y,m){var o=R.cf[y*12+m];return o?o.C+o.F+(o.O||0):0};
-    var B=[];
-    // 1) meta del mes
-    var c=K.contratos!=null?K.contratos:tot(yA,mA),esp=Math.round(meta*dia/dm);
-    B.push(['Cómo vamos con la meta del mes','En '+mn(mA)+' de '+yA+' llevamos '+c+' contratos de una meta de '+meta+' ('+pc(c,meta)+' %). A hoy (día '+dia+' de '+dm+') lo esperado eran '+esp+' contratos, así que vamos '+(c>=esp?'al día o por encima del ritmo':'por debajo del ritmo')+'. Faltan '+Math.max(0,meta-c)+' contratos y '+(dm-dia)+' días para cerrar el mes.']);
-    // 2) comparación
-    var pm=mA===1?12:mA-1,py=mA===1?yA-1:yA,ant=tot(py,pm),mismo=tot(yA-1,mA),ac=0,aa=0,i;
-    for(i=1;i<=mA;i++){ac+=tot(yA,i);aa+=tot(yA-1,i)}
-    var t2='El mes anterior ('+mn(pm)+') cerró con '+ant+' contratos'+(mismo?' y en '+mn(mA)+' de '+(yA-1)+' hubo '+mismo+' en todo el mes':'')+'. El mes en curso aún no termina, por eso no conviene compararlo con meses completos. ';
-    t2+='En lo que va de '+yA+' (enero a '+mn(mA)+') se han firmado '+ac+' contratos'+(aa?', frente a '+aa+' en el mismo período de '+(yA-1)+' ('+(ac>=aa?'+':'−')+Math.abs(pc(ac-aa,aa))+' %).':'.');
-    B.push(['Frente al mes anterior y al año anterior',t2]);
+    var B=[],m,i;
+    B.push(['Período del informe',HIST?'Este informe cubre todo el histórico (todos los años que hay en la hoja).':'Este informe cubre solo el año '+yA+'.']);
+    // 1) meta del mes (solo si se mira el presente)
+    if(esAct){var c=K.contratos!=null?K.contratos:tot(yC,mC),esp=Math.round(meta*dia/dm);
+      B.push(['Cómo vamos con la meta del mes','En '+mn(mC)+' de '+yC+' llevamos '+c+' contratos de una meta de '+meta+' ('+pc(c,meta)+' %). A hoy (día '+dia+' de '+dm+') lo esperado eran '+esp+' contratos, así que vamos '+(c>=esp?'al día o por encima del ritmo':'por debajo del ritmo')+'. Faltan '+Math.max(0,meta-c)+' contratos y '+(dm-dia)+' días para cerrar el mes.'])}
+    // 2) comparaciones
+    if(HIST){var ys=Object.keys(R.cf).map(function(k){return Math.floor((+k-1)/12)}).filter(function(y,ix,ar){return ar.indexOf(y)===ix}).sort(),lis=ys.map(function(y){var t=0;for(m=1;m<=12;m++)t+=tot(y,m);return y+': '+nf(t)});
+      B.push(['Contratos por año','Contratos firmados cada año — '+lis.join(' · ')+'. '+'El año en curso ('+yC+') aún no termina, por eso no conviene compararlo con años completos.'])}
+    else{var tt=[],mx=0,mi=0,tA=0,lastC=(yA===yC)?mA-1:mA;for(m=1;m<=mA;m++){var v=tot(yA,m);tt.push(v);tA+=v}
+      for(m=1;m<=lastC;m++){if(tt[m-1]>tt[mx])mx=m-1;if(tt[m-1]<tt[mi])mi=m-1}
+      var prevY=0;for(m=1;m<=mA;m++)prevY+=tot(yA-1,m);
+      var t2='En '+yA+' se firmaron '+tA+' contratos'+(yA===yC?' (de enero a '+mn(mC)+')':'')+'. ';
+      if(lastC>1)t2+='El mes con más contratos fue '+mn(mx+1)+' ('+tt[mx]+') y el de menos '+mn(mi+1)+' ('+tt[mi]+'). ';
+      t2+=prevY?'En el mismo período de '+(yA-1)+' fueron '+prevY+' ('+(tA>=prevY?'+':'−')+Math.abs(pc(tA-prevY,prevY))+' %).':'No hay datos del año anterior para comparar.';
+      B.push(['Contratos del año',t2])}
+    if(HIST||yA===yC){var pm=mC===1?12:mC-1,py=mC===1?yC-1:yC,ant=tot(py,pm),mismo=tot(yC-1,mC),ac=0,aa=0;for(i=1;i<=mC;i++){ac+=tot(yC,i);aa+=tot(yC-1,i)}
+      B.push(['Frente al mes anterior y al año anterior','El mes anterior ('+mn(pm)+') cerró con '+ant+' contratos'+(mismo?' y en '+mn(mC)+' de '+(yC-1)+' hubo '+mismo+' en todo el mes':'')+'. El mes en curso aún no termina, por eso no conviene compararlo con meses completos. En lo que va de '+yC+' (enero a '+mn(mC)+') se han firmado '+ac+' contratos'+(aa?', frente a '+aa+' en el mismo período de '+(yC-1)+' ('+(ac>=aa?'+':'−')+Math.abs(pc(ac-aa,aa))+' %).':'.')])}
     // 3) contado / financiado
-    var cc=0,ff=0,oo=0,m;for(m=1;m<=12;m++){var o=R.cf[yA*12+m];if(o){cc+=o.C;ff+=o.F;oo+=(o.O||0)}}
-    if(cc+ff+oo)B.push(['Contado y financiado','En '+yA+' el '+pc(cc,cc+ff+oo)+' % de los contratos fue de contado ('+cc+') y el '+pc(ff,cc+ff+oo)+' % financiado ('+ff+')'+(oo?'. Hay '+oo+' contratos sin forma de pago en la columna T de la hoja: cuentan en los totales pero no en ninguno de los dos grupos.':'.')]);
-    // 4) asesores
-    if(R.rcs&&R.rcs.length){var ca={},cm={};R.rcs.forEach(function(r){var y=Math.floor((r.k-1)/12);if(y===yA){ca[r.a]=(ca[r.a]||0)+1;if(r.k===yA*12+mA)cm[r.a]=(cm[r.a]||0)+1}});
+    var cc=0,ff=0,oo=0;Object.keys(R.cf).forEach(function(k){var y=Math.floor((+k-1)/12);if(!yok(y))return;var o=R.cf[k];cc+=o.C;ff+=o.F;oo+=(o.O||0)});
+    if(cc+ff+oo)B.push(['Contado y financiado',per.charAt(0).toUpperCase()+per.slice(1)+', el '+pc(cc,cc+ff+oo)+' % de los contratos fue de contado ('+cc+') y el '+pc(ff,cc+ff+oo)+' % financiado ('+ff+')'+(oo?'. Hay '+oo+' contratos sin forma de pago en la columna T de la hoja: cuentan en los totales pero no en ninguno de los dos grupos.':'.')]);
+    // 4) asesores y seguros
+    if(R.rcs&&R.rcs.length){var ca={},cm={};R.rcs.forEach(function(r){var y=Math.floor((r.k-1)/12);if(yok(y)){ca[r.a]=(ca[r.a]||0)+1;if(r.k===yC*12+mC)cm[r.a]=(cm[r.a]||0)+1}});
       var ta=Object.keys(ca).sort(function(a,b){return ca[b]-ca[a]}),tm=Object.keys(cm).sort(function(a,b){return cm[b]-cm[a]});
-      if(ta.length)B.push(['Ventas por asesor','En '+yA+' los asesores con más contratos son '+ta.slice(0,3).map(function(a){return a+' ('+ca[a]+')'}).join(', ')+'. En total vendieron '+ta.length+' asesores.'+(tm.length?' En lo que va de '+mn(mA)+' lidera '+tm[0]+' con '+cm[tm[0]]+'.':'')]);
-      // 5) seguros
-      var tg=0,rc=0,ap=0,ambos=0;R.rcs.forEach(function(r){if(Math.floor((r.k-1)/12)!==yA)return;tg++;if(r.rc)rc++;if(r.ap)ap++;if(r.rc&&r.ap)ambos++});
-      if(tg)B.push(['Seguros que llevan los contratos','Todos los contratos llevan Protect Motos. En '+yA+', de '+tg+' contratos, '+rc+' llevan RC ('+pc(rc,tg)+' %), '+ap+' llevan AP ('+pc(ap,tg)+' %) y '+ambos+' llevan ambos. '+(tg-rc-ap+ambos)+' llevan solo Protect Motos.'])}
-    // 6) clientes
-    if(R.ecs&&R.ecs.length){var ec={};R.ecs.forEach(function(r){ec[r.e]=(ec[r.e]||0)+1});var v=(ec.ACTIVO||0)+(ec.FINALIZADO||0)+(ec.CANCELADO||0);
-      B.push(['Estado de los clientes','Hay '+nf(v)+' contratos vendidos: '+nf(ec.ACTIVO||0)+' activos ('+pc(ec.ACTIVO||0,v)+' %), '+nf(ec.FINALIZADO||0)+' finalizados ('+pc(ec.FINALIZADO||0,v)+' %) y '+nf(ec.CANCELADO||0)+' cancelados ('+pc(ec.CANCELADO||0,v)+' %).'+(ec.ANULADO?' Además hay '+nf(ec.ANULADO)+' contratos anulados, que no se cuentan como vendidos.':'')])}
-    if(K.faltaConc!=null)B.push(['Conciliación de pagos','Faltan por consolidar '+K.faltaConc+' contratos'+(K.menos?' y '+K.menos+' pagaron de menos':'')+'. El detalle está en el botón Conciliación.']);
-    // 7) SOAT
-    if(soatRecs&&soatRecs.length){var sn=0,sg=0,pn=0,pg=0;soatRecs.forEach(function(r){if(r.y===yA&&r.m===mA){sn++;sg+=r.g}if(r.y===py&&r.m===pm){pn++;pg+=r.g}});var an=0,ag=0;soatRecs.forEach(function(r){if(r.y===yA){an++;ag+=r.g}});
-      B.push(['SOAT','En '+mn(mA)+' se han vendido '+sn+' SOAT con una ganancia de $'+nf(sg)+' (el mes anterior fueron '+pn+' y $'+nf(pg)+'). En lo que va de '+yA+': '+an+' SOAT y $'+nf(ag)+' de ganancia.'+(K.soatRen!=null?' Hay '+K.soatRen+' SOAT por renovar en los próximos 8 días.':'')])}
-    // 8) OMS
-    if(OMS&&OMS.contratos.length){var po=0,vh={};OMS.contratos.forEach(function(x){var d=(x.fechaFirmaISO||'').split('-');if(+d[0]!==yA)return;po++;var k=String(x.placa||'(sin dato)').toUpperCase().trim();vh[k]=(vh[k]||0)+1});var tv=Object.keys(vh).sort(function(a,b){return vh[b]-vh[a]});
-      B.push(['Clientes OMS','En '+yA+' se han vendido '+po+' pólizas OMS.'+(tv.length?' Las motos más vendidas son '+tv.slice(0,3).map(function(a){return a+' ('+vh[a]+')'}).join(', ')+'.':'')+(K.omsRen!=null?' Hay '+K.omsRen+' clientes OMS que cumplen su año en 8 días o menos y hay que volver a hablarles.':'')])}
-    // 9) glosario y notas
+      if(ta.length)B.push(['Ventas por asesor','Los asesores con más contratos '+per+' son '+ta.slice(0,3).map(function(a){return a+' ('+ca[a]+')'}).join(', ')+'. En total vendieron '+ta.length+' asesores.'+(esAct&&tm.length?' En lo que va de '+mn(mC)+' lidera '+tm[0]+' con '+cm[tm[0]]+'.':'')]);
+      var tg=0,rc=0,ap=0,ambos=0;R.rcs.forEach(function(r){if(!yok(Math.floor((r.k-1)/12)))return;tg++;if(r.rc)rc++;if(r.ap)ap++;if(r.rc&&r.ap)ambos++});
+      if(tg)B.push(['Seguros que llevan los contratos','Todos los contratos llevan Protect Motos. '+per.charAt(0).toUpperCase()+per.slice(1)+', de '+tg+' contratos, '+rc+' llevan RC ('+pc(rc,tg)+' %), '+ap+' llevan AP ('+pc(ap,tg)+' %) y '+ambos+' llevan ambos. '+(tg-rc-ap+ambos)+' llevan solo Protect Motos.'])}
+    // 5) clientes
+    if(R.ecs&&R.ecs.length){var ec={};R.ecs.forEach(function(r){if(!HIST&&r.y!==yA)return;ec[r.e]=(ec[r.e]||0)+1});var v=(ec.ACTIVO||0)+(ec.FINALIZADO||0)+(ec.CANCELADO||0);
+      B.push(['Estado de los clientes',(HIST?'Hay ':'De los contratos firmados en '+yA+' hay ')+nf(v)+' contratos vendidos: '+nf(ec.ACTIVO||0)+' activos ('+pc(ec.ACTIVO||0,v)+' %), '+nf(ec.FINALIZADO||0)+' finalizados ('+pc(ec.FINALIZADO||0,v)+' %) y '+nf(ec.CANCELADO||0)+' cancelados ('+pc(ec.CANCELADO||0,v)+' %).'+(ec.ANULADO?' Además hay '+nf(ec.ANULADO)+' contratos anulados, que no se cuentan como vendidos.':'')])}
+    if(esAct&&K.faltaConc!=null)B.push(['Conciliación de pagos','Faltan por consolidar '+K.faltaConc+' contratos'+(K.menos?' y '+K.menos+' pagaron de menos':'')+'. El detalle está en el botón Conciliación.']);
+    // 6) SOAT
+    if(soatRecs&&soatRecs.length){var an=0,ag=0,sn=0,sg=0,pn=0,pg=0,pm2=mC===1?12:mC-1,py2=mC===1?yC-1:yC;
+      soatRecs.forEach(function(r){if(yok(r.y)){an++;ag+=r.g}if(r.y===yC&&r.m===mC){sn++;sg+=r.g}if(r.y===py2&&r.m===pm2){pn++;pg+=r.g}});
+      B.push(['SOAT',(esAct?'En '+mn(mC)+' se han vendido '+sn+' SOAT con una ganancia de $'+nf(sg)+' (el mes anterior fueron '+pn+' y $'+nf(pg)+'). ':'')+per.charAt(0).toUpperCase()+per.slice(1)+' se vendieron '+an+' SOAT, con $'+nf(ag)+' de ganancia.'+(esAct&&K.soatRen!=null?' Hay '+K.soatRen+' SOAT por renovar en los próximos 8 días.':'')])}
+    // 7) OMS
+    if(OMS&&OMS.contratos.length){var po=0,vh={};OMS.contratos.forEach(function(x){var d=(x.fechaFirmaISO||'').split('-');if(!yok(+d[0]))return;po++;var kk=String(x.placa||'(sin dato)').toUpperCase().trim();vh[kk]=(vh[kk]||0)+1});var tv=Object.keys(vh).sort(function(a,b){return vh[b]-vh[a]});
+      B.push(['Clientes OMS',per.charAt(0).toUpperCase()+per.slice(1)+' se vendieron '+po+' pólizas OMS.'+(tv.length?' Las motos más vendidas son '+tv.slice(0,3).map(function(a){return a+' ('+vh[a]+')'}).join(', ')+'.':'')+(esAct&&K.omsRen!=null?' Hay '+K.omsRen+' clientes OMS que cumplen su año en 8 días o menos y hay que volver a hablarles.':'')])}
     B.push(['Cómo leer este informe','RC: responsabilidad civil. AP: asistencias. Contado y financiado: forma de pago del contrato. Anulado: contrato que no cuenta como vendido. Todos los números salen de las hojas de Google Sheets de Protect Motos (Protect, SOAT y Clientes OMS) al momento de descargar este informe; si cambias la hoja, cambian las cifras. Este texto solo describe los datos: no explica las causas de los cambios.']);
     return B;
   }
   function descargarInforme(){
     var B=informeBloques();if(!B){repAviso('Aún no hay datos: configura el conector del CRM en «Conexiones» y espera a que cargue.');return}
     var txt=informeTexto(B),f=new Date(),z=function(n){return ('0'+n).slice(-2)},a=document.createElement('a');
-    a.href=URL.createObjectURL(new Blob(['﻿'+txt],{type:'text/plain;charset=utf-8'}));a.download='Informe_escrito_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.txt';document.body.appendChild(a);a.click();a.remove();repAviso('Descargado ✔ informe escrito');
+    a.href=URL.createObjectURL(new Blob(['﻿'+txt],{type:'text/plain;charset=utf-8'}));a.download='Informe_escrito_'+(anioSel()||'historico')+'_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.txt';document.body.appendChild(a);a.click();a.remove();repAviso('Descargado ✔ informe escrito');
   }
   function informeTexto(B){
     var f=new Date();return 'INFORME DE GESTIÓN · PROTECT MOTOS\r\nNegociemos Group S.A.S.\r\n'+f.toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})+'\r\n\r\n'+B.map(function(b,i){return (i+1)+'. '+b[0].toUpperCase()+'\r\n'+b[1]}).join('\r\n\r\n')+'\r\n';
@@ -1635,6 +1662,7 @@
     repAviso('Armando la presentación…');
     var P=new PptxGenJS();P.layout='LAYOUT_WIDE';P.title='Reporte Protect Motos';P.company='Negociemos Group S.A.S.';
     var NAVY='13223F',ORO='D6A417',CEL='38BDF8',AZ='5B78C7',VER='1F9D55',GRIS='6B7280',h=new Date(),yA=h.getFullYear(),mA=h.getMonth()+1;
+    var HIST=!anioSel();if(!HIST){yA=+anioSel();if(yA!==h.getFullYear())mA=12}
     var fechaTxt=h.toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'}),meta=(window.PMG&&PMG.getMeta)?PMG.getMeta():105;
     var MC=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     P.defineSlideMaster({title:'M',background:{color:'F5F7FB'},objects:[
@@ -1645,13 +1673,14 @@
     function lamina(titulo,sub){var s=P.addSlide({masterName:'M'});s.addText(titulo,{x:0.5,y:0.3,w:12.3,h:0.6,fontSize:26,bold:true,color:NAVY,fontFace:'Calibri'});if(sub)s.addText(sub,{x:0.5,y:0.9,w:12.3,h:0.4,fontSize:13,color:GRIS,fontFace:'Calibri'});return s}
     var okChart=function(){return {showLegend:true,legendPos:'b',legendFontSize:11,catAxisLabelFontSize:11,valAxisLabelFontSize:10,valGridLine:{color:'E3E6EB',size:0.5},valAxisMinVal:0,showValue:true,dataLabelFontSize:9,dataLabelColor:NAVY}};
     var Y=Object.keys(R.cf).map(function(k){return Math.floor((+k-1)/12)}).filter(function(y,i,a){return a.indexOf(y)===i}).sort();
+    if(!HIST)Y=Y.filter(function(y){return y===yA});
     // 1) portada
     var s=P.addSlide();s.background={color:NAVY};
     s.addShape('rect',{x:0,y:0,w:13.33,h:0.18,fill:{color:ORO}});
     s.addShape('roundRect',{x:0.7,y:1.3,w:3.3,h:2.95,fill:{color:'FFFFFF'},rectRadius:0.2});s.addImage({data:LOGO_B64,x:0.95,y:1.45,w:2.8,h:2.43});
     s.addText('Reporte de gestión',{x:4.4,y:1.8,w:8.4,h:0.9,fontSize:42,bold:true,color:'FFFFFF',fontFace:'Calibri'});
     s.addText('Protect Motos · Sistema de gestión',{x:4.4,y:2.8,w:8.4,h:0.5,fontSize:20,color:'F0C94A',fontFace:'Calibri'});
-    s.addText(fechaTxt,{x:4.4,y:3.5,w:8.4,h:0.4,fontSize:16,color:'C9D3EE',fontFace:'Calibri'});
+    s.addText(fechaTxt+'  ·  Período: '+(HIST?'histórico (todos los años)':'año '+yA),{x:4.4,y:3.5,w:8.4,h:0.4,fontSize:16,color:'C9D3EE',fontFace:'Calibri'});
     s.addText('Negociemos Group S.A.S. · Medellín',{x:4.4,y:6.4,w:8.4,h:0.4,fontSize:13,color:'9FB0CF',fontFace:'Calibri'});
     // 2) resumen ejecutivo
     s=lamina('Resumen ejecutivo','Cómo va el negocio a '+fechaTxt);
@@ -1681,42 +1710,46 @@
     s.addText([{text:'De contado\n',options:{fontSize:13,color:GRIS}},{text:tc+'  ('+Math.round(tc/tt*100)+' %)\n\n',options:{fontSize:30,bold:true,color:'B45309'}},{text:'Financiados\n',options:{fontSize:13,color:GRIS}},{text:tf+'  ('+Math.round(tf/tt*100)+' %)',options:{fontSize:30,bold:true,color:AZ}}],{x:9.3,y:2.3,w:3.6,h:3.5,fontFace:'Calibri',valign:'top'});
     // 5) ventas por asesor (año actual)
     if(R.rcs&&R.rcs.length){
-      var ca={};R.rcs.forEach(function(r){if(Math.floor((r.k-1)/12)!==yA)return;ca[r.a]=(ca[r.a]||0)+1});
+      var ca={};R.rcs.forEach(function(r){if(!HIST&&Math.floor((r.k-1)/12)!==yA)return;ca[r.a]=(ca[r.a]||0)+1});
       var top=Object.keys(ca).sort(function(a,b){return ca[b]-ca[a]}).slice(0,15);
-      if(top.length){s=lamina('¿Quién vende más?','Contratos firmados por cada asesor en '+yA+' (los 15 primeros)');
+      if(top.length){s=lamina('¿Quién vende más?','Contratos firmados por cada asesor '+(HIST?'en todos los años (histórico)':'en '+yA)+' (los 15 primeros)');
         s.addChart(P.charts.BAR,[{name:'Contratos',labels:top.slice().reverse(),values:top.slice().reverse().map(function(a){return ca[a]})}],Object.assign(okChart(),{x:0.5,y:1.4,w:12.3,h:5.6,barDir:'bar',showLegend:false,chartColors:[NAVY],barGapWidthPct:40}))}
       // 6) seguros (año actual)
-      var sg={solo:0,rc:0,ap:0,ambos:0};R.rcs.forEach(function(r){if(Math.floor((r.k-1)/12)!==yA)return;if(r.rc&&r.ap)sg.ambos++;else if(r.rc)sg.rc++;else if(r.ap)sg.ap++;else sg.solo++});
+      var sg={solo:0,rc:0,ap:0,ambos:0};R.rcs.forEach(function(r){if(!HIST&&Math.floor((r.k-1)/12)!==yA)return;if(r.rc&&r.ap)sg.ambos++;else if(r.rc)sg.rc++;else if(r.ap)sg.ap++;else sg.solo++});
       var tg=sg.solo+sg.rc+sg.ap+sg.ambos;
-      if(tg){s=lamina('¿Qué protección llevan los contratos?','Todos llevan Protect Motos · año '+yA+' · '+tg+' contratos');
+      if(tg){s=lamina('¿Qué protección llevan los contratos?','Todos llevan Protect Motos · '+(HIST?'histórico (todos los años)':'año '+yA)+' · '+tg+' contratos');
         s.addChart(P.charts.DOUGHNUT,[{name:'Contratos',labels:['Solo Protect Motos','Protect + RC','Protect + AP','Protect + RC y AP'],values:[sg.solo,sg.rc,sg.ap,sg.ambos]}],{x:0.5,y:1.4,w:7.5,h:5.6,holeSize:55,chartColors:[NAVY,'FDC33E',AZ,VER],showLegend:true,legendPos:'r',legendFontSize:13,showPercent:true,showValue:false,dataLabelColor:'FFFFFF',dataLabelFontSize:12});
         s.addText([{text:'Con RC o AP\n',options:{fontSize:13,color:GRIS}},{text:(sg.rc+sg.ap+sg.ambos)+'  ('+Math.round((sg.rc+sg.ap+sg.ambos)/tg*100)+' %)',options:{fontSize:30,bold:true,color:NAVY}}],{x:8.6,y:2.6,w:4.2,h:2,fontFace:'Calibri',valign:'top'})}
       // 7) RC y sin RC por mes (año actual)
-      var rcM=[],srM=[],mm,MCa=MC.slice(0,mA);for(mm=1;mm<=mA;mm++){var a=0,b=0;R.rcs.forEach(function(r){if(r.k===yA*12+mm){if(r.rc)a++;else b++}});rcM.push(a);srM.push(b)}
-      if(rcM.concat(srM).some(function(v){return v>0})){s=lamina('Contratos con RC y sin RC, mes a mes','Año '+yA);
+      var rcM=[],srM=[],mm,MCa=MC.slice(0,mA);
+      if(HIST){var rcY={},srY={};R.rcs.forEach(function(r){var yy=Math.floor((r.k-1)/12);if(r.rc)rcY[yy]=(rcY[yy]||0)+1;else srY[yy]=(srY[yy]||0)+1});MCa=Y.map(String);rcM=Y.map(function(y){return rcY[y]||0});srM=Y.map(function(y){return srY[y]||0})}
+      else for(mm=1;mm<=mA;mm++){var a=0,b=0;R.rcs.forEach(function(r){if(r.k===yA*12+mm){if(r.rc)a++;else b++}});rcM.push(a);srM.push(b)}
+      if(rcM.concat(srM).some(function(v){return v>0})){s=lamina('Contratos con RC y sin RC, '+(HIST?'año por año':'mes a mes'),HIST?'Todos los años':'Año '+yA);
         s.addChart(P.charts.BAR,[{name:'Con RC',labels:MCa,values:rcM},{name:'Sin RC',labels:MCa,values:srM}],Object.assign(okChart(),{x:0.5,y:1.4,w:12.3,h:5.6,barGrouping:'clustered',chartColors:['FDC33E',CEL],barGapWidthPct:60}))}
     }
     // 8) estado de clientes
     if(R.ecs&&R.ecs.length){var ec={};R.ecs.forEach(function(r){ec[r.e]=(ec[r.e]||0)+1});var vend=(ec.ACTIVO||0)+(ec.FINALIZADO||0)+(ec.CANCELADO||0);
-      s=lamina('¿Cuántos clientes están activos?','Estado de los clientes de Protect · '+vend+' contratos vendidos'+(ec.ANULADO?' (sin contar '+ec.ANULADO+' anulados)':''));
+      s=lamina('¿Cuántos clientes están activos?','Estado de los clientes de Protect · '+(HIST?'histórico':'firmados en '+yA)+' · '+vend+' contratos vendidos'+(ec.ANULADO?' (sin contar '+ec.ANULADO+' anulados)':''));
       s.addChart(P.charts.DOUGHNUT,[{name:'Clientes',labels:['Activos','Finalizados','Cancelados'],values:[ec.ACTIVO||0,ec.FINALIZADO||0,ec.CANCELADO||0]}],{x:0.5,y:1.4,w:7.5,h:5.6,holeSize:55,chartColors:[VER,AZ,'D64545'],showLegend:true,legendPos:'r',legendFontSize:13,showPercent:true,showValue:false,dataLabelColor:'FFFFFF',dataLabelFontSize:12});
       s.addText([{text:'Activos\n',options:{fontSize:13,color:GRIS}},{text:String(ec.ACTIVO||0)+'\n\n',options:{fontSize:30,bold:true,color:VER}},{text:'Cancelados\n',options:{fontSize:13,color:GRIS}},{text:String(ec.CANCELADO||0),options:{fontSize:30,bold:true,color:'D64545'}}],{x:8.6,y:2.2,w:4.2,h:3.6,fontFace:'Calibri',valign:'top'})}
     // 9) SOAT
-    if(soatRecs&&soatRecs.length){var sn=[],sgn=[];for(mm=1;mm<=mA;mm++){var n=0,g=0;soatRecs.forEach(function(r){if(r.y===yA&&r.m===mm){n++;g+=r.g}});sn.push(n);sgn.push(Math.round(g))}
+    if(soatRecs&&soatRecs.length){var sn=[],sgn=[],slab=MCa;
+      if(HIST){var sy={};soatRecs.forEach(function(r){sy[r.y]=1});var syl=Object.keys(sy).map(Number).sort();slab=syl.map(String);syl.forEach(function(y){var n=0,g=0;soatRecs.forEach(function(r){if(r.y===y){n++;g+=r.g}});sn.push(n);sgn.push(Math.round(g))})}
+      else{slab=MC.slice(0,mA);for(mm=1;mm<=mA;mm++){var n=0,g=0;soatRecs.forEach(function(r){if(r.y===yA&&r.m===mm){n++;g+=r.g}});sn.push(n);sgn.push(Math.round(g))}}
       var tn=sn.reduce(function(a,b){return a+b},0),tgn=sgn.reduce(function(a,b){return a+b},0);
-      s=lamina('SOAT: cuántos vendemos y cuánto ganamos','Año '+yA+' · '+tn+' SOAT vendidos · ganancia '+pesosC(tgn));
-      s.addChart(P.charts.BAR,[{name:'SOAT vendidos',labels:MCa,values:sn}],Object.assign(okChart(),{x:0.5,y:1.4,w:6.1,h:5.6,showLegend:false,chartColors:[NAVY],barGapWidthPct:50,showTitle:true,title:'SOAT vendidos por mes',titleFontSize:13,titleColor:GRIS}));
-      s.addChart(P.charts.LINE,[{name:'Ganancia',labels:MCa,values:sgn}],Object.assign(okChart(),{x:6.8,y:1.4,w:6.1,h:5.6,showLegend:false,chartColors:[VER],lineSize:3,showValue:false,showTitle:true,title:'Ganancia por mes ($)',titleFontSize:13,titleColor:GRIS,valAxisLabelFormatCode:'#,##0'}))}
+      s=lamina('SOAT: cuántos vendemos y cuánto ganamos',(HIST?'Histórico':'Año '+yA)+' · '+tn+' SOAT vendidos · ganancia '+pesosC(tgn));
+      s.addChart(P.charts.BAR,[{name:'SOAT vendidos',labels:slab,values:sn}],Object.assign(okChart(),{x:0.5,y:1.4,w:6.1,h:5.6,showLegend:false,chartColors:[NAVY],barGapWidthPct:50,showTitle:true,title:HIST?'SOAT vendidos por año':'SOAT vendidos por mes',titleFontSize:13,titleColor:GRIS}));
+      s.addChart(P.charts.LINE,[{name:'Ganancia',labels:slab,values:sgn}],Object.assign(okChart(),{x:6.8,y:1.4,w:6.1,h:5.6,showLegend:false,chartColors:[VER],lineSize:3,showValue:false,showTitle:true,title:HIST?'Ganancia por año ($)':'Ganancia por mes ($)',titleFontSize:13,titleColor:GRIS,valAxisLabelFormatCode:'#,##0'}))}
     // 10) Clientes OMS
-    if(OMS&&OMS.contratos.length){var om={},vh={},tOm=0;OMS.contratos.forEach(function(c){var d=(c.fechaFirmaISO||'').split('-');if(d.length<3||+d[0]!==yA)return;om[+d[1]]=(om[+d[1]]||0)+1;tOm++;var v=String(c.placa||'(sin dato)').toUpperCase().trim();vh[v]=(vh[v]||0)+1});
+    if(OMS&&OMS.contratos.length){var om={},vh={},tOm=0;OMS.contratos.forEach(function(c){var d=(c.fechaFirmaISO||'').split('-');if(d.length<3||(!HIST&&+d[0]!==yA))return;var ok=HIST?+d[0]:+d[1];om[ok]=(om[ok]||0)+1;tOm++;var v=String(c.placa||'(sin dato)').toUpperCase().trim();vh[v]=(vh[v]||0)+1});
       var vt=Object.keys(vh).sort(function(a,b){return vh[b]-vh[a]}).slice(0,8);
-      if(tOm){s=lamina('Clientes OMS: pólizas vendidas y motos','Año '+yA+' · '+tOm+' pólizas vendidas');
-        var ov=[];for(mm=1;mm<=mA;mm++)ov.push(om[mm]||0);
-        s.addChart(P.charts.BAR,[{name:'Pólizas',labels:MCa,values:ov}],Object.assign(okChart(),{x:0.5,y:1.4,w:6.1,h:5.6,showLegend:false,chartColors:[NAVY],barGapWidthPct:50,showTitle:true,title:'Pólizas por mes',titleFontSize:13,titleColor:GRIS}));
+      if(tOm){s=lamina('Clientes OMS: pólizas vendidas y motos',(HIST?'Histórico':'Año '+yA)+' · '+tOm+' pólizas vendidas');
+        var ov=[],olab;if(HIST){var oys=Object.keys(om).map(Number).sort();olab=oys.map(String);oys.forEach(function(y){ov.push(om[y])})}else{olab=MC.slice(0,mA);for(mm=1;mm<=mA;mm++)ov.push(om[mm]||0)}
+        s.addChart(P.charts.BAR,[{name:'Pólizas',labels:olab,values:ov}],Object.assign(okChart(),{x:0.5,y:1.4,w:6.1,h:5.6,showLegend:false,chartColors:[NAVY],barGapWidthPct:50,showTitle:true,title:HIST?'Pólizas por año':'Pólizas por mes',titleFontSize:13,titleColor:GRIS}));
         s.addChart(P.charts.BAR,[{name:'Pólizas',labels:vt.slice().reverse(),values:vt.slice().reverse().map(function(v){return vh[v]})}],Object.assign(okChart(),{x:6.8,y:1.4,w:6.1,h:5.6,barDir:'bar',showLegend:false,chartColors:[ORO],barGapWidthPct:40,showTitle:true,title:'Motos más vendidas',titleFontSize:13,titleColor:GRIS}))}}
     var f=h,z=function(n){return ('0'+n).slice(-2)};
     if(retorno)return P.write({outputType:'arraybuffer'});
-    P.writeFile({fileName:'Reporte_Protect_Motos_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.pptx'}).then(function(){repAviso('Descargado ✔ presentación de PowerPoint')}).catch(function(e){repAviso('No se pudo crear la presentación: '+(e&&e.message||e))});
+    P.writeFile({fileName:'Reporte_Protect_Motos_'+(anioSel()||'historico')+'_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.pptx'}).then(function(){repAviso('Descargado ✔ presentación de PowerPoint')}).catch(function(e){repAviso('No se pudo crear la presentación: '+(e&&e.message||e))});
   }
   /* ===== Descargar TODOS los reportes de una vez (ZIP): Inicio + Cobros + SOAT + Clientes OMS + PowerPoint ===== */
   var repRespuestas={};
@@ -1726,7 +1759,7 @@
     repAviso('Reuniendo todos los reportes… espera unos segundos');
     var archivos=[],MODS=[['cobros','Cobros','pm_cobros_url_conector'],['soat','SOAT','pm_soat_url_conector'],['oms','Clientes_OMS','pm_oms_url_conector']];
     function txt(filas){return '﻿'+filas.map(function(r){return r.map(function(v){v=v==null?'':String(v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(';')}).join('\r\n')}
-    REPORTES.forEach(function(r,ri){try{var x=r[1]();if(x&&x[1].length>1)archivos.push({nombre:'Inicio/'+x[0]+'.csv',datos:txt(conCabecera(x[1],DESC_INI[ri]))})}catch(e){}});
+    REPORTES.forEach(function(r,ri){try{var x=r[1]();if(!x)return;var fl=filtrarAnio(x[1],YC_INI[ri],anioSel(),TIT_INI[ri]);if(fl.length>1)archivos.push({nombre:'Inicio/'+x[0]+'.csv',datos:txt(conCabecera(fl,DESC_INI[ri]))})}catch(e){}});
     if(modoTexto())try{var ib=informeBloques();if(ib)archivos.unshift({nombre:'Informe_escrito.txt',datos:'\ufeff'+informeTexto(ib)})}catch(e){}
     // cargar en segundo plano los botones que tengan su conector configurado
     var pedir=[];
@@ -1735,7 +1768,7 @@
     var t0=Date.now(),espera=Math.min(40000,0+40000);
     (function ciclo(){
       var faltan=pedir.filter(function(m){return !repRespuestas[m[0]]});
-      pedir.forEach(function(m){if(repRespuestas[m[0]])return;var fr=document.querySelector('#v-'+m[0]+' iframe');if(fr&&fr.contentWindow)try{fr.contentWindow.postMessage({pmRepPedido:true,conTexto:modoTexto()},'*')}catch(e){}});
+      pedir.forEach(function(m){if(repRespuestas[m[0]])return;var fr=document.querySelector('#v-'+m[0]+' iframe');if(fr&&fr.contentWindow)try{fr.contentWindow.postMessage({pmRepPedido:true,conTexto:modoTexto(),anio:anioSel()},'*')}catch(e){}});
       if(faltan.length&&Date.now()-t0<espera){repAviso('Reuniendo reportes… '+(pedir.length-faltan.length)+' de '+pedir.length+' botones listos');setTimeout(ciclo,1800);return}
       pedir.forEach(function(m){(repRespuestas[m[0]]||[]).forEach(function(it){archivos.push({nombre:m[1]+'/'+it[0]+'.csv',datos:it[1]})})});
       var ppt=null;try{ppt=descargarPPT(true)}catch(e){}
@@ -1743,7 +1776,7 @@
         if(buf)archivos.push({nombre:'Presentacion/Reporte_Protect_Motos.pptx',datos:buf});
         if(!archivos.length){repAviso('Aún no hay datos para descargar. Espera a que carguen los conectores.');return}
         var f=new Date(),z=function(n){return ('0'+n).slice(-2)},a=document.createElement('a');
-        a.href=URL.createObjectURL(ZipSimple.crear(archivos));a.download='Reportes_Protect_Motos_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.zip';document.body.appendChild(a);a.click();a.remove();
+        a.href=URL.createObjectURL(ZipSimple.crear(archivos));a.download='Reportes_Protect_Motos_'+(anioSel()||'historico')+'_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.zip';document.body.appendChild(a);a.click();a.remove();
         var omit=faltan.map(function(m){return m[1]});repAviso('Descargado ✔ '+archivos.length+' archivos en un ZIP'+(omit.length?' (sin datos de: '+omit.join(', ')+')':''));
       };
       if(ppt&&ppt.then)ppt.then(fin,function(){fin(null)});else fin(null);

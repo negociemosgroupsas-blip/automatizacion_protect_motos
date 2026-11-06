@@ -300,6 +300,7 @@
   .rep-w{position:relative;display:inline-block} .rep-m{position:absolute;right:0;top:calc(100% + 6px);z-index:60;min-width:290px;background:#13223f;color:#eef2ff;border:1px solid #3b4f8f;border-radius:12px;padding:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:2px}
   .rep-m[hidden]{display:none} .rep-m b{padding:4px 8px;color:#fdc33e;font-size:.82rem} .rep-m button{background:transparent;color:#eef2ff;text-align:left;border:0;border-radius:8px;padding:8px 10px;font-size:.84rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit} .rep-m button:hover{background:#25366a}
   .rep-modo{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:2px 0 6px;padding:4px;background:#0d1530;border-radius:10px} .rep-m .rep-modo button{text-align:center;white-space:normal;font-size:.78rem;padding:7px 6px;border:1px solid transparent} .rep-m .rep-modo button.on{background:#fdc33e;color:#1a1200;border-color:#fdc33e}
+  .rep-per{margin:2px 0 4px;padding:6px 8px;background:#0d1530;border-radius:10px} .rep-per label{display:flex;align-items:center;gap:8px;font-size:.78rem;color:#a3b4d8} .rep-per select{flex:1;background:#13223f;color:#eef2ff;border:1px solid #3b4f8f;border-radius:8px;padding:5px 8px;font-size:.82rem}
   #repAviso{position:fixed;right:18px;bottom:18px;background:#13223f;color:#fff;padding:9px 14px;border-radius:10px;font-size:.84rem;z-index:80;display:none;box-shadow:0 8px 22px rgba(0,0,0,.35)}
 </style>
 <script src="../assets/zip_simple.js"></script>
@@ -529,8 +530,11 @@
     var MESN=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     function dIso(iso){if(!iso)return '';var p=String(iso).split('-');return p.length===3?(+p[2])+'/'+(+p[1])+'/'+p[0]:iso}
     var DESC=[["Todos los clientes OMS", "Una fila por cada cliente OMS (cada cliente es una póliza), con su estado de renovación.", "«Cumple su año» es la fecha fin de la póliza. No se cobra: es la fecha en que hay que volver a hablarle para renovar."], ["Clientes OMS por renovar", "Clientes cuya póliza cumple el año en 8 días o menos.", "«Días» negativo significa que ya cumplió su año. Son los clientes a los que hay que escribirles."], ["Pólizas por mes y por moto", "Cuántas pólizas OMS se vendieron cada mes y de qué moto.", "La primera tabla cuenta por mes de la fecha de inicio; la segunda, las pólizas por moto en cada año."], ["Mensajes y gestiones", "Los avisos de renovación enviados y sus respuestas.", "Sale de la pestaña Gestiones_OMS que crea el CRM."]];
+    var YCM=[5, 5, 0, 0],TITM=[0, 0, 1, 0],per='';try{per=localStorage.getItem('pm_rep_anio_mod')||''}catch(e){}
+    function perTxt(y){return y?'año '+y:'histórico (todos los años)'}
+    function filt(filas,i,y){if(!y||YCM[i]==null)return filas;var out=[filas[0]];for(var k=1;k<filas.length;k++){var v=filas[k][YCM[i]],mm=String(v==null?'':v).match(/(?:^|\D)(20\d{2})(?:\D|$)/);if(mm){if(mm[1]===y)out.push(filas[k])}else if(TITM[i])out.push(filas[k])}return out}
     var modo=false;try{modo=localStorage.getItem('pm_rep_texto_mod')==='1'}catch(e){}
-    function cab(filas,i,on){if(!on||!DESC[i])return filas;var f=new Date();return [['REPORTE: '+DESC[i][0]],['Fecha del reporte',f.toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})],['Qué muestra',DESC[i][1]],['Cómo leerlo',DESC[i][2]],['Importante','Estas cifras salen de las hojas de Google Sheets de Protect Motos al momento de descargar el reporte.'],[]].concat(filas)}
+    function cab(filas,i,on,y){if(!on||!DESC[i])return filas;var f=new Date();return [['REPORTE: '+DESC[i][0]],['Fecha del reporte',f.toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})],['Período',perTxt(y)],['Qué muestra',DESC[i][1]],['Cómo leerlo',DESC[i][2]],['Importante','Estas cifras salen de las hojas de Google Sheets de Protect Motos al momento de descargar el reporte.'],[]].concat(filas)}
     var REP=[
       ['👥 Todos los clientes OMS (con estado)',function(){var f=[['Cliente','Cédula','Vehículo','Compra','Valor a pagar','Inicio','Cumple su año','Celular','Estado en la hoja','Estado de renovación']];
         D.analizar(estado.clientes,estado.gestiones).forEach(function(x){var c=x.c;f.push([c.cliente,c.cedula,c.placa,c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma,c.valorProtect,dIso(c.fechaFirmaISO),dIso(c.finISO),c.celular,c.estado,ETQ[x.tipo][1]])});return ['clientes_OMS',f]}],
@@ -542,22 +546,25 @@
       ['📝 Mensajes y gestiones de renovación',function(){var f=[['Fecha','Referencia','Cédula','Cliente','Acción','Registrado por']];estado.gestiones.forEach(function(g){f.push([g.fechaGestion,g.contrato,g.cedula,g.cliente,g.accion,g.registradoPor])});return ['OMS_gestiones',f]}]
     ];
     var m=document.getElementById('repM');
-    m.innerHTML='<b>Descarga de reportes</b><div class="rep-modo"><button type="button" data-modo="0">📄 Solo datos</button><button type="button" data-modo="1">📝 Datos + texto que explica</button></div>'+REP.map(function(r,i){return '<button type="button" data-i="'+i+'">'+r[0]+'</button>'}).join('')+'<button type="button" data-all="1" style="border-top:1px solid #2a3b70;margin-top:4px;color:#fdc33e">📦 Todos los reportes de este botón (ZIP)</button>';
+    m.innerHTML='<b>Descarga de reportes</b><div class="rep-per"><label>Período <select id="repAnio"><option value="">Histórico (todos los años)</option></select></label></div><div class="rep-modo"><button type="button" data-modo="0">📄 Solo datos</button><button type="button" data-modo="1">📝 Datos + texto que explica</button></div>'+REP.map(function(r,i){return '<button type="button" data-i="'+i+'">'+r[0]+'</button>'}).join('')+'<button type="button" data-all="1" style="border-top:1px solid #2a3b70;margin-top:4px;color:#fdc33e">📦 Todos los reportes de este botón (ZIP)</button>';
     pintaModo();
-    document.getElementById('btnRep').addEventListener('click',function(ev){ev.stopPropagation();m.hidden=!m.hidden});
+    document.getElementById('btnRep').addEventListener('click',function(ev){ev.stopPropagation();if(m.hidden)llenaAnios();m.hidden=!m.hidden});
+    document.getElementById('repAnio').addEventListener('change',function(){per=this.value;try{localStorage.setItem('pm_rep_anio_mod',per)}catch(e){}});
+    document.getElementById('repAnio').addEventListener('click',function(ev){ev.stopPropagation()});
     document.addEventListener('click',function(ev){if(!ev.target.closest('.rep-w'))m.hidden=true});
-    function todos(on){var out=[];REP.forEach(function(r,i){try{var x=r[1]();if(x&&x[1].length>1)out.push([x[0],cab(x[1],i,on===undefined?modo:on)])}catch(e){}});return out}
+    function todos(on,anio){var y=anio===undefined?per:anio,out=[];REP.forEach(function(r,i){try{var x=r[1]();if(!x)return;var fl=filt(x[1],i,y);if(fl.length>1)out.push([x[0]+(y?'_'+y:'_historico'),cab(fl,i,on===undefined?modo:on,y)])}catch(e){}});return out}
+    function llenaAnios(){var ys={};ys[new Date().getFullYear()]=1;REP.forEach(function(r,i){if(YCM[i]==null)return;try{var x=r[1]();if(x)x[1].slice(1).forEach(function(f){var mm=String(f[YCM[i]]==null?'':f[YCM[i]]).match(/(?:^|\D)(20\d{2})(?:\D|$)/);if(mm)ys[mm[1]]=1})}catch(e){}});var sel=document.getElementById('repAnio');sel.innerHTML='<option value="">Histórico (todos los años)</option>'+Object.keys(ys).sort(function(a,b){return b-a}).map(function(y){return '<option value="'+y+'">Solo '+y+'</option>'}).join('');sel.value=per;if(sel.value!==per)sel.value=''}
     function pintaModo(){[].forEach.call(m.querySelectorAll('.rep-modo button'),function(b){b.classList.toggle('on',(b.dataset.modo==='1')===modo)})}
     function txt(filas){return '\ufeff'+filas.map(function(r){return r.map(function(v){v=v==null?'':String(v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(';')}).join('\r\n')}
-    window.addEventListener('message',function(ev){var d=ev.data;if(!d||!d.pmRepPedido)return;var it=todos(!!d.conTexto);try{window.parent.postMessage({pmRepDatos:'oms',items:it.map(function(x){return [x[0],txt(x[1])]})},'*')}catch(e){}});
+    window.addEventListener('message',function(ev){var d=ev.data;if(!d||!d.pmRepPedido)return;var it=todos(!!d.conTexto,d.anio||'');try{window.parent.postMessage({pmRepDatos:'oms',items:it.map(function(x){return [x[0],txt(x[1])]})},'*')}catch(e){}});
     m.addEventListener('click',function(ev){var b=ev.target.closest('button');if(!b)return;
       if(b.dataset.modo!==undefined){modo=b.dataset.modo==='1';try{localStorage.setItem('pm_rep_texto_mod',b.dataset.modo)}catch(e){}pintaModo();return}
       m.hidden=true;
       if(b.dataset.all){var it=todos();if(!it.length){aviso('Todavía no hay datos. Pulsa «Actualizar datos» y vuelve a intentar.');return}
-        var f=new Date(),z=function(n){return ('0'+n).slice(-2)},a=document.createElement('a');a.href=URL.createObjectURL(ZipSimple.crear(it.map(function(x){return {nombre:x[0]+'.csv',datos:txt(x[1])}})));a.download='Reportes_Clientes_OMS_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.zip';document.body.appendChild(a);a.click();a.remove();aviso('Descargado ✔ '+it.length+' reportes en un ZIP');return}
+        var f=new Date(),z=function(n){return ('0'+n).slice(-2)},a=document.createElement('a');a.href=URL.createObjectURL(ZipSimple.crear(it.map(function(x){return {nombre:x[0]+'.csv',datos:txt(x[1])}})));a.download='Reportes_Clientes_OMS_'+(per||'historico')+'_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.zip';document.body.appendChild(a);a.click();a.remove();aviso('Descargado ✔ '+it.length+' reportes en un ZIP');return}
       var res=null;try{res=REP[+b.dataset.i][1]()}catch(e){aviso('No se pudo armar el reporte: '+e.message);return}
       if(!res||res[1].length<2){aviso('Todavía no hay datos para ese reporte. Pulsa «Actualizar datos» y vuelve a intentar.');return}
-      csv(res[0],cab(res[1],+b.dataset.i,modo));aviso('Descargado ✔ '+res[0]+'.csv'+(modo?' (con explicación)':''))});
+      var fl=filt(res[1],+b.dataset.i,per);if(fl.length<2){aviso('No hay datos de '+perTxt(per)+' en ese reporte.');return}csv(res[0]+(per?'_'+per:'_historico'),cab(fl,+b.dataset.i,modo,per));aviso('Descargado ✔ '+res[0]+'.csv ('+perTxt(per)+(modo?', con explicación':'')+')')});
   })();
 
   document.getElementById('anioActual').textContent = new Date().getFullYear();
