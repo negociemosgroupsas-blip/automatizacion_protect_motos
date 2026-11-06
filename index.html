@@ -461,6 +461,11 @@
   body.tema-inicio .od-ayuda,body.tema-inicio .ay-sub{color:#a3b4d8}
   body.inicio-claro .od-ayuda,body.inicio-claro .ay-sub{color:#5f6f93}
   @media(max-width:760px){.in-nav{position:static;flex-direction:column;align-items:stretch} .in-chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px} #inBusca{flex:1 1 auto;width:100%}}
+  .cf-ays{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px} .cf-ay{background:var(--fondo,#f3f4f8);border-radius:14px;padding:12px 14px;min-width:0}
+  .cf-ay-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:4px} .cf-ay-h b{font-size:1.7rem;line-height:1;display:block} .cf-ay-h span{font-size:.78rem;color:var(--suave,#6b7280)}
+  .cf-ay-h label{font-size:.74rem;color:var(--suave,#6b7280);display:flex;align-items:center;gap:6px} .cf-ay-h select{border:1px solid var(--borde,#e3e6eb);background:var(--tarjeta,#fff);color:var(--texto,#1f2430);border-radius:8px;padding:4px 8px;font-size:.8rem}
+  body.tema-inicio .cf-ay{background:#1b2850}
+  @media(max-width:560px){.cf-ays{grid-template-columns:1fr}}
 </style>
 <script src="assets/dash_oms.js"></script>
 </head>
@@ -888,16 +893,17 @@
 
 
   var cfc=document.createElement('div');cfc.className='card cfc';cfc.innerHTML='<h3>Ventas: comparativo por año, contado y financiados</h3><p class="tot" id="cfTot">Se muestra al conectar Cobros.</p><div class="cf-ley" id="cfLey"></div>'+
-    '<div class="ed-per"><label>Ver <select id="cfVista"><option value="anios">Comparar años</option><option value="tipos">Contado y financiados</option></select></label>'+
+    '<div class="ed-per"><label>Ver <select id="cfVista"><option value="porano">Una gráfica por año</option><option value="anios">Comparar años (juntos)</option><option value="tipos">Contado y financiados</option></select></label>'+
     '<label id="cfLTipo">Tipo de venta <select id="cfTipo"><option value="todas">Todas</option><option value="contado">Solo de contado</option><option value="financiadas">Solo financiadas</option></select></label>'+
     '<label id="cfLAnio">Año <select id="cfAnio"></select></label></div><div class="cf-chips" id="cfChips"></div><div id="cfCuerpo"></div>';tarjetas.appendChild(cfc);
-  var cfVista='anios',cfTipo='todas',cfAnio=String(new Date().getFullYear()),cfSel=null,cfDatos=null,cfOk=false,
+  var cfVista='porano',cfTipo='todas',cfAnio=String(new Date().getFullYear()),cfSel=null,cfDatos=null,cfOk=false,
       PAL=['#021346','#fdc33e','#9fb8e8','#5b78c7','#e08a00','#d5dcf0'],PALT=['nom-b','nom-o','nom-o','nom-b','nom-o','nom-o'];
-  try{var v1=localStorage.getItem('pm_cf_vista');if(v1==='anios'||v1==='tipos')cfVista=v1;var v2=localStorage.getItem('pm_cf_tipo');if(v2==='todas'||v2==='contado'||v2==='financiadas')cfTipo=v2;var ca=localStorage.getItem('pm_cf_anio');if(ca&&(ca==='todos'||/^\d{4}$/.test(ca)))cfAnio=ca;var cs=JSON.parse(localStorage.getItem('pm_cf_anios')||'null');if(Array.isArray(cs))cfSel=cs.map(Number)}catch(e){}
+  try{var v1=localStorage.getItem('pm_cf_vista');if(v1==='anios'||v1==='tipos')cfVista=v1;if(v1==='porano'||localStorage.getItem('pm_cf_v3')!=='1'){cfVista='porano';cfAnio='todos';localStorage.setItem('pm_cf_v3','1')}var v2=localStorage.getItem('pm_cf_tipo');if(v2==='todas'||v2==='contado'||v2==='financiadas')cfTipo=v2;var ca=localStorage.getItem('pm_cf_anio');if(ca&&(ca==='todos'||/^\d{4}$/.test(ca)))cfAnio=ca;var cs=JSON.parse(localStorage.getItem('pm_cf_anios')||'null');if(Array.isArray(cs))cfSel=cs.map(Number)}catch(e){}
   function cfGuardar(){try{localStorage.setItem('pm_cf_vista',cfVista);localStorage.setItem('pm_cf_tipo',cfTipo);localStorage.setItem('pm_cf_anio',cfAnio);localStorage.setItem('pm_cf_anios',JSON.stringify(cfSel||[]))}catch(e){}}
   document.getElementById('cfVista').addEventListener('change',function(){cfVista=this.value;cfGuardar();pintarCF()});
   document.getElementById('cfTipo').addEventListener('change',function(){cfTipo=this.value;cfGuardar();pintarCF()});
   document.getElementById('cfAnio').addEventListener('change',function(){cfAnio=this.value;cfGuardar();pintarCF()});
+  document.getElementById('cfCuerpo').addEventListener('change',function(ev){var t=ev.target;if(t.tagName==='SELECT'&&t.dataset.y){(window.cfTipoAnio=window.cfTipoAnio||{})[t.dataset.y]=t.value;pintarCF()}});
   document.getElementById('cfChips').addEventListener('click',function(ev){var bt=ev.target.closest('.cf-todos');if(!bt)return;var yA=new Date().getFullYear(),all=Object.keys(cfDatos||{}).map(function(k){return Math.floor((+k-1)/12)});all.push(yA);all=all.filter(function(v,i,a){return a.indexOf(v)===i}).sort();cfSel=bt.dataset.a==='todos'?all:[yA];cfGuardar();pintarCF()});
   document.getElementById('cfChips').addEventListener('change',function(){var ch=[].slice.call(document.querySelectorAll('#cfChips input:checked')).map(function(i){return +i.value}).sort();if(!ch.length){pintarCF();return}cfSel=ch;cfGuardar();pintarCF()});
   function pintarCF(cf,ok){
@@ -907,11 +913,33 @@
     var yAct=new Date().getFullYear(),mAct=new Date().getMonth()+1,anios={};anios[yAct]=1;Object.keys(cfDatos).forEach(function(k){anios[Math.floor((+k-1)/12)]=1});
     var lst=Object.keys(anios).map(Number).sort(function(a,c){return a-c});
     document.getElementById('cfVista').value=cfVista;document.getElementById('cfTipo').value=cfTipo;
-    document.getElementById('cfLTipo').style.display=cfVista==='anios'?'':'none';(function(){var l=document.getElementById('cfLey');if(l)l.innerHTML=cfVista==='tipos'?'<span><i style="background:#fdc33e"></i><b>Dorado = De contado</b></span><span><i style="background:#5b78c7"></i><b>Azul = Financiados</b></span>':'<span class="cf-ley-t">En esta vista cada color es un <b>año</b> (los de las casillas de abajo). Para ver <b>contado y financiados</b> por separado, cambia «Ver» a <b>Contado y financiados</b>.</span>'})();document.getElementById('cfLAnio').style.display=cfVista==='tipos'?'':'none';
+    document.getElementById('cfLTipo').style.display=cfVista==='anios'?'':'none';(function(){var l=document.getElementById('cfLey');if(l)l.innerHTML=cfVista==='porano'?'<span class="cf-ley-t">Cada año tiene su propia gráfica y su propio filtro de <b>Tipo de venta</b>. El número de cada columna es el total de contratos de ese mes.</span>':cfVista==='tipos'?'<span><i style="background:#fdc33e"></i><b>Dorado = De contado</b></span><span><i style="background:#5b78c7"></i><b>Azul = Financiados</b></span>':'<span class="cf-ley-t">En esta vista cada color es un <b>año</b> (los de las casillas de abajo). Para ver <b>contado y financiados</b> por separado, cambia «Ver» a <b>Contado y financiados</b>.</span>'})();document.getElementById('cfLAnio').style.display=(cfVista==='tipos'||cfVista==='porano')?'':'none';
     var sa=document.getElementById('cfAnio');sa.innerHTML='<option value="todos">Todos los años</option>'+lst.slice().reverse().map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');
     if(cfAnio!=='todos'&&!anios[cfAnio])cfAnio=String(yAct);sa.value=cfAnio;
     var tipoTxt=cfTipo==='contado'?'de contado':cfTipo==='financiadas'?'financiadas':'(todas)';
     var valor=function(k){var o=cfDatos[k];if(!o)return 0;return cfTipo==='contado'?o.C:cfTipo==='financiadas'?o.F:(o.C+o.F+(o.O||0))};
+    if(cfVista==='porano'){
+      chips.innerHTML='';
+      var yrs=lst.slice().reverse().filter(function(y){return cfAnio==='todos'||y===+cfAnio});
+      var COLY=['#38bdf8','#fdc33e','#9fb8e8','#5b78c7','#e08a00','#d5dcf0'];
+      var tipoY=window.cfTipoAnio=window.cfTipoAnio||{};
+      var hh='',nT=0,infoY=[];
+      yrs.forEach(function(y,yi){
+        var tp=tipoY[y]||'todas',vf=function(k){var o=cfDatos[k];if(!o)return 0;return tp==='contado'?o.C:tp==='financiadas'?o.F:(o.C+o.F+(o.O||0))},t=0,mx=1,mes=[],j;
+        for(j=1;j<=12;j++){var v=vf(y*12+j);t+=v;if(v>mx)mx=v;mes.push(v)}
+        nT+=t;
+        var tx=tp==='contado'?'de contado':tp==='financiadas'?'financiadas':'(todas)';
+        hh+='<div class="cf-ay" data-y="'+y+'"><div class="cf-ay-h"><div><b style="color:'+COLY[yi%6]+'">'+y+'</b><span>'+t+' contratos '+tx+(y===yAct?' · a la fecha (ene–'+MES_C[mAct-1]+')':' en el año')+'</span></div><label>Tipo de venta <select data-y="'+y+'"><option value="todas"'+(tp==='todas'?' selected':'')+'>Todas</option><option value="contado"'+(tp==='contado'?' selected':'')+'>De contado</option><option value="financiadas"'+(tp==='financiadas'?' selected':'')+'>Financiadas</option></select></label></div><div class="cf-ay-g" id="cfAy'+y+'"></div></div>';
+        infoY.push({y:y,mes:mes,mx:mx,tx:tx});
+      });
+      tot.textContent=nT?'Una gráfica por año · '+yrs.length+(yrs.length===1?' año':' años')+' · el número de cada columna es el total de contratos de ese mes':'No hay ventas en los años elegidos.';
+      b.innerHTML='<div class="cf-ays">'+hh+'</div>';
+      infoY.forEach(function(r){
+        var box=document.getElementById('cfAy'+r.y);if(!box)return;
+        columnas(box,{datos:r.mes.map(function(v,ix){return (r.y===yAct&&ix+1>mAct)?null:{v:v,m:ix}}),n:12,max:r.mx*1.2,alto:200,etiquetas:MES_C,activo:r.y===yAct?mAct-1:-1,aria:'Contratos por mes de '+r.y,etqBarra:function(d){return d.v},
+          tip:function(d,ix){return '<b>'+MES_LARGO[ix]+' '+r.y+'</b><br>'+d.v+' contratos '+r.tx}});
+      });
+      return}
     if(cfVista==='anios'){
       var sel=(cfSel&&cfSel.length?cfSel:lst.slice(-3)).filter(function(y){return anios[y]}).sort(function(a,c){return a-c});
       if(!sel.length)sel=lst.slice(-3);
