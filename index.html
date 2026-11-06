@@ -353,7 +353,7 @@
   .in-fil #gUlt{font-size:.72rem;color:#7f93bf}
 
   /* tarjetas KPI */
-  .in-kpis{grid-column:1/-1;order:3;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+  .in-kpis{grid-column:1/-1;order:3;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
   .in-k{position:relative;display:block;border-radius:18px;padding:16px 16px 14px;color:#fff;text-decoration:none;overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.35);transition:transform .15s,box-shadow .15s;min-width:0}
   .in-k:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(0,0,0,.45)}
   .in-k::after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.12)}
@@ -416,7 +416,7 @@
     #v-inicio .svc{grid-column:1/-1!important;order:16!important} #v-inicio .oms-wrap{grid-column:1/-1!important;order:18!important}
   }
   @media(max-width:1180px){
-    .in-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .in-kpis{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
     #v-inicio .meta{order:5!important} #v-inicio .asr{order:6!important} #v-inicio .cfc{order:7!important} #v-inicio .seg{order:9!important} #v-inicio .rcm{order:10!important} #v-inicio .edc{order:11!important} #v-inicio .anu{order:12!important}
     #v-inicio .alertas{order:14!important} #v-inicio .svc{order:16!important} #v-inicio .oms-wrap{order:18!important}
   }
@@ -521,7 +521,7 @@
   var menu=document.getElementById('menu'), tarjetas=document.getElementById('tarjetas');
   MODULOS.forEach(function(m){
     var li=document.createElement('li');
-    li.innerHTML='<a href="#'+m.id+'" data-id="'+m.id+'"><span class="ico">'+m.ico+'</span>'+m.nombre+(m.disponible===false?'<span class="tag">PRÓXIMO</span>':'')+(m.id==='soat'?'<span class="tag" id="soatBadge" hidden></span>':'')+(m.id==='oms'?'<span class="tag" id="omsBadge" hidden></span>':'')+'</a>';
+    li.innerHTML='<a href="#'+m.id+'" data-id="'+m.id+'"><span class="ico">'+m.ico+'</span>'+m.nombre+(m.disponible===false?'<span class="tag">PRÓXIMO</span>':'')+''+'</a>';
     menu.appendChild(li);
     if(false&&m.desc){
       var a=document.createElement('a');a.className='card';a.href='#'+m.id;
@@ -1213,7 +1213,7 @@
   var cargandoSoat=false;
   function cargarSoat(){
     if(cargandoSoat)return;
-    var u=url('pm_soat_url_conector'),av=$('soatAviso')||{},bd=$('soatBadge');
+    var u=url('pm_soat_url_conector'),av=$('soatAviso')||{},bd=$('soatBadge')||{};
     if(!/^https:\/\/script\.google\.com\//.test(u)){av.hidden=true;bd.hidden=true;return}
     cargandoSoat=true;
     var cb='pmSoat'+Date.now(),s=document.createElement('script'),t=setTimeout(fin,90000);
@@ -1270,7 +1270,7 @@
     document.head.appendChild(s);
   }
   function pintarOms(){
-    var dash=$('omsDash'),av=$('omsAviso')||{},bd=$('omsBadge');
+    var dash=$('omsDash'),av=$('omsAviso')||{},bd=$('omsBadge')||{};
     if(!OMS||!window.PMDashOMS){dash.hidden=true;av.hidden=true;bd.hidden=true;return}
     dash.hidden=false;PMDashOMS.render(dash,{clientes:OMS.contratos,gestiones:OMS.gestiones});
     var rs=PMDashOMS.resumen(OMS.contratos,OMS.gestiones),n=rs.porRenovar,nombres=rs.lista.filter(function(x){return x.tipo==='renovar'}).slice(0,3).map(function(x){return String(x.c.cliente||'').split(' ').slice(0,2).join(' ')+' ('+x.veh+')'});
@@ -1291,11 +1291,10 @@
       ['k-oro','🏍️','Contratos del mes',tot==null?'—':tot,tot==null?'Conecta el conector del CRM':'Meta '+meta+' · '+pct+' %',pct==null?0:Math.min(100,pct)],
       ['k-cian','🛡️','Con RC este mes',rcp==null?'—':rcp+' %',tot?PMK.rc+' de '+tot+' contratos':'Sin datos del mes',rcp==null?0:rcp],
       ['k-vio','📈','SOAT vendidos del mes',PMK.soatMes==null?'—':PMK.soatMes,PMK.soatMes==null?'Conecta SOAT':'Ganancia '+(window.PMG?dineroK(PMK.soatGan):''),null],
-      ['k-ros','🔔','Renovaciones por atender',(PMK.soatRen==null&&PMK.omsRen==null)?'—':ren,'SOAT '+(PMK.soatRen||0)+' · OMS '+(PMK.omsRen||0)+' (≤8 días)',null],
       ['k-azu','👥','Clientes activos',PMK.activos==null?'—':PMK.activos,PMK.activos==null?'':(PMK.finalizados||0)+' finalizados · '+(PMK.cancelados||0)+' cancelados',null],
       ['k-nar','🧾','Faltan por consolidar',PMK.faltaConc==null?'—':PMK.faltaConc,PMK.faltaConc==null?'Abre Conciliación':(PMK.menos?PMK.menos+' pagaron de menos':'Todo al día'),null]
     ];
-    box.innerHTML=K.map(function(x){return '<a class="in-k '+x[0]+'" href="'+(x[0]==='k-nar'?'#conciliacion':x[0]==='k-vio'?'#soat':x[0]==='k-ros'?'#soat':x[0]==='k-azu'?'#cobros':'#inicio')+'"><div class="in-ki">'+x[1]+'</div><div class="in-kt"><span>'+x[2]+'</span><b>'+x[3]+'</b><small>'+x[4]+'</small></div>'+(x[5]!==null?'<div class="in-kp"><i style="width:'+x[5]+'%"></i></div>':'')+'</a>'}).join('');
+    box.innerHTML=K.map(function(x){return '<a class="in-k '+x[0]+'" href="'+(x[0]==='k-nar'?'#conciliacion':x[0]==='k-vio'?'#soat':x[0]==='k-azu'?'#cobros':'#inicio')+'"><div class="in-ki">'+x[1]+'</div><div class="in-kt"><span>'+x[2]+'</span><b>'+x[3]+'</b><small>'+x[4]+'</small></div>'+(x[5]!==null?'<div class="in-kp"><i style="width:'+x[5]+'%"></i></div>':'')+'</a>'}).join('');
     var u=$('gUlt');if(u)u.textContent='Actualizado '+new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
     var sub=$('inSub');if(sub)sub.textContent='Mes en curso: '+MES_TXT_G()+' · todo se actualiza solo cada minuto';
   }
