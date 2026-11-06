@@ -4,6 +4,7 @@
  * CÓMO CREARLO (una sola vez):
  *   1) Abre el Google Sheet de clientes OMS ("Historico polizas").
  *   2) Menú Extensiones > Apps Script. Borra lo que haya y pega TODO este archivo. Guarda.
+ *      (Si el Sheet se llama distinto a «Historico polizas», cambia SHEET_NOMBRE o pega su ID en SHEET_ID.)
  *   3) Implementar > Nueva implementación > Aplicación web.  Ejecutar como: Yo.  Quién tiene acceso: Cualquier usuario.
  *   4) Copia la URL que termina en /exec y pégala en el botón «Clientes OMS» del CRM.
  *
@@ -14,7 +15,8 @@
 
 // ==================== CONFIGURACIÓN ====================
 var TOKEN = 'PM-OMS-2026';
-var SHEET_ID = '';                 // vacío = usa el Google Sheet desde el que creaste este script (lo normal). Si lo creaste suelto, pega aquí el ID del Sheet.
+var SHEET_ID = '';                 // ID del Google Sheet (lo que está en su URL entre /d/ y /edit). Si lo dejas vacío, se busca por nombre (SHEET_NOMBRE).
+var SHEET_NOMBRE = 'Historico polizas'; // nombre exacto del Google Sheet de clientes OMS
 var HOJA_CLIENTES = 'Clientes OMS'; // nombre de la pestaña de clientes; si no existe se usa la que tenga las columnas Cedula y Fecha fin (o la primera)
 var HOJA_PAGOS = 'Pagos_OMS';
 var HOJA_GESTIONES = 'Gestiones_OMS';
@@ -89,8 +91,21 @@ function responder(objeto, callback) {
 }
 
 // ==================== DATOS ====================
+// Abre el Google Sheet de clientes OMS. Una aplicación web NO puede usar "la hoja activa", así que se busca de este orden:
+//   1) por el ID de SHEET_ID (lo más seguro);  2) por el nombre SHEET_NOMBRE en tu Drive (el más reciente).
 function abrirSS() {
-  return SHEET_ID ? SpreadsheetApp.openById(SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  if (SHEET_ID) return SpreadsheetApp.openById(SHEET_ID);
+  var ss = null;
+  try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (e) {}
+  if (ss) return ss;
+  var archivos = DriveApp.getFilesByName(SHEET_NOMBRE), mejor = null;
+  while (archivos.hasNext()) {
+    var f = archivos.next();
+    if (f.getMimeType() !== MimeType.GOOGLE_SHEETS) continue;
+    if (!mejor || f.getLastUpdated() > mejor.getLastUpdated()) mejor = f;
+  }
+  if (!mejor) throw new Error('No encontré el Google Sheet "' + SHEET_NOMBRE + '". Pega su ID en SHEET_ID (está en la URL del Sheet, entre /d/ y /edit).');
+  return SpreadsheetApp.openById(mejor.getId());
 }
 
 function accionDatos() {
