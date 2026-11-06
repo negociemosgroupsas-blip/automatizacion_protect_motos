@@ -7,6 +7,7 @@
   var DIAS_AVISO = 8, DIAS_VENCIDO = 30;
   var ACC_ENV = 'Mensaje de renovación enviado', ACC_REN = 'Renovó', ACC_NO = 'No renovará';
   var YEARSEL = {};   // año elegido por cada tablero
+  var LAST = {};      // últimos datos de cada tablero (para repintar al cambiar el año desde fuera)
 
   /* ---------- utilidades ---------- */
   function E(tag, a, txt) { var e = document.createElementNS(NS, tag); for (var k in (a || {})) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; }
@@ -168,6 +169,7 @@
   function render(root, datos) {
     css();
     var clientes = (datos && datos.clientes) || [], gest = (datos && datos.gestiones) || [];
+    if (root.id) LAST[root.id] = datos;
     var a = analizar(clientes, gest), h = hoy(), yA = h.getFullYear(), mA = h.getMonth();
     var ys = {}; ys[yA] = 1; a.forEach(function (x) { if (x.ini) ys[x.ini.getFullYear()] = 1; });
     var lista = Object.keys(ys).map(Number).sort(function (p, q) { return q - p; });
@@ -253,5 +255,7 @@
     return { porRenovar: r, enviados: e, lista: a };
   }
 
-  window.PMDashOMS = { render: render, resumen: resumen, analizar: analizar, DIAS_AVISO: DIAS_AVISO, ACC_ENV: ACC_ENV, ACC_REN: ACC_REN, ACC_NO: ACC_NO };
+  function setYear(root, y) { if (!root || !root.id || !LAST[root.id]) return; YEARSEL[root.id] = String(y); render(root, LAST[root.id]); }
+
+  window.PMDashOMS = { render: render, setYear: setYear, resumen: resumen, analizar: analizar, DIAS_AVISO: DIAS_AVISO, ACC_ENV: ACC_ENV, ACC_REN: ACC_REN, ACC_NO: ACC_NO };
 })();

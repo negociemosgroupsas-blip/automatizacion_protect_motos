@@ -324,6 +324,103 @@
   .sv-d .t-g{fill:#1f9d55;font-size:11px;font-weight:800;paint-order:stroke;stroke:#fff;stroke-width:3px} .sv-d .t-ge{fill:#1f9d55;font-size:10px;font-weight:700}
   #v-inicio .oms-wrap{grid-column:1/-1;order:11} #v-inicio .oms-wrap[hidden]{display:none}
   #v-inicio .soat-aviso{order:1}
+
+  /* =====================================================================
+     PANEL EJECUTIVO DEL INICIO (tema oscuro, tarjetas KPI, secciones y filtro global)
+     Solo cambia la presentación: los datos, filtros y gráficas de cada tarjeta siguen siendo los mismos.
+     ===================================================================== */
+  body.tema-inicio{background:#0a1124}
+  body.tema-inicio main{--tarjeta:#131d38;--fondo:#1b2850;--borde:#2a3b70;--texto:#e8eefc;--suave:#a3b4d8;--titulo:#ffffff;--azul:#ffffff;--btn:#38bdf8;--c-navy:#38bdf8;--dorado:#fdc33e;--verde:#34d399;color:var(--texto)}
+  body.tema-inicio #top{background:#0e1632;border-bottom:1px solid #1f2e5b}
+  body.tema-inicio #q{background-color:#16224a;color:#e8eefc;border-color:#2a3b70}
+  body.tema-inicio #q::placeholder{color:#8ea2cd}
+  body.tema-inicio #btnRec{background:#16224a;color:#e8eefc;border-color:#2a3b70}
+  body.tema-inicio #ultAct{color:#8ea2cd!important}
+  body.tema-inicio #res{background:#131d38;border-color:#2a3b70;box-shadow:0 14px 34px #000a}
+  body.tema-inicio .f-caja{background:#131d38;color:#e8eefc} body.tema-inicio .f-acc a,body.tema-inicio .f-acc button{background:#2f4690;color:#fff} body.tema-inicio .f-acc .sec{background:#25366a;color:#e8eefc}
+  body.tema-inicio .bd{background:#25366a;color:#e8eefc} body.tema-inicio .bd.v{background:#0f3d33;color:#6ee7b7} body.tema-inicio .bd.r{background:#4a1d2b;color:#fda4af} body.tema-inicio .bd.n{background:#4a3410;color:#fcd34d} body.tema-inicio .bd.a{background:#1e3a6b;color:#93c5fd}
+  body.tema-inicio select option{background:#0f1830;color:#e8eefc}
+  #v-inicio{background:radial-gradient(1100px 520px at 12% -8%,#1c2f6b 0,transparent 62%),radial-gradient(900px 520px at 100% 0,#2b1d63 0,transparent 58%),#0a1124}
+  body.tema-inicio #v-inicio{color:var(--texto)}
+
+  /* cabecera + filtro global */
+  .in-head{grid-column:1/-1;order:1;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .in-tit h2{margin:0;font-size:1.6rem;color:#fff;letter-spacing:-.01em} .in-tit p{margin:2px 0 0;color:#a3b4d8;font-size:.82rem}
+  .in-fil{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#121c3a;border:1px solid #26376a;border-radius:14px;padding:8px 12px}
+  .in-fil label{display:flex;align-items:center;gap:6px;font-size:.74rem;color:#a3b4d8;text-transform:uppercase;letter-spacing:.06em}
+  .in-fil select{background:#0d1530;color:#e8eefc;border:1px solid #2f4284;border-radius:9px;padding:6px 10px;font-size:.84rem;cursor:pointer}
+  .in-fil button{background:#fdc33e;color:#1a1200;border:0;border-radius:9px;padding:7px 13px;font-weight:700;font-size:.8rem;cursor:pointer} .in-fil button:hover{filter:brightness(1.08)}
+  .in-fil #gUlt{font-size:.72rem;color:#7f93bf}
+
+  /* tarjetas KPI */
+  .in-kpis{grid-column:1/-1;order:3;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+  .in-k{position:relative;display:block;border-radius:18px;padding:16px 16px 14px;color:#fff;text-decoration:none;overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.35);transition:transform .15s,box-shadow .15s;min-width:0}
+  .in-k:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(0,0,0,.45)}
+  .in-k::after{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.12)}
+  .in-ki{position:absolute;right:12px;top:12px;width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.15rem;z-index:1}
+  .in-kt{position:relative;z-index:1;padding-right:44px} .in-kt span{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;opacity:.9;font-weight:700}
+  .in-kt b{display:block;font-size:2.05rem;line-height:1.1;margin:6px 0 2px;font-variant-numeric:tabular-nums;font-weight:800} .in-kt small{display:block;font-size:.74rem;opacity:.92;line-height:1.3}
+  .in-kp{position:relative;z-index:1;height:6px;border-radius:4px;background:rgba(255,255,255,.28);margin-top:10px;overflow:hidden} .in-kp i{display:block;height:100%;background:#fff;border-radius:4px;transition:width .8s ease}
+  .k-oro{background:linear-gradient(135deg,#fdc33e,#e08a00);color:#1b1300} .k-oro .in-kp{background:rgba(0,0,0,.18)} .k-oro .in-kp i{background:#1b1300} .k-oro .in-ki{background:rgba(0,0,0,.14)}
+  .k-cian{background:linear-gradient(135deg,#0e7490,#22d3ee)} .k-vio{background:linear-gradient(135deg,#6d28d9,#a78bfa)} .k-ros{background:linear-gradient(135deg,#be123c,#fb7185)}
+  .k-azu{background:linear-gradient(135deg,#1d4ed8,#60a5fa)} .k-nar{background:linear-gradient(135deg,#c2410c,#fb923c)}
+
+  /* títulos de sección */
+  .in-sec{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin-top:8px!important;font-size:.76rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#a3b4d8}
+  .in-sec i{width:9px;height:9px;border-radius:50%;background:#fdc33e;box-shadow:0 0 10px #fdc33e99} .in-sec::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,#2a3b70,transparent)}
+
+  /* tarjetas de gráficas */
+  body.tema-inicio #v-inicio .card,body.tema-inicio #v-inicio .al{background:linear-gradient(180deg,#17224a,#111a36);border:1px solid #25376b;border-top:3px solid var(--acc,#fdc33e);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.30)}
+  body.tema-inicio #v-inicio .card:hover{box-shadow:0 8px 24px rgba(0,0,0,.30);transform:none}
+  #v-inicio .meta{--acc:#fdc33e} #v-inicio .asr{--acc:#34d399} #v-inicio .cfc{--acc:#60a5fa} #v-inicio .seg{--acc:#a78bfa} #v-inicio .edc{--acc:#22d3ee} #v-inicio .rcm{--acc:#fb923c} #v-inicio .anu{--acc:#f472b6} #v-inicio .svc{--acc:#2dd4bf}
+  body.tema-inicio #v-inicio .card h3{color:#fff!important}
+  body.tema-inicio #v-inicio .tot,body.tema-inicio .ed-per label{color:#a3b4d8}
+  body.tema-inicio .ed-per select,body.tema-inicio #v-inicio select{background:#0d1530;color:#e8eefc;border:1px solid #2f4284;border-radius:8px}
+  body.tema-inicio .cf-chip{background:#0d1530;color:#e8eefc;border-color:#2f4284} body.tema-inicio .cf-todos{background:#1b2850;color:#e8eefc;border-color:#2f4284}
+  body.tema-inicio .al{border-left:5px solid var(--borde)} body.tema-inicio .al.rojo{border-left-color:#fb7185} body.tema-inicio .al.nar{border-left-color:#fb923c} body.tema-inicio .al.verde{border-left-color:#34d399}
+  body.tema-inicio .tk-p,body.tema-inicio .gi,body.tema-inicio .ed-big,body.tema-inicio .cf-n,body.tema-inicio .est-k{background:#1b2850}
+  body.tema-inicio .est-b{background:#0d1530} body.tema-inicio .est-tot{background:linear-gradient(135deg,#3730a3,#7c3aed)!important}
+  body.tema-inicio .est-n{color:#fff} body.tema-inicio .est-tot .est-n,body.tema-inicio .est-k.est-tot b{color:#fdc33e}
+  body.tema-inicio .est-d th,body.tema-inicio .est-d td{border-color:#2a3b70}
+  body.tema-inicio .meta-p{background:#0d1530} body.tema-inicio .meta-p u{background:#fff}
+  body.tema-inicio .fila-a .pista,body.tema-inicio .dona-b,body.tema-inicio .tk-b,body.tema-inicio .rc-b{background:#0d1530}
+  body.tema-inicio .sg-4{color:#06122b!important}
+  body.tema-inicio .tend-l,body.tema-inicio .leg-g,body.tema-inicio .tend-l .leg-g{color:#c4d1ee}
+  body.tema-inicio .ch-sub,body.tema-inicio .ch-t{fill:#c4d1ee}
+  body.tema-inicio .ch-in-b{stroke:#0b1633} body.tema-inicio .ch-in-o{stroke:#fdc33e}
+  /* colores que estaban escritos fijos en las gráficas: el azul marino pasa a celeste en el tema oscuro */
+  body.tema-inicio svg [fill="#021346"],body.tema-inicio svg [fill="#13223f"]{fill:var(--c-navy)}
+  body.tema-inicio svg circle[stroke="#021346"],body.tema-inicio svg circle[stroke="#13223f"]{stroke:var(--c-navy)}
+  body.tema-inicio [style*="background:#021346"],body.tema-inicio [style*="background:#13223f"]{background:var(--c-navy)!important}
+  body.tema-inicio #pmTip,body.tema-inicio .od-tip{border:1px solid #3b4f8f}
+  body.tema-inicio .sv-d .t-s{fill:#a3b4d8} body.tema-inicio .sv-d .t-v{fill:#fff} body.tema-inicio .sv-d .t-g{stroke:#111a36} body.tema-inicio .sv-d .t-w{fill:#06122b}
+  /* avisos de renovación */
+  body.tema-inicio .soat-aviso{background:linear-gradient(90deg,#3a2a05,#241c06);border:1px solid #7a5b0c;border-left:6px solid #fdc33e;color:#ffe9b0} body.tema-inicio .soat-aviso b,body.tema-inicio .soat-aviso u{color:#fff}
+  #v-inicio .soat-aviso{order:2!important;grid-column:1/-1}
+  /* tablero de Clientes OMS en oscuro */
+  body.tema-inicio .od-top h2{color:#fff} body.tema-inicio .od-top label{color:#a3b4d8} body.tema-inicio .od-top select{background:#0d1530;color:#e8eefc;border-color:#2f4284}
+  body.tema-inicio .od-k{background:linear-gradient(180deg,#17224a,#111a36);border-color:#25376b;border-top-color:#fdc33e} body.tema-inicio .od-k b{color:#fff} body.tema-inicio .od-k span{color:#a3b4d8} body.tema-inicio .od-k.al b{color:#fb7185}
+  body.tema-inicio .od-card{background:linear-gradient(180deg,#17224a,#111a36);border-color:#25376b;box-shadow:0 8px 24px rgba(0,0,0,.30)} body.tema-inicio .od-card h3{color:#fff} body.tema-inicio .od-sub,body.tema-inicio .od-leg2,body.tema-inicio .od-mute,body.tema-inicio .od-ts,body.tema-inicio .od-gs,body.tema-inicio .od-leg .p,body.tema-inicio .od-rk,body.tema-inicio .od-rq{color:#a3b4d8;fill:#a3b4d8}
+  body.tema-inicio .od-tv,body.tema-inicio .od-gn,body.tema-inicio .od-leg b,body.tema-inicio .od-r b,body.tema-inicio .od-rn{fill:#fff;color:#fff} body.tema-inicio .od-tw{fill:#06122b}
+  body.tema-inicio .od-tg{stroke:#111a36} body.tema-inicio .od-grid{stroke:#2a3b70}
+  body.tema-inicio .od-parts div,body.tema-inicio .od-tiles div{background:#1b2850} body.tema-inicio .od-parts b,body.tema-inicio .od-tiles b{color:#fff} body.tema-inicio .od-parts span,body.tema-inicio .od-tiles span{color:#a3b4d8}
+  body.tema-inicio .od-rp,body.tema-inicio .od-band{background:#0d1530} body.tema-inicio .od-svg [fill="#13223f"]{fill:var(--c-navy)} body.tema-inicio .od-rb[style*="#13223f"]{background:var(--c-navy)!important}
+
+  /* distribución (escritorio): metas y ventas → clientes y seguros → cartera → SOAT → OMS */
+  @media(min-width:1181px){
+    #v-inicio .meta{grid-column:span 4!important;order:5!important} #v-inicio .asr{grid-column:span 8!important;order:6!important}
+    #v-inicio .cfc{grid-column:1/-1!important;order:7!important}
+    #v-inicio .seg{grid-column:span 4!important;order:9!important} #v-inicio .rcm{grid-column:span 8!important;order:10!important}
+    #v-inicio .edc{grid-column:span 4!important;order:11!important} #v-inicio .anu{grid-column:span 8!important;order:12!important}
+    #v-inicio .alertas{grid-column:1/-1!important;order:14!important}
+    #v-inicio .svc{grid-column:1/-1!important;order:16!important} #v-inicio .oms-wrap{grid-column:1/-1!important;order:18!important}
+  }
+  @media(max-width:1180px){
+    .in-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+    #v-inicio .meta{order:5!important} #v-inicio .asr{order:6!important} #v-inicio .cfc{order:7!important} #v-inicio .seg{order:9!important} #v-inicio .rcm{order:10!important} #v-inicio .edc{order:11!important} #v-inicio .anu{order:12!important}
+    #v-inicio .alertas{order:14!important} #v-inicio .svc{order:16!important} #v-inicio .oms-wrap{order:18!important}
+  }
+  @media(max-width:640px){.in-kpis{grid-template-columns:repeat(2,minmax(0,1fr))} .in-kt b{font-size:1.6rem} .in-head{align-items:flex-start}}
 </style>
 <script src="assets/dash_oms.js"></script>
 </head>
@@ -337,7 +434,22 @@
   <div id="top"><input id="q" type="search" placeholder="Buscar cliente: cédula, placa, nombre o contrato" autocomplete="off" aria-label="Buscar cliente"><button id="btnRec" type="button" title="Volver a leer los datos de Cobros y Conciliación">↻ Actualizar</button><span id="ultAct" style="font-size:.74rem;color:var(--suave);white-space:nowrap" title="Se actualiza solo cada minuto">Se actualiza cada minuto</span><div id="res"></div></div>
   <div id="vistas">
   <section class="vista" id="v-inicio"><div class="pagina">
-    <h1>Inicio</h1><p class="sub" id="subInicio">Resumen del mes · usa el buscador de arriba para consultar un cliente</p>
+    <div class="in-head" id="inHead">
+      <div class="in-tit"><h2>Panel ejecutivo</h2><p id="inSub">Resumen general del negocio</p></div>
+      <div class="in-fil" id="inFil" title="Aplica el período a todas las tarjetas. Cada tarjeta también tiene sus propios filtros.">
+        <label>Año <select id="gAnio"><option value="">Cada tarjeta</option></select></label>
+        <label>Mes <select id="gMes"><option value="">Cada tarjeta</option></select></label>
+        <button type="button" id="gReset" title="Devuelve cada tarjeta a su filtro de siempre">Restablecer</button>
+        <span id="gUlt"></span>
+      </div>
+    </div>
+    <div class="in-kpis" id="inKpis"></div>
+    <div class="in-sec" style="order:4"><i></i>Ventas y contratos</div>
+    <div class="in-sec" style="order:8"><i></i>Clientes y seguros</div>
+    <div class="in-sec" style="order:13"><i></i>Conciliación de pagos</div>
+    <div class="in-sec" style="order:15"><i></i>SOAT</div>
+    <div class="in-sec" style="order:17"><i></i>Clientes OMS</div>
+    <h1 style="display:none">Inicio</h1><p class="sub" id="subInicio">Resumen del mes · usa el buscador de arriba para consultar un cliente</p>
     <a class="soat-aviso" id="soatAviso" href="#soat" hidden></a>
     <a class="soat-aviso" id="omsAviso" href="#oms" hidden></a>
     <h2 class="sec-t">Alertas de conciliación</h2>
@@ -468,7 +580,7 @@
     el._fn=fn;var w=Math.max(260,el.clientWidth);el._w=w;fn(w);
     if(!el._ro&&window.ResizeObserver){el._ro=new ResizeObserver(function(){var nw=Math.max(260,el.clientWidth);if(Math.abs(nw-el._w)>24){el._w=nw;el._fn(nw)}});el._ro.observe(el)}
   }
-  window.PMG={sv:sv,stxt:stxt,enAncho:enAncho,verTip:verTip,ocultarTip:ocultarTip,MES_C:MES_C};   /* para las gráficas del segundo bloque (SOAT) */
+  window.PMG={sv:sv,stxt:stxt,enAncho:enAncho,verTip:verTip,ocultarTip:ocultarTip,MES_C:MES_C,getMeta:function(){return metaVal}};   /* para las gráficas del segundo bloque (SOAT) */
   function curva(p){
     var d='M'+p[0][0]+','+p[0][1],i;
     for(i=0;i<p.length-1;i++){var a=p[i-1]||p[i],b=p[i],c=p[i+1],e=p[i+2]||c;
@@ -802,6 +914,7 @@
     }
     var so=document.getElementById('solo');so.style.display=m.src&&m.disponible?'inline':'none';if(m.src)so.href=m.src;
     document.title=(m.id==='inicio'?'':m.nombre+' · ')+'CRM Protect Motos';
+    document.body.classList.toggle('tema-inicio',m.id==='inicio');
   }
   window.addEventListener('hashchange',function(){mostrar(location.hash.slice(1))});
   mostrar(location.hash.slice(1)||'inicio');
@@ -893,6 +1006,7 @@
       pintarSeg(rcs,nuevo&&r.contratos.some(function(x){return x.ap!==undefined}));
       pintarAnual(ecs,nuevo);
       pintarMeta(nuevo?Object.keys(ventas).reduce(function(a,k){return a+ventas[k]},0):null);
+      var PMK=window.PMK=window.PMK||{};PMK.ok=nuevo;PMK.contratos=nuevo?Object.keys(ventas).reduce(function(a,k){return a+ventas[k]},0):null;PMK.activos=c.ACTIVO;PMK.rc=rc;PMK.cont=cont;PMK.finalizados=c.FINALIZADO;PMK.cancelados=c.CANCELADO;if(window.pintarKpis)window.pintarKpis();
       document.getElementById('kpis').innerHTML=[['Activos',c.ACTIVO],['Finalizados',c.FINALIZADO],['Cancelados',c.CANCELADO],['Contratos',(r.contratos||[]).length],['RC este mes',nuevo?rc:'—'],['Contado este mes',nuevo?cont:'—']]
         .map(function(k){return '<div class="kpi"><b>'+k[1]+'</b><span>'+k[0]+'</span></div>'}).join('');
       nota.textContent=conRc?'Datos de la hoja Protect al abrir la plataforma. Este mes (columnas I y J de Protect): RC = SI en la columna U; Contado = CONTADO en la columna T.':'Para ver RC y Contado del mes, configura el conector del CRM en «Conexiones» (conectores/cobros/Codigo_cobros.gs).';
@@ -936,11 +1050,13 @@
   function esCons(f){return /^Consolidado/.test(f.estado)}
   function pintarAlertas(){
     var falta=0,menos=0,revisar=0,ok=0;
+    PMK.faltaConc=null;
     (CON||[]).forEach(function(f){
       if(f.estado==='Falta por consolidar')falta++;
       else if(esCons(f)){ok++;
         if(!f.revisado&&f.valor==='Pagó de menos')menos++;
         else if(!f.revisado&&f.valor==='Pagó de más (revisar valor)')revisar++}});
+    PMK.faltaConc=falta;PMK.menos=menos;pintarKpis();
     function c(cl,n,t){return '<a class="al '+cl+'" href="#conciliacion"><b>'+n+'</b><span>'+t+'</span></a>'}
     $('alertas').innerHTML=c(falta?'rojo':'verde',falta,'Faltan por consolidar')+c(menos?'rojo':'verde',menos,'Pagaron de menos')+c(revisar?'nar':'verde',revisar,'Pagaron de más · revisar valor')+c('verde',ok,'Ya consolidados');
   }
@@ -1097,6 +1213,7 @@
       });
       soatRecs=(r.soat||[]).filter(function(x){return /^\d{4}-\d{2}/.test(x.fechaISO||'')}).map(function(x){return {y:+x.fechaISO.slice(0,4),m:+x.fechaISO.slice(5,7),g:Number(x.ganancia)||0}});pintarSoatG();
       bd.hidden=!n;bd.textContent=n;
+      PMK.soatRen=n;PMK.soatMes=0;PMK.soatGan=0;var hh0=new Date();soatRecs.forEach(function(x){if(x.y===hh0.getFullYear()&&x.m===hh0.getMonth()+1){PMK.soatMes++;PMK.soatGan+=x.g}});pintarKpis();
       av.hidden=!n;
       if(n)av.innerHTML='<b>🛡️ '+n+' SOAT por renovar</b> <span>vencen en 8 días o menos · '+esc(primeros.join(', '))+(n>3?' y más…':'')+'</span> <u>Abrir SOAT →</u>';
     };
@@ -1136,11 +1253,59 @@
     if(!OMS||!window.PMDashOMS){dash.hidden=true;av.hidden=true;bd.hidden=true;return}
     dash.hidden=false;PMDashOMS.render(dash,{clientes:OMS.contratos,gestiones:OMS.gestiones});
     var rs=PMDashOMS.resumen(OMS.contratos,OMS.gestiones),n=rs.porRenovar,nombres=rs.lista.filter(function(x){return x.tipo==='renovar'}).slice(0,3).map(function(x){return String(x.c.cliente||'').split(' ').slice(0,2).join(' ')+' ('+x.veh+')'});
+    PMK.omsRen=n;PMK.omsTotal=OMS.contratos.length;pintarKpis();
     bd.hidden=!n;bd.textContent=n;av.hidden=!n;
     if(n)av.innerHTML='<b>🏍️ '+n+' cliente'+(n>1?'s':'')+' OMS por renovar</b> <span>cumplen su año en 8 días o menos · '+esc(nombres.join(', '))+(n>3?' y más…':'')+'</span> <u>Abrir Clientes OMS →</u>';
   }
   window.addEventListener('resize',function(){if(OMS)pintarOms()});
   window.addEventListener('storage',function(ev){if(ev.key==='pm_oms_url_conector')setTimeout(cargarOms,300)});
+  /* ===== Panel ejecutivo: tarjetas KPI y filtro global (solo presentación: usan los mismos datos de siempre) ===== */
+  var PMK=window.PMK=window.PMK||{};window.pintarKpis=pintarKpis;
+  function kn(v,d){return v==null||v===undefined?'—':(d===undefined?v:v)}
+  function pintarKpis(){
+    var box=$('inKpis');if(!box)return;
+    var meta=(window.PMG&&PMG.getMeta)?PMG.getMeta():105,tot=PMK.contratos,pct=tot==null?null:Math.round(tot/meta*100),
+        rcp=(tot&&PMK.rc!=null)?Math.round(PMK.rc/tot*100):null,ren=(PMK.soatRen||0)+(PMK.omsRen||0);
+    var K=[
+      ['k-oro','🏍️','Contratos del mes',tot==null?'—':tot,tot==null?'Conecta el conector del CRM':'Meta '+meta+' · '+pct+' %',pct==null?0:Math.min(100,pct)],
+      ['k-cian','🛡️','Con RC este mes',rcp==null?'—':rcp+' %',tot?PMK.rc+' de '+tot+' contratos':'Sin datos del mes',rcp==null?0:rcp],
+      ['k-vio','📈','SOAT vendidos del mes',PMK.soatMes==null?'—':PMK.soatMes,PMK.soatMes==null?'Conecta SOAT':'Ganancia '+(window.PMG?dineroK(PMK.soatGan):''),null],
+      ['k-ros','🔔','Renovaciones por atender',(PMK.soatRen==null&&PMK.omsRen==null)?'—':ren,'SOAT '+(PMK.soatRen||0)+' · OMS '+(PMK.omsRen||0)+' (≤8 días)',null],
+      ['k-azu','👥','Clientes activos',PMK.activos==null?'—':PMK.activos,PMK.activos==null?'':(PMK.finalizados||0)+' finalizados · '+(PMK.cancelados||0)+' cancelados',null],
+      ['k-nar','🧾','Faltan por consolidar',PMK.faltaConc==null?'—':PMK.faltaConc,PMK.faltaConc==null?'Abre Conciliación':(PMK.menos?PMK.menos+' pagaron de menos':'Todo al día'),null]
+    ];
+    box.innerHTML=K.map(function(x){return '<a class="in-k '+x[0]+'" href="'+(x[0]==='k-nar'?'#conciliacion':x[0]==='k-vio'?'#soat':x[0]==='k-ros'?'#soat':x[0]==='k-azu'?'#cobros':'#inicio')+'"><div class="in-ki">'+x[1]+'</div><div class="in-kt"><span>'+x[2]+'</span><b>'+x[3]+'</b><small>'+x[4]+'</small></div>'+(x[5]!==null?'<div class="in-kp"><i style="width:'+x[5]+'%"></i></div>':'')+'</a>'}).join('');
+    var u=$('gUlt');if(u)u.textContent='Actualizado '+new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+    var sub=$('inSub');if(sub)sub.textContent='Mes en curso: '+MES_TXT_G()+' · todo se actualiza solo cada minuto';
+  }
+  function MES_TXT_G(){var m=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'],h=new Date();return m[h.getMonth()]+' '+h.getFullYear()}
+  function dineroK(v){v=Number(v)||0;if(v>=1e6)return '$'+(v/1e6).toFixed(1).replace('.',',')+' M';if(v>=1e3)return '$'+Math.round(v/1e3)+' mil';return '$'+Math.round(v)}
+  /* Filtro global: coloca el mismo año y mes en los filtros de cada tarjeta (como si los cambiaras uno por uno) */
+  var PARES=[['asAnio','asMes'],['sgAnio','sgMes'],['rcAnio','rcMes'],['esAnio','esMes'],['svAnio','svMes'],['edAnio','edMes']];
+  function poner(id,val){var el=$(id);if(!el)return;var ok=[].some.call(el.options,function(o){return o.value===String(val)});if(!ok)return;if(el.value===String(val))return;el.value=String(val);el.dispatchEvent(new Event('change',{bubbles:true}))}
+  function aplicarGlobal(){
+    var y=$('gAnio').value,m=$('gMes').value;
+    PARES.forEach(function(p){if(y!=='')poner(p[0],y);if(m!=='')poner(p[1],m)});
+    if(y!=='')poner('cfAnio',y);
+    if(y!==''&&window.PMDashOMS&&$('omsDash')&&!$('omsDash').hidden)PMDashOMS.setYear($('omsDash'),y);
+  }
+  function restablecerGlobal(){
+    var A=String(new Date().getFullYear()),M=String(new Date().getMonth()+1);
+    [['asAnio',A],['asMes',M],['sgAnio',A],['sgMes',M],['edAnio',A],['edMes',M],['rcAnio',A],['rcMes','0'],['esAnio','todos'],['esMes','0'],['svAnio',A],['svMes','0'],['cfAnio',A]].forEach(function(p){poner(p[0],p[1])});
+    if(window.PMDashOMS&&$('omsDash')&&!$('omsDash').hidden)PMDashOMS.setYear($('omsDash'),A);
+    $('gAnio').value='';$('gMes').value='';
+  }
+  function llenarGlobal(){
+    var g=$('gAnio'),m=$('gMes');if(!g||!m)return;
+    if(m.options.length<2){var N=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];m.innerHTML='<option value="">Cada tarjeta</option><option value="0">Todo el año</option>'+N.map(function(x,i){return '<option value="'+(i+1)+'">'+x+'</option>'}).join('')}
+    var ys={};ys[new Date().getFullYear()]=1;['esAnio','asAnio','rcAnio','svAnio'].forEach(function(id){var el=$(id);if(el)[].forEach.call(el.options,function(o){if(/^\d{4}$/.test(o.value))ys[o.value]=1})});
+    var act=g.value;g.innerHTML='<option value="">Cada tarjeta</option><option value="todos">Todos los años</option>'+Object.keys(ys).sort(function(a,b){return b-a}).map(function(y){return '<option>'+y+'</option>'}).join('');
+    g.value=[].some.call(g.options,function(o){return o.value===act})?act:'';
+  }
+  $('gAnio').addEventListener('change',aplicarGlobal);$('gMes').addEventListener('change',aplicarGlobal);
+  $('gReset').addEventListener('click',restablecerGlobal);
+  setInterval(llenarGlobal,4000);setTimeout(llenarGlobal,1500);
+  pintarKpis();
   function actualizarTodo(){ultimoAuto=Date.now();if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc();cargarSoat();cargarOms()}
   setInterval(function(){if(!document.hidden)actualizarTodo()},60000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&Date.now()-ultimoAuto>60000)actualizarTodo()});
