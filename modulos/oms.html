@@ -299,6 +299,7 @@
 <style>
   .rep-w{position:relative;display:inline-block} .rep-m{position:absolute;right:0;top:calc(100% + 6px);z-index:60;min-width:290px;background:#13223f;color:#eef2ff;border:1px solid #3b4f8f;border-radius:12px;padding:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:2px}
   .rep-m[hidden]{display:none} .rep-m b{padding:4px 8px;color:#fdc33e;font-size:.82rem} .rep-m button{background:transparent;color:#eef2ff;text-align:left;border:0;border-radius:8px;padding:8px 10px;font-size:.84rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit} .rep-m button:hover{background:#25366a}
+  .rep-modo{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:2px 0 6px;padding:4px;background:#0d1530;border-radius:10px} .rep-m .rep-modo button{text-align:center;white-space:normal;font-size:.78rem;padding:7px 6px;border:1px solid transparent} .rep-m .rep-modo button.on{background:#fdc33e;color:#1a1200;border-color:#fdc33e}
   #repAviso{position:fixed;right:18px;bottom:18px;background:#13223f;color:#fff;padding:9px 14px;border-radius:10px;font-size:.84rem;z-index:80;display:none;box-shadow:0 8px 22px rgba(0,0,0,.35)}
 </style>
 <script src="../assets/zip_simple.js"></script>
@@ -527,6 +528,9 @@
     }
     var MESN=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     function dIso(iso){if(!iso)return '';var p=String(iso).split('-');return p.length===3?(+p[2])+'/'+(+p[1])+'/'+p[0]:iso}
+    var DESC=[["Todos los clientes OMS", "Una fila por cada cliente OMS (cada cliente es una póliza), con su estado de renovación.", "«Cumple su año» es la fecha fin de la póliza. No se cobra: es la fecha en que hay que volver a hablarle para renovar."], ["Clientes OMS por renovar", "Clientes cuya póliza cumple el año en 8 días o menos.", "«Días» negativo significa que ya cumplió su año. Son los clientes a los que hay que escribirles."], ["Pólizas por mes y por moto", "Cuántas pólizas OMS se vendieron cada mes y de qué moto.", "La primera tabla cuenta por mes de la fecha de inicio; la segunda, las pólizas por moto en cada año."], ["Mensajes y gestiones", "Los avisos de renovación enviados y sus respuestas.", "Sale de la pestaña Gestiones_OMS que crea el CRM."]];
+    var modo=false;try{modo=localStorage.getItem('pm_rep_texto_mod')==='1'}catch(e){}
+    function cab(filas,i,on){if(!on||!DESC[i])return filas;var f=new Date();return [['REPORTE: '+DESC[i][0]],['Fecha del reporte',f.toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})],['Qué muestra',DESC[i][1]],['Cómo leerlo',DESC[i][2]],['Importante','Estas cifras salen de las hojas de Google Sheets de Protect Motos al momento de descargar el reporte.'],[]].concat(filas)}
     var REP=[
       ['👥 Todos los clientes OMS (con estado)',function(){var f=[['Cliente','Cédula','Vehículo','Compra','Valor a pagar','Inicio','Cumple su año','Celular','Estado en la hoja','Estado de renovación']];
         D.analizar(estado.clientes,estado.gestiones).forEach(function(x){var c=x.c;f.push([c.cliente,c.cedula,c.placa,c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma,c.valorProtect,dIso(c.fechaFirmaISO),dIso(c.finISO),c.celular,c.estado,ETQ[x.tipo][1]])});return ['clientes_OMS',f]}],
@@ -538,18 +542,22 @@
       ['📝 Mensajes y gestiones de renovación',function(){var f=[['Fecha','Referencia','Cédula','Cliente','Acción','Registrado por']];estado.gestiones.forEach(function(g){f.push([g.fechaGestion,g.contrato,g.cedula,g.cliente,g.accion,g.registradoPor])});return ['OMS_gestiones',f]}]
     ];
     var m=document.getElementById('repM');
-    m.innerHTML='<b>Descarga de reportes</b>'+REP.map(function(r,i){return '<button type="button" data-i="'+i+'">'+r[0]+'</button>'}).join('')+'<button type="button" data-all="1" style="border-top:1px solid #2a3b70;margin-top:4px;color:#fdc33e">📦 Todos los reportes de este botón (ZIP)</button>';
+    m.innerHTML='<b>Descarga de reportes</b><div class="rep-modo"><button type="button" data-modo="0">📄 Solo datos</button><button type="button" data-modo="1">📝 Datos + texto que explica</button></div>'+REP.map(function(r,i){return '<button type="button" data-i="'+i+'">'+r[0]+'</button>'}).join('')+'<button type="button" data-all="1" style="border-top:1px solid #2a3b70;margin-top:4px;color:#fdc33e">📦 Todos los reportes de este botón (ZIP)</button>';
+    pintaModo();
     document.getElementById('btnRep').addEventListener('click',function(ev){ev.stopPropagation();m.hidden=!m.hidden});
     document.addEventListener('click',function(ev){if(!ev.target.closest('.rep-w'))m.hidden=true});
-    function todos(){var out=[];REP.forEach(function(r){try{var x=r[1]();if(x&&x[1].length>1)out.push([x[0],x[1]])}catch(e){}});return out}
+    function todos(on){var out=[];REP.forEach(function(r,i){try{var x=r[1]();if(x&&x[1].length>1)out.push([x[0],cab(x[1],i,on===undefined?modo:on)])}catch(e){}});return out}
+    function pintaModo(){[].forEach.call(m.querySelectorAll('.rep-modo button'),function(b){b.classList.toggle('on',(b.dataset.modo==='1')===modo)})}
     function txt(filas){return '\ufeff'+filas.map(function(r){return r.map(function(v){v=v==null?'':String(v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(';')}).join('\r\n')}
-    window.addEventListener('message',function(ev){var d=ev.data;if(!d||!d.pmRepPedido)return;var it=todos();try{window.parent.postMessage({pmRepDatos:'oms',items:it.map(function(x){return [x[0],txt(x[1])]})},'*')}catch(e){}});
-    m.addEventListener('click',function(ev){var b=ev.target.closest('button');if(!b)return;m.hidden=true;
+    window.addEventListener('message',function(ev){var d=ev.data;if(!d||!d.pmRepPedido)return;var it=todos(!!d.conTexto);try{window.parent.postMessage({pmRepDatos:'oms',items:it.map(function(x){return [x[0],txt(x[1])]})},'*')}catch(e){}});
+    m.addEventListener('click',function(ev){var b=ev.target.closest('button');if(!b)return;
+      if(b.dataset.modo!==undefined){modo=b.dataset.modo==='1';try{localStorage.setItem('pm_rep_texto_mod',b.dataset.modo)}catch(e){}pintaModo();return}
+      m.hidden=true;
       if(b.dataset.all){var it=todos();if(!it.length){aviso('Todavía no hay datos. Pulsa «Actualizar datos» y vuelve a intentar.');return}
         var f=new Date(),z=function(n){return ('0'+n).slice(-2)},a=document.createElement('a');a.href=URL.createObjectURL(ZipSimple.crear(it.map(function(x){return {nombre:x[0]+'.csv',datos:txt(x[1])}})));a.download='Reportes_Clientes_OMS_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.zip';document.body.appendChild(a);a.click();a.remove();aviso('Descargado ✔ '+it.length+' reportes en un ZIP');return}
       var res=null;try{res=REP[+b.dataset.i][1]()}catch(e){aviso('No se pudo armar el reporte: '+e.message);return}
       if(!res||res[1].length<2){aviso('Todavía no hay datos para ese reporte. Pulsa «Actualizar datos» y vuelve a intentar.');return}
-      csv(res[0],res[1]);aviso('Descargado ✔ '+res[0]+'.csv')});
+      csv(res[0],cab(res[1],+b.dataset.i,modo));aviso('Descargado ✔ '+res[0]+'.csv'+(modo?' (con explicación)':''))});
   })();
 
   document.getElementById('anioActual').textContent = new Date().getFullYear();
