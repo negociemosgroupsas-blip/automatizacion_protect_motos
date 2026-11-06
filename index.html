@@ -466,8 +466,6 @@
     <div class="in-sec" style="order:15"><i></i>SOAT</div>
     <div class="in-sec" style="order:17"><i></i>Clientes OMS</div>
     <h1 style="display:none">Inicio</h1><p class="sub" id="subInicio">Resumen del mes · usa el buscador de arriba para consultar un cliente</p>
-    <a class="soat-aviso" id="soatAviso" href="#soat" hidden></a>
-    <a class="soat-aviso" id="omsAviso" href="#oms" hidden></a>
     <h2 class="sec-t">Alertas de conciliación</h2>
     <div class="alertas" id="alertas"><div class="nota">Abre Conciliación y guarda su URL para ver aquí las alertas.</div></div>
     <div class="grid" id="tarjetas"></div>
@@ -1215,7 +1213,7 @@
   var cargandoSoat=false;
   function cargarSoat(){
     if(cargandoSoat)return;
-    var u=url('pm_soat_url_conector'),av=$('soatAviso'),bd=$('soatBadge');
+    var u=url('pm_soat_url_conector'),av=$('soatAviso')||{},bd=$('soatBadge');
     if(!/^https:\/\/script\.google\.com\//.test(u)){av.hidden=true;bd.hidden=true;return}
     cargandoSoat=true;
     var cb='pmSoat'+Date.now(),s=document.createElement('script'),t=setTimeout(fin,90000);
@@ -1272,7 +1270,7 @@
     document.head.appendChild(s);
   }
   function pintarOms(){
-    var dash=$('omsDash'),av=$('omsAviso'),bd=$('omsBadge');
+    var dash=$('omsDash'),av=$('omsAviso')||{},bd=$('omsBadge');
     if(!OMS||!window.PMDashOMS){dash.hidden=true;av.hidden=true;bd.hidden=true;return}
     dash.hidden=false;PMDashOMS.render(dash,{clientes:OMS.contratos,gestiones:OMS.gestiones});
     var rs=PMDashOMS.resumen(OMS.contratos,OMS.gestiones),n=rs.porRenovar,nombres=rs.lista.filter(function(x){return x.tipo==='renovar'}).slice(0,3).map(function(x){return String(x.c.cliente||'').split(' ').slice(0,2).join(' ')+' ('+x.veh+')'});
