@@ -510,7 +510,7 @@
         <label>Año <select id="gAnio"><option value="">Cada tarjeta</option></select></label>
         <label>Mes <select id="gMes"><option value="">Cada tarjeta</option></select></label>
         <button type="button" id="gReset" title="Devuelve cada tarjeta a su filtro de siempre">Restablecer</button>
-        <div class="in-rep"><button type="button" id="gRep" title="Descargar reportes para tus jefes">⬇ Reportes</button><div class="in-repm" id="gRepM" hidden></div></div>
+        <div class="in-rep"><button type="button" id="gRep" title="Descarga de reportes">⬇ Reportes</button><div class="in-repm" id="gRepM" hidden></div></div>
         <button type="button" id="gTema" class="in-tema" title="Cambiar entre fondo oscuro y fondo claro">☀️ Fondo claro</button>
         <span id="gUlt"></span>
       </div>
@@ -1539,7 +1539,7 @@
   ];
   function repMenu(){
     var m=$('gRepM');
-    m.innerHTML='<b>Descargar para tus jefes</b><button type="button" data-pdf="1">🖨️ Panel completo en PDF</button><button type="button" data-ppt="1">📽️ Presentación en PowerPoint</button><hr><small>Excel (se abre con doble clic):</small>'+REPORTES.map(function(r,i){return '<button type="button" data-i="'+i+'">'+r[0]+'</button>'}).join('');
+    m.innerHTML='<b>Descarga de reportes</b><button type="button" data-pdf="1">🖨️ Panel completo en PDF</button><button type="button" data-ppt="1">📽️ Presentación en PowerPoint</button><hr><small>Excel (se abre con doble clic):</small>'+REPORTES.map(function(r,i){return '<button type="button" data-i="'+i+'">'+r[0]+'</button>'}).join('');
   }
   repMenu();
   $('gRep').addEventListener('click',function(ev){ev.stopPropagation();$('gRepM').hidden=!$('gRepM').hidden});
