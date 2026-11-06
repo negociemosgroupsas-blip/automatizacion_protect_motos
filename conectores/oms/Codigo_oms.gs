@@ -1,0 +1,352 @@
+/**
+ * PROTECT MOTOS — Conector de Clientes OMS (igual que el de Cobros, pero para el Google Sheet «Historico polizas»)
+ *
+ * CÓMO CREARLO (una sola vez):
+ *   1) Abre el Google Sheet de clientes OMS ("Historico polizas").
+ *   2) Menú Extensiones > Apps Script. Borra lo que haya y pega TODO este archivo. Guarda.
+ *   3) Implementar > Nueva implementación > Aplicación web.  Ejecutar como: Yo.  Quién tiene acceso: Cualquier usuario.
+ *   4) Copia la URL que termina en /exec y pégala en el botón «Clientes OMS» del CRM.
+ *
+ * Lee la hoja de clientes (columnas: Nombre completo, Cedula, Vehiculo, Valor a pagar, Celular, Compra, Fecha inicio,
+ * Fecha fin, Estado). Guarda los pagos en la pestaña «Pagos_OMS» y las gestiones en «Gestiones_OMS» (se crean solas).
+ * Cambiar el estado escribe en la columna «Estado» de la hoja de clientes. No toca ninguna otra hoja.
+ */
+
+// ==================== CONFIGURACIÓN ====================
+var TOKEN = 'PM-OMS-2026';
+var SHEET_ID = '';                 // vacío = usa el Google Sheet desde el que creaste este script (lo normal). Si lo creaste suelto, pega aquí el ID del Sheet.
+var HOJA_CLIENTES = 'Clientes OMS'; // nombre de la pestaña de clientes; si no existe se usa la que tenga las columnas Cedula y Fecha fin (o la primera)
+var HOJA_PAGOS = 'Pagos_OMS';
+var HOJA_GESTIONES = 'Gestiones_OMS';
+var FILA_ENCABEZADOS = 1;          // fila donde están los títulos
+var PLAZO_POR_DEFECTO = 12;        // cuotas de un cliente FINANCIADO si la hoja no trae plazo (se calcula con Fecha inicio y Fecha fin)
+
+// Columnas: se buscan por el NOMBRE del título (sin importar mayúsculas ni tildes). pos = columna por defecto (A=1).
+var COLS = [
+  { clave: 'cliente',  pos: 1, nombres: ['nombre completo', 'nombre', 'cliente'] },
+  { clave: 'cedula',   pos: 2, nombres: ['cedula', 'documento', 'cc'] },
+  { clave: 'vehiculo', pos: 3, nombres: ['vehiculo', 'moto', 'placa'] },
+  { clave: 'valor',    pos: 4, nombres: ['valor a pagar', 'valor cuota', 'valor'] },
+  { clave: 'celular',  pos: 5, nombres: ['celular', 'telefono', 'whatsapp'] },
+  { clave: 'forma',    pos: 6, nombres: ['compra', 'forma de pago', 'forma'] },
+  { clave: 'inicio',   pos: 7, nombres: ['fecha inicio', 'fecha inicial', 'inicio'] },
+  { clave: 'fin',      pos: 8, nombres: ['fecha fin', 'fecha final', 'fecha vencimiento', 'vencimiento', 'fin'] },
+  { clave: 'estado',   pos: 9, nombres: ['estado', 'estado del cliente'] }
+];
+// Columnas opcionales (si algún día las agregas, se leen solas): no hay posición por defecto.
+var COLS_OPC = [
+  { clave: 'contrato', nombres: ['contrato', 'n contrato', 'numero de contrato'] },
+  { clave: 'plazo',    nombres: ['plazo', 'cuotas', 'numero de cuotas'] },
+  { clave: 'correo',   nombres: ['correo', 'email', 'correo electronico'] },
+  { clave: 'asesor',   nombres: ['asesor'] },
+  { clave: 'direccion',nombres: ['direccion'] }
+];
+
+var ENCABEZADOS_PAGOS = ['Fecha de pago', 'Referencia', 'Cédula', 'Cliente', 'N° de cuota', 'Valor pagado', 'Comprobante / nota', 'Registrado por'];
+var ENCABEZADOS_GESTIONES = ['Fecha de gestión', 'Referencia', 'Cédula', 'Cliente', 'Acción', 'Registrado por'];
+var CARPETA_COMPROBANTES = 'Comprobantes de pago OMS';
+
+// ==================== PUNTO DE ENTRADA ====================
+function doGet(e) {
+  var params = (e && e.parameter) ? e.parameter : {};
+  var salida;
+  try {
+    if (params.token !== TOKEN) {
+      salida = { ok: false, error: 'Token inválido.' };
+    } else {
+      var accion = params.action || 'datos';
+      if (accion === 'datos') salida = accionDatos();
+      else if (accion === 'registrarPago') salida = accionRegistrarPago(params);
+      else if (accion === 'estado') salida = accionCambiarEstado(params);
+      else if (accion === 'registrarGestion') salida = accionRegistrarGestion(params);
+      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de Clientes OMS activo', version: 'oms-1' };
+      else salida = { ok: false, error: 'Acción desconocida: ' + accion };
+    }
+  } catch (err) {
+    salida = { ok: false, error: 'Error en el servidor: ' + err.message };
+  }
+  return responder(salida, params.callback);
+}
+
+// Solo para subir la imagen del comprobante (no cabe en una URL de GET).
+function doPost(e) {
+  var salida;
+  try {
+    var body = (e && e.postData && e.postData.contents) ? JSON.parse(e.postData.contents) : {};
+    if (body.token !== TOKEN) salida = { ok: false, error: 'Token inválido.' };
+    else if (body.action === 'subirComprobante') salida = accionSubirComprobante(body);
+    else salida = { ok: false, error: 'Acción desconocida: ' + body.action };
+  } catch (err) {
+    salida = { ok: false, error: 'Error en el servidor: ' + err.message };
+  }
+  return responder(salida, null);
+}
+
+function responder(objeto, callback) {
+  var json = JSON.stringify(objeto);
+  if (callback) return ContentService.createTextOutput(callback + '(' + json + ')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+  return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
+}
+
+// ==================== DATOS ====================
+function abrirSS() {
+  return SHEET_ID ? SpreadsheetApp.openById(SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+}
+
+function accionDatos() {
+  var ss = abrirSS();
+  var hoja = hojaClientes(ss);
+  return { ok: true, contratos: leerClientes(hoja).lista, pagos: leerPagos(ss.getSheetByName(HOJA_PAGOS)), gestiones: leerGestiones(ss.getSheetByName(HOJA_GESTIONES)) };
+}
+
+// Devuelve cada cliente con el mismo formato que usa el módulo de Cobros.
+function leerClientes(hoja) {
+  var ultimaFila = hoja.getLastRow(), ultimaCol = hoja.getLastColumn();
+  if (ultimaFila <= FILA_ENCABEZADOS || ultimaCol < 1) return { lista: [], mapa: {} };
+  var enc = hoja.getRange(FILA_ENCABEZADOS, 1, 1, ultimaCol).getDisplayValues()[0];
+  var idx = indicesColumnas(enc);
+  var datos = hoja.getRange(FILA_ENCABEZADOS + 1, 1, ultimaFila - FILA_ENCABEZADOS, ultimaCol).getValues();
+  var lista = [], mapa = {}, usados = {};
+  for (var i = 0; i < datos.length; i++) {
+    var f = datos[i];
+    var g = function (k) { return idx[k] >= 0 ? f[idx[k]] : ''; };
+    var cliente = texto(g('cliente')), cedula = texto(g('cedula'));
+    if (!cliente && !cedula) continue;
+    var inicio = aFecha(g('inicio')), fin = aFecha(g('fin'));
+    var forma = normalizarForma(g('forma'));
+    var valor = moneda(g('valor'));
+    var plazo = Number(numero(g('plazo'))) || 0;
+    if (forma === 'FINANCIADO' && !plazo) plazo = plazoPorFechas(inicio, fin);
+    // Referencia única del cliente (equivale al "N° de contrato" de Cobros): la columna Contrato si existe; si no, cédula + fecha de inicio
+    var ref = texto(g('contrato'));
+    if (!ref) ref = (cedula || 'SIN-CEDULA') + '-' + (inicio ? iso(inicio).replace(/-/g, '') : 'F' + (FILA_ENCABEZADOS + 1 + i));
+    if (usados[ref]) { usados[ref]++; ref = ref + '-' + usados[ref]; } else { usados[ref] = 1; }
+    var reg = {
+      asesor: texto(g('asesor')),
+      cedula: cedula, cliente: cliente,
+      fechaFirma: fmt(inicio), fechaFirmaISO: iso(inicio),
+      fin: fmt(fin), finISO: iso(fin),
+      placa: texto(g('vehiculo')),
+      contrato: ref,
+      valorProtect: forma === 'FINANCIADO' ? valor * (plazo || 1) : valor,
+      valorCuota: forma === 'FINANCIADO' ? valor : 0,
+      plazo: forma === 'FINANCIADO' ? plazo : 0,
+      forma: forma,
+      celular: texto(g('celular')), correo: texto(g('correo')), direccion: texto(g('direccion')),
+      estado: texto(g('estado')).toUpperCase(),
+      fila: FILA_ENCABEZADOS + 1 + i
+    };
+    lista.push(reg); mapa[ref] = reg;
+  }
+  return { lista: lista, mapa: mapa, idx: idx };
+}
+
+function leerPagos(hoja) {
+  if (!hoja) return [];
+  var n = hoja.getLastRow();
+  if (n < 2) return [];
+  var d = hoja.getRange(2, 1, n - 1, 8).getValues(), out = [];
+  for (var i = 0; i < d.length; i++) {
+    var ref = texto(d[i][1]);
+    if (!ref) continue;
+    out.push({ fechaPago: fmt(aFecha(d[i][0])), fechaPagoISO: iso(aFecha(d[i][0])), contrato: ref, cedula: texto(d[i][2]), cliente: texto(d[i][3]),
+      cuota: texto(d[i][4]), valorPagado: Number(d[i][5] || 0), nota: texto(d[i][6]), registradoPor: texto(d[i][7]) });
+  }
+  return out;
+}
+
+function leerGestiones(hoja) {
+  if (!hoja) return [];
+  var n = hoja.getLastRow();
+  if (n < 2) return [];
+  var d = hoja.getRange(2, 1, n - 1, 6).getValues(), out = [];
+  for (var i = 0; i < d.length; i++) {
+    var ref = texto(d[i][1]);
+    if (!ref) continue;
+    out.push({ fechaGestion: fmt(aFecha(d[i][0])), fechaGestionISO: iso(aFecha(d[i][0])), contrato: ref, cedula: texto(d[i][2]), cliente: texto(d[i][3]),
+      accion: texto(d[i][4]), registradoPor: texto(d[i][5]) });
+  }
+  return out;
+}
+
+// ==================== GESTIÓN DE COBRO ====================
+function accionRegistrarGestion(p) {
+  var ref = texto(p.contrato);
+  if (!ref) return { ok: false, error: 'Falta la referencia del cliente.' };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
+  try {
+    var ss = abrirSS();
+    var hoja = ss.getSheetByName(HOJA_GESTIONES);
+    if (!hoja) { hoja = ss.insertSheet(HOJA_GESTIONES); hoja.appendRow(ENCABEZADOS_GESTIONES); hoja.getRange(1, 1, 1, ENCABEZADOS_GESTIONES.length).setFontWeight('bold'); }
+    hoja.appendRow([new Date(), ref, texto(p.cedula), texto(p.cliente), texto(p.accion) || 'Cobro realizado', texto(p.registradoPor)]);
+    return { ok: true, mensaje: 'Gestión registrada correctamente.' };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo registrar la gestión: ' + err.message };
+  } finally { lock.releaseLock(); }
+}
+
+// ==================== PAGOS ====================
+function accionRegistrarPago(p) {
+  var ref = texto(p.contrato), cuota = texto(p.cuota), valor = Number(p.valor || 0);
+  if (!ref) return { ok: false, error: 'Falta la referencia del cliente.' };
+  if (!cuota) return { ok: false, error: 'Falta el número de cuota.' };
+  if (!valor || valor <= 0) return { ok: false, error: 'El valor pagado debe ser mayor a 0.' };
+  var fechaPago = parsearFecha(texto(p.fecha)) || new Date();
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
+  try {
+    var ss = abrirSS();
+    var hojaPagos = ss.getSheetByName(HOJA_PAGOS);
+    if (!hojaPagos) { hojaPagos = ss.insertSheet(HOJA_PAGOS); hojaPagos.appendRow(ENCABEZADOS_PAGOS); hojaPagos.getRange(1, 1, 1, ENCABEZADOS_PAGOS.length).setFontWeight('bold'); }
+    hojaPagos.appendRow([fechaPago, ref, texto(p.cedula), texto(p.cliente), cuota, valor, texto(p.nota), texto(p.registradoPor)]);
+
+    // Si con este pago el cliente financiado completó todas las cuotas, pasa a Finalizado (la cuota 1 se da por pagada al comprar)
+    var finalizado = false, hoja = hojaClientes(ss), info = leerClientes(hoja), c = info.mapa[ref];
+    if (c && c.forma === 'FINANCIADO' && c.estado === 'ACTIVO' && c.plazo > 0) {
+      if (contarCuotasPagadas(hojaPagos, ref, c.plazo) + 1 >= c.plazo) { escribirEstado(hoja, info.idx, c.fila, 'FINALIZADO'); finalizado = true; }
+    }
+    return { ok: true, mensaje: 'Pago registrado correctamente.', finalizado: finalizado };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo registrar el pago: ' + err.message };
+  } finally { lock.releaseLock(); }
+}
+
+function contarCuotasPagadas(hojaPagos, ref, plazo) {
+  var n = hojaPagos.getLastRow();
+  if (n < 2) return 0;
+  var d = hojaPagos.getRange(2, 1, n - 1, 8).getValues(), pagadas = {};
+  for (var i = 0; i < d.length; i++) {
+    if (texto(d[i][1]) !== ref) continue;
+    var nums = extraerNumerosCuota(texto(d[i][4]));
+    for (var j = 0; j < nums.length; j++) if (nums[j] >= 1 && nums[j] <= plazo) pagadas[nums[j]] = true;
+  }
+  return Object.keys(pagadas).length;
+}
+
+function extraerNumerosCuota(t) {
+  var nums = [];
+  t = String(t || '').replace(/,/g, ' ');
+  var rt = t.trim().match(/^(\d+)\s*a\s*(\d+)$/i);
+  if (rt) { for (var k = parseInt(rt[1], 10); k <= parseInt(rt[2], 10); k++) nums.push(k); return nums; }
+  t.split(/\s+/).filter(function (x) { return x !== ''; }).forEach(function (parte) {
+    var r = parte.match(/^(\d+)-(\d+)$/);
+    if (r) { for (var n = parseInt(r[1], 10); n <= parseInt(r[2], 10); n++) nums.push(n); }
+    else { var s = parte.match(/\d+/g); if (s) s.forEach(function (x) { nums.push(parseInt(x, 10)); }); }
+  });
+  return nums;
+}
+
+// ==================== COMPROBANTES ====================
+function accionSubirComprobante(b) {
+  var ref = texto(b.contrato);
+  if (!ref) return { ok: false, error: 'Falta la referencia del cliente.' };
+  if (!b.datosBase64) return { ok: false, error: 'No se recibió ninguna imagen.' };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
+  try {
+    var bytes = Utilities.base64Decode(b.datosBase64), nombre = texto(b.nombreArchivo) || 'comprobante';
+    var ext = (nombre.match(/\.[a-zA-Z0-9]+$/) || [''])[0], partes = [];
+    if (texto(b.cuota)) partes.push('Cuota ' + texto(b.cuota));
+    var ff = fechaParaNombre(texto(b.fecha)); if (ff) partes.push(ff);
+    if (!partes.length) partes.push('comprobante');
+    var blob = Utilities.newBlob(bytes, texto(b.tipoMime) || 'image/jpeg', partes.join(' - ') + ext);
+    var archivo = carpetaCliente(texto(b.cedula) || ref, texto(b.cliente)).createFile(blob);
+    archivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return { ok: true, url: 'https://drive.google.com/file/d/' + archivo.getId() + '/view' };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo subir el comprobante: ' + err.message };
+  } finally { lock.releaseLock(); }
+}
+
+function carpetaCliente(clave, cliente) {
+  var it = DriveApp.getFoldersByName(CARPETA_COMPROBANTES), raiz = it.hasNext() ? it.next() : DriveApp.createFolder(CARPETA_COMPROBANTES);
+  var sub = raiz.getFolders();
+  while (sub.hasNext()) { var f = sub.next(); if (f.getName().indexOf(clave + ' - ') === 0) return f; }
+  return raiz.createFolder(clave + ' - ' + (cliente || 'Cliente'));
+}
+
+// Selecciónala en el editor y pulsa «Ejecutar» una vez para que Google pida el permiso de Drive.
+function pruebaDrive() {
+  Logger.log(accionSubirComprobante({ contrato: 'PRUEBA', nombreArchivo: 'prueba.txt', tipoMime: 'text/plain', datosBase64: Utilities.base64Encode('prueba') }));
+}
+
+// ==================== ESTADO ====================
+function accionCambiarEstado(p) {
+  var ref = texto(p.contrato), nuevo = texto(p.nuevoEstado).toUpperCase();
+  if (!ref) return { ok: false, error: 'Falta la referencia del cliente.' };
+  if (['ACTIVO', 'CANCELADO', 'FINALIZADO'].indexOf(nuevo) === -1) return { ok: false, error: 'Estado inválido: ' + nuevo };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
+  try {
+    var hoja = hojaClientes(abrirSS()), info = leerClientes(hoja), c = info.mapa[ref];
+    if (!c) return { ok: false, error: 'No se encontró el cliente ' + ref };
+    escribirEstado(hoja, info.idx, c.fila, nuevo);
+    return { ok: true, mensaje: 'Estado actualizado a ' + nuevo + '.' };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo cambiar el estado: ' + err.message };
+  } finally { lock.releaseLock(); }
+}
+
+function escribirEstado(hoja, idx, fila, estado) {
+  var col = idx.estado >= 0 ? idx.estado + 1 : 9;
+  hoja.getRange(fila, col).setValue(estado.charAt(0) + estado.slice(1).toLowerCase());   // Activo / Cancelado / Finalizado, como lo escribes en la hoja
+}
+
+// ==================== UTILIDADES ====================
+function hojaClientes(ss) {
+  var h = ss.getSheetByName(HOJA_CLIENTES);
+  if (h) return h;
+  var clave = function (t) { return String(t).toLowerCase().replace(/[^a-z0-9]/g, ''); }, hojas = ss.getSheets(), i;
+  for (i = 0; i < hojas.length; i++) if (clave(hojas[i].getName()) === clave(HOJA_CLIENTES)) return hojas[i];
+  for (i = 0; i < hojas.length; i++) {
+    if (hojas[i].getName() === HOJA_PAGOS || hojas[i].getName() === HOJA_GESTIONES || hojas[i].getLastColumn() < 3) continue;
+    var enc = hojas[i].getRange(FILA_ENCABEZADOS, 1, 1, hojas[i].getLastColumn()).getDisplayValues()[0].map(normalizar);
+    if (enc.indexOf('cedula') >= 0 && (enc.indexOf('fecha fin') >= 0 || enc.indexOf('fecha final') >= 0)) return hojas[i];
+  }
+  return hojas[0];
+}
+
+function normalizar(t) { return String(t === null || t === undefined ? '' : t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+
+function indicesColumnas(enc) {
+  var norm = enc.map(normalizar), idx = {};
+  var buscar = function (c, porDefecto) {
+    for (var n = 0; n < c.nombres.length; n++) { var b = normalizar(c.nombres[n]); for (var i = 0; i < norm.length; i++) if (norm[i] === b) return i; }
+    return porDefecto;
+  };
+  COLS.forEach(function (c) { idx[c.clave] = buscar(c, c.pos - 1); });
+  COLS_OPC.forEach(function (c) { idx[c.clave] = buscar(c, -1); });
+  return idx;
+}
+
+function normalizarForma(v) { var t = normalizar(v); return /financ|credito|cuota/.test(t) ? 'FINANCIADO' : (/contado/.test(t) ? 'CONTADO' : texto(v).toUpperCase()); }
+function plazoPorFechas(ini, fin) { if (!ini || !fin) return PLAZO_POR_DEFECTO; var m = (fin.getFullYear() - ini.getFullYear()) * 12 + (fin.getMonth() - ini.getMonth()); return m >= 1 && m <= 60 ? m : PLAZO_POR_DEFECTO; }
+// Un valor como 865.765 (con punto de miles que Sheets leyó como decimal) se corrige a 865765
+function moneda(v) {
+  var n = numero(v);
+  if (typeof v === 'number' && n > 0 && n < 5000 && n !== Math.round(n) && Math.abs(n * 1000 - Math.round(n * 1000)) < 1e-6) return Math.round(n * 1000);
+  return n;
+}
+function texto(v) { return String(v === null || v === undefined ? '' : v).trim(); }
+function numero(v) {
+  if (typeof v === 'number') return v;
+  var t = texto(v).replace(/[^0-9,.-]/g, '');
+  if (!t) return 0;
+  if (t.indexOf(',') > -1 && t.indexOf('.') > -1) t = t.replace(/\./g, '').replace(',', '.');
+  else if (/^-?\d{1,3}(\.\d{3})+$/.test(t) || /^-?\d{1,3}(,\d{3})+$/.test(t)) t = t.replace(/[.,]/g, '');
+  else t = t.replace(',', '.');
+  var n = parseFloat(t); return isNaN(n) ? 0 : n;
+}
+function aFecha(v) {
+  if (!v) return null;
+  if (Object.prototype.toString.call(v) === '[object Date]') return isNaN(v.getTime()) ? null : v;
+  var t = texto(v), m = t.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+  if (m) { var a = +m[3]; if (a < 100) a += 2000; var d = new Date(a, +m[2] - 1, +m[1]); return isNaN(d.getTime()) ? null : d; }
+  m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+}
+function fmt(d) { return d ? d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear() : ''; }
+function iso(d) { return d ? d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2) : ''; }
+function parsearFecha(t) { return aFecha(t) || (function () { var f = new Date(t); return isNaN(f.getTime()) ? null : f; })(); }
+function fechaParaNombre(t) { var f = parsearFecha(t); return f ? ('0' + f.getDate()).slice(-2) + '-' + ('0' + (f.getMonth() + 1)).slice(-2) + '-' + f.getFullYear() : ''; }
