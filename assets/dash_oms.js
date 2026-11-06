@@ -57,22 +57,18 @@
   function svgBase(W, H) { return E('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, 'class': 'od-svg' }); }
 
   function combo(box, datos, etq, activo) {
-    var W = ancho(box), H = 250, pl = 10, pr = 58, pt = 28, pb = 26, iw = W - pl - pr, ih = H - pt - pb, n = datos.length, slot = iw / n, bw = Math.min(40, slot * 0.6);
-    var maxN = Math.max.apply(null, datos.map(function (d) { return d ? d.n : 0; }).concat(1)) * 1.25, maxG = Math.max.apply(null, datos.map(function (d) { return d ? d.g : 0; }).concat(1)) * 1.25;
-    var v = svgBase(W, H), xs = function (j) { return pl + slot * (j + .5); }, yG = function (x) { return pt + ih - x / maxG * ih; };
-    [0, .5, 1].forEach(function (f) { var y = pt + ih - f * ih; v.appendChild(E('line', { x1: pl, x2: W - pr, y1: y, y2: y, 'class': 'od-grid' })); v.appendChild(E('text', { x: W - pr + 6, y: y + 4, 'class': 'od-ge' }, corto(maxG * f))); });
-    var pts = [];
+    var W = ancho(box), H = 250, pl = 10, pr = 10, pt = 28, pb = 26, iw = W - pl - pr, ih = H - pt - pb, n = datos.length, slot = iw / n, bw = Math.min(46, slot * 0.6);
+    var maxN = Math.max.apply(null, datos.map(function (d) { return d ? d.n : 0; }).concat(1)) * 1.2;
+    var v = svgBase(W, H), xs = function (j) { return pl + slot * (j + .5); };
+    [0, .5, 1].forEach(function (f) { var y = pt + ih - f * ih; v.appendChild(E('line', { x1: pl, x2: W - pr, y1: y, y2: y, 'class': 'od-grid' })); });
     datos.forEach(function (d, j) {
       if (!d) return; var hh = d.n / maxN * ih, cur = j === activo;
       v.appendChild(E('rect', { x: xs(j) - bw / 2, y: pt + ih - hh, width: bw, height: Math.max(hh, d.n ? 2 : 0), rx: 5, fill: cur ? '#f0c94a' : '#13223f', stroke: cur ? '#13223f' : 'none', 'stroke-width': cur ? 1.5 : 0 }));
-      if (d.n) v.appendChild(E('text', { x: xs(j), y: hh >= 20 ? pt + ih - hh + 15 : pt + ih - hh - 6, 'text-anchor': 'middle', 'class': hh >= 20 && !cur ? 'od-tw' : 'od-tv' }, d.n));
-      pts.push({ x: xs(j), y: yG(d.g), g: d.g });
+      v.appendChild(E('text', { x: xs(j), y: pt + ih - hh - 7, 'text-anchor': 'middle', 'class': 'od-tv' }, d.n));
     });
     for (var j = 0; j < n; j++) v.appendChild(E('text', { x: xs(j), y: H - 8, 'text-anchor': 'middle', 'class': 'od-ts' }, String(etq[j]).charAt(0).toUpperCase() + String(etq[j]).slice(1)));
-    if (pts.length > 1) v.appendChild(E('polyline', { points: pts.map(function (p) { return p.x + ',' + p.y; }).join(' '), fill: 'none', stroke: '#1f9d55', 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
-    pts.forEach(function (p) { v.appendChild(E('circle', { cx: p.x, cy: p.y, r: 4.5, fill: '#fff', stroke: '#1f9d55', 'stroke-width': 2.5 })); if (p.g) v.appendChild(E('text', { x: p.x, y: p.y - 10, 'text-anchor': 'middle', 'class': 'od-tg' }, corto(p.g))); });
     datos.forEach(function (d, j) { if (!d) return; var r = E('rect', { x: pl + slot * j, y: 0, width: slot, height: H, 'class': 'od-hit' });
-      r.addEventListener('mousemove', function (ev) { tip(ev, '<b>' + d.t + '</b><br>' + d.n + ' clientes nuevos<br>Valor vendido: ' + pesos(d.g)); }); r.addEventListener('mouseleave', notip); v.appendChild(r); });
+      r.addEventListener('mousemove', function (ev) { tip(ev, '<b>' + d.t + '</b><br>' + d.n + ' pólizas vendidas'); }); r.addEventListener('mouseleave', notip); v.appendChild(r); });
     box.innerHTML = ''; box.appendChild(v);
   }
 
@@ -230,9 +226,10 @@
     Object.keys(S).forEach(function (k) { if (S[k].y !== 'todos' && !ys[S[k].y]) S[k].y = String(yA); });
 
     // KPIs (no dependen de los filtros)
-    var activos = 0, mes = 0, valMes = 0, porRenovar = 0, enviados = 0;
+    var activos = 0, mes = 0, valMes = 0, porRenovar = 0, enviados = 0, totAnio = 0;
     a.forEach(function (x) {
       if (x.c.estado === 'ACTIVO' && x.tipo !== 'renovado' && x.tipo !== 'vencido' && x.tipo !== 'norenovara') activos++;
+      if (x.ini && x.ini.getFullYear() === yA) totAnio++;
       if (x.ini && x.ini.getFullYear() === yA && x.ini.getMonth() === mA) { mes++; valMes += x.valor; }
       if (x.tipo === 'renovar') porRenovar++; else if (x.tipo === 'enviado') enviados++;
     });
@@ -252,14 +249,14 @@
       '<div class="od-top"><h2>Tablero de Clientes OMS</h2><div class="od-fil od-fil-top"><label>Año <select class="od-y"><option value="">Cada tarjeta</option>' + opcionesAnio(lista) + '</select></label><label>Mes <select class="od-m"><option value="">Cada tarjeta</option>' + OPC_MES + '</select></label></div></div>' +
       '<div class="od-kpis">' +
         '<div class="od-k"><b>' + activos + '</b><span>Clientes vigentes</span></div>' +
-        '<div class="od-k"><b>' + mes + '</b><span>Nuevos este mes</span></div>' +
-        '<div class="od-k vd"><b>' + corto(valMes) + '</b><span>Valor vendido del mes</span></div>' +
+        '<div class="od-k"><b>' + mes + '</b><span>Pólizas vendidas este mes</span></div>' +
+        '<div class="od-k vd"><b>' + totAnio + '</b><span>Pólizas vendidas en ' + yA + '</span></div>' +
         '<div class="od-k' + (porRenovar ? ' al' : '') + '"><b>' + porRenovar + '</b><span>Por renovar (≤' + DIAS_AVISO + ' días)</span></div>' +
         '<div class="od-k"><b>' + enviados + '</b><span>Mensajes enviados</span></div>' +
         '<div class="od-k"><b>' + (tasaTodos === null ? '—' : tasaTodos + ' %') + '</b><span>Tasa de renovación</span></div>' +
       '</div>' +
       '<div class="od-grid12">' +
-        '<div class="od-card od-c8 ay-c"><h3>OMS: clientes nuevos y valor vendido</h3>' + ayBoton('OMS: clientes nuevos y valor vendido','Sale de la hoja de clientes OMS: cada cliente cuenta en el mes de su fecha de inicio. El valor es lo que figura en «Valor a pagar» (en financiados, por las cuotas del año).') + '<p class="od-ayuda">Clientes nuevos de cada mes (columnas) y el valor vendido (línea).</p><p class="od-sub" data-s="1"></p>' + filtro('combo', lista, true) + '<div class="od-leg2"><span><i style="background:#13223f"></i>Columnas: clientes nuevos</span><span><i style="background:#1f9d55"></i>Línea: valor vendido</span></div><div data-g="combo"></div></div>' +
+        '<div class="od-card od-c8 ay-c"><h3>OMS: pólizas vendidas</h3>' + ayBoton('OMS: pólizas vendidas','Sale de la hoja de clientes OMS: cada cliente es una póliza y cuenta en el mes de su fecha de inicio. Con «Mes» ves un mes y con «Año» comparas años.') + '<p class="od-ayuda">Cuántas pólizas se han vendido cada mes.</p><p class="od-sub" data-s="1"></p>' + filtro('combo', lista, true) + '<div class="od-leg2"><span><i style="background:#13223f"></i>Cada columna = pólizas vendidas en ese mes</span></div><div data-g="combo"></div></div>' +
         '<div class="od-card od-c4 ay-c"><h3>OMS: ¿contado o financiado?</h3>' + ayBoton('OMS: ¿contado o financiado?','Sale de la columna Compra de la hoja OMS. Usa el año y el mes de la fecha de inicio.') + '<p class="od-ayuda">Cómo pagaron los clientes OMS del período.</p><p class="od-sub" data-s="2"></p>' + filtro('forma', lista, true) + '<div data-g="forma"></div></div>' +
         '<div class="od-card od-c8 ay-c"><h3>OMS: vehículos más vendidos</h3>' + ayBoton('OMS: vehículos más vendidos','Cuenta la columna Vehículo de la hoja OMS. Muestra los 6 primeros.') + '<p class="od-ayuda">Los modelos que más se venden en el período.</p><p class="od-sub" data-s="6"></p>' + filtro('veh', lista, true) + '<div data-g="veh"></div></div>' +
         '<div class="od-card od-c4 ay-c"><h3>OMS: renovaciones</h3>' + ayBoton('OMS: renovaciones','Cuenta los clientes cuya fecha fin ya pasó. Renovó = hay un registro nuevo del mismo cliente y vehículo, o lo marcaste «Renovó». Sin respuesta = aún no se sabe.') + '<p class="od-ayuda">Qué parte de los clientes que cumplieron su año renovó.</p><p class="od-sub" data-s="4"></p>' + filtro('med', lista, false) + '<div data-g="med"></div></div>' +
@@ -287,7 +284,7 @@
     var datosC = [], etq = [], act = -1, totN = 0, totG = 0, i, porAnio = (mm !== 0 || C.y === 'todos');
     if (!porAnio) { for (i = 0; i < 12; i++) { var o2 = porMes[+C.y * 12 + i] || { n: 0, g: 0 }, fut = (+C.y === yA && i > mA); datosC.push(fut ? null : { n: o2.n, g: o2.g, t: MESES[i] + ' ' + C.y }); etq.push(MC[i]); if (!fut) { totN += o2.n; totG += o2.g; } } if (+C.y === yA) act = mA; }
     else { lista.slice().reverse().forEach(function (y) { var n = 0, g = 0; for (var m = 0; m < 12; m++) { if (mm && m + 1 !== mm) continue; var o = porMes[y * 12 + m]; if (o) { n += o.n; g += o.g; } } datosC.push({ n: n, g: g, t: (mm ? MESES[mm - 1] + ' ' : 'Año ') + y }); etq.push(String(y)); if (C.y === 'todos' || y === +C.y) { totN += n; totG += g; } if (y === yA) act = datosC.length - 1; }); }
-    q('[data-s="1"]').textContent = totN + ' clientes nuevos · ' + pesos(totG) + (totN ? ' · ' + pesos(totG / totN) + ' por cliente' : '');
+    q('[data-s="1"]').textContent = totN + ' pólizas vendidas';
     combo(q('[data-g="combo"]'), datosC, etq, act);
 
     // 2) contado o financiado
