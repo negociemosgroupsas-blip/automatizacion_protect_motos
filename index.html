@@ -461,6 +461,8 @@
   body.tema-inicio .od-ayuda,body.tema-inicio .ay-sub{color:#a3b4d8}
   body.inicio-claro .od-ayuda,body.inicio-claro .ay-sub{color:#5f6f93}
   @media(max-width:760px){.in-nav{position:static;flex-direction:column;align-items:stretch} .in-chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px} #inBusca{flex:1 1 auto;width:100%}}
+  #v-inicio .vmc{grid-column:1/-1;--acc:#60a5fa} .vmc{cursor:default;max-width:none} .vmc:hover{box-shadow:none;transform:none}
+  @media(min-width:1181px){#v-inicio .vmc{grid-column:1/-1!important;order:7!important}} @media(max-width:1180px){#v-inicio .vmc{order:7!important}}
   .cf-ays{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px} .cf-ay{background:var(--fondo,#f3f4f8);border-radius:14px;padding:12px 14px;min-width:0}
   .cf-ay-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:4px} .cf-ay-h b{font-size:1.7rem;line-height:1;display:block} .cf-ay-h span{font-size:.78rem;color:var(--suave,#6b7280)}
   .cf-ay-h label{font-size:.74rem;color:var(--suave,#6b7280);display:flex;align-items:center;gap:6px} .cf-ay-h select{border:1px solid var(--borde,#e3e6eb);background:var(--tarjeta,#fff);color:var(--texto,#1f2430);border-radius:8px;padding:4px 8px;font-size:.8rem}
@@ -906,8 +908,37 @@
   document.getElementById('cfCuerpo').addEventListener('change',function(ev){var t=ev.target;if(t.tagName==='SELECT'&&t.dataset.mes){window.cfMesG=t.value;pintarCF();return}if(t.tagName==='SELECT'&&t.dataset.y){(window.cfTipoAnio=window.cfTipoAnio||{})[t.dataset.y]=t.value;pintarCF()}});
   document.getElementById('cfChips').addEventListener('click',function(ev){var bt=ev.target.closest('.cf-todos');if(!bt)return;var yA=new Date().getFullYear(),all=Object.keys(cfDatos||{}).map(function(k){return Math.floor((+k-1)/12)});all.push(yA);all=all.filter(function(v,i,a){return a.indexOf(v)===i}).sort();cfSel=bt.dataset.a==='todos'?all:[yA];cfGuardar();pintarCF()});
   document.getElementById('cfChips').addEventListener('change',function(){var ch=[].slice.call(document.querySelectorAll('#cfChips input:checked')).map(function(i){return +i.value}).sort();if(!ch.length){pintarCF();return}cfSel=ch;cfGuardar();pintarCF()});
+  /* ===== Tarjeta independiente: ventas mes a mes, por año (todas las ventas, 12 meses, un color por año) ===== */
+  var vmc=document.createElement('div');vmc.className='card vmc';
+  vmc.innerHTML='<h3>Ventas mes a mes, por año</h3><p class="tot" id="vmTot">Se muestra al conectar Cobros.</p><div class="ed-per"><label>Año <select id="vmAnio"></select></label><label>Tipo de venta <select id="vmTipo"><option value="todas">Todas</option><option value="contado">De contado</option><option value="financiadas">Financiadas</option></select></label></div><div class="cf-ley" id="vmLey"></div><div id="vmCuerpo"></div>';
+  tarjetas.appendChild(vmc);
+  var vmAnio='todos',vmTipo='todas';
+  document.getElementById('vmAnio').addEventListener('change',function(){vmAnio=this.value;pintarVM()});
+  document.getElementById('vmTipo').addEventListener('change',function(){vmTipo=this.value;pintarVM()});
+  window.pintarVM=pintarVM;
+  function pintarVM(){
+    var tot=document.getElementById('vmTot'),b=document.getElementById('vmCuerpo'),ley=document.getElementById('vmLey');
+    if(!cfOk||!cfDatos){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';b.innerHTML='';ley.innerHTML='';return}
+    var yA=new Date().getFullYear(),mA=new Date().getMonth()+1,ys={};ys[yA]=1;Object.keys(cfDatos).forEach(function(k){ys[Math.floor((+k-1)/12)]=1});
+    var lst=Object.keys(ys).map(Number).sort(function(a,c){return a-c}),sa=document.getElementById('vmAnio');
+    sa.innerHTML='<option value="todos">Todos los años</option>'+lst.slice().reverse().map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');
+    if(vmAnio!=='todos'&&!ys[vmAnio])vmAnio='todos';sa.value=vmAnio;document.getElementById('vmTipo').value=vmTipo;
+    var sel=vmAnio==='todos'?lst:[+vmAnio],COL=['#9fb8e8','#fdc33e','#38bdf8','#5b78c7','#e08a00','#d5dcf0'],TXT=['vd-o','vd-o','vd-o','vd-b','vd-o','vd-o'];
+    var colY=function(y){return COL[lst.indexOf(y)%6]},txY=function(y){return TXT[lst.indexOf(y)%6]};
+    var val=function(k){var o=cfDatos[k];if(!o)return 0;return vmTipo==='contado'?o.C:vmTipo==='financiadas'?o.F:(o.C+o.F+(o.O||0))};
+    var tx=vmTipo==='contado'?'de contado':vmTipo==='financiadas'?'financiadas':'(todas)';
+    var dm=[],tt=sel.map(function(){return 0}),mx=1,i;
+    for(i=1;i<=12;i++){var v=sel.map(function(y,si){var n=val(y*12+i);tt[si]+=n;if(n>mx)mx=n;return n});dm.push(v.some(function(n){return n>0})?{vals:v,m:i-1}:null)}
+    var T=tt.reduce(function(p,q){return p+q},0);
+    tot.textContent=T?'Ventas '+tx+' de cada mes · '+(sel.length>1?'un color por año':'año '+sel[0])+' · el número de cada columna es el total de ese mes':'No hay ventas '+tx+' en el período elegido.';
+    ley.innerHTML=sel.map(function(y,si){return '<span><i style="background:'+colY(y)+'"></i><b>'+y+'</b> · '+tt[si]+' ventas'+(y===yA?' (ene–'+MES_C[mA-1]+')':'')+'</span>'}).join('');
+    b.innerHTML='<div class="vm-c"></div>';
+    columnas(b.querySelector('.vm-c'),{datos:dm.map(function(d){return d?{vals:d.vals,m:d.m,t:0}:null}),n:12,max:mx*1.2,alto:280,etiquetas:MES_C,grupo:true,valDentro:true,gwMax:34,colores:sel.map(colY),txtVal:sel.map(txY),activo:-1,aria:'Ventas mes a mes por año',etqBarra:function(){return ''},
+      tip:function(d,ix){return '<b>'+MES_LARGO[ix]+'</b> · ventas '+tx+'<br>'+sel.map(function(y,si){return '<span style="display:inline-block;width:9px;height:9px;border-radius:2px;border:1px solid #fff;background:'+colY(y)+';margin-right:5px"></span>'+y+': <b>'+d.vals[si]+'</b>'}).join('<br>')}});
+  }
   function pintarCF(cf,ok){
     if(cf){cfDatos=cf;cfOk=ok}
+    if(cf&&window.pintarVM)window.pintarVM();
     var tot=document.getElementById('cfTot'),b=document.getElementById('cfCuerpo'),chips=document.getElementById('cfChips');
     if(!cfOk){tot.textContent='Para ver esta gráfica, configura el conector del CRM en «Conexiones».';b.innerHTML='';chips.innerHTML='';return}
     var yAct=new Date().getFullYear(),mAct=new Date().getMonth()+1,anios={};anios[yAct]=1;Object.keys(cfDatos).forEach(function(k){anios[Math.floor((+k-1)/12)]=1});
@@ -1374,7 +1405,7 @@
   function MES_TXT_G(){var m=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'],h=new Date();return m[h.getMonth()]+' '+h.getFullYear()}
   function dineroK(v){v=Number(v)||0;if(v>=1e6)return '$'+(v/1e6).toFixed(1).replace('.',',')+' M';if(v>=1e3)return '$'+Math.round(v/1e3)+' mil';return '$'+Math.round(v)}
   /* Filtro global: coloca el mismo año y mes en los filtros de cada tarjeta (como si los cambiaras uno por uno) */
-  var PARES=[['asAnio','asMes'],['sgAnio','sgMes'],['rcAnio','rcMes'],['esAnio','esMes'],['svAnio','svMes'],['edAnio','edMes']];
+  var PARES=[['vmAnio','vmNoMes'],['asAnio','asMes'],['sgAnio','sgMes'],['rcAnio','rcMes'],['esAnio','esMes'],['svAnio','svMes'],['edAnio','edMes']];
   function poner(id,val){var el=$(id);if(!el)return;var ok=[].some.call(el.options,function(o){return o.value===String(val)});if(!ok)return;if(el.value===String(val))return;el.value=String(val);el.dispatchEvent(new Event('change',{bubbles:true}))}
   function aplicarGlobal(){
     var y=$('gAnio').value,m=$('gMes').value;
@@ -1411,6 +1442,7 @@
     ['.rcm','Contratos con RC y sin RC, mes a mes','🧾','Cuántos contratos de cada mes llevan RC y cuántos no.','Columna dorada = contratos con RC, celeste = sin RC. Con «Mostrar» puedes ver solo uno de los dos. Sale de la columna U de Protect.','clientes',1],
     ['.edc','¿Quién nos compra? Edad y ticket promedio','👥','Rango de edad que más compra y valor promedio de cada venta.','La edad sale de la columna G (o de la fecha de nacimiento). En financiados el ticket es la cuota mensual promedio; en contado, el valor de la venta.','clientes',1],
     ['.anu','¿Cuántos clientes están activos?','✅','Activos, finalizados, cancelados y anulados de Protect.','Cuenta el texto de la columna AR de la hoja, igual que el botón Cobros. Los anulados se muestran aparte y no cuentan como vendidos. Con «¿Cómo se cuenta?» ves el detalle por año.','clientes',1],
+    ['.vmc','Ventas mes a mes, por año','📈','Todas las ventas de cada mes, con un color por año.','Cada columna es el total de contratos de ese mes (contado y financiados juntos) y cada color es un año. Con «Año» ves uno solo y con «Tipo de venta» separas contado o financiadas. Sale de las columnas I, J y T de Protect; no cuenta anulados.','ventas',1],
     ['.svc','SOAT: cuántos vendemos y cuánto ganamos','🛡️','SOAT vendidos por mes (columnas) y su ganancia (línea verde).','Sale de la hoja Soat: cada SOAT cuenta en el mes de su fecha de venta. La escala verde de la derecha es la ganancia.','soat',1]
   ];
   function aclarar(){
