@@ -462,7 +462,7 @@
   body.inicio-claro .od-ayuda,body.inicio-claro .ay-sub{color:#5f6f93}
   @media(max-width:760px){.in-nav{position:static;flex-direction:column;align-items:stretch} .in-chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px} #inBusca{flex:1 1 auto;width:100%}}
   #v-inicio .vmc{grid-column:1/-1;--acc:#60a5fa} .vmc{cursor:default;max-width:none} .vmc:hover{box-shadow:none;transform:none}
-  @media(min-width:1181px){#v-inicio .vmc{grid-column:1/-1!important;order:7!important}} @media(max-width:1180px){#v-inicio .vmc{order:7!important}}
+  #v-inicio .vmc{grid-column:1/-1!important;order:3!important}
   .cf-ays{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px} .cf-ay{background:var(--fondo,#f3f4f8);border-radius:14px;padding:12px 14px;min-width:0}
   .cf-ay-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:4px} .cf-ay-h b{font-size:1.7rem;line-height:1;display:block} .cf-ay-h span{font-size:.78rem;color:var(--suave,#6b7280)}
   .cf-ay-h label{font-size:.74rem;color:var(--suave,#6b7280);display:flex;align-items:center;gap:6px} .cf-ay-h select{border:1px solid var(--borde,#e3e6eb);background:var(--tarjeta,#fff);color:var(--texto,#1f2430);border-radius:8px;padding:4px 8px;font-size:.8rem}
@@ -1442,7 +1442,7 @@
     ['.rcm','Contratos con RC y sin RC, mes a mes','🧾','Cuántos contratos de cada mes llevan RC y cuántos no.','Columna dorada = contratos con RC, celeste = sin RC. Con «Mostrar» puedes ver solo uno de los dos. Sale de la columna U de Protect.','clientes',1],
     ['.edc','¿Quién nos compra? Edad y ticket promedio','👥','Rango de edad que más compra y valor promedio de cada venta.','La edad sale de la columna G (o de la fecha de nacimiento). En financiados el ticket es la cuota mensual promedio; en contado, el valor de la venta.','clientes',1],
     ['.anu','¿Cuántos clientes están activos?','✅','Activos, finalizados, cancelados y anulados de Protect.','Cuenta el texto de la columna AR de la hoja, igual que el botón Cobros. Los anulados se muestran aparte y no cuentan como vendidos. Con «¿Cómo se cuenta?» ves el detalle por año.','clientes',1],
-    ['.vmc','Ventas mes a mes, por año','📈','Todas las ventas de cada mes, con un color por año.','Cada columna es el total de contratos de ese mes (contado y financiados juntos) y cada color es un año. Con «Año» ves uno solo y con «Tipo de venta» separas contado o financiadas. Sale de las columnas I, J y T de Protect; no cuenta anulados.','ventas',1],
+    ['.vmc','Ventas mes a mes, por año','📈','Todas las ventas de cada mes, con un color por año.','Cada columna es el total de contratos de ese mes (contado y financiados juntos) y cada color es un año. Con «Año» ves uno solo y con «Tipo de venta» separas contado o financiadas. Sale de las columnas I, J y T de Protect; no cuenta anulados.','resumen',1],
     ['.svc','SOAT: cuántos vendemos y cuánto ganamos','🛡️','SOAT vendidos por mes (columnas) y su ganancia (línea verde).','Sale de la hoja Soat: cada SOAT cuenta en el mes de su fecha de venta. La escala verde de la derecha es la ganancia.','soat',1]
   ];
   function aclarar(){
