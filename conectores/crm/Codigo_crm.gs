@@ -1,9 +1,10 @@
 /**
- * PROTECT MOTOS — Conector del CRM (SOLO LECTURA)
+ * PROTECT MOTOS — Conector del CRM (lectura + decisiones de comisiones)
  *
  * Proyecto de Apps Script NUEVO e independiente: no modifica ni reemplaza el conector de Cobros,
- * ni el de Conciliación, ni el de Contratos. Solo LEE la hoja y entrega los datos al Inicio del CRM
- * (gráficas, alertas y buscador). No escribe nada en el Sheet.
+ * ni el de Conciliación, ni el de Contratos. Lee la hoja y entrega los datos al Inicio del CRM
+ * (gráficas, alertas, buscador y comisiones). Lo ÚNICO que escribe es la pestaña nueva «Comisiones_Config»
+ * (decisiones de casos especiales y observaciones del informe de comisiones). Nunca modifica Protect ni Pagos.
  *
  * Publicar como Aplicación web:  Ejecutar como: Yo  ·  Quién tiene acceso: Cualquier usuario.
  */
@@ -26,6 +27,7 @@ var COL = {
   VALOR_PROTECT: 15, // Valor total financiado
   VALOR_CUOTA: 17,
   PLAZO: 18,
+  COMISION: 19,      // Valor de la comisión (columna S)
   FORMA: 20,         // CONTADO | FINANCIADO
   FECHA_NAC: 6,      // Fecha de nacimiento del cliente (columna F)
   EDAD: 7,           // Edad del cliente al firmar (columna G)
@@ -50,10 +52,12 @@ function doGet(e) {
       var accion = params.action || 'datos';
       if (accion === 'datos') {
         salida = accionDatos();
+      } else if (accion === 'guardarClave') {
+        salida = accionGuardarClave(params);
       } else if (accion === 'ping') {
-        salida = { ok: true, mensaje: 'Conector del CRM activo (solo lectura)', version: 'crm-1' };
+        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-2' };
       } else {
-        salida = { ok: false, error: 'Este conector es solo de lectura. Acción no disponible: ' + accion };
+        salida = { ok: false, error: 'Acción no disponible: ' + accion };
       }
     }
   } catch (err) {
@@ -79,7 +83,7 @@ function accionDatos() {
   var ss = SpreadsheetApp.openById(SHEET_ID);
   var hojaSeg = hojaSeguimiento(ss);
   var hojaPagos = ss.getSheetByName(HOJA_PAGOS);
-  return { ok: true, contratos: leerContratos(hojaSeg), pagos: leerPagos(hojaPagos), gestiones: [] };
+  return { ok: true, contratos: leerContratos(hojaSeg), pagos: leerPagos(hojaPagos), gestiones: [], comisionesCfg: leerConfigComisiones(ss) };
 }
 
 function leerContratos(hoja) {
@@ -117,6 +121,7 @@ function leerContratos(hoja) {
       fechaNacISO: formatoISO(fila[COL.FECHA_NAC - 1]),
       mes: valorMesAnio(fila[COL.MES - 1], 'mes'),
       anio: valorMesAnio(fila[COL.ANIO - 1], 'anio'),
+      comision: Number(fila[COL.COMISION - 1]) || 0,
       rc: String(fila[COL.RC - 1] || '').trim().toUpperCase(),
       ap: String(fila[COL.AP - 1] || '').trim().toUpperCase(),
       estado: String(fila[COL.ESTADO_CLIENTE - 1] || '').trim().toUpperCase()
@@ -180,4 +185,56 @@ function formatoISO(valor) {
   var mes = ('0' + (fecha.getMonth() + 1)).slice(-2);
   var dia = ('0' + fecha.getDate()).slice(-2);
   return fecha.getFullYear() + '-' + mes + '-' + dia;
+}
+
+
+// ==================== COMISIONES: decisiones y observaciones ====================
+// Pestaña «Comisiones_Config» (se crea sola): Clave | Valor (JSON) | Actualizado | Registrado por
+//   caso:<contrato>            → decisión sobre un caso especial (se paga o no, valor, nota)
+//   obs:<AAAA-MM>:<asesor>      → observación escrita en el informe de ese asesor y mes
+var HOJA_CONFIG = 'Comisiones_Config';
+
+function hojaConfig(ss) {
+  var h = ss.getSheetByName(HOJA_CONFIG);
+  if (!h) {
+    h = ss.insertSheet(HOJA_CONFIG);
+    h.getRange(1, 1, 1, 4).setValues([['Clave', 'Valor', 'Actualizado', 'Registrado por']]).setFontWeight('bold');
+    h.setFrozenRows(1);
+  }
+  return h;
+}
+
+function leerConfigComisiones(ss) {
+  var h = ss.getSheetByName(HOJA_CONFIG);
+  var out = {};
+  if (!h || h.getLastRow() < 2) return out;
+  var datos = h.getRange(2, 1, h.getLastRow() - 1, 2).getValues();
+  for (var i = 0; i < datos.length; i++) {
+    var k = String(datos[i][0] || '').trim();
+    if (k) out[k] = String(datos[i][1] || '');
+  }
+  return out;
+}
+
+function accionGuardarClave(params) {
+  var clave = String(params.clave || '').trim();
+  if (!/^(caso|obs):/.test(clave)) return { ok: false, error: 'Clave no válida.' };
+  var valor = String(params.valor === undefined ? '' : params.valor);
+  if (valor.length > 2000) return { ok: false, error: 'El texto es demasiado largo.' };
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var h = hojaConfig(ss);
+    var ultima = h.getLastRow(), fila = 0;
+    if (ultima >= 2) {
+      var claves = h.getRange(2, 1, ultima - 1, 1).getValues();
+      for (var i = 0; i < claves.length; i++) { if (String(claves[i][0]).trim() === clave) { fila = i + 2; break; } }
+    }
+    if (!fila) fila = ultima + 1;
+    h.getRange(fila, 1, 1, 4).setValues([[clave, valor, new Date(), String(params.por || '')]]);
+    return { ok: true };
+  } finally {
+    lock.releaseLock();
+  }
 }

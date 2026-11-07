@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comisiones</title>
+<style>
+  :root{--azul:#13223f;--azul2:#1f4e79;--dorado:#d6a417;--fondo:#f4f5f7;--tarjeta:#fff;--texto:#1f2430;--suave:#6b7280;--borde:#e3e6eb;--verde:#1f9d55;--naranja:#d97706;--rojo:#dc2626}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fondo);color:var(--texto)}
+  header{background:linear-gradient(135deg,#13223f,#1c3050);color:#fff;padding:18px 24px}
+  header h1{margin:0;font-size:1.25rem} header p{margin:4px 0 0;font-size:.85rem;opacity:.8}
+  main{max-width:1200px;margin:0 auto;padding:18px}
+  .panel{background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .panel h2{margin:0 0 4px;font-size:1.02rem;color:var(--azul)} .sub{font-size:.8rem;color:var(--suave);margin:0 0 12px}
+  .fil{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+  label{font-size:.78rem;color:var(--suave);display:flex;flex-direction:column;gap:4px}
+  select,input[type=text],input[type=number],textarea{border:1px solid var(--borde);border-radius:8px;padding:7px 10px;font-size:.88rem;background:#fff;font-family:inherit}
+  .btn{border:0;border-radius:9px;padding:9px 15px;font-size:.86rem;font-weight:600;cursor:pointer;background:var(--azul);color:#fff}
+  .btn.d{background:var(--dorado);color:#13223f} .btn.g{background:#e9edf3;color:var(--azul)} .btn:disabled{opacity:.45;cursor:not-allowed}
+  .estado{font-size:.82rem;margin:10px 0 0;color:var(--suave)} .estado.ok{color:var(--verde)} .estado.er{color:var(--rojo)}
+  .alerta{border:1px solid #f5c2c2;background:#fdeaea;border-left:6px solid var(--rojo);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:.88rem}
+  .aviso{border:1px solid #f3d9a8;background:#fff3e0;border-left:6px solid var(--naranja);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:.88rem}
+  .okb{border:1px solid #bfe6cf;background:#e7f8ee;border-left:6px solid var(--verde);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:.88rem}
+  table{width:100%;border-collapse:collapse;font-size:.85rem} th,td{padding:8px 10px;border-bottom:1px solid var(--borde);text-align:left;vertical-align:top} th{font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;color:var(--suave);background:#fafbfc}
+  .caso{border:1px solid var(--borde);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:#fffdf7}
+  .caso.dec{background:#f6fbf8} .caso h4{margin:0 0 4px;font-size:.92rem} .caso small{color:var(--suave)}
+  .caso .ctl{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:10px}
+  .num{text-align:right;white-space:nowrap} .tot td{font-weight:700;background:#eaf1fb;color:var(--azul2)}
+  .scroll{overflow-x:auto}
+  /* ===== informe (igual al formato que se entrega a contabilidad) ===== */
+  #informe{background:#fff;border:2px solid var(--azul2);border-radius:4px;padding:0 0 14px}
+  #informe .tt{background:#eaf1fb;color:var(--azul2);text-align:center;font-size:1.5rem;font-weight:800;padding:14px 10px;border-bottom:2px solid var(--azul2)}
+  #informe .st{text-align:center;color:#555;padding:6px 10px 2px;font-size:.95rem}
+  #informe .ln{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:2px 14px;font-size:.85rem;color:#444}
+  #informe .tar{text-align:center;font-size:.8rem;color:#555;padding:4px 10px 10px}
+  #informe table th{background:#1f4e79;color:#fff;text-align:center;font-size:.72rem;border:1px solid #fff}
+  #informe table td{border:1px solid #333;padding:6px 8px}
+  #informe .c1{background:#dfe1f3}#informe .c2{background:#e1ecd9}#informe .c3{background:#fff0c9}#informe .c4{background:#fde1d5}
+  #informe th.h1{background:#2e4a87}#informe th.h2{background:#1e6b3a}#informe th.h3{background:#7a6212}#informe th.h4{background:#7a4210}
+  #informe .tot td{background:#bdd7ee;color:#1f4e79;font-weight:800;text-align:center}
+  #informe .obs textarea{width:100%;min-height:34px;border:1px dashed #b8c4d6;background:#fbfdff;font-size:.8rem}
+  #informe .obsp{display:none;font-size:.78rem;white-space:pre-wrap}
+  #informe .auto{font-size:.72rem;color:#7a4210;margin-top:3px}
+  .firmas{display:flex;gap:30px;justify-content:space-around;padding:36px 20px 6px;font-size:.8rem}
+  .firmas div{flex:1;border-top:1px solid #333;text-align:center;padding-top:5px;color:#333}
+  .ayuda{font-size:.8rem;color:var(--suave);line-height:1.5}
+  @media print{
+    @page{size:landscape;margin:12mm}
+    body{background:#fff} header,main>.panel:not(#pInforme),.nop,.estado{display:none!important}
+    main{padding:0;max-width:none} #pInforme{border:0;padding:0;margin:0} #pInforme>h2,#pInforme>.sub{display:none}
+    #informe .obs textarea{display:none} #informe .obsp{display:block}
+    #informe{border-radius:0}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+<header><h1>💵 Comisiones de asesores</h1><p>Informe de bonificaciones del mes, calculado con la hoja Protect · los anulados no generan comisión</p></header>
+<main>
+  <section class="panel">
+    <h2>1. Elija el mes</h2>
+    <p class="sub">El sistema toma los contratos de ese mes (columnas I y J de Protect) y calcula la comisión de cada asesor.</p>
+    <div class="fil">
+      <label>Año <select id="fAnio"></select></label>
+      <label>Mes <select id="fMes"></select></label>
+      <button class="btn g" id="bRec" type="button">🔄 Volver a leer la hoja</button>
+    </div>
+    <p class="estado" id="est">Cargando…</p>
+  </section>
+
+  <section class="panel" id="pCasos" style="display:none">
+    <h2>2. ⚠️ Casos especiales: necesitan su decisión</h2>
+    <p class="sub">Normalmente esto no debería pasar. Para cada caso diga si se paga comisión (y cuánto) o si no se paga. Queda guardado en la hoja de Google y no vuelve a preguntar.</p>
+    <div id="casos"></div>
+  </section>
+
+  <section class="panel" id="pDif" style="display:none">
+    <h2>3. Revisar: el valor de la hoja no coincide con la tarifa</h2>
+    <p class="sub">El informe paga según la tarifa. Aquí se muestran los contratos cuya comisión escrita en la columna S es distinta; revise si fue error de digitación.</p>
+    <div class="scroll"><table><thead><tr><th>Cliente</th><th>Asesor</th><th>Tipo</th><th class="num">Columna S</th><th class="num">Según tarifa</th></tr></thead><tbody id="dif"></tbody></table></div>
+  </section>
+
+  <section class="panel" id="pInforme">
+    <h2>Informe de bonificaciones</h2>
+    <p class="sub">Así se imprime. Puede escribir observaciones por asesor (se guardan solas).</p>
+    <div class="nop" id="banner"></div>
+    <div class="nop fil" style="margin-bottom:12px">
+      <label>Elaborado por <input type="text" id="elab" value="Kelli Restrepo" style="width:200px"></label>
+      <button class="btn d" id="bPdf" type="button">🖨️ Descargar PDF (imprimir)</button>
+      <button class="btn" id="bRes" type="button">⬇ Excel resumen</button>
+      <button class="btn" id="bDet" type="button">⬇ Excel detalle por cliente</button>
+    </div>
+    <div id="informe"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Detalle: de dónde sale cada valor</h2>
+    <p class="sub">Cada contrato del mes, con la comisión que se le pagará al asesor.</p>
+    <div class="fil nop" style="margin-bottom:10px"><label>Asesor <select id="fAs"></select></label></div>
+    <div class="scroll"><table><thead><tr><th>#</th><th>Asesor</th><th>Cliente</th><th>Placa</th><th>Forma</th><th>RC</th><th>AP</th><th>Tipo</th><th class="num">Comisión</th><th>Nota</th></tr></thead><tbody id="det"></tbody></table></div>
+    <p class="ayuda">Tarifas: contado con RC y AP $40.000 · contado sin RC y sin AP $25.000 · financiado con RC y AP $15.000 · financiado sin RC y sin AP $10.000. Cualquier otra combinación es un caso especial.</p>
+  </section>
+</main>
+
+<script>
+(function(){
+  var TARIFAS={CRC:40000,C:25000,FRC:15000,F:10000};
+  var NOM={CRC:'PM + RC contado',C:'PM contado',FRC:'PM + RC financiado',F:'PM financiado'};
+  var MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var datos=null, cfg={}, anio=new Date().getFullYear(), mes=new Date().getMonth()+1, calc=null;
+  function $(i){return document.getElementById(i)}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function pesos(n){return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
+  function est(t,c){var e=$('est');e.textContent=t;e.className='estado '+(c||'')}
+  function lsg(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
+
+  // ---------- lectura de fechas (igual que el Inicio) ----------
+  function numMes(v){v=String(v==null?'':v).trim().toLowerCase();if(!v)return 0;if(/^\d+$/.test(v))return +v;
+    v=v.normalize('NFD').replace(/[̀-ͯ]/g,'').slice(0,3);if(v==='set')return 9;
+    for(var i=0;i<12;i++){if(MESES[i].toLowerCase().slice(0,3)===v)return i+1}return 0}
+  function numAnio(v){var n=parseInt(String(v==null?'':v).trim(),10);return isNaN(n)?0:(n<100?2000+n:n)}
+  function mesAnio(x){
+    var m=numMes(x.mes),a=numAnio(x.anio),tx=String(x.mes||''),q;
+    if(!m){q=tx.match(/^\s*(\d{1,2})\s*[\/\-]\s*(\d{2,4})\s*$/);if(q&&+q[1]>=1&&+q[1]<=12){m=+q[1];if(!a)a=numAnio(q[2])}else{q=tx.match(/^\s*(\d{4})\s*[\/\-]\s*(\d{1,2})\s*$/);if(q&&+q[2]>=1&&+q[2]<=12){m=+q[2];if(!a)a=+q[1]}}}
+    if(!a&&(q=tx.match(/(20\d{2})/)))a=+q[1];
+    if((!m||!a)&&x.fechaFirmaISO&&/^\d{4}-\d{2}/.test(x.fechaFirmaISO)){if(!m)m=+x.fechaFirmaISO.slice(5,7);if(!a)a=+x.fechaFirmaISO.slice(0,4)}
+    return {m:m,a:a}}
+  function anulado(x){return /^\s*anulad[oa]\s*$/i.test(String(x.cliente||''))||String(x.estado||'').trim().toUpperCase()==='ANULADO'}
+  function clave(x){return x.contrato?String(x.contrato):('sin:'+x.cliente+'|'+x.placa)}
+
+  // ---------- clasificación ----------
+  function clasificar(x){
+    var f=x.forma,rc=x.rc,ap=x.ap,mot=[];
+    if(f!=='CONTADO'&&f!=='FINANCIADO')mot.push('la forma de pago no es CONTADO ni FINANCIADO ("'+(f||'vacía')+'")');
+    var okv=function(v){return v==='SI'||v==='NO'};
+    if(!okv(rc))mot.push('la columna RC está vacía o no dice SI/NO');
+    if(!okv(ap))mot.push('la columna AP está vacía o no dice SI/NO');
+    if(okv(rc)&&okv(ap)&&rc!==ap)mot.push(rc==='SI'?'lleva RC pero NO lleva AP':'lleva AP pero NO lleva RC');
+    if(mot.length)return {cat:null,motivo:mot.join('; ')};
+    var con=rc==='SI';
+    return {cat:(f==='CONTADO'?(con?'CRC':'C'):(con?'FRC':'F'))};
+  }
+  function decision(k){var v=cfg['caso:'+k];if(!v)return null;try{return JSON.parse(v)}catch(e){return null}}
+
+  function calcular(){
+    var filas=[],sinAs=0;
+    (datos.contratos||[]).forEach(function(x){
+      if(!String(x.cliente||'').trim()||anulado(x))return;
+      var r=mesAnio(x);if(r.m!==mes||r.a!==anio)return;
+      var cl=clasificar(x),k=clave(x),as=(x.asesor||'').trim().toUpperCase()||'SIN ASESOR';
+      var f={x:x,k:k,as:as,cat:cl.cat,motivo:cl.motivo||'',tarifa:cl.cat?TARIFAS[cl.cat]:0,pagar:0,dec:null,nota:''};
+      if(cl.cat){f.pagar=f.tarifa;if(x.comision&&x.comision!==f.tarifa)f.dif=true}
+      else{f.dec=decision(k);if(f.dec){f.pagar=f.dec.d==='pagar'?(+f.dec.valor||0):0;f.nota=(f.dec.d==='pagar'?'Caso especial: SE PAGA ':'Caso especial: NO se paga')+(f.dec.nota?' · '+f.dec.nota:'')}}
+      filas.push(f)});
+    var as={};
+    filas.forEach(function(f){var o=as[f.as]=as[f.as]||{n:f.as,CRC:0,C:0,FRC:0,F:0,esp:0,espN:0,tot:0,auto:[]};
+      if(f.cat){o[f.cat]++;o.tot+=f.pagar}
+      else if(f.dec&&f.dec.d==='pagar'){o.esp+=f.pagar;o.espN++;o.tot+=f.pagar;o.auto.push('Caso especial pagado: '+f.x.cliente+' '+pesos(f.pagar))}
+      else if(f.dec){o.auto.push('Caso especial sin comisión: '+f.x.cliente)}});
+    var lista=Object.keys(as).sort().map(function(k){return as[k]});
+    var pend=filas.filter(function(f){return !f.cat&&!f.dec});
+    return {filas:filas,lista:lista,pend:pend,dif:filas.filter(function(f){return f.dif})};
+  }
+
+  // ---------- conexión ----------
+  function llamar(params,cb){
+    var url=lsg('pm_crm_url'),tok=lsg('pm_crm_token')||'PM-CRM-2026';
+    if(!url){cb({ok:false,error:'Falta la URL del conector del CRM. Pégala en «Conexiones».'});return}
+    var n='pmCom'+Date.now()+Math.floor(Math.random()*1e4),s=document.createElement('script'),t;
+    function fin(){clearTimeout(t);delete window[n];s.remove()}
+    window[n]=function(r){fin();cb(r)};
+    t=setTimeout(function(){if(window[n]){fin();cb({ok:false,error:'El conector tardó demasiado en responder.'})}},45000);
+    s.onerror=function(){if(window[n]){fin();cb({ok:false,error:'No se pudo conectar. Revisa la URL en «Conexiones».'})}};
+    var q='?';for(var k in params){q+=encodeURIComponent(k)+'='+encodeURIComponent(params[k])+'&'}
+    s.src=url+(url.indexOf('?')<0?q:'&'+q.slice(1))+'token='+encodeURIComponent(tok)+'&callback='+n+'&_='+Date.now();
+    document.head.appendChild(s);
+  }
+  function guardar(claveK,valor,cb){llamar({action:'guardarClave',clave:claveK,valor:valor,por:lsg('pm_cobros_registrado_por')},function(r){
+    if(!r||!r.ok){var m=(r&&r.error)||'sin respuesta';if(/no disponible/i.test(m))m='El conector del CRM es una versión vieja: hay que pegar el código nuevo y publicar «Nueva versión» (ver LEEME_COMISIONES.md).';est('No se pudo guardar: '+m,'er');window.alert('No se pudo guardar:\n\n'+m);return}
+    cb&&cb()})}
+
+  function cargar(){
+    est('Leyendo la hoja Protect…');
+    llamar({action:'datos'},function(r){
+      if(!r||!r.ok){est((r&&r.error)||'No se pudo leer.','er');return}
+      datos=r;cfg=r.comisionesCfg||{};
+      var tieneCom=(r.contratos||[]).some(function(x){return x.comision!==undefined});
+      est('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos'+(tieneCom?'':' — ⚠️ el conector aún no trae la columna de comisión: publica «Nueva versión» con el código nuevo (LEEME_COMISIONES.md).'),tieneCom?'ok':'er');
+      llenarFiltros();pintar()});
+  }
+
+  function llenarFiltros(){
+    var ys={};ys[new Date().getFullYear()]=1;(datos.contratos||[]).forEach(function(x){var a=mesAnio(x).a;if(a)ys[a]=1});
+    $('fAnio').innerHTML=Object.keys(ys).sort(function(a,b){return b-a}).map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');
+    $('fAnio').value=String(anio);if($('fAnio').value!==String(anio)){anio=+$('fAnio').value}
+    $('fMes').innerHTML=MESES.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>'}).join('');$('fMes').value=String(mes);
+  }
+
+  // ---------- pintado ----------
+  function pintar(){
+    if(!datos)return;calc=calcular();
+    var mk=anio+'-'+('0'+mes).slice(-2);
+    // casos especiales
+    var esp=calc.filas.filter(function(f){return !f.cat});
+    $('pCasos').style.display=esp.length?'block':'none';
+    $('casos').innerHTML=esp.map(function(f,i){var d=f.dec,x=f.x;
+      return '<div class="caso'+(d?' dec':'')+'" data-i="'+i+'"><h4>'+(d?'✅':'⚠️')+' '+esc(x.cliente)+' <small>· Asesor: '+esc(f.as)+' · Placa '+esc(x.placa)+' · '+esc(x.forma||'sin forma')+' · RC: '+esc(x.rc||'—')+' · AP: '+esc(x.ap||'—')+' · Columna S: '+pesos(x.comision)+'</small></h4>'+
+        '<small>Por qué es especial: '+esc(f.motivo)+'.</small><div class="ctl">'+
+        '<label>Decisión <select class="cd"><option value="">— Sin decidir —</option><option value="no"'+(d&&d.d==='no'?' selected':'')+'>No se paga comisión</option><option value="pagar"'+(d&&d.d==='pagar'?' selected':'')+'>Sí se paga comisión</option></select></label>'+
+        '<label class="cvw" style="'+(d&&d.d==='pagar'?'':'display:none')+'">Valor a pagar ($) <input type="number" class="cv" min="0" step="1000" value="'+(d&&d.d==='pagar'?(d.valor||0):(x.comision||''))+'" style="width:130px"></label>'+
+        '<label>Nota (opcional) <input type="text" class="cn" value="'+esc(d&&d.nota||'')+'" style="width:230px"></label>'+
+        '<button class="btn d cg" type="button">Guardar decisión</button></div></div>'}).join('');
+    // diferencias
+    $('pDif').style.display=calc.dif.length?'block':'none';
+    $('dif').innerHTML=calc.dif.map(function(f){return '<tr><td>'+esc(f.x.cliente)+'</td><td>'+esc(f.as)+'</td><td>'+NOM[f.cat]+'</td><td class="num">'+pesos(f.x.comision)+'</td><td class="num"><b>'+pesos(f.tarifa)+'</b></td></tr>'}).join('');
+    // banner
+    var b='';
+    if(!calc.filas.length)b='<div class="aviso">No se encontraron contratos de '+MESES[mes-1]+' '+anio+' en la hoja Protect.</div>';
+    else if(calc.pend.length)b='<div class="alerta"><b>Faltan '+calc.pend.length+' caso(s) especial(es) por decidir.</b> Hasta que los decida no puede descargar el informe final, porque el total no estaría completo.</div>';
+    else b='<div class="okb">Todo listo: '+calc.filas.length+' contratos del mes, sin casos pendientes.'+(calc.dif.length?' Revise antes los '+calc.dif.length+' contrato(s) con valor distinto a la tarifa.':'')+'</div>';
+    $('banner').innerHTML=b;
+    ['bPdf','bRes','bDet'].forEach(function(i){$(i).disabled=!calc.filas.length||calc.pend.length>0});
+    // informe
+    var T={CRC:0,C:0,FRC:0,F:0,tot:0};
+    var cuerpo=calc.lista.map(function(o,i){T.CRC+=o.CRC;T.C+=o.C;T.FRC+=o.FRC;T.F+=o.F;T.tot+=o.tot;
+      var ob=cfg['obs:'+mk+':'+o.n]||'';
+      return '<tr data-as="'+esc(o.n)+'"><td style="text-align:center">'+(i+1)+'</td><td><b>'+esc(o.n)+'</b></td><td class="c1" style="text-align:center">'+o.CRC+'</td><td class="c2" style="text-align:center">'+o.C+'</td><td class="c3" style="text-align:center">'+o.FRC+'</td><td class="c4" style="text-align:center">'+o.F+'</td><td class="num"><b>'+pesos(o.tot)+'</b></td><td class="obs"><textarea class="ot" placeholder="Observaciones">'+esc(ob)+'</textarea><div class="obsp">'+esc(ob)+'</div>'+(o.auto.length?'<div class="auto">'+o.auto.map(esc).join('<br>')+'</div>':'')+'</td></tr>'}).join('');
+    var pend=calc.pend.length?'<tr><td></td><td colspan="7" style="color:#dc2626"><b>⚠️ '+calc.pend.length+' caso(s) especial(es) sin decidir: no incluidos en el total.</b></td></tr>':'';
+    $('informe').innerHTML='<div class="tt">INFORME DE BONIFICACIONES – '+MESES[mes-1]+' '+anio+'</div>'+
+      '<div class="st">PROTECT MOTOS &nbsp;–&nbsp; Pago de Comisiones a Asesores</div>'+
+      '<div class="ln"><span><b>Mes:</b> '+MESES[mes-1]+' / '+anio+'</span><span>Elaborado por: <u>&nbsp;&nbsp;'+esc($('elab').value)+'&nbsp;&nbsp;</u></span></div>'+
+      '<div class="tar">Tarifas: PM+RC Contado $40.000 | PM Contado $25.000 | PM+RC Financiado $15.000 | PM Financiado $10.000</div>'+
+      '<table><thead><tr><th rowspan="2" style="width:34px">#</th><th rowspan="2">NOMBRE DEL ASESOR</th><th colspan="4">CANTIDAD DE PÓLIZAS VENDIDAS</th><th rowspan="2">TOTAL COMISIÓN ($COP)</th><th rowspan="2">OBSERVACIONES</th></tr>'+
+      '<tr><th class="h1">PM + RC<br>Contado<br>$40.000</th><th class="h2">PM<br>Contado<br>$25.000</th><th class="h3">PM + RC<br>Financiado<br>$15.000</th><th class="h4">PM<br>Financiado<br>$10.000</th></tr></thead><tbody>'+cuerpo+pend+
+      '<tr class="tot"><td colspan="2">TOTAL A PAGAR</td><td>'+T.CRC+'</td><td>'+T.C+'</td><td>'+T.FRC+'</td><td>'+T.F+'</td><td>'+pesos(T.tot)+'</td><td></td></tr></tbody></table>'+
+      '<div class="firmas"><div>Elaboró<br><b>'+esc($('elab').value)+'</b></div><div>Aprobó (Gerencia)</div><div>Recibido – Contabilidad</div></div>';
+    calc.T=T;
+    // detalle
+    var sel=$('fAs'),prev=sel.value;sel.innerHTML='<option value="">Todos</option>'+calc.lista.map(function(o){return '<option>'+esc(o.n)+'</option>'}).join('');sel.value=prev;if(sel.value!==prev)sel.value='';
+    pintarDetalle();
+  }
+  function tipoTxt(f){return f.cat?NOM[f.cat]:'Caso especial'}
+  function pintarDetalle(){
+    var a=$('fAs').value;var L=calc.filas.filter(function(f){return !a||f.as===a}).sort(function(p,q){return p.as<q.as?-1:p.as>q.as?1:0});
+    $('det').innerHTML=L.map(function(f,i){var x=f.x;return '<tr><td>'+(i+1)+'</td><td>'+esc(f.as)+'</td><td>'+esc(x.cliente)+'</td><td>'+esc(x.placa)+'</td><td>'+esc(x.forma)+'</td><td>'+esc(x.rc)+'</td><td>'+esc(x.ap)+'</td><td>'+tipoTxt(f)+'</td><td class="num">'+(f.cat||f.dec?'<b>'+pesos(f.pagar)+'</b>':'<span style="color:#dc2626">sin decidir</span>')+'</td><td>'+esc(f.dif?'En la hoja dice '+pesos(x.comision)+'; se paga la tarifa.':f.nota||f.motivo)+'</td></tr>'}).join('')||'<tr><td colspan="10" style="color:#6b7280">Sin contratos en este período.</td></tr>';
+  }
+
+  // ---------- descargas ----------
+  function csv(filas){return '﻿'+filas.map(function(r){return r.map(function(v){v=v==null?'':String(v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(';')}).join('\r\n')}
+  function bajar(nombre,texto){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([texto],{type:'text/csv;charset=utf-8'}));a.download=nombre;document.body.appendChild(a);a.click();setTimeout(function(){a.remove()},500)}
+  var mk=function(){return anio+'-'+('0'+mes).slice(-2)};
+  $('bRes').addEventListener('click',function(){
+    var f=[['INFORME DE BONIFICACIONES – '+MESES[mes-1]+' '+anio],['Elaborado por',$('elab').value],['Tarifas','PM+RC Contado $40.000 | PM Contado $25.000 | PM+RC Financiado $15.000 | PM Financiado $10.000'],[],['#','Asesor','PM + RC Contado','PM Contado','PM + RC Financiado','PM Financiado','Casos especiales pagados','Total comisión (COP)','Observaciones']];
+    calc.lista.forEach(function(o,i){f.push([i+1,o.n,o.CRC,o.C,o.FRC,o.F,o.esp,o.tot,((cfg['obs:'+mk()+':'+o.n]||'')+' '+o.auto.join(' | ')).trim()])});
+    f.push(['','TOTAL A PAGAR',calc.T.CRC,calc.T.C,calc.T.FRC,calc.T.F,'',calc.T.tot,'']);bajar('comisiones_'+mk()+'_resumen.csv',csv(f))});
+  $('bDet').addEventListener('click',function(){
+    var f=[['Asesor','Cliente','Cédula','N° contrato','Placa','Forma de pago','RC','AP','Tipo','Comisión en la hoja (col. S)','Comisión a pagar','Nota']];
+    calc.filas.slice().sort(function(a,b){return a.as<b.as?-1:a.as>b.as?1:0}).forEach(function(r){var x=r.x;f.push([r.as,x.cliente,x.cedula,x.contrato,x.placa,x.forma,x.rc,x.ap,tipoTxt(r),x.comision||'',r.pagar,r.dif?'La hoja dice distinto; se paga la tarifa':r.nota])});
+    bajar('comisiones_'+mk()+'_detalle.csv',csv(f))});
+  $('bPdf').addEventListener('click',function(){
+    var t='INFORME DE BONIFICACIONES - '+MESES[mes-1]+' '+anio,antes=document.title;document.title=t;
+    var enM=window.parent!==window;if(enM){try{window.parent.postMessage({pmTitulo:t},'*')}catch(e){}}
+    var fin=function(){document.title=antes;if(enM){try{window.parent.postMessage({pmTitulo:null},'*')}catch(e){}}window.removeEventListener('afterprint',fin)};
+    window.addEventListener('afterprint',fin);window.print()});
+
+  // ---------- eventos ----------
+  $('fAnio').addEventListener('change',function(){anio=+this.value;pintar()});
+  $('fMes').addEventListener('change',function(){mes=+this.value;pintar()});
+  $('fAs').addEventListener('change',pintarDetalle);
+  $('bRec').addEventListener('click',cargar);
+  $('elab').value=lsg('pm_com_elabora')||'Kelli Restrepo';
+  $('elab').addEventListener('change',function(){try{localStorage.setItem('pm_com_elabora',this.value)}catch(e){}if(datos)pintar()});
+  $('casos').addEventListener('change',function(e){if(!e.target.classList.contains('cd'))return;var c=e.target.closest('.caso');c.querySelector('.cvw').style.display=e.target.value==='pagar'?'':'none'});
+  $('casos').addEventListener('click',function(e){
+    if(!e.target.classList.contains('cg'))return;var c=e.target.closest('.caso'),i=+c.dataset.i;
+    var esp=calc.filas.filter(function(f){return !f.cat}),f=esp[i],d=c.querySelector('.cd').value;
+    if(!d){window.alert('Elija primero: «No se paga comisión» o «Sí se paga comisión».');return}
+    var v=+c.querySelector('.cv').value||0;if(d==='pagar'&&v<=0){window.alert('Escriba el valor que se va a pagar.');return}
+    var obj={d:d,valor:d==='pagar'?v:0,nota:c.querySelector('.cn').value.trim(),mes:mk(),cliente:f.x.cliente};
+    e.target.disabled=true;e.target.textContent='Guardando...';
+    guardar('caso:'+f.k,JSON.stringify(obj),function(){cfg['caso:'+f.k]=JSON.stringify(obj);est('✓ Decisión guardada para '+f.x.cliente+'.','ok');pintar()});
+    setTimeout(function(){e.target.disabled=false;e.target.textContent='Guardar decisión'},4000)});
+  $('informe').addEventListener('change',function(e){if(!e.target.classList.contains('ot'))return;var as=e.target.closest('tr').dataset.as,k='obs:'+mk()+':'+as,v=e.target.value.trim();
+    guardar(k,v,function(){cfg[k]=v;est('✓ Observación guardada.','ok');var p=e.target.parentNode.querySelector('.obsp');if(p)p.textContent=v})});
+  cargar();
+})();
+</script>
+</body>
+</html>
