@@ -328,6 +328,10 @@
   .rep-m[hidden]{display:none} .rep-m b{padding:4px 8px;color:#fdc33e;font-size:.82rem} .rep-m button{background:transparent;color:#eef2ff;text-align:left;border:0;border-radius:8px;padding:8px 10px;font-size:.84rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit} .rep-m button:hover{background:#25366a}
   .rep-modo{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:2px 0 6px;padding:4px;background:#0d1530;border-radius:10px} .rep-m .rep-modo button{text-align:center;white-space:normal;font-size:.78rem;padding:7px 6px;border:1px solid transparent} .rep-m .rep-modo button.on{background:#fdc33e;color:#1a1200;border-color:#fdc33e}
   .rep-per{margin:2px 0 4px;padding:6px 8px;background:#0d1530;border-radius:10px} .rep-per label{display:flex;align-items:center;gap:8px;font-size:.78rem;color:#a3b4d8} .rep-per select{flex:1;background:#13223f;color:#eef2ff;border:1px solid #3b4f8f;border-radius:8px;padding:5px 8px;font-size:.82rem}
+  .modal.ancho{max-width:680px;width:94%} .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px} .fgrid .full{grid-column:1/-1}
+  @media(max-width:560px){.fgrid{grid-template-columns:1fr}}
+  .campo-form .ayuda{display:block;font-size:.72rem;color:var(--texto-suave);margin-top:3px} .campo-form input[readonly]{background:#f3f4f6;color:#4b5563}
+  .modal .msg-modal.nota{display:block;background:#e6efff;color:#1d4ed8}
   #repAviso{position:fixed;right:18px;bottom:18px;background:#13223f;color:#fff;padding:9px 14px;border-radius:10px;font-size:.84rem;z-index:80;display:none;box-shadow:0 8px 22px rgba(0,0,0,.35)}
 </style>
 <script src="../assets/zip_simple.js"></script>
@@ -344,6 +348,7 @@
   <div class="barra-conector">
     <input type="text" id="inputUrlConector" placeholder="Pega aquí la URL del conector de SOAT (Apps Script)">
     <button class="btn btn-oro" id="btnGuardarUrl">Guardar</button>
+    <button class="btn btn-oro" id="btnNuevo" type="button" title="Registrar un SOAT nuevo en la hoja de Google">➕ Registrar SOAT</button>
     <span class="rep-w"><button class="btn btn-verde" id="btnRep" type="button">⬇ Descarga de reportes</button><div class="rep-m" id="repM" hidden></div></span>
     <button class="btn btn-azul" id="btnRecargar">Actualizar datos</button>
     <span style="color:#cbd3e6;font-size:.72rem;">🔄 Se actualiza solo cada 1 min</span>
@@ -424,6 +429,30 @@
   </section>
 </main>
 
+<div class="modal-fondo" id="modalNuevo">
+  <div class="modal ancho">
+    <h3>Registrar SOAT nuevo</h3>
+    <div class="sub">Lo que llenes aquí se guarda solo en la hoja «Historico Soat». No tienes que abrirla.</div>
+    <div class="msg-modal" id="nvNota"></div>
+    <div class="fgrid">
+      <div class="campo-form full"><label>Cliente *</label><input type="text" id="nvCliente" autocomplete="off" placeholder="Nombre completo"></div>
+      <div class="campo-form"><label>Cédula</label><input type="text" id="nvCedula" inputmode="numeric" autocomplete="off"></div>
+      <div class="campo-form"><label>Celular</label><input type="text" id="nvCel" inputmode="numeric" autocomplete="off"></div>
+      <div class="campo-form"><label>Placa *</label><input type="text" id="nvPlaca" autocomplete="off" maxlength="8" style="text-transform:uppercase" placeholder="Ej. ABC12D"><span class="ayuda">Si la placa ya existe, se llenan solos los datos del SOAT anterior.</span></div>
+      <div class="campo-form"><label>Tipo de vehículo</label><select id="nvTipo"><option>MOTO</option><option>CARRO</option></select></div>
+      <div class="campo-form"><label>Cilindraje</label><input type="number" id="nvCil" min="0" step="1"></div>
+      <div class="campo-form"><label>Forma de pago</label><input type="text" id="nvForma" list="nvFormas" autocomplete="off" placeholder="Efectivo, Cuenta Bancolombia…"><datalist id="nvFormas"></datalist></div>
+      <div class="campo-form"><label>Fecha de la venta</label><input type="date" id="nvFecha"></div>
+      <div class="campo-form"><label>Fecha de inicio *</label><input type="date" id="nvInicio"></div>
+      <div class="campo-form"><label>Fecha de vencimiento</label><input type="date" id="nvVence"><span class="ayuda">Se calcula sola: un año después del inicio. Puedes cambiarla.</span></div>
+      <div class="campo-form"><label>Valor del SOAT *</label><input type="number" id="nvValor" min="0" step="1"></div>
+      <div class="campo-form"><label>Ganancia</label><input type="number" id="nvGan" min="0" step="1"></div>
+      <div class="campo-form"><label>Total a consignar</label><input type="text" id="nvTotal" readonly><span class="ayuda">Valor del SOAT + ganancia.</span></div>
+    </div>
+    <div class="msg-modal" id="nvMsg"></div>
+    <div class="modal-acciones"><button class="btn btn-gris" id="nvCancelar" type="button">Cancelar</button><button class="btn btn-verde" id="nvGuardar" type="button">Guardar en la hoja</button></div>
+  </div>
+</div>
 <footer>Protect Motos © <span id="anioActual"></span> — SOAT</footer>
 
 <script>
@@ -740,6 +769,54 @@
     estado.filtro = b.dataset.f; pintarTodos();
   });
   [].forEach.call(document.querySelectorAll('[data-ir]'), function(el){ el.style.cursor='pointer'; el.addEventListener('click', function(){ var p = document.getElementById(el.dataset.ir); if(p) p.scrollIntoView({behavior:'smooth',block:'start'}); }); });
+
+  /* ===== Registrar un SOAT nuevo: se guarda directo en la hoja «Historico Soat» ===== */
+  (function(){
+    var $=function(i){return document.getElementById(i)},modal=$('modalNuevo'),venceManual=false,guardando=false;
+    function iso(d){var z=function(n){return ('0'+n).slice(-2)};return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())}
+    function masAnio(v){var p=(v||'').split('-');if(p.length!==3)return '';var d=new Date(+p[0]+1,+p[1]-1,+p[2]);return iso(d)}
+    function msg(id,tipo,t){var e=$(id);e.className='msg-modal'+(tipo?' '+tipo:'');e.textContent=t||''}
+    function total(){var v=Number($('nvValor').value)||0,g=Number($('nvGan').value)||0;$('nvTotal').value=(v||g)?dinero(v+g):''}
+    function abrir(){
+      ['nvCliente','nvCedula','nvCel','nvPlaca','nvCil','nvForma','nvValor','nvGan'].forEach(function(i){$(i).value=''});
+      $('nvTipo').value='MOTO';$('nvFecha').value=iso(new Date());$('nvInicio').value=iso(new Date());$('nvVence').value=masAnio($('nvInicio').value);venceManual=false;total();
+      var fs={};estado.soat.forEach(function(s){if(s.forma)fs[s.forma]=1});$('nvFormas').innerHTML=Object.keys(fs).map(function(f){return '<option value="'+esc(f)+'">'}).join('');
+      msg('nvMsg');msg('nvNota');$('nvGuardar').disabled=false;modal.classList.add('abierto');setTimeout(function(){$('nvCliente').focus()},50);
+    }
+    function cerrar(){modal.classList.remove('abierto')}
+    $('btnNuevo').addEventListener('click',function(){if(!estado.url){mostrar('error','Primero pega y guarda la URL del conector de SOAT arriba.');return}abrir()});
+    $('nvCancelar').addEventListener('click',cerrar);
+    modal.addEventListener('mousedown',function(ev){if(ev.target===modal&&!guardando)cerrar()});
+    $('nvInicio').addEventListener('change',function(){if(!venceManual)$('nvVence').value=masAnio(this.value)});
+    $('nvVence').addEventListener('input',function(){venceManual=true});
+    $('nvValor').addEventListener('input',total);$('nvGan').addEventListener('input',total);
+    $('nvPlaca').addEventListener('input',function(){this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')});
+    $('nvPlaca').addEventListener('change',function(){   // si es una renovación, se llenan los datos del SOAT anterior
+      var pl=this.value,prev=null;estado.soat.forEach(function(s){if(s.placa===pl&&(!prev||(s.venceISO||'')>(prev.venceISO||'')))prev=s});
+      if(!prev){msg('nvNota');return}
+      var pon=function(id,v){if(!$(id).value&&v!==''&&v!=null)$(id).value=v};
+      pon('nvCliente',prev.cliente);pon('nvCedula',prev.cedula);pon('nvCel',prev.celular);pon('nvCil',prev.cilindraje);pon('nvForma',prev.forma);pon('nvValor',prev.valor||'');pon('nvGan',prev.ganancia||'');
+      if(prev.tipo)$('nvTipo').value=/carro|camion|auto/i.test(prev.tipo)?'CARRO':'MOTO';total();
+      msg('nvNota','nota','Esta placa ya tiene un SOAT: es una renovación. Se llenaron los datos del SOAT anterior; revísalos.');
+    });
+    function datos(forzar){return {cliente:$('nvCliente').value.trim(),cedula:$('nvCedula').value.trim(),celular:$('nvCel').value.trim(),placa:$('nvPlaca').value.trim(),tipo:$('nvTipo').value,cilindraje:$('nvCil').value,forma:$('nvForma').value.trim(),fecha:$('nvFecha').value,inicio:$('nvInicio').value,vence:$('nvVence').value,valor:$('nvValor').value,ganancia:$('nvGan').value||0,forzar:forzar?1:0}}
+    function enviar(forzar){
+      var d=datos(forzar);
+      if(!d.cliente){msg('nvMsg','error','Escribe el nombre del cliente.');return}
+      if(!d.placa){msg('nvMsg','error','Escribe la placa.');return}
+      if(!d.inicio){msg('nvMsg','error','Elige la fecha de inicio.');return}
+      if(!(Number(d.valor)>0)){msg('nvMsg','error','Escribe el valor del SOAT.');return}
+      guardando=true;$('nvGuardar').disabled=true;msg('nvMsg','nota','Guardando en la hoja de Google…');
+      llamar({action:'agregar',fila:JSON.stringify(d)}).then(function(r){
+        guardando=false;$('nvGuardar').disabled=false;
+        if(r&&r.duplicado){msg('nvMsg','aviso',r.error);if(confirm(r.error+'\n\n¿Guardarlo de todas formas?'))enviar(true);return}
+        if(!r||!r.ok){msg('nvMsg','error',(r&&r.error)||'No se pudo guardar. Revisa la conexión.');return}
+        cerrar();mostrar('ok','SOAT guardado ✔ '+d.cliente+' · '+d.placa+(r.omitidos&&r.omitidos.length?' (no se pudo llenar en la hoja: '+r.omitidos.join(', ')+')':''));
+        setTimeout(function(){cargar(false)},600);
+      }).catch(function(e){guardando=false;$('nvGuardar').disabled=false;msg('nvMsg','error',e.message)});
+    }
+    $('nvGuardar').addEventListener('click',function(){enviar(false)});
+  })();
 
   /* ===== Descarga de reportes de este módulo (Excel .csv) ===== */
   (function(){

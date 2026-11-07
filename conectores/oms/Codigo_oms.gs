@@ -57,7 +57,8 @@ function doGet(e) {
       if (accion === 'datos') salida = accionDatos();
       else if (accion === 'estado') salida = accionCambiarEstado(params);
       else if (accion === 'registrarGestion') salida = accionRegistrarGestion(params);
-      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de Clientes OMS activo', version: 'oms-1' };
+      else if (accion === 'agregar') salida = accionAgregar(params);
+      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de Clientes OMS activo', version: 'oms-2' };
       else salida = { ok: false, error: 'Acción desconocida: ' + accion };
     }
   } catch (err) {
@@ -169,6 +170,67 @@ function accionRegistrarGestion(p) {
   } finally { lock.releaseLock(); }
 }
 
+
+// ==================== AGREGAR UNA FILA NUEVA DESDE EL CRM ====================
+// Escribe al final de la hoja, copia el formato de la última fila y, si una columna tiene fórmula en la fila anterior
+// (por ejemplo el consecutivo o un total), copia esa fórmula en la fila nueva.
+function ultimaFilaConDatos(hoja, col0) {
+  var n = hoja.getLastRow();
+  if (n <= FILA_ENCABEZADOS) return FILA_ENCABEZADOS;
+  var v = hoja.getRange(FILA_ENCABEZADOS + 1, col0 + 1, n - FILA_ENCABEZADOS, 1).getValues();
+  for (var i = v.length - 1; i >= 0; i--) if (texto(v[i][0]) !== '') return FILA_ENCABEZADOS + 1 + i;
+  return FILA_ENCABEZADOS;
+}
+function mismaFecha(a, b) { return a && b && iso(a) === iso(b); }
+function sumarAnio(d) { return new Date(d.getFullYear() + 1, d.getMonth(), d.getDate()); }
+function aNumeroSiPuede(v) { var t = texto(v).replace(/[^0-9]/g, ''); return t && t.length <= 15 ? Number(t) : texto(v); }
+
+function accionAgregar(p) {
+  var d;
+  try { d = JSON.parse(p.fila || '{}'); } catch (e) { return { ok: false, error: 'No se pudieron leer los datos del formulario.' }; }
+  var cliente = texto(d.cliente), ced = texto(d.cedula), veh = texto(d.vehiculo), ini = aFecha(d.inicio), valor = numero(d.valor);
+  if (!cliente) return { ok: false, error: 'Falta el nombre del cliente.' };
+  if (!ced) return { ok: false, error: 'Falta la cédula.' };
+  if (!veh) return { ok: false, error: 'Falta el vehículo.' };
+  if (!ini) return { ok: false, error: 'Falta la fecha de inicio.' };
+  if (!valor) return { ok: false, error: 'Falta el valor a pagar.' };
+  var fin = aFecha(d.fin) || sumarAnio(ini), compra = /financ/i.test(texto(d.compra)) ? 'FINANCIADO' : 'Contado', estadoTxt = texto(d.estado) || 'Activo';
+  estadoTxt = estadoTxt.charAt(0).toUpperCase() + estadoTxt.slice(1).toLowerCase();
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
+  try {
+    var hoja = hojaClientes(abrirSS());
+    var ncol = hoja.getLastColumn(), enc = hoja.getRange(FILA_ENCABEZADOS, 1, 1, ncol).getDisplayValues()[0], idx = indicesColumnas(enc);
+    var ult = ultimaFilaConDatos(hoja, idx.cliente);
+    if (!d.forzar && ult > FILA_ENCABEZADOS) {
+      var datos = hoja.getRange(FILA_ENCABEZADOS + 1, 1, ult - FILA_ENCABEZADOS, ncol).getValues(), kc = String(ced).replace(/\D/g, ''), kv = normalizar(veh);
+      for (var i = 0; i < datos.length; i++) {
+        if (String(datos[i][idx.cedula]).replace(/\D/g, '') === kc && normalizar(datos[i][idx.vehiculo]) === kv && mismaFecha(aFecha(datos[i][idx.inicio]), ini))
+          return { ok: false, duplicado: true, error: 'Ya hay un cliente con esa cédula, ese vehículo y esa fecha de inicio (fila ' + (FILA_ENCABEZADOS + 1 + i) + ').' };
+      }
+    }
+    var nueva = ult + 1;
+    if (ult > FILA_ENCABEZADOS) hoja.getRange(ult, 1, 1, ncol).copyTo(hoja.getRange(nueva, 1, 1, ncol), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+    var val = { cliente: cliente, cedula: aNumeroSiPuede(ced), vehiculo: veh, valor: valor, celular: aNumeroSiPuede(d.celular), forma: compra, inicio: ini, fin: fin, estado: estadoTxt };
+    var asignada = {}, omitidos = [];
+    ['cliente', 'cedula', 'vehiculo', 'valor', 'celular', 'forma', 'inicio', 'fin', 'estado'].forEach(function (k) {
+      var col = idx[k]; if (col === undefined || col < 0) return;
+      var v = val[k]; if (v === undefined || v === '' || v === null) return;
+      if (!coincideNombre(enc, [k])) { omitidos.push(k); return; }   // no se escribe en una columna que no se reconoce por su título
+      hoja.getRange(nueva, col + 1).setValue(v); asignada[col] = true;
+    });
+    if (ult > FILA_ENCABEZADOS) for (var j = 0; j < ncol; j++) {
+      if (asignada[j]) continue;
+      var f = hoja.getRange(ult, j + 1).getFormulaR1C1();
+      if (f) hoja.getRange(nueva, j + 1).setFormulaR1C1(f);
+    }
+    SpreadsheetApp.flush();
+    return { ok: true, mensaje: 'Cliente guardado en la hoja (fila ' + nueva + ').', fila: nueva, omitidos: omitidos };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo guardar: ' + err.message };
+  } finally { lock.releaseLock(); }
+}
+
 // ==================== ESTADO ====================
 function accionCambiarEstado(p) {
   var ref = texto(p.contrato), nuevo = texto(p.nuevoEstado).toUpperCase();
@@ -207,6 +269,13 @@ function hojaClientes(ss) {
 
 function normalizar(t) { return String(t === null || t === undefined ? '' : t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
 
+function coincideNombre(enc, claves) {
+  var norm = enc.map(normalizar), todos = COLS.concat(COLS_OPC).filter(function (c) { return claves.indexOf(c.clave) >= 0; })[0];
+  if (!todos) return false;
+  for (var n = 0; n < todos.nombres.length; n++) { var b = normalizar(todos.nombres[n]); for (var i = 0; i < norm.length; i++) if (norm[i] === b) return true; }
+  return false;
+}
+
 function indicesColumnas(enc) {
   var norm = enc.map(normalizar), idx = {};
   var buscar = function (c, porDefecto) {
@@ -240,7 +309,7 @@ function aFecha(v) {
   if (!v) return null;
   if (Object.prototype.toString.call(v) === '[object Date]') return isNaN(v.getTime()) ? null : v;
   var t = texto(v), m = t.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
-  if (m) { var a = +m[3]; if (a < 100) a += 2000; var d = new Date(a, +m[2] - 1, +m[1]); return isNaN(d.getTime()) ? null : d; }
+  if (m) { var a = +m[3]; if (a < 100) a += 2000; var dd = +m[1], mm = +m[2]; if (mm > 12 && dd <= 12) { var tmp = dd; dd = mm; mm = tmp; } var d = new Date(a, mm - 1, dd); return isNaN(d.getTime()) ? null : d; }
   m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
   return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
 }

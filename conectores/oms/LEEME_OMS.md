@@ -9,3 +9,6 @@
 No se cobra: el botón avisa cuando a un cliente le toca renovar al año (8 días antes) para volver a hablarle por WhatsApp.
 Columnas que lee: Nombre completo, Cedula, Vehiculo, Valor a pagar, Celular, Compra (Financiado / Contado), Fecha inicio, Fecha fin, Estado.
 Crea sola la pestaña `Gestiones_OMS` (mensajes enviados, renovó, no renovará).
+
+Desde el botón **Clientes OMS** puedes **➕ Registrar cliente**: el formulario escribe la fila nueva en la hoja (copia el formato de la
+fila anterior). Para que funcione, publica el código como **Nueva versión** (Implementar → Administrar implementaciones → lápiz).

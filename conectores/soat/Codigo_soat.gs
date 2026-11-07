@@ -10,7 +10,8 @@
 
 // ==================== CONFIGURACIÓN ====================
 var TOKEN = 'PM-SOAT-2026';   // si lo cambias, cámbialo igual en el módulo SOAT del CRM
-var SHEET_ID = '1WMR0VhNg6apQa5BPg4bFoRbMqJNdQQ9f3UdlA2fKb04';
+var SHEET_ID = '';                 // ID del Google Sheet «Historico Soat» (lo que está en su URL entre /d/ y /edit). Vacío = se busca por nombre en tu Drive.
+var SHEET_NOMBRE = 'Historico Soat'; // nombre exacto del Google Sheet de SOAT
 var HOJA_SOAT = 'Soat';
 var HOJA_GESTIONES = 'Gestiones_Soat';
 var FILA_ENCABEZADOS = 1;     // fila donde están los títulos de la hoja Soat
@@ -46,7 +47,8 @@ function doGet(e) {
       var accion = params.action || 'datos';
       if (accion === 'datos') salida = accionDatos();
       else if (accion === 'registrarGestion') salida = accionRegistrarGestion(params);
-      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de SOAT activo', version: 'soat-1' };
+      else if (accion === 'agregar') salida = accionAgregar(params);
+      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de SOAT activo', version: 'soat-2' };
       else salida = { ok: false, error: 'Acción no disponible: ' + accion };
     }
   } catch (err) {
@@ -63,9 +65,25 @@ function responder(objeto, callback) {
   return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
 }
 
+// Abre el Google Sheet de SOAT: por su ID (SHEET_ID) o, si está vacío, buscándolo por nombre en tu Drive.
+function abrirSS() {
+  if (SHEET_ID) return SpreadsheetApp.openById(SHEET_ID);
+  var ss = null;
+  try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (e) {}
+  if (ss) return ss;
+  var archivos = DriveApp.getFilesByName(SHEET_NOMBRE), mejor = null;
+  while (archivos.hasNext()) {
+    var f = archivos.next();
+    if (f.getMimeType() !== MimeType.GOOGLE_SHEETS) continue;
+    if (!mejor || f.getLastUpdated() > mejor.getLastUpdated()) mejor = f;
+  }
+  if (!mejor) throw new Error('No encontré el Google Sheet "' + SHEET_NOMBRE + '". Pega su ID en SHEET_ID (está en la URL del Sheet, entre /d/ y /edit).');
+  return SpreadsheetApp.openById(mejor.getId());
+}
+
 // ==================== DATOS ====================
 function accionDatos() {
-  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var ss = abrirSS();
   var hoja = buscarHoja(ss, HOJA_SOAT);
   if (!hoja) throw new Error('No se encontró la pestaña "' + HOJA_SOAT + '". Revisa que se llame exactamente así.');
   return { ok: true, soat: leerSoat(hoja), gestiones: leerGestiones(ss.getSheetByName(HOJA_GESTIONES)) };
@@ -122,7 +140,7 @@ function accionRegistrarGestion(p) {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(15000)) return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
   try {
-    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var ss = abrirSS();
     var hoja = ss.getSheetByName(HOJA_GESTIONES);
     if (!hoja) {
       hoja = ss.insertSheet(HOJA_GESTIONES);
@@ -138,6 +156,77 @@ function accionRegistrarGestion(p) {
   }
 }
 
+
+// ==================== AGREGAR UNA FILA NUEVA DESDE EL CRM ====================
+// Escribe al final de la hoja, copia el formato de la última fila y, si una columna tiene fórmula en la fila anterior
+// (por ejemplo el consecutivo o un total), copia esa fórmula en la fila nueva.
+function ultimaFilaConDatos(hoja, col0) {
+  var n = hoja.getLastRow();
+  if (n <= FILA_ENCABEZADOS) return FILA_ENCABEZADOS;
+  var v = hoja.getRange(FILA_ENCABEZADOS + 1, col0 + 1, n - FILA_ENCABEZADOS, 1).getValues();
+  for (var i = v.length - 1; i >= 0; i--) if (texto(v[i][0]) !== '') return FILA_ENCABEZADOS + 1 + i;
+  return FILA_ENCABEZADOS;
+}
+function mismaFecha(a, b) { return a && b && iso(a) === iso(b); }
+function sumarAnio(d) { return new Date(d.getFullYear() + 1, d.getMonth(), d.getDate()); }
+function aNumeroSiPuede(v) { var t = texto(v).replace(/[^0-9]/g, ''); return t && t.length <= 15 ? Number(t) : texto(v); }
+
+function accionAgregar(p) {
+  var d;
+  try { d = JSON.parse(p.fila || '{}'); } catch (e) { return { ok: false, error: 'No se pudieron leer los datos del formulario.' }; }
+  var cliente = texto(d.cliente), placa = limpiarPlaca(d.placa), ini = aFecha(d.inicio), venta = aFecha(d.fecha) || new Date(), valor = numero(d.valor);
+  if (!cliente) return { ok: false, error: 'Falta el nombre del cliente.' };
+  if (!placa) return { ok: false, error: 'Falta la placa.' };
+  if (!ini) return { ok: false, error: 'Falta la fecha de inicio.' };
+  var ven = aFecha(d.vence) || sumarAnio(ini);
+  if (!valor) return { ok: false, error: 'Falta el valor del SOAT.' };
+  var ganancia = numero(d.ganancia), total = d.total !== undefined && d.total !== '' ? numero(d.total) : valor + ganancia;
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
+  try {
+    var hoja = buscarHoja(abrirSS(), HOJA_SOAT);
+    if (!hoja) throw new Error('No se encontró la pestaña "' + HOJA_SOAT + '".');
+    var ncol = hoja.getLastColumn(), enc = hoja.getRange(FILA_ENCABEZADOS, 1, 1, ncol).getDisplayValues()[0], idx = {};
+    COLS.forEach(function (c) { idx[c.clave] = posicionColumna(enc, c); });
+    var ult = ultimaFilaConDatos(hoja, idx.placa >= 0 ? idx.placa : idx.cliente);
+    if (!d.forzar && ult > FILA_ENCABEZADOS) {
+      var datos = hoja.getRange(FILA_ENCABEZADOS + 1, 1, ult - FILA_ENCABEZADOS, ncol).getValues();
+      for (var i = 0; i < datos.length; i++) {
+        if (limpiarPlaca(datos[i][idx.placa]) === placa && mismaFecha(aFecha(datos[i][idx.inicio]), ini))
+          return { ok: false, duplicado: true, error: 'Ya hay un SOAT de la placa ' + placa + ' con esa fecha de inicio (fila ' + (FILA_ENCABEZADOS + 1 + i) + ').' };
+      }
+    }
+    var nueva = ult + 1;
+    if (ult > FILA_ENCABEZADOS) hoja.getRange(ult, 1, 1, ncol).copyTo(hoja.getRange(nueva, 1, 1, ncol), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+    var val = { fecha: venta, cliente: cliente, cedula: aNumeroSiPuede(d.cedula), placa: placa, tipo: texto(d.tipo).toUpperCase(), cilindraje: numero(d.cilindraje) || texto(d.cilindraje),
+      inicio: ini, vence: ven, valor: valor, ganancia: ganancia, total: total, forma: texto(d.forma), celular: aNumeroSiPuede(d.celular) };
+    var asignada = {}, omitidos = [];
+    COLS.forEach(function (c) {
+      var col = idx[c.clave]; if (col < 0 || c.clave === 'num') return;
+      var v = val[c.clave]; if (v === undefined || v === '' || v === null) return;
+      if (!coincideNombre(enc, c)) { omitidos.push(c.nombres[0]); return; }   // no se escribe en una columna que no se reconoce por su título
+      hoja.getRange(nueva, col + 1).setValue(v); asignada[col] = true;
+    });
+    // consecutivo (#): si la fila anterior tiene fórmula se copia; si no, máximo + 1
+    if (idx.num >= 0) {
+      var fnum = ult > FILA_ENCABEZADOS ? hoja.getRange(ult, idx.num + 1).getFormulaR1C1() : '';
+      if (fnum) hoja.getRange(nueva, idx.num + 1).setFormulaR1C1(fnum);
+      else { var nums = ult > FILA_ENCABEZADOS ? hoja.getRange(FILA_ENCABEZADOS + 1, idx.num + 1, ult - FILA_ENCABEZADOS, 1).getValues() : [], mx = 0; nums.forEach(function (r) { var n = Number(r[0]); if (n > mx) mx = n; }); hoja.getRange(nueva, idx.num + 1).setValue(mx + 1); }
+      asignada[idx.num] = true;
+    }
+    // el resto de columnas: si la fila anterior tenía una fórmula, se copia
+    if (ult > FILA_ENCABEZADOS) for (var j = 0; j < ncol; j++) {
+      if (asignada[j]) continue;
+      var f = hoja.getRange(ult, j + 1).getFormulaR1C1();
+      if (f) hoja.getRange(nueva, j + 1).setFormulaR1C1(f);
+    }
+    SpreadsheetApp.flush();
+    return { ok: true, mensaje: 'SOAT guardado en la hoja (fila ' + nueva + ').', fila: nueva, omitidos: omitidos };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo guardar: ' + err.message };
+  } finally { lock.releaseLock(); }
+}
+
 // ==================== UTILIDADES ====================
 function buscarHoja(ss, nombre) {
   var exacta = ss.getSheetByName(nombre);
@@ -150,6 +239,16 @@ function buscarHoja(ss, nombre) {
 
 function normalizar(t) {
   return String(t === null || t === undefined ? '' : t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9#]+/g, ' ').trim();
+}
+
+// ¿El título de alguna columna coincide con el nombre esperado? (sin usar la posición por defecto)
+function coincideNombre(encabezados, col) {
+  var norm = encabezados.map(normalizar);
+  for (var n = 0; n < col.nombres.length; n++) {
+    var b = normalizar(col.nombres[n]);
+    for (var i = 0; i < norm.length; i++) if (norm[i] === b || (b.length >= 4 && norm[i].indexOf(b) === 0)) return true;
+  }
+  return false;
 }
 
 function posicionColumna(encabezados, col) {
@@ -187,7 +286,9 @@ function aFecha(v) {
   var t = texto(v), m = t.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
   if (m) {
     var a = +m[3]; if (a < 100) a += 2000;
-    var d = new Date(a, +m[2] - 1, +m[1]);
+    var dd = +m[1], mm = +m[2];
+    if (mm > 12 && dd <= 12) { var tmp = dd; dd = mm; mm = tmp; }   // texto tipo 9-18-2027 (mes-día-año)
+    var d = new Date(a, mm - 1, dd);
     return isNaN(d.getTime()) ? null : d;
   }
   m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
