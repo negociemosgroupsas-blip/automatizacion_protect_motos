@@ -1,10 +1,10 @@
 /**
- * PROTECT MOTOS — Conector del CRM (lectura + decisiones de comisiones)
+ * PROTECT MOTOS — Conector del CRM (lectura + comisiones)
  *
  * Proyecto de Apps Script NUEVO e independiente: no modifica ni reemplaza el conector de Cobros,
  * ni el de Conciliación, ni el de Contratos. Lee la hoja y entrega los datos al Inicio del CRM
- * (gráficas, alertas, buscador y comisiones). Lo ÚNICO que escribe es la pestaña nueva «Comisiones_Config»
- * (decisiones de casos especiales y observaciones del informe de comisiones). Nunca modifica Protect ni Pagos.
+ * (gráficas, alertas, buscador y comisiones). Lo ÚNICO que escribe son las pestañas nuevas «Comisiones_Config» y «Comisiones_Historico»
+ * (decisiones, observaciones e informes de comisiones guardados). Nunca modifica Protect ni Pagos.
  *
  * Publicar como Aplicación web:  Ejecutar como: Yo  ·  Quién tiene acceso: Cualquier usuario.
  */
@@ -54,8 +54,12 @@ function doGet(e) {
         salida = accionDatos();
       } else if (accion === 'guardarClave') {
         salida = accionGuardarClave(params);
+      } else if (accion === 'listarReportes') {
+        salida = accionListarReportes();
+      } else if (accion === 'verReporte') {
+        salida = accionVerReporte(params);
       } else if (accion === 'ping') {
-        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-2' };
+        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-3' };
       } else {
         salida = { ok: false, error: 'Acción no disponible: ' + accion };
       }
@@ -64,6 +68,20 @@ function doGet(e) {
     salida = { ok: false, error: 'Error en el servidor: ' + err.message };
   }
   return responder(salida, params.callback);
+}
+
+// Solo para guardar informes de comisiones en el histórico (el contenido es grande y no cabe en una URL).
+function doPost(e) {
+  var salida;
+  try {
+    var body = (e && e.postData && e.postData.contents) ? JSON.parse(e.postData.contents) : {};
+    if (body.token !== TOKEN) salida = { ok: false, error: 'Token inválido.' };
+    else if (body.action === 'guardarReporte') salida = accionGuardarReporte(body);
+    else salida = { ok: false, error: 'Acción desconocida: ' + body.action };
+  } catch (err) {
+    salida = { ok: false, error: 'Error en el servidor: ' + err.message };
+  }
+  return responder(salida, null);
 }
 
 function responder(objeto, callback) {
@@ -238,4 +256,56 @@ function accionGuardarClave(params) {
   } finally {
     lock.releaseLock();
   }
+}
+
+
+// ==================== HISTÓRICO DE INFORMES DE COMISIONES ====================
+// Pestaña «Comisiones_Historico» (se crea sola). Cada guardado agrega una fila nueva (versión 1, 2, 3…): nada se borra.
+var HOJA_HIST = 'Comisiones_Historico';
+function hojaHistorico(ss) {
+  var h = ss.getSheetByName(HOJA_HIST);
+  if (!h) {
+    h = ss.insertSheet(HOJA_HIST);
+    h.getRange(1, 1, 1, 9).setValues([['Clave', 'Mes', 'Año', 'Informe', 'Total a pagar', 'Versión', 'Guardado el', 'Guardado por', 'Datos (no editar)']]).setFontWeight('bold');
+    h.setFrozenRows(1);
+  }
+  return h;
+}
+
+function accionGuardarReporte(b) {
+  var tipo = String(b.tipo || ''), mes = Number(b.mes), anio = Number(b.anio), total = Number(b.total) || 0;
+  if (tipo !== 'general' && tipo !== 'kelli') return { ok: false, error: 'Tipo de informe no válido.' };
+  if (!(mes >= 1 && mes <= 12) || !(anio >= 2000 && anio <= 2100)) return { ok: false, error: 'Mes o año no válido.' };
+  var datos = String(b.datos || '');
+  if (!datos || datos.length > 45000) return { ok: false, error: 'El informe está vacío o es demasiado grande.' };
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var h = hojaHistorico(SpreadsheetApp.openById(SHEET_ID));
+    var clave = anio + '-' + ('0' + mes).slice(-2) + '|' + tipo, version = 1, n = h.getLastRow();
+    if (n >= 2) {
+      var cl = h.getRange(2, 1, n - 1, 1).getValues();
+      for (var i = 0; i < cl.length; i++) if (String(cl[i][0]) === clave) version++;
+    }
+    h.appendRow([clave, mes, anio, tipo, total, version, new Date(), String(b.por || ''), datos]);
+    return { ok: true, version: version };
+  } finally { lock.releaseLock(); }
+}
+
+function accionListarReportes() {
+  var h = SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_HIST), out = [];
+  if (!h || h.getLastRow() < 2) return { ok: true, reportes: out };
+  var d = h.getRange(2, 1, h.getLastRow() - 1, 8).getValues();
+  for (var i = 0; i < d.length; i++) {
+    if (!d[i][0]) continue;
+    out.push({ fila: i + 2, mes: Number(d[i][1]), anio: Number(d[i][2]), tipo: String(d[i][3]), total: Number(d[i][4]) || 0, version: Number(d[i][5]) || 1,
+      guardado: (d[i][6] instanceof Date) ? Utilities.formatDate(d[i][6], Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm') : String(d[i][6]), por: String(d[i][7]) });
+  }
+  return { ok: true, reportes: out };
+}
+
+function accionVerReporte(p) {
+  var fila = Number(p.fila), h = SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_HIST);
+  if (!h || !(fila >= 2) || fila > h.getLastRow()) return { ok: false, error: 'No se encontró el informe guardado.' };
+  return { ok: true, datos: String(h.getRange(fila, 9).getValue()) };
 }

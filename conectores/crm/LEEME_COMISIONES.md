@@ -25,7 +25,12 @@ No modifica las pestañas Protect ni Pagos.
 - Se paga según la tarifa; si la columna S dice otro valor, lo muestra en «Revisar».
 
 ## Informe aparte de Kelli
-- Las ventas de Kelli (en Protect, SOAT y Clientes OMS) salen en la pestaña «Informe de Kelli» y no en el informe general.
-- Clientes OMS: contado $40.000, financiado $15.000. SOAT: el valor por SOAT se escribe en la pantalla (se guarda solo).
-- Para que cuenten, agregue la columna **Asesor** al FINAL de las hojas «Historico polizas» y «Historico Soat» y escriba el asesor en las ventas.
-- Hay que pegar de nuevo y publicar «Nueva versión» en los conectores de **SOAT** (soat-3) y del **CRM** (crm-2, con la clave cfg). El de OMS también (guarda el asesor al registrar).
+- Las ventas de Kelli en Protect (hoja normal) y las pólizas de **Clientes OMS** salen en la pestaña «Informe de Kelli» y no en el informe general.
+- Clientes OMS: contado $40.000, financiado $15.000. El SOAT no paga comisión y no entra.
+- Los **anulados y cancelados no cuentan** (Protect y OMS), en los dos informes.
+- Para que cuenten sus pólizas OMS, agregue la columna **Asesor** AL FINAL de la hoja «Historico polizas» y escriba el asesor (el formulario «Registrar cliente nuevo» de OMS ya trae el campo Asesor).
+- Hay que pegar de nuevo y publicar «Nueva versión» en el conector del **CRM** (crm-3) y en el de **OMS**.
+
+## Histórico
+- Con **💾 Guardar en el histórico** el informe queda guardado (pestaña nueva «Comisiones_Historico» de la hoja de Google). Cada guardado es una versión nueva; nada se borra.
+- En la pestaña **📚 Histórico guardado** se puede descargar de nuevo cualquier mes (PDF, Excel resumen o Excel detalle), tal como se firmó.
