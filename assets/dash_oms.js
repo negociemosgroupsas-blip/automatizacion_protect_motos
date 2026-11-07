@@ -139,6 +139,16 @@
     }).join('') + '</div>';
   }
 
+  function costoClientes(box, items, orden) {   // una fila por póliza: cliente, moto, forma de pago y cuánto costó (COP)
+    if (!items.length) { box.innerHTML = '<div class="od-mute" style="padding:30px 0;text-align:center">Sin datos</div>'; return; }
+    var max = Math.max.apply(null, items.map(function (it) { return it.v; }).concat(1)), mes = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    box.innerHTML = '<div class="od-cl-w"><div class="od-rank od-cl">' + items.map(function (it, i) {
+      var det = it.f === 'FINANCIADO' ? 'Financiado: ' + cop(it.cu) + ' × ' + (it.pl || '?') + ' cuotas' : it.f === 'CONTADO' ? 'De contado' : 'Forma de pago sin dato';
+      var fe = it.d ? it.d.getDate() + ' ' + mes[it.d.getMonth()] + ' ' + it.d.getFullYear() : '';
+      return '<div class="od-r" title="' + esc(it.c) + '"><span class="od-rk">' + (i + 1) + '</span><span class="od-rn">' + esc(it.c) + '</span><span class="od-rn od-mt">' + esc(it.m) + '</span><div class="od-rp"><div class="od-rb" style="width:' + Math.round(it.v / max * 100) + '%;background:' + (i === 0 && orden !== 'a' ? '#d6a417' : '#13223f') + '"></div></div><b>' + cop(it.v) + '</b><span class="od-rq2">' + det + (fe ? ' · ' + fe : '') + '</span></div>';
+    }).join('') + '</div></div>';
+  }
+
   function barrasH(box, items, total) {   // ranking horizontal (vehículos más vendidos)
     if (!items.length) { box.innerHTML = '<div class="od-mute" style="padding:30px 0;text-align:center">Sin datos</div>'; return; }
     var max = items[0].n;
@@ -181,6 +191,7 @@
       '.od-band{display:flex;height:28px;border-radius:999px;overflow:hidden;background:#e8ebf3} .od-band i{display:flex;align-items:center;justify-content:center;color:#fff;font:700 .8rem Arial;font-style:normal}',
       '.od-rank{display:grid;gap:8px} .od-r{display:grid;grid-template-columns:18px minmax(80px,150px) 1fr 30px 38px;gap:8px;align-items:center;font-size:.82rem} .od-rk{color:#6b7280;text-align:right;font-size:.75rem} .od-rn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#13223f}',
       '.od-mk .od-r{grid-template-columns:18px minmax(90px,170px) 1fr 150px minmax(150px,230px)} .od-mk b{white-space:nowrap} .od-rq2{color:#6b7280;font-size:.74rem;text-align:right} @media(max-width:760px){.od-mk .od-r{grid-template-columns:18px 1fr 120px} .od-mk .od-rp,.od-mk .od-rq2{display:none}}',
+      '.od-cl-w{max-height:540px;overflow-y:auto;padding-right:4px} .od-cl .od-r{grid-template-columns:18px minmax(130px,210px) minmax(90px,150px) 1fr 140px minmax(170px,260px)} .od-cl b{white-space:nowrap} .od-mt{color:#6b7280!important} @media(max-width:860px){.od-cl .od-r{grid-template-columns:18px 1fr 120px} .od-cl .od-rp,.od-cl .od-rq2,.od-cl .od-mt{display:none}}',
       '.od-rp{background:#e8ebf3;border-radius:999px;height:12px;overflow:hidden} .od-rb{height:100%;border-radius:999px} .od-r b{color:#13223f;text-align:right} .od-rq{color:#6b7280;font-size:.74rem;text-align:right}',
       '.od-tip{position:fixed;display:none;background:#13223f;color:#fff;border-radius:8px;padding:7px 10px;font-size:.78rem;pointer-events:none;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.25)}',
       '@media(max-width:1000px){.od-c8,.od-c4,.od-c6,.od-c12{grid-column:1/-1}}'
@@ -227,11 +238,12 @@
 
   var ST = {};     // filtros de cada tarjeta, por tablero
   var TOP = {};    // selección del filtro de arriba («todo el tablero»)
-  function porDefecto(yA) { return { combo: { y: String(yA), m: '0' }, forma: { y: String(yA), m: '0' }, acum: { y: String(yA) }, med: { y: String(yA) }, estados: { y: 'todos', m: '0' }, veh: { y: String(yA), m: '0' }, marca: { y: String(yA), m: '0', v: 'marca', o: 'v' } }; }
+  function porDefecto(yA) { return { combo: { y: String(yA), m: '0' }, forma: { y: String(yA), m: '0' }, acum: { y: String(yA) }, med: { y: String(yA) }, estados: { y: 'todos', m: '0' }, veh: { y: String(yA), m: '0' }, marca: { y: String(yA), m: '0', v: 'marca', o: 'v' }, costo: { y: String(yA), m: '0', o: 'v', n: '15' } }; }
   function opcionesAnio(lista) { return '<option value="todos">Todos los años</option>' + lista.map(function (y) { return '<option>' + y + '</option>'; }).join(''); }
   var OPC_MES = '<option value="0">Todo el año</option>' + MESES.map(function (m, i) { return '<option value="' + (i + 1) + '">' + m + '</option>'; }).join('');
   function filtro(k, lista, conMes) { return '<div class="od-fil" data-k="' + k + '"><label>Año <select data-f="y">' + opcionesAnio(lista) + '</select></label>' + (conMes ? '<label>Mes <select data-f="m">' + OPC_MES + '</select></label>' : '') + '</div>'; }
   function marcaFiltro(lista) { return '<div class="od-fil" data-k="marca"><label>Año <select data-f="y">' + opcionesAnio(lista) + '</select></label><label>Mes <select data-f="m">' + OPC_MES + '</select></label><label>Agrupar por <select data-f="v"><option value="marca">Marca</option><option value="modelo">Modelo</option></select></label><label>Ordenar por <select data-f="o"><option value="v">Valor vendido (COP)</option><option value="n">Cantidad de pólizas</option></select></label></div>'; }
+  function costoFiltro(lista) { return '<div class="od-fil" data-k="costo"><label>Año <select data-f="y">' + opcionesAnio(lista) + '</select></label><label>Mes <select data-f="m">' + OPC_MES + '</select></label><label>Ordenar por <select data-f="o"><option value="v">Mayor valor primero</option><option value="a">Menor valor primero</option><option value="r">Más recientes primero</option></select></label><label>Mostrar <select data-f="n"><option value="10">10 clientes</option><option value="15">15 clientes</option><option value="30">30 clientes</option><option value="9999">Todos</option></select></label></div>'; }
   function pasa(x, st) {   // ¿el cliente se vendió en el año y mes elegidos?
     if (!x.ini) return false;
     if (st.y !== 'todos' && x.ini.getFullYear() !== +st.y) return false;
@@ -285,6 +297,7 @@
         '<div class="od-card od-c4 ay-c"><h3>OMS: ¿contado o financiado?</h3>' + ayBoton('OMS: ¿contado o financiado?','Sale de la columna Compra de la hoja OMS. Usa el año y el mes de la fecha de inicio.') + '<p class="od-ayuda">Cómo pagaron los clientes OMS del período.</p><p class="od-sub" data-s="2"></p>' + filtro('forma', lista, true) + '<div data-g="forma"></div></div>' +
         '<div class="od-card od-c8 ay-c"><h3>OMS: vehículos más vendidos</h3>' + ayBoton('OMS: vehículos más vendidos','Cuenta la columna Vehículo de la hoja OMS. Muestra los 6 primeros.') + '<p class="od-ayuda">Los modelos que más se venden en el período.</p><p class="od-sub" data-s="6"></p>' + filtro('veh', lista, true) + '<div data-g="veh"></div></div>' +
         '<div class="od-card od-c12 ay-c"><h3>OMS: marca de la moto y valor vendido</h3>' + ayBoton('OMS: marca de la moto y valor vendido','Agrupa las pólizas OMS por la marca de la moto. La marca sale de la columna «Marca» de la hoja si existe; si no, se deduce del nombre del vehículo (las que no se reconocen quedan en «Sin marca identificada»). El valor es lo que costó cada póliza: en contado el valor de la venta y en financiado la cuota por el número de cuotas. Todo en pesos colombianos (COP).') + '<p class="od-ayuda">Qué marcas se venden y cuánto dinero (en pesos colombianos, COP) representan.</p><p class="od-sub" data-s="7"></p>' + marcaFiltro(lista) + '<div data-g="marca"></div><p class="od-sub" data-s="8"></p></div>' +
+        '<div class="od-card od-c12 ay-c"><h3>OMS: cuánto costó la póliza de cada cliente</h3>' + ayBoton('OMS: cuánto costó la póliza de cada cliente','Una fila por póliza vendida: el cliente, su moto, cómo pagó y el valor total en pesos colombianos (COP). En contado es el valor de la venta; en financiado es la cuota por el número de cuotas. Cada fila cuenta en el año y mes de su fecha de inicio.') + '<p class="od-ayuda">Cuánto costó cada póliza, cliente por cliente (en pesos colombianos, COP).</p><p class="od-sub" data-s="9"></p>' + costoFiltro(lista) + '<div data-g="costo"></div></div>' +
         '<div class="od-card od-c4 ay-c"><h3>OMS: renovaciones</h3>' + ayBoton('OMS: renovaciones','Cuenta los clientes cuya fecha fin ya pasó. Renovó = hay un registro nuevo del mismo cliente y vehículo, o lo marcaste «Renovó». Sin respuesta = aún no se sabe.') + '<p class="od-ayuda">Qué parte de los clientes que cumplieron su año renovó.</p><p class="od-sub" data-s="4"></p>' + filtro('med', lista, false) + '<div data-g="med"></div></div>' +
         '<div class="od-card od-c12 ay-c"><h3>OMS: ¿cuántos clientes están activos?</h3>' + ayBoton('OMS: ¿cuántos clientes están activos?','Sale de la columna Estado de la hoja OMS. Puedes filtrar por la fecha de inicio.') + '<p class="od-ayuda">Activos, cancelados y finalizados de OMS.</p><p class="od-sub" data-s="5"></p>' + filtro('estados', lista, true) + '<div data-g="estados"></div></div>' +
       '</div>';
@@ -295,7 +308,7 @@
     // valores de los filtros + eventos
     Object.keys(S).forEach(function (k) {
       var f = root.querySelector('.od-fil[data-k="' + k + '"]'); if (!f) return;
-      var sy = f.querySelector('[data-f="y"]'), sm = f.querySelector('[data-f="m"]'); sy.value = S[k].y; if (sm) sm.value = S[k].m || '0'; ['v', 'o'].forEach(function (z) { var e = f.querySelector('[data-f="' + z + '"]'); if (e && S[k][z]) e.value = S[k][z]; });
+      var sy = f.querySelector('[data-f="y"]'), sm = f.querySelector('[data-f="m"]'); sy.value = S[k].y; if (sm) sm.value = S[k].m || '0'; ['v', 'o', 'n'].forEach(function (z) { var e = f.querySelector('[data-f="' + z + '"]'); if (e && S[k][z]) e.value = S[k][z]; });
       f.addEventListener('change', function (ev) { var t = ev.target; if (!t.dataset.f) return; S[k][t.dataset.f] = t.value; render(root, datos); });
     });
     var ty = q('.od-y'), tm = q('.od-m'); ty.value = top.y; tm.value = top.m;
@@ -340,6 +353,13 @@
     var itM = Object.keys(mk).map(function (k) { return mk[k]; }).sort(function (p, r) { return (S.marca.o === 'n' ? r.n - p.n : r.v - p.v) || r.n - p.n; }).slice(0, 12);
     q('[data-s="7"]').textContent = nM ? nM + ' pólizas vendidas · ' + cop(vM) + ' en total' : 'Sin ventas en el período';
     marcaBarras(q('[data-g="marca"]'), itM, nM || 1, S.marca.o);
+    // 8) costo de la póliza por cliente
+    var cs = [], sumC = 0;
+    a.forEach(function (x) { if (!pasa(x, S.costo)) return; cs.push({ c: String(x.c.cliente || 'Sin nombre'), m: String(x.veh || '—').toUpperCase(), f: x.forma, cu: Number(x.c.valorCuota) || 0, pl: x.c.plazo, v: x.valor, d: x.ini }); sumC += x.valor; });
+    cs.sort(function (p, r) { return S.costo.o === 'a' ? p.v - r.v : S.costo.o === 'r' ? (r.d || 0) - (p.d || 0) : r.v - p.v; });
+    var mxC = cs.length ? Math.max.apply(null, cs.map(function (z) { return z.v; })) : 0, mnC = cs.length ? Math.min.apply(null, cs.map(function (z) { return z.v; })) : 0;
+    q('[data-s="9"]').textContent = cs.length ? cs.length + ' pólizas · promedio por cliente ' + cop(sumC / cs.length) + ' · la más cara ' + cop(mxC) + ' · la más económica ' + cop(mnC) : 'Sin ventas en el período';
+    costoClientes(q('[data-g="costo"]'), cs.slice(0, +S.costo.n || 15), S.costo.o);
     var sl = Object.keys(sinM).slice(0, 8); q('[data-s="8"]').textContent = sl.length ? 'Sin marca identificada: ' + sl.join(', ') + '. Agregue la columna «Marca» en la hoja o dígame a qué marca pertenecen.' : '';
   }
 
