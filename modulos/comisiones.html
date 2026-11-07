@@ -60,7 +60,7 @@
 </style>
 </head>
 <body>
-<header><h1>💵 Comisiones de asesores</h1><p>Informe de bonificaciones del mes, calculado con la hoja Protect · los anulados y cancelados no generan comisión</p></header>
+<header><h1>💵 Comisiones de asesores</h1><p>Informe de bonificaciones del mes, calculado con la hoja Protect · los anulados y cancelados no generan comisión</p><p style="font-size:.72rem;opacity:.6;margin-top:6px">Pantalla Comisiones · versión del sistema: <b>SC-07nov-B</b></p></header>
 <main>
   <section class="panel">
     <h2>1. Elija el mes</h2>
@@ -249,7 +249,9 @@
       var tieneCom=(r.contratos||[]).some(function(x){return x.comision!==undefined});
       var u0=lsg('pm_crm_url'),fin0='…'+u0.replace(/\/exec.*$/,'').slice(-8)+'/exec';
       est('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos'+(tieneCom?'':' — ⚠️ este conector (URL guardada en «Conexiones» que termina en '+fin0+') todavía es la versión vieja.'),tieneCom?'ok':'er');
-      llamar({action:'ping'},function(pg){var v=pg&&pg.version?pg.version:'sin versión (muy vieja)';if(!tieneCom)est($('est').textContent+' Versión que responde: '+v+'. Se necesita crm-3. Si usted ya publicó crm-3 en otro lugar, esa URL no es la guardada aquí: copie la URL de ESA implementación y péguela en «Conexiones».','er')});
+      llamar({action:'ping'},function(pg){var v=pg&&pg.version?pg.version:'sin versión (muy vieja)',bien=v==='crm-3';
+        if(bien&&tieneCom)est($('est').textContent+' · Conector: '+v+' ✔ (URL …'+u0.replace(/\/exec.*$/,'').slice(-8)+')','ok');
+        else est('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos — ⚠️ el conector que responde es «'+v+'» y se necesita «crm-3». URL guardada en Conexiones: termina en …'+u0.replace(/\/exec.*$/,'').slice(-8)+'/exec. Abra esa MISMA URL en el navegador con ?action=ping&token=PM-CRM-2026 al final: si dice crm-3 y aquí sigue igual, está abriendo una carpeta vieja del sistema (use la del zip más nuevo); si dice crm-1, esa URL es de una implementación sin actualizar.','er')});
       cargarExtra('oms');
       llenarFiltros();pintar()});
   }
