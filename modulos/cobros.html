@@ -445,6 +445,22 @@
     </div>
   </section>
 
+  <section class="panel" id="panelSegCli">
+    <div class="cabecera">
+      <h2>Seguimiento a clientes de renovación</h2>
+      <span class="sub">Hasta 3 mensajes de seguimiento (cada uno diferente) y el registro de quién aceptó y quién no</span>
+    </div>
+    <div class="contenido-panel">
+      <div class="seg-tiles" id="scTiles"></div>
+      <div class="seg-fil"><label>Ver <select id="scFiltro"><option value="pend">Pendientes de respuesta</option><option value="acepto">Aceptaron</option><option value="no">No aceptaron</option><option value="todos">Todos</option></select></label><label>Buscar <input id="scBusca" type="search" placeholder="nombre, placa o contrato" style="border:1px solid var(--borde);border-radius:8px;padding:5px 9px;font-size:.84rem"></label></div>
+      <div class="seg-tabla-w"><table id="tablaSC"><thead><tr><th>Cliente</th><th>Celular</th><th>Placa</th><th>Contrato</th><th>Vence</th><th>Mensajes enviados</th><th>Resultado</th><th>Acciones</th></tr></thead><tbody id="cuerpoSC"></tbody></table></div>
+      <div class="vacio" id="vacioSC" style="display:none;">No hay clientes en esta lista.</div>
+      <h3 style="margin:18px 0 8px;color:var(--azul);font-size:.95rem;">¿Con qué mensaje aceptaron?</h3>
+      <div class="seg-tabla-w"><table><thead><tr><th>Mensaje</th><th>Aceptaron</th><th>% de los que aceptaron</th></tr></thead><tbody id="cuerpoSCef"></tbody></table></div>
+      <p class="seg-nota">Cada cliente que ya recibió el mensaje de renovación entra aquí. El botón de WhatsApp abre el mensaje de seguimiento que toca (1, 2 o 3, cada uno distinto) y, al confirmar, queda anotado en la hoja Gestiones. Si el cliente ya había vencido y luego acepta, pasa a «Aceptó». Para quien no acepta se guarda el registro y no se le escribe más.</p>
+    </div>
+  </section>
+
 </main>
 
 <footer>Protect Motos © <span id="anioActual"></span> — Panel interno de cobros</footer>
@@ -1035,12 +1051,117 @@
   document.getElementById('segAnio').addEventListener('change', function(){ segAnio = this.value; renderizarSeguimiento(); });
   document.getElementById('segMes').addEventListener('change', function(){ segMes = this.value; renderizarSeguimiento(); });
 
+  // ==================== SEGUIMIENTO A CLIENTES DE RENOVACIÓN (3 mensajes) ====================
+  var SEG_ACC = ['Seguimiento 1 de renovación enviado','Seguimiento 2 de renovación enviado','Seguimiento 3 de renovación enviado'];
+  var scFiltro = 'pend', scTexto = '';
+  function textoSeguimiento(n, c){
+    var fin = c.finISO ? parsearISO(c.finISO) : null, vencida = fin && diferenciaDias(fin, hoy()) < 0;
+    var cuando = fin ? (vencida ? 'venció el ' : 'vence el ') + formatoFechaCO(fin) : 'está por vencer';
+    if(n===1) return 'Hola, '+c.cliente+' 😊\nTe escribimos de Protect Motos. Hace unos días te contamos que la garantía suplementaria de tu moto de placa '+c.placa+' '+cuando+'.\n\n¿Pudiste revisar la información? Con gusto resolvemos tus dudas y te ayudamos a renovarla en un momento 💙💛';
+    if(n===2) return 'Hola, '+c.cliente+', ¿cómo estás? 🏍️\nTe recordamos que la garantía de tu moto de placa '+c.placa+' '+cuando+'. Renovarla te permite seguir con tu respaldo y evitar costos inesperados si tu moto necesita una reparación.\n\n¿Te parece si la renovamos hoy? Solo respóndenos y nosotros hacemos el resto 💛';
+    return 'Hola, '+c.cliente+' 👋\nEste es nuestro último mensaje sobre la garantía de tu moto de placa '+c.placa+' ('+cuando+'). No queremos que te quedes sin respaldo.\n\nSi quieres renovar, escríbenos ahora; si ya no te interesa, cuéntanos para dejar tu solicitud cerrada. ¡Gracias por confiar en Protect Motos! 💙';
+  }
+  function datosSegCli(){
+    var por = {};
+    (estado.gestiones||[]).forEach(function(g){
+      var k = g.contrato; if(!k) return; var a = g.accion, f = g.fechaGestionISO||'';
+      var i = SEG_ACC.indexOf(a);
+      if(a!==ACCION_RENOVACION_ENVIADA && i<0 && a!==ACCION_ACEPTADA && a!==ACCION_NO_ACEPTADA) return;
+      var o = por[k] = por[k] || {contrato:k, envio:'', seg:[], resp:'', respISO:''};
+      if(a===ACCION_RENOVACION_ENVIADA){ if(!o.envio || (f && f<o.envio)) o.envio = f; }
+      else if(i>=0){ o.seg[i] = f || '0'; }
+      else if(!o.respISO || f>=o.respISO){ o.resp = a===ACCION_ACEPTADA?'acepto':'no'; o.respISO = f; }
+    });
+    var L = [];
+    Object.keys(por).forEach(function(k){
+      var o = por[k]; if(!o.envio) return;
+      var c = estado.contratos.filter(function(x){return x.contrato===k})[0]; if(!c) return;
+      o.c = c; o.nSeg = [0,1,2].filter(function(i){return o.seg[i];}).length;
+      o.msgs = 1 + o.nSeg;
+      o.resultado = o.resp==='acepto'?'Aceptó':o.resp==='no'?'No aceptó':'Pendiente';
+      // ¿con qué mensaje aceptó? = cuántos seguimientos se habían enviado hasta ese día
+      o.conCual = 0;
+      if(o.resp==='acepto') o.conCual = [0,1,2].filter(function(i){return o.seg[i] && o.seg[i]<=o.respISO;}).length;
+      L.push(o);
+    });
+    return L;
+  }
+  function registrarSegGestion(c, accion, boton, textoOk){
+    var registradoPor = localStorage.getItem('pm_cobros_registrado_por') || '';
+    var t0 = boton ? boton.textContent : ''; if(boton){ boton.disabled = true; boton.textContent = 'Guardando...'; }
+    return llamarConector({action:'registrarGestion', contrato:c.contrato, cedula:c.cedula, cliente:c.cliente, registradoPor:registradoPor, accion:accion}).then(function(r){
+      if(!r.ok) throw new Error(r.error || 'No se pudo guardar.');
+      var h = hoy(); if(!Array.isArray(estado.gestiones)) estado.gestiones = [];
+      estado.gestiones.push({fechaGestion:formatoFechaCO(h), fechaGestionISO:formatoFechaInput(h), contrato:c.contrato, cedula:c.cedula, cliente:c.cliente, accion:accion, registradoPor:registradoPor});
+      mostrarEstado('ok', '✓ '+textoOk);
+      renderizarSegCli(); renderizarSeguimiento();
+    }).catch(function(err){
+      if(boton){ boton.disabled = false; boton.textContent = t0; }
+      mostrarEstado('error', err.message); window.alert('No se pudo guardar:\n\n'+err.message);
+    });
+  }
+  function renderizarSegCli(){
+    var cuerpo = document.getElementById('cuerpoSC'); if(!cuerpo) return;
+    var L = datosSegCli(), n = L.length;
+    var ac = L.filter(function(o){return o.resp==='acepto';}), no = L.filter(function(o){return o.resp==='no';}), pe = n-ac.length-no.length;
+    var pct = function(a,b){ return b ? Math.round(a/b*100) : 0; };
+    var totMsgs = L.reduce(function(t,o){return t+o.msgs;},0), totSeg = totMsgs-n;
+    document.getElementById('scTiles').innerHTML =
+      '<div class="seg-t" style="--c:#13223f"><span>Clientes en seguimiento</span><b>'+n+'</b><small>'+totMsgs+' mensajes en total ('+totSeg+' de seguimiento)</small></div>'+
+      '<div class="seg-t" style="--c:#5b78c7"><span>Pendientes de respuesta</span><b>'+pe+'</b><small>'+pct(pe,n)+' %</small></div>'+
+      '<div class="seg-t" style="--c:#1f9d55"><span>Aceptaron</span><b>'+ac.length+'</b><small>'+pct(ac.length,n)+' % de los contactados</small></div>'+
+      '<div class="seg-t" style="--c:#d97706"><span>No aceptaron</span><b>'+no.length+'</b><small>'+pct(no.length,n)+' %</small></div>'+
+      '<div class="seg-t" style="--c:#7c3aed"><span>Mensajes por cliente que aceptó</span><b>'+(ac.length ? (ac.reduce(function(t,o){return t+o.msgs;},0)/ac.length).toFixed(1) : '0')+'</b><small>promedio</small></div>';
+    var rot = ['Mensaje inicial de renovación','Después del seguimiento 1','Después del seguimiento 2','Después del seguimiento 3'];
+    document.getElementById('cuerpoSCef').innerHTML = rot.map(function(t,i){ var k = ac.filter(function(o){return o.conCual===i;}).length;
+      return '<tr><td data-etiqueta="Mensaje">'+t+'</td><td data-etiqueta="Aceptaron"><strong>'+k+'</strong></td><td data-etiqueta="%">'+pct(k,ac.length)+' %</td></tr>'; }).join('');
+    var q = scTexto.toLowerCase();
+    var F = L.filter(function(o){
+      if(scFiltro==='pend' && o.resp) return false;
+      if(scFiltro==='acepto' && o.resp!=='acepto') return false;
+      if(scFiltro==='no' && o.resp!=='no') return false;
+      if(q && (o.c.cliente+' '+o.c.placa+' '+o.c.contrato).toLowerCase().indexOf(q)<0) return false;
+      return true;
+    }).sort(function(a,b){ return (a.c.finISO||'').localeCompare(b.c.finISO||''); });
+    cuerpo.innerHTML = '';
+    document.getElementById('vacioSC').style.display = F.length ? 'none' : 'block';
+    document.getElementById('tablaSC').style.display = F.length ? '' : 'none';
+    F.forEach(function(o){
+      var c = o.c, sig = o.nSeg + 1, cerrado = !!o.resp;
+      var puntos = [0,1,2].map(function(i){ return '<span title="Seguimiento '+(i+1)+(o.seg[i]?' enviado':' sin enviar')+'" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:3px;background:'+(o.seg[i]?'#1f9d55':'#cbd5e1')+'"></span>'; }).join('');
+      var bWa = cerrado ? '' : (sig<=3 ? '<button class="btn btn-verde btn-sm" data-a="wa">WhatsApp seguimiento '+sig+'</button>' : '<span class="seg-nota" style="margin:0">3 de 3 enviados</span>');
+      var acc = cerrado ? '' : bWa+'<button class="btn btn-azul btn-sm" data-a="si">Aceptó</button><button class="btn btn-rojo btn-sm" data-a="no">No aceptó</button>';
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td data-etiqueta="Cliente"><strong>'+escapeHtml(c.cliente)+'</strong></td><td data-etiqueta="Celular">'+escapeHtml(c.celular)+'</td><td data-etiqueta="Placa">'+escapeHtml(c.placa)+'</td><td data-etiqueta="Contrato">'+escapeHtml(c.contrato)+'</td><td data-etiqueta="Vence">'+escapeHtml(c.fin||'—')+'</td>'+
+        '<td data-etiqueta="Mensajes"><strong>'+o.msgs+'</strong> <small>(1 inicial + '+o.nSeg+' de seguimiento)</small><br>'+puntos+'</td>'+
+        '<td data-etiqueta="Resultado">'+(o.resp==='acepto'?'✅ Aceptó':o.resp==='no'?'❌ No aceptó':'⏳ Pendiente')+'</td><td data-etiqueta="Acciones"><div class="acciones-fila">'+acc+'</div></td>';
+      var b = function(a){ return tr.querySelector('[data-a="'+a+'"]'); };
+      if(b('wa')) b('wa').addEventListener('click', function(e){
+        var btn = e.currentTarget;
+        window.open('https://wa.me/'+numeroWhatsApp(c.celular)+'?text='+encodeURIComponent(textoSeguimiento(sig, c)), '_blank');
+        if(window.confirm('¿Ya enviaste el mensaje de seguimiento '+sig+' a '+c.cliente+'?\n\nAcepta para dejarlo anotado.')) registrarSegGestion(c, SEG_ACC[sig-1], btn, 'Seguimiento '+sig+' anotado para '+c.cliente+'.');
+      });
+      if(b('si')) b('si').addEventListener('click', function(e){
+        if(c.estado==='ACTIVO') return marcarRenovacion(c, true, e.currentTarget);
+        if(window.confirm('¿Confirmas que '+c.cliente+' ACEPTÓ la renovación?')) registrarSegGestion(c, ACCION_ACEPTADA, e.currentTarget, c.cliente+' aceptó la renovación.');
+      });
+      if(b('no')) b('no').addEventListener('click', function(e){
+        if(c.estado==='ACTIVO') return marcarRenovacion(c, false, e.currentTarget);
+        if(window.confirm('¿Confirmas que '+c.cliente+' NO aceptó la renovación?')) registrarSegGestion(c, ACCION_NO_ACEPTADA, e.currentTarget, c.cliente+' no aceptó la renovación.');
+      });
+      cuerpo.appendChild(tr);
+    });
+  }
+  document.getElementById('scFiltro').addEventListener('change', function(){ scFiltro = this.value; renderizarSegCli(); });
+  document.getElementById('scBusca').addEventListener('input', function(){ scTexto = this.value.trim(); renderizarSegCli(); });
+
   function renderizarVistas(mapaPagos){
     renderizarContadores(mapaPagos);
     renderizarCobros(mapaPagos);
     renderizarRenovaciones();
     renderizarRenovacionesEnviadas();
     renderizarSeguimiento();
+    renderizarSegCli();
     renderizarFiltro(mapaPagos);
   }
 
@@ -2420,8 +2541,8 @@
     }
     var MESN=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     function dIso(iso){if(!iso)return '';var p=String(iso).split('-');return p.length===3?(+p[2])+'/'+(+p[1])+'/'+p[0]:iso}
-    var DESC=[["Todos los clientes", "Una fila por cada cliente de la hoja Protect, con su estado, cuotas pagadas y saldo.", "Cuotas pagadas y saldo solo aplican a clientes financiados; la cuota 1 se da por pagada al firmar. El estado sale de la columna AR."], ["Pendientes de cobro", "Clientes financiados activos que tienen una cuota vencida sin pagar.", "Los más atrasados aparecen primero. «Días de atraso» cuenta desde la fecha en que venció la cuota."], ["Pólizas por renovar", "Pólizas que vencen en 8 días o menos (o vencieron hace menos de 30 días).", "«Días para vencer» negativo significa que ya venció. Son los clientes a los que hay que volver a hablarles."], ["Pagos registrados", "Todos los pagos anotados en la hoja Pagos.", "Cada fila es un pago de una o varias cuotas. «Registrado por» es quien lo anotó."], ["Seguimiento de renovaciones", "A cuántos clientes se les envió el mensaje de renovación y cuántos aceptaron.", "Cada fila es un cliente, con la fecha de su primer mensaje y el resultado: Aceptó, No aceptó, Venció sin responder o Esperando respuesta. «Fecha del primer mensaje» es la que usa el filtro de período."], ["Gestiones de cobro", "Las veces que se marcó «Ya cobré hoy» u otra acción de cobro.", "Sirve para saber a quién ya se le escribió y cuándo."]];
-    var YCM=[6, 6, 6, 0, 5, 0],TITM=[0, 0, 0, 0, 0, 0],per='';try{per=localStorage.getItem('pm_rep_anio_mod')||''}catch(e){}
+    var DESC=[["Todos los clientes", "Una fila por cada cliente de la hoja Protect, con su estado, cuotas pagadas y saldo.", "Cuotas pagadas y saldo solo aplican a clientes financiados; la cuota 1 se da por pagada al firmar. El estado sale de la columna AR."], ["Pendientes de cobro", "Clientes financiados activos que tienen una cuota vencida sin pagar.", "Los más atrasados aparecen primero. «Días de atraso» cuenta desde la fecha en que venció la cuota."], ["Pólizas por renovar", "Pólizas que vencen en 8 días o menos (o vencieron hace menos de 30 días).", "«Días para vencer» negativo significa que ya venció. Son los clientes a los que hay que volver a hablarles."], ["Pagos registrados", "Todos los pagos anotados en la hoja Pagos.", "Cada fila es un pago de una o varias cuotas. «Registrado por» es quien lo anotó."], ["Seguimiento de renovaciones", "A cuántos clientes se les envió el mensaje de renovación y cuántos aceptaron.", "Cada fila es un cliente, con la fecha de su primer mensaje y el resultado: Aceptó, No aceptó, Venció sin responder o Esperando respuesta. «Fecha del primer mensaje» es la que usa el filtro de período."], ["Seguimiento a clientes de renovación", "Cada cliente que recibió el mensaje de renovación, cuántos mensajes de seguimiento (1 a 3) se le enviaron y si aceptó o no.", "«Con qué mensaje aceptó» indica cuántos seguimientos se habían enviado cuando aceptó (0 = con el mensaje inicial). «Pendiente» significa que aún no responde."], ["Gestiones de cobro", "Las veces que se marcó «Ya cobré hoy» u otra acción de cobro.", "Sirve para saber a quién ya se le escribió y cuándo."]];
+    var YCM=[6, 6, 6, 0, 5, 5, 0],TITM=[0, 0, 0, 0, 0, 0, 0],per='';try{per=localStorage.getItem('pm_rep_anio_mod')||''}catch(e){}
     function perTxt(y){return y?'año '+y:'histórico (todos los años)'}
     function filt(filas,i,y){if(!y||YCM[i]==null)return filas;var out=[filas[0]];for(var k=1;k<filas.length;k++){var v=filas[k][YCM[i]],mm=String(v==null?'':v).match(/(?:^|\D)(20\d{2})(?:\D|$)/);if(mm){if(mm[1]===y)out.push(filas[k])}else if(TITM[i])out.push(filas[k])}return out}
     var modo=false;try{modo=localStorage.getItem('pm_rep_texto_mod')==='1'}catch(e){}
@@ -2437,6 +2558,8 @@
       ['💰 Pagos registrados',function(){var f=[['Fecha de pago','N° contrato','Cédula','Cliente','Cuota','Valor pagado','Nota','Registrado por']];estado.pagos.forEach(function(p){f.push([p.fechaPago,p.contrato,p.cedula,p.cliente,p.cuota,p.valorPagado,p.nota,p.registradoPor])});return ['pagos_registrados',f]}],
       ['📈 Seguimiento de renovaciones (enviados y aceptaron)',function(){var S=seguimientoRenovaciones(),f=[['Cliente','Cédula','N° contrato','Placa','Celular','Fecha del primer mensaje','Resultado','Fecha de la respuesta']];
         S.lista.sort(function(a,b){return (b.envio||'').localeCompare(a.envio||'')}).forEach(function(o){f.push([o.cliente,o.cedula,o.contrato,o.placa,o.celular,dIso(o.envio),o.resultado,dIso(o.respISO)])});return ['seguimiento_renovaciones',f]}],
+      ['🎯 Seguimiento a clientes (mensajes y resultado)',function(){var f=[['Cliente','Cédula','N° contrato','Placa','Celular','Fecha del primer mensaje','Mensajes enviados (total)','Seguimiento 1','Seguimiento 2','Seguimiento 3','Resultado','Fecha de la respuesta','Con qué mensaje aceptó']];
+        datosSegCli().sort(function(a,b){return (b.envio||'').localeCompare(a.envio||'')}).forEach(function(o){f.push([o.c.cliente,o.c.cedula,o.c.contrato,o.c.placa,o.c.celular,dIso(o.envio),o.msgs,dIso(o.seg[0]||''),dIso(o.seg[1]||''),dIso(o.seg[2]||''),o.resultado,dIso(o.respISO),o.resp==='acepto'?(o.conCual?'Seguimiento '+o.conCual:'Mensaje inicial'):''])});return ['seguimiento_clientes_renovacion',f]}],
       ['📝 Gestiones de cobro',function(){var f=[['Fecha','N° contrato','Cédula','Cliente','Acción','Registrado por']];(estado.gestiones||[]).forEach(function(g){f.push([g.fechaGestion,g.contrato,g.cedula,g.cliente,g.accion,g.registradoPor])});return ['gestiones_de_cobro',f]}]
     ];
     var m=document.getElementById('repM');
