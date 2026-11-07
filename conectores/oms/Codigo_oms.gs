@@ -40,6 +40,7 @@ var COLS_OPC = [
   { clave: 'plazo',    nombres: ['plazo', 'cuotas', 'numero de cuotas'] },
   { clave: 'correo',   nombres: ['correo', 'email', 'correo electronico'] },
   { clave: 'asesor',   nombres: ['asesor'] },
+  { clave: 'marca',    nombres: ['marca', 'marca de la moto'] },
   { clave: 'direccion',nombres: ['direccion'] }
 ];
 
@@ -120,7 +121,7 @@ function leerClientes(hoja) {
     if (!ref) ref = (cedula || 'SIN-CEDULA') + '-' + (inicio ? iso(inicio).replace(/-/g, '') : 'F' + (FILA_ENCABEZADOS + 1 + i));
     if (usados[ref]) { usados[ref]++; ref = ref + '-' + usados[ref]; } else { usados[ref] = 1; }
     var reg = {
-      asesor: texto(g('asesor')),
+      asesor: texto(g('asesor')), marca: texto(g('marca')),
       cedula: cedula, cliente: cliente,
       fechaFirma: fmt(inicio), fechaFirmaISO: iso(inicio),
       fin: fmt(fin), finISO: iso(fin),

@@ -466,7 +466,7 @@
   #v-inicio .cmc{grid-column:1/-1!important;order:20!important;--acc:#34d399} .cmc{cursor:default;max-width:none} .cmc:hover{box-shadow:none;transform:none}
   .cmc .tot{font-size:.8rem;color:var(--suave);margin:0 0 12px} .cmc .tot em{font-style:normal;color:#fdc33e;font-weight:700}
   .cm-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:2px 0 16px} .cm-k .in-k{cursor:default} .cm-k .in-k:hover{transform:none} .cm-k .in-kt b{font-size:1.55rem} .cm-k .in-kt small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .cmc .asr-l{display:grid;grid-auto-flow:column;column-gap:28px;grid-template-rows:repeat(var(--f,10),auto)} .cmc .fila-a{display:grid;grid-template-columns:22px minmax(80px,170px) 1fr 92px 44px;gap:8px;margin:3px 0;font-size:.82rem;align-items:center} .cmc .fila-a .pista{height:16px;border-radius:5px;background:var(--borde,#e3e6eb)} .cmc .fila-a .barra{height:100%;border-radius:5px;background:var(--btn,var(--azul))} .cmc .fila-a.top .barra{background:var(--dorado)} .cmc .fila-a .rk,.cmc .fila-a .pc{color:var(--suave);font-size:.72rem;text-align:right} .cmc .fila-a b{text-align:right;font-variant-numeric:tabular-nums}
+  .cmc .asr-l{display:grid;grid-auto-flow:column;column-gap:28px;grid-template-rows:repeat(var(--f,10),auto)} .cmc .fila-a{display:grid;grid-template-columns:22px minmax(80px,170px) 1fr 130px 44px;gap:8px;margin:3px 0;font-size:.82rem;align-items:center} .cmc .fila-a .pista{height:16px;border-radius:5px;background:var(--borde,#e3e6eb)} .cmc .fila-a .barra{height:100%;border-radius:5px;background:var(--btn,var(--azul))} .cmc .fila-a.top .barra{background:var(--dorado)} .cmc .fila-a .rk,.cmc .fila-a .pc{color:var(--suave);font-size:.72rem;text-align:right} .cmc .fila-a b{text-align:right;font-variant-numeric:tabular-nums}
   @media(max-width:720px){.cmc .asr-l{grid-auto-flow:row;grid-template-rows:none} .cmc .fila-a{grid-template-columns:18px minmax(60px,110px) 1fr 80px 0}}
   .cf-ays{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px} .cf-ay{background:var(--fondo,#f3f4f8);border-radius:14px;padding:12px 14px;min-width:0}
   .cf-ay-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:4px} .cf-ay-h b{font-size:1.7rem;line-height:1;display:block} .cf-ay-h span{font-size:.78rem;color:var(--suave,#6b7280)}
@@ -1123,7 +1123,8 @@
       if(!cmEsKelli(x.asesor)||!String(x.cliente||'').trim()||/cancel|anulad/i.test(x.estado||'')||!CM_OMS[x.forma])return;
       var d=x.fechaFirmaISO;if(!d||!/^\d{4}-\d{2}/.test(d))return;out.push({y:+d.slice(0,4),m:+d.slice(5,7),as:'KELLI',pay:CM_OMS[x.forma]})});
     return out}
-  function cmPesos(n){return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
+  function cmPesos(n){return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+' COP'}
+  function cmK(n){return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+'<em style="font-size:.5em;font-style:normal;opacity:.85"> COP</em>'}
   function pintarCM(){
     var tot=document.getElementById('cmTot'),b=document.getElementById('cmCuerpo'),ley=document.getElementById('cmLey');if(!tot)return;
     var recs=cmRecs();
@@ -1146,7 +1147,7 @@
     (function(){var mm={},aa={};F.forEach(function(r){var k=r.y*12+r.m;mm[k]=(mm[k]||0)+r.pay;aa[r.as]=(aa[r.as]||0)+r.pay});
       var ks=Object.keys(mm).filter(function(k){return mm[k]>0}).sort(function(p,q){return mm[q]-mm[p]}),top=Object.keys(aa).sort(function(p,q){return aa[q]-aa[p]})[0],kb=ks[0]?+ks[0]:0,ky=kb?Math.floor((kb-1)/12):0,km=kb-ky*12;
       var K=function(c,i,l,v,sm){return '<div class="in-k '+c+'"><div class="in-ki">'+i+'</div><div class="in-kt"><span>'+l+'</span><b>'+v+'</b><small>'+sm+'</small></div></div>'};
-      document.getElementById('cmKpis').innerHTML=T?K('k-oro','💵','Total pagado',cmPesos(T),F.length+' póliza(s) · '+per)+K('k-cian','📆','Promedio por mes',cmPesos(T/ks.length),'en '+ks.length+' mes(es) con comisiones')+K('k-vio','🏅','Mejor mes',cmPesos(mm[kb]),MES_LARGO[km-1]+' '+ky)+K('k-azu','👤','Mayor comisión',cmPesos(aa[top]),(top==='KELLI'?'Kelli':top)):'';})();
+      document.getElementById('cmKpis').innerHTML=T?K('k-oro','💵','Total pagado (COP)',cmK(T),F.length+' póliza(s) · '+per)+K('k-cian','📆','Promedio por mes (COP)',cmK(T/ks.length),'en '+ks.length+' mes(es) con comisiones')+K('k-vio','🏅','Mejor mes (COP)',cmK(mm[kb]),MES_LARGO[km-1]+' '+ky)+K('k-azu','👤','Mayor comisión (COP)',cmK(aa[top]),(top==='KELLI'?'Kelli':top)):'';})();
     ley.innerHTML='';
     if(cmV==='asesor'){
       var v={};F.forEach(function(r){v[r.as]=(v[r.as]||0)+r.pay});
@@ -1159,12 +1160,12 @@
       var sy=cmY==='todos'?lst:[+cmY],colY=function(y){return COL[lst.indexOf(y)%6]};
       dm=[];for(var i=1;i<=12;i++){var raw=sy.map(function(y){return F.filter(function(r){return r.y===y&&r.m===i}).reduce(function(s_,r){return s_+r.pay},0)});raw.forEach(function(x){if(M(x)>mx2)mx2=M(x)});dm.push(raw.some(function(x){return x>0})?{vals:raw.map(M),raw:raw,m:i-1,t:0}:null)}
       etq=MES_C;n=12;cols=sy.map(colY);txt=sy.map(function(y){return TXT[lst.indexOf(y)%6]});aria='Comisiones pagadas mes a mes';
-      ley.innerHTML=sy.map(function(y){var t=F.filter(function(r){return r.y===y}).reduce(function(s_,r){return s_+r.pay},0);return '<span><i style="background:'+colY(y)+'"></i><b>'+y+'</b> · '+cmPesos(t)+'</span>'}).join('')+'<span class="cf-ley-t">Cada columna es el total pagado en ese mes, en miles de pesos (385 = $385.000).</span>';
+      ley.innerHTML=sy.map(function(y){var t=F.filter(function(r){return r.y===y}).reduce(function(s_,r){return s_+r.pay},0);return '<span><i style="background:'+colY(y)+'"></i><b>'+y+'</b> · '+cmPesos(t)+'</span>'}).join('')+'<span class="cf-ley-t">Cada columna es el total pagado en ese mes, en miles de pesos colombianos (385 = $385.000 COP).</span>';
       tip=function(d,ix){return '<b>'+MES_LARGO[ix]+'</b> · comisiones<br>'+sy.map(function(y,si){return '<span style="display:inline-block;width:9px;height:9px;border-radius:2px;border:1px solid #fff;background:'+colY(y)+';margin-right:5px"></span>'+y+': <b>'+cmPesos(d.raw[si])+'</b>'}).join('<br>')};
     }else{
       var ay=lst;dm=ay.map(function(y,i){var raw=F.filter(function(r){return r.y===y}).reduce(function(s_,r){return s_+r.pay},0);if(M(raw)>mx2)mx2=M(raw);return {vals:[M(raw)],raw:[raw],m:i,t:0}});
       etq=ay.map(String);n=ay.length;cols=['#fdc33e'];txt=['vd-o'];aria='Comisiones pagadas año a año';
-      ley.innerHTML='<span class="cf-ley-t">Total pagado en cada año, en miles de pesos (385 = $385.000).</span>';
+      ley.innerHTML='<span class="cf-ley-t">Total pagado en cada año, en miles de pesos colombianos (385 = $385.000 COP).</span>';
       tip=function(d,ix){return '<b>'+ay[ix]+'</b> · comisiones: <b>'+cmPesos(d.raw[0])+'</b>'};
     }
     b.innerHTML='<div class="vm-c"></div>';
@@ -1566,7 +1567,7 @@
     ['.edc','¿Quién nos compra? Edad y ticket promedio','👥','Rango de edad que más compra y valor promedio de cada venta.','La edad sale de la columna G (o de la fecha de nacimiento). En financiados el ticket es la cuota mensual promedio; en contado, el valor de la venta.','clientes',1],
     ['.anu','¿Cuántos clientes están activos?','✅','Activos, finalizados, cancelados y anulados de Protect.','Cuenta el texto de la columna AR de la hoja, igual que el botón Cobros. Los anulados se muestran aparte y no cuentan como vendidos. Con «¿Cómo se cuenta?» ves el detalle por año.','clientes',1],
     ['.vmc','Ventas mes a mes, por año','📈','Todas las ventas de cada mes, con un color por año.','Cada columna es el total de contratos de ese mes (contado y financiados juntos) y cada color es un año. Con «Año» ves uno solo y con «Tipo de venta» separas contado o financiadas. Sale de las columnas I, J y T de Protect; no cuenta anulados.','resumen',1],
-    ['.cmc','¿Cuánto pagamos en comisiones?','💵','Total de comisiones pagadas a los asesores, mes a mes, por asesor o año a año.','Se calcula igual que el botón Comisiones: contado con RC y AP $40.000, contado sin RC ni AP $25.000, financiado con RC y AP $15.000, financiado sin RC ni AP $10.000; solo RC o solo AP según su regla. Las pólizas OMS de Kelli pagan $40.000 contado y $15.000 financiado. No cuenta anulados ni cancelados ni los casos especiales sin decidir. Las columnas están en miles de pesos (385 = $385.000).','com',1],
+    ['.cmc','¿Cuánto pagamos en comisiones?','💵','Total de comisiones pagadas a los asesores, mes a mes, por asesor o año a año.','Se calcula igual que el botón Comisiones: contado con RC y AP $40.000, contado sin RC ni AP $25.000, financiado con RC y AP $15.000, financiado sin RC ni AP $10.000; solo RC o solo AP según su regla. Las pólizas OMS de Kelli pagan $40.000 contado y $15.000 financiado. No cuenta anulados ni cancelados ni los casos especiales sin decidir. Las columnas están en miles de pesos colombianos (385 = $385.000 COP).','com',1],
     ['.svc','SOAT: cuántos vendemos y cuánto ganamos','🛡️','SOAT vendidos por mes (columnas) y su ganancia (línea verde).','Sale de la hoja Soat: cada SOAT cuenta en el mes de su fecha de venta. La escala verde de la derecha es la ganancia.','soat',1]
   ];
   function aclarar(){
