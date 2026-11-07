@@ -18,7 +18,8 @@ No modifica las pestañas Protect ni Pagos.
 | Contado | $40.000 | $25.000 |
 | Financiado | $15.000 | $10.000 |
 
-- Solo RC o solo AP, forma de pago rara o datos vacíos = **caso especial**: el sistema avisa y usted decide
+- Contado con solo RC o solo AP = $40.000; financiado con solo RC = $15.000 (se pagan, pero salen en «Casos especiales» para revisar).
+- Financiado con solo AP, forma de pago rara o datos vacíos = **caso especial**: el sistema avisa y usted decide
   si se paga (y cuánto) o no. Hasta decidirlo no deja descargar el informe.
 - Los anulados no generan comisión.
 - Se paga según la tarifa; si la columna S dice otro valor, lo muestra en «Revisar».

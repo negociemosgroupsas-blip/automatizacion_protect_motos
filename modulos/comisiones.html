@@ -70,8 +70,8 @@
   </section>
 
   <section class="panel" id="pCasos" style="display:none">
-    <h2>2. ⚠️ Casos especiales: necesitan su decisión</h2>
-    <p class="sub">Normalmente esto no debería pasar. Para cada caso diga si se paga comisión (y cuánto) o si no se paga. Queda guardado en la hoja de Google y no vuelve a preguntar.</p>
+    <h2>2. ⚠️ Casos especiales: revise y decida</h2>
+    <p class="sub">Normalmente esto no debería pasar. Los de solo RC o solo AP ya traen el valor de su regla (puede cambiarlo); los demás casos usted debe decidir si se paga comisión (y cuánto) o si no se paga. Queda guardado en la hoja de Google y no vuelve a preguntar.</p>
     <div id="casos"></div>
   </section>
 
@@ -99,7 +99,7 @@
     <p class="sub">Cada contrato del mes, con la comisión que se le pagará al asesor.</p>
     <div class="fil nop" style="margin-bottom:10px"><label>Asesor <select id="fAs"></select></label></div>
     <div class="scroll"><table><thead><tr><th>#</th><th>Asesor</th><th>Cliente</th><th>Placa</th><th>Forma</th><th>RC</th><th>AP</th><th>Tipo</th><th class="num">Comisión</th><th>Nota</th></tr></thead><tbody id="det"></tbody></table></div>
-    <p class="ayuda">Tarifas: contado con RC y AP $40.000 · contado sin RC y sin AP $25.000 · financiado con RC y AP $15.000 · financiado sin RC y sin AP $10.000. Cualquier otra combinación es un caso especial.</p>
+    <p class="ayuda">Tarifas: contado con RC y AP $40.000 · contado sin RC y sin AP $25.000 · financiado con RC y AP $15.000 · financiado sin RC y sin AP $10.000. Contado con solo RC o solo AP $40.000 · financiado con solo RC $15.000 (se muestran como caso para revisar). Cualquier otra combinación es un caso especial que usted decide.</p>
   </section>
 </main>
 
@@ -136,21 +136,30 @@
     var okv=function(v){return v==='SI'||v==='NO'};
     if(!okv(rc))mot.push('la columna RC está vacía o no dice SI/NO');
     if(!okv(ap))mot.push('la columna AP está vacía o no dice SI/NO');
-    if(okv(rc)&&okv(ap)&&rc!==ap)mot.push(rc==='SI'?'lleva RC pero NO lleva AP':'lleva AP pero NO lleva RC');
+    if(okv(rc)&&okv(ap)&&rc!==ap){
+      var q=rc==='SI'?'lleva RC pero NO lleva AP':'lleva AP pero NO lleva RC';
+      // combinaciones poco comunes con valor definido: contado (solo RC o solo AP) = $40.000; financiado solo RC = $15.000
+      if(f==='CONTADO')return {cat:'CRC',raro:true,motivo:q};
+      if(f==='FINANCIADO'&&rc==='SI')return {cat:'FRC',raro:true,motivo:q};
+      mot.push(q+' (financiado solo con AP: no tiene valor definido)');
+    }
     if(mot.length)return {cat:null,motivo:mot.join('; ')};
     var con=rc==='SI';
     return {cat:(f==='CONTADO'?(con?'CRC':'C'):(con?'FRC':'F'))};
   }
   function decision(k){var v=cfg['caso:'+k];if(!v)return null;try{return JSON.parse(v)}catch(e){return null}}
 
+  function espList(){return calc.filas.filter(function(f){return !f.cat||f.raro})}
   function calcular(){
     var filas=[],sinAs=0;
     (datos.contratos||[]).forEach(function(x){
       if(!String(x.cliente||'').trim()||anulado(x))return;
       var r=mesAnio(x);if(r.m!==mes||r.a!==anio)return;
       var cl=clasificar(x),k=clave(x),as=(x.asesor||'').trim().toUpperCase()||'SIN ASESOR';
-      var f={x:x,k:k,as:as,cat:cl.cat,motivo:cl.motivo||'',tarifa:cl.cat?TARIFAS[cl.cat]:0,pagar:0,dec:null,nota:''};
-      if(cl.cat){f.pagar=f.tarifa;if(x.comision&&x.comision!==f.tarifa)f.dif=true}
+      var f={x:x,k:k,as:as,cat:cl.cat,motivo:cl.motivo||'',tarifa:cl.cat?TARIFAS[cl.cat]:0,pagar:0,dec:null,nota:'',raro:!!cl.raro,regla:cl.cat?TARIFAS[cl.cat]:0};
+      var dr=cl.raro?decision(k):null;
+      if(cl.raro&&dr&&dr.d!=='regla'){f.cat=null;f.dec=dr;f.pagar=dr.d==='pagar'?(+dr.valor||0):0;f.nota=(dr.d==='pagar'?'Caso especial: SE PAGA ':'Caso especial: NO se paga')+(dr.nota?' · '+dr.nota:'')}
+      else if(f.cat){f.pagar=f.tarifa;if(x.comision&&x.comision!==f.tarifa)f.dif=true}
       else{f.dec=decision(k);if(f.dec){f.pagar=f.dec.d==='pagar'?(+f.dec.valor||0):0;f.nota=(f.dec.d==='pagar'?'Caso especial: SE PAGA ':'Caso especial: NO se paga')+(f.dec.nota?' · '+f.dec.nota:'')}}
       filas.push(f)});
     var as={};
@@ -202,12 +211,13 @@
     if(!datos)return;calc=calcular();
     var mk=anio+'-'+('0'+mes).slice(-2);
     // casos especiales
-    var esp=calc.filas.filter(function(f){return !f.cat});
+    var esp=espList();
     $('pCasos').style.display=esp.length?'block':'none';
     $('casos').innerHTML=esp.map(function(f,i){var d=f.dec,x=f.x;
-      return '<div class="caso'+(d?' dec':'')+'" data-i="'+i+'"><h4>'+(d?'✅':'⚠️')+' '+esc(x.cliente)+' <small>· Asesor: '+esc(f.as)+' · Placa '+esc(x.placa)+' · '+esc(x.forma||'sin forma')+' · RC: '+esc(x.rc||'—')+' · AP: '+esc(x.ap||'—')+' · Columna S: '+pesos(x.comision)+'</small></h4>'+
-        '<small>Por qué es especial: '+esc(f.motivo)+'.</small><div class="ctl">'+
-        '<label>Decisión <select class="cd"><option value="">— Sin decidir —</option><option value="no"'+(d&&d.d==='no'?' selected':'')+'>No se paga comisión</option><option value="pagar"'+(d&&d.d==='pagar'?' selected':'')+'>Sí se paga comisión</option></select></label>'+
+      var rg=f.raro&&(!d||d.d==='regla');
+      return '<div class="caso'+(d?' dec':'')+'" data-i="'+i+'"><h4>'+(rg?'ℹ️':d?'✅':'⚠️')+' '+esc(x.cliente)+' <small>· Asesor: '+esc(f.as)+' · Placa '+esc(x.placa)+' · '+esc(x.forma||'sin forma')+' · RC: '+esc(x.rc||'—')+' · AP: '+esc(x.ap||'—')+' · Columna S: '+pesos(x.comision)+'</small></h4>'+
+        '<small>Por qué es especial: '+esc(f.motivo)+'.'+(f.raro?' Se paga según su regla ('+pesos(f.regla)+') salvo que usted decida otra cosa.':'')+'</small><div class="ctl">'+
+        '<label>Decisión <select class="cd">'+(f.raro?'<option value="regla"'+(rg?' selected':'')+'>Pagar según la regla ('+pesos(f.regla)+')</option>':'<option value="">— Sin decidir —</option>')+'<option value="no"'+(d&&d.d==='no'?' selected':'')+'>No se paga comisión</option><option value="pagar"'+(d&&d.d==='pagar'?' selected':'')+'>Sí se paga comisión</option></select></label>'+
         '<label class="cvw" style="'+(d&&d.d==='pagar'?'':'display:none')+'">Valor a pagar ($) <input type="number" class="cv" min="0" step="1000" value="'+(d&&d.d==='pagar'?(d.valor||0):(x.comision||''))+'" style="width:130px"></label>'+
         '<label>Nota (opcional) <input type="text" class="cn" value="'+esc(d&&d.nota||'')+'" style="width:230px"></label>'+
         '<button class="btn d cg" type="button">Guardar decisión</button></div></div>'}).join('');
@@ -218,7 +228,7 @@
     var b='';
     if(!calc.filas.length)b='<div class="aviso">No se encontraron contratos de '+MESES[mes-1]+' '+anio+' en la hoja Protect.</div>';
     else if(calc.pend.length)b='<div class="alerta"><b>Faltan '+calc.pend.length+' caso(s) especial(es) por decidir.</b> Hasta que los decida no puede descargar el informe final, porque el total no estaría completo.</div>';
-    else b='<div class="okb">Todo listo: '+calc.filas.length+' contratos del mes, sin casos pendientes.'+(calc.dif.length?' Revise antes los '+calc.dif.length+' contrato(s) con valor distinto a la tarifa.':'')+'</div>';
+    else b=(calc.filas.some(function(f){return f.raro&&f.cat})?'<div class="aviso">ℹ️ Hay '+calc.filas.filter(function(f){return f.raro&&f.cat}).length+' contrato(s) con solo RC o solo AP, pagados según su regla. Normalmente no debería pasar: revíselos en «Casos especiales» por si alguno no se debe pagar.</div>':'')+'<div class="okb">Todo listo: '+calc.filas.length+' contratos del mes, sin casos pendientes.'+(calc.dif.length?' Revise antes los '+calc.dif.length+' contrato(s) con valor distinto a la tarifa.':'')+'</div>';
     $('banner').innerHTML=b;
     ['bPdf','bRes','bDet'].forEach(function(i){$(i).disabled=!calc.filas.length||calc.pend.length>0});
     // informe
@@ -274,7 +284,7 @@
   $('casos').addEventListener('change',function(e){if(!e.target.classList.contains('cd'))return;var c=e.target.closest('.caso');c.querySelector('.cvw').style.display=e.target.value==='pagar'?'':'none'});
   $('casos').addEventListener('click',function(e){
     if(!e.target.classList.contains('cg'))return;var c=e.target.closest('.caso'),i=+c.dataset.i;
-    var esp=calc.filas.filter(function(f){return !f.cat}),f=esp[i],d=c.querySelector('.cd').value;
+    var esp=espList(),f=esp[i],d=c.querySelector('.cd').value;
     if(!d){window.alert('Elija primero: «No se paga comisión» o «Sí se paga comisión».');return}
     var v=+c.querySelector('.cv').value||0;if(d==='pagar'&&v<=0){window.alert('Escriba el valor que se va a pagar.');return}
     var obj={d:d,valor:d==='pagar'?v:0,nota:c.querySelector('.cn').value.trim(),mes:mk(),cliente:f.x.cliente};
