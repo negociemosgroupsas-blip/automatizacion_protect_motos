@@ -247,7 +247,9 @@
       if(!r||!r.ok){est((r&&r.error)||'No se pudo leer.','er');return}
       datos=r;cfg=r.comisionesCfg||{};
       var tieneCom=(r.contratos||[]).some(function(x){return x.comision!==undefined});
-      est('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos'+(tieneCom?'':' — ⚠️ el conector aún no trae la columna de comisión: publica «Nueva versión» con el código nuevo (LEEME_COMISIONES.md).'),tieneCom?'ok':'er');
+      var u0=lsg('pm_crm_url'),fin0='…'+u0.replace(/\/exec.*$/,'').slice(-8)+'/exec';
+      est('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos'+(tieneCom?'':' — ⚠️ este conector (URL guardada en «Conexiones» que termina en '+fin0+') todavía es la versión vieja.'),tieneCom?'ok':'er');
+      llamar({action:'ping'},function(pg){var v=pg&&pg.version?pg.version:'sin versión (muy vieja)';if(!tieneCom)est($('est').textContent+' Versión que responde: '+v+'. Se necesita crm-3. Si usted ya publicó crm-3 en otro lugar, esa URL no es la guardada aquí: copie la URL de ESA implementación y péguela en «Conexiones».','er')});
       cargarExtra('oms');
       llenarFiltros();pintar()});
   }
