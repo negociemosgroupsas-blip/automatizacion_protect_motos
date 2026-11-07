@@ -448,6 +448,7 @@
       <div class="campo-form"><label>Tipo de vehículo</label><select id="nvTipo"><option>MOTO</option><option>CARRO</option></select></div>
       <div class="campo-form"><label>Cilindraje</label><input type="number" id="nvCil" min="0" step="1"></div>
       <div class="campo-form"><label>Forma de pago</label><input type="text" id="nvForma" list="nvFormas" autocomplete="off" placeholder="Efectivo, Cuenta Bancolombia…"><datalist id="nvFormas"></datalist></div>
+      <div class="campo-form"><label>Asesor (quien vendió)</label><input type="text" id="nvAsesor" autocomplete="off" list="nvAsesores" placeholder="Ej. Kelli"><datalist id="nvAsesores"></datalist></div>
       <div class="campo-form"><label>Fecha de la venta</label><input type="date" id="nvFecha"></div>
       <div class="campo-form"><label>Fecha de inicio *</label><input type="date" id="nvInicio"></div>
       <div class="campo-form"><label>Fecha de vencimiento</label><input type="date" id="nvVence"><span class="ayuda">Se calcula sola: un año después del inicio. Puedes cambiarla.</span></div>
@@ -785,6 +786,8 @@
     function total(){var v=Number($('nvValor').value)||0,g=Number($('nvGan').value)||0;$('nvTotal').value=(v||g)?dinero(v+g):''}
     function abrir(){
       ['nvCliente','nvCedula','nvCel','nvPlaca','nvCil','nvForma','nvValor','nvGan'].forEach(function(i){$(i).value=''});
+      try{if(!$('nvAsesor').value)$('nvAsesor').value=localStorage.getItem('pm_asesor_ultimo')||''}catch(e){}
+      var as_={};estado.soat.forEach(function(c){if(c.asesor)as_[c.asesor]=1});$('nvAsesores').innerHTML=Object.keys(as_).sort().map(function(v){return '<option value="'+esc(v)+'">'}).join('');
       $('nvTipo').value='MOTO';$('nvFecha').value=iso(new Date());$('nvInicio').value=iso(new Date());$('nvVence').value=masAnio($('nvInicio').value);venceManual=false;total();
       var fs={};estado.soat.forEach(function(s){if(s.forma)fs[s.forma]=1});$('nvFormas').innerHTML=Object.keys(fs).map(function(f){return '<option value="'+esc(f)+'">'}).join('');
       msg('nvMsg');msg('nvNota');$('nvGuardar').disabled=false;modal.classList.add('abierto');setTimeout(function(){$('nvCliente').focus()},50);
@@ -805,7 +808,7 @@
       if(prev.tipo)$('nvTipo').value=/carro|camion|auto/i.test(prev.tipo)?'CARRO':'MOTO';total();
       msg('nvNota','nota','Esta placa ya tiene un SOAT: es una renovación. Se llenaron los datos del SOAT anterior; revísalos.');
     });
-    function datos(forzar){return {cliente:$('nvCliente').value.trim(),cedula:$('nvCedula').value.trim(),celular:$('nvCel').value.trim(),placa:$('nvPlaca').value.trim(),tipo:$('nvTipo').value,cilindraje:$('nvCil').value,forma:$('nvForma').value.trim(),fecha:$('nvFecha').value,inicio:$('nvInicio').value,vence:$('nvVence').value,valor:$('nvValor').value,ganancia:$('nvGan').value||0,forzar:forzar?1:0}}
+    function datos(forzar){return {cliente:$('nvCliente').value.trim(),cedula:$('nvCedula').value.trim(),celular:$('nvCel').value.trim(),placa:$('nvPlaca').value.trim(),tipo:$('nvTipo').value,cilindraje:$('nvCil').value,forma:$('nvForma').value.trim(),asesor:$('nvAsesor').value.trim(),fecha:$('nvFecha').value,inicio:$('nvInicio').value,vence:$('nvVence').value,valor:$('nvValor').value,ganancia:$('nvGan').value||0,forzar:forzar?1:0}}
     function enviar(forzar){
       var d=datos(forzar);
       if(!d.cliente){msg('nvMsg','error','Escribe el nombre del cliente.');return}
@@ -813,6 +816,7 @@
       if(!d.inicio){msg('nvMsg','error','Elige la fecha de inicio.');return}
       if(!(Number(d.valor)>0)){msg('nvMsg','error','Escribe el valor del SOAT.');return}
       guardando=true;$('nvGuardar').disabled=true;msg('nvMsg','nota','Guardando en la hoja de Google…');
+      try{if(d.asesor)localStorage.setItem('pm_asesor_ultimo',d.asesor)}catch(e){}
       llamar({action:'agregar',fila:JSON.stringify(d)}).then(function(r){
         guardando=false;$('nvGuardar').disabled=false;
         if(r&&r.duplicado){msg('nvMsg','aviso',r.error);if(confirm(r.error+'\n\n¿Guardarlo de todas formas?'))enviar(true);return}

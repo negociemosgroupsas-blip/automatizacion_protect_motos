@@ -192,6 +192,7 @@ function formatoISO(valor) {
 // Pestaña «Comisiones_Config» (se crea sola): Clave | Valor (JSON) | Actualizado | Registrado por
 //   caso:<contrato>            → decisión sobre un caso especial (se paga o no, valor, nota)
 //   obs:<AAAA-MM>:<asesor>      → observación escrita en el informe de ese asesor y mes
+//   cfg:<nombre>               → ajustes del informe de Kelli (valor por SOAT, etc.)
 var HOJA_CONFIG = 'Comisiones_Config';
 
 function hojaConfig(ss) {
@@ -218,7 +219,7 @@ function leerConfigComisiones(ss) {
 
 function accionGuardarClave(params) {
   var clave = String(params.clave || '').trim();
-  if (!/^(caso|obs):/.test(clave)) return { ok: false, error: 'Clave no válida.' };
+  if (!/^(caso|obs|cfg):/.test(clave)) return { ok: false, error: 'Clave no válida.' };
   var valor = String(params.valor === undefined ? '' : params.valor);
   if (valor.length > 2000) return { ok: false, error: 'El texto es demasiado largo.' };
   var lock = LockService.getScriptLock();

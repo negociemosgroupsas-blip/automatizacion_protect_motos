@@ -44,13 +44,15 @@
   #informe .auto{font-size:.72rem;color:#7a4210;margin-top:3px}
   .firmas{display:flex;gap:30px;justify-content:space-around;padding:36px 20px 6px;font-size:.8rem}
   .firmas div{flex:1;border-top:1px solid #333;text-align:center;padding-top:5px;color:#333}
+  .tabs{display:flex;gap:8px;margin-bottom:14px} .tab{border:1px solid var(--borde);background:#fff;border-radius:10px;padding:9px 16px;font-size:.88rem;font-weight:600;cursor:pointer;color:var(--azul)} .tab.on{background:var(--azul);color:#fff;border-color:var(--azul)}
+  #informeK{background:#fff;border:2px solid var(--azul2);border-radius:4px;padding:0 0 14px} #informeK .tt{background:#eaf1fb;color:var(--azul2);text-align:center;font-size:1.45rem;font-weight:800;padding:14px 10px;border-bottom:2px solid var(--azul2)} #informeK .st{text-align:center;color:#555;padding:6px 10px 2px} #informeK .ln{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:2px 14px;font-size:.85rem;color:#444} #informeK table th{background:#1f4e79;color:#fff;text-align:center;font-size:.72rem;border:1px solid #fff} #informeK table td{border:1px solid #333;padding:6px 8px} #informeK .sec td{background:#dfe9f6;font-weight:800;color:#1f4e79} #informeK .tot td{background:#bdd7ee;color:#1f4e79;font-weight:800} #informeK .tar{text-align:center;font-size:.8rem;color:#555;padding:4px 10px 10px}
   .ayuda{font-size:.8rem;color:var(--suave);line-height:1.5}
   @media print{
     @page{size:landscape;margin:12mm}
-    body{background:#fff} header,main>.panel:not(#pInforme),.nop,.estado{display:none!important}
-    main{padding:0;max-width:none} #pInforme{border:0;padding:0;margin:0} #pInforme>h2,#pInforme>.sub{display:none}
+    body{background:#fff} header,main>.panel:not(#pInforme):not(#pKelli),.nop,.estado,#pKelli>h2,#pKelli>.sub{display:none!important}
+    main{padding:0;max-width:none} #pInforme,#pKelli{border:0;padding:0;margin:0} #pInforme>h2,#pInforme>.sub{display:none}
     #informe .obs textarea{display:none} #informe .obsp{display:block}
-    #informe{border-radius:0}
+    #informe,#informeK{border-radius:0}
     *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   }
 </style>
@@ -68,6 +70,8 @@
     </div>
     <p class="estado" id="est">Cargando…</p>
   </section>
+
+  <div class="tabs nop"><button type="button" class="tab on" data-t="g">📋 Informe general</button><button type="button" class="tab" data-t="k">👩‍💼 Informe de Kelli (aparte)</button></div>
 
   <section class="panel" id="pCasos" style="display:none">
     <h2>2. ⚠️ Casos especiales: revise y decida</h2>
@@ -94,7 +98,23 @@
     <div id="informe"></div>
   </section>
 
-  <section class="panel">
+  <section class="panel" id="pKelli" style="display:none">
+    <h2>Informe de bonificaciones de Kelli</h2>
+    <p class="sub">Kelli va aparte: se le cuentan sus ventas de Protect, de SOAT y de Clientes OMS. Sus ventas no aparecen en el informe general.</p>
+    <div class="nop" id="bannerK"></div>
+    <div class="nop fil" style="margin-bottom:12px">
+      <label>Valor que se le paga por cada SOAT ($) <input type="number" id="kSoat" min="0" step="500" style="width:150px"></label>
+      <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="kCanc"> No contar pólizas OMS canceladas</label>
+      <button class="btn d" id="kPdf" type="button">🖨️ Descargar PDF (imprimir)</button>
+      <button class="btn" id="kRes" type="button">⬇ Excel resumen</button>
+      <button class="btn" id="kDet" type="button">⬇ Excel detalle por venta</button>
+    </div>
+    <div id="informeK"></div>
+    <h3 class="nop" style="margin:16px 0 6px;font-size:.92rem;color:var(--azul)">Detalle de las ventas de Kelli</h3>
+    <div class="scroll nop"><table><thead><tr><th>Origen</th><th>Cliente</th><th>Placa / Vehículo</th><th>Tipo</th><th>Estado</th><th class="num">Comisión</th><th>Nota</th></tr></thead><tbody id="detK"></tbody></table></div>
+  </section>
+
+  <section class="panel" id="pDetG">
     <h2>Detalle: de dónde sale cada valor</h2>
     <p class="sub">Cada contrato del mes, con la comisión que se le pagará al asesor.</p>
     <div class="fil nop" style="margin-bottom:10px"><label>Asesor <select id="fAs"></select></label></div>
@@ -149,19 +169,21 @@
   }
   function decision(k){var v=cfg['caso:'+k];if(!v)return null;try{return JSON.parse(v)}catch(e){return null}}
 
-  function espList(){return calc.filas.filter(function(f){return !f.cat||f.raro})}
+  function esKelli(n){return /kelli/i.test(String(n||''))}
+  function espList(){return calc.filas.concat(calc.filasK).filter(function(f){return !f.cat||f.raro})}
   function calcular(){
     var filas=[],sinAs=0;
     (datos.contratos||[]).forEach(function(x){
       if(!String(x.cliente||'').trim()||anulado(x))return;
       var r=mesAnio(x);if(r.m!==mes||r.a!==anio)return;
       var cl=clasificar(x),k=clave(x),as=(x.asesor||'').trim().toUpperCase()||'SIN ASESOR';
-      var f={x:x,k:k,as:as,cat:cl.cat,motivo:cl.motivo||'',tarifa:cl.cat?TARIFAS[cl.cat]:0,pagar:0,dec:null,nota:'',raro:!!cl.raro,regla:cl.cat?TARIFAS[cl.cat]:0};
+      var f={x:x,k:k,as:as,kelli:esKelli(as),cat:cl.cat,motivo:cl.motivo||'',tarifa:cl.cat?TARIFAS[cl.cat]:0,pagar:0,dec:null,nota:'',raro:!!cl.raro,regla:cl.cat?TARIFAS[cl.cat]:0};
       var dr=cl.raro?decision(k):null;
       if(cl.raro&&dr&&dr.d!=='regla'){f.cat=null;f.dec=dr;f.pagar=dr.d==='pagar'?(+dr.valor||0):0;f.nota=(dr.d==='pagar'?'Caso especial: SE PAGA ':'Caso especial: NO se paga')+(dr.nota?' · '+dr.nota:'')}
       else if(f.cat){f.pagar=f.tarifa;if(x.comision&&x.comision!==f.tarifa)f.dif=true}
       else{f.dec=decision(k);if(f.dec){f.pagar=f.dec.d==='pagar'?(+f.dec.valor||0):0;f.nota=(f.dec.d==='pagar'?'Caso especial: SE PAGA ':'Caso especial: NO se paga')+(f.dec.nota?' · '+f.dec.nota:'')}}
       filas.push(f)});
+    var filasK=filas.filter(function(f){return f.kelli});filas=filas.filter(function(f){return !f.kelli});
     var as={};
     filas.forEach(function(f){var o=as[f.as]=as[f.as]||{n:f.as,CRC:0,C:0,FRC:0,F:0,esp:0,espN:0,tot:0,auto:[]};
       if(f.cat){o[f.cat]++;o.tot+=f.pagar}
@@ -169,13 +191,14 @@
       else if(f.dec){o.auto.push('Caso especial sin comisión: '+f.x.cliente)}});
     var lista=Object.keys(as).sort().map(function(k){return as[k]});
     var pend=filas.filter(function(f){return !f.cat&&!f.dec});
-    return {filas:filas,lista:lista,pend:pend,dif:filas.filter(function(f){return f.dif})};
+    return {filas:filas,filasK:filasK,lista:lista,pend:pend,pendK:filasK.filter(function(f){return !f.cat&&!f.dec}),dif:filas.filter(function(f){return f.dif})};
   }
 
   // ---------- conexión ----------
-  function llamar(params,cb){
-    var url=lsg('pm_crm_url'),tok=lsg('pm_crm_token')||'PM-CRM-2026';
-    if(!url){cb({ok:false,error:'Falta la URL del conector del CRM. Pégala en «Conexiones».'});return}
+  function llamar(params,cb,src){
+    var url,tok;src=src||'crm';
+    if(src==='oms'){url=lsg('pm_oms_url_conector');tok='PM-OMS-2026'}else if(src==='soat'){url=lsg('pm_soat_url_conector');tok='PM-SOAT-2026'}else{url=lsg('pm_crm_url');tok=lsg('pm_crm_token')||'PM-CRM-2026'}
+    if(!url){cb({ok:false,sinUrl:true,error:'Falta la URL del conector ('+src+'). Pégala en «Conexiones».'});return}
     var n='pmCom'+Date.now()+Math.floor(Math.random()*1e4),s=document.createElement('script'),t;
     function fin(){clearTimeout(t);delete window[n];s.remove()}
     window[n]=function(r){fin();cb(r)};
@@ -196,7 +219,17 @@
       datos=r;cfg=r.comisionesCfg||{};
       var tieneCom=(r.contratos||[]).some(function(x){return x.comision!==undefined});
       est('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos'+(tieneCom?'':' — ⚠️ el conector aún no trae la columna de comisión: publica «Nueva versión» con el código nuevo (LEEME_COMISIONES.md).'),tieneCom?'ok':'er');
+      cargarExtra('oms');cargarExtra('soat');
       llenarFiltros();pintar()});
+  }
+  var EXTRA={oms:{ok:false,lista:[],txt:'sin leer'},soat:{ok:false,lista:[],txt:'sin leer'}};
+  function cargarExtra(src){
+    llamar({action:'datos'},function(r){
+      var E=EXTRA[src];
+      if(!r||!r.ok){E.ok=false;E.lista=[];E.txt=r&&r.sinUrl?'sin conector (se cuenta 0)':(r&&r.error)||'sin respuesta';if(datos)pintarKelli();return}
+      E.ok=true;E.lista=(src==='oms'?r.contratos:r.soat)||[];E.txt=E.lista.length+' registros leídos';
+      var falta=E.lista.length&&E.lista.every(function(x){return x.asesor===undefined});if(falta)E.txt+=' — ⚠️ la hoja o el conector no traen la columna «Asesor»';
+      if(datos)pintarKelli()},src);
   }
 
   function llenarFiltros(){
@@ -222,13 +255,14 @@
         '<label>Nota (opcional) <input type="text" class="cn" value="'+esc(d&&d.nota||'')+'" style="width:230px"></label>'+
         '<button class="btn d cg" type="button">Guardar decisión</button></div></div>'}).join('');
     // diferencias
-    $('pDif').style.display=calc.dif.length?'block':'none';
+    $('pDif').style.display=(calc.dif.length&&!tabK)?'block':'none';
     $('dif').innerHTML=calc.dif.map(function(f){return '<tr><td>'+esc(f.x.cliente)+'</td><td>'+esc(f.as)+'</td><td>'+NOM[f.cat]+'</td><td class="num">'+pesos(f.x.comision)+'</td><td class="num"><b>'+pesos(f.tarifa)+'</b></td></tr>'}).join('');
     // banner
     var b='';
     if(!calc.filas.length)b='<div class="aviso">No se encontraron contratos de '+MESES[mes-1]+' '+anio+' en la hoja Protect.</div>';
     else if(calc.pend.length)b='<div class="alerta"><b>Faltan '+calc.pend.length+' caso(s) especial(es) por decidir.</b> Hasta que los decida no puede descargar el informe final, porque el total no estaría completo.</div>';
     else b=(calc.filas.some(function(f){return f.raro&&f.cat})?'<div class="aviso">ℹ️ Hay '+calc.filas.filter(function(f){return f.raro&&f.cat}).length+' contrato(s) con solo RC o solo AP, pagados según su regla. Normalmente no debería pasar: revíselos en «Casos especiales» por si alguno no se debe pagar.</div>':'')+'<div class="okb">Todo listo: '+calc.filas.length+' contratos del mes, sin casos pendientes.'+(calc.dif.length?' Revise antes los '+calc.dif.length+' contrato(s) con valor distinto a la tarifa.':'')+'</div>';
+    if(calc.filasK.length)b='<div class="aviso">ℹ️ '+calc.filasK.length+' contrato(s) de Kelli no están en este informe: van en la pestaña «Informe de Kelli».</div>'+b;
     $('banner').innerHTML=b;
     ['bPdf','bRes','bDet'].forEach(function(i){$(i).disabled=!calc.filas.length||calc.pend.length>0});
     // informe
@@ -248,7 +282,7 @@
     calc.T=T;
     // detalle
     var sel=$('fAs'),prev=sel.value;sel.innerHTML='<option value="">Todos</option>'+calc.lista.map(function(o){return '<option>'+esc(o.n)+'</option>'}).join('');sel.value=prev;if(sel.value!==prev)sel.value='';
-    pintarDetalle();
+    pintarDetalle();pintarKelli();
   }
   function tipoTxt(f){return f.cat?NOM[f.cat]:'Caso especial'}
   function pintarDetalle(){
@@ -293,6 +327,59 @@
     setTimeout(function(){e.target.disabled=false;e.target.textContent='Guardar decisión'},4000)});
   $('informe').addEventListener('change',function(e){if(!e.target.classList.contains('ot'))return;var as=e.target.closest('tr').dataset.as,k='obs:'+mk()+':'+as,v=e.target.value.trim();
     guardar(k,v,function(){cfg[k]=v;est('✓ Observación guardada.','ok');var p=e.target.parentNode.querySelector('.obsp');if(p)p.textContent=v})});
+  // ---------- INFORME DE KELLI (Protect + SOAT + Clientes OMS) ----------
+  var T_OMS={CONTADO:40000,FINANCIADO:15000};
+  function numCfg(k){var v=cfg['cfg:'+k];return v===undefined||v===''?null:(+v||0)}
+  function ventasKelli(){
+    var sv=numCfg('soat_kelli'),noCanc=cfg['cfg:oms_cancel']==='1';
+    var K={prot:{CRC:0,C:0,FRC:0,F:0,esp:0,tot:0},oms:{C:0,F:0,tot:0,canc:0},soat:{n:0,valor:sv||0,tot:0},det:[],warn:[],total:0};
+    calc.filasK.forEach(function(f){var x=f.x;
+      if(f.cat){K.prot[f.cat]++;K.prot.tot+=f.pagar}else if(f.dec&&f.dec.d==='pagar'){K.prot.esp+=f.pagar;K.prot.tot+=f.pagar}
+      K.det.push({o:'Protect',cli:x.cliente,veh:x.placa,tipo:f.cat?NOM[f.cat]:'Caso especial',est:x.estado||'',v:(f.cat||f.dec)?f.pagar:null,nota:f.nota||(f.cat&&f.raro?'Solo RC o solo AP: '+f.motivo:'')||(!f.cat&&!f.dec?f.motivo:'')})});
+    (EXTRA.oms.lista||[]).forEach(function(x){
+      if(!esKelli(x.asesor)||!String(x.cliente||'').trim())return;var r=mesAnio({mes:'',anio:'',fechaFirmaISO:x.fechaFirmaISO});if(r.m!==mes||r.a!==anio)return;
+      var cn=/cancel/i.test(x.estado||'');
+      if(cn&&noCanc){K.oms.canc++;K.det.push({o:'Clientes OMS',cli:x.cliente,veh:x.placa,tipo:x.forma,est:x.estado,v:0,nota:'Cancelada: no se cuenta'});return}
+      if(x.forma!=='CONTADO'&&x.forma!=='FINANCIADO'){K.warn.push('OMS: '+x.cliente+' sin forma de pago reconocida (no se cuenta).');K.det.push({o:'Clientes OMS',cli:x.cliente,veh:x.placa,tipo:x.forma||'—',est:x.estado,v:null,nota:'Sin forma de pago: no se cuenta'});return}
+      var v=T_OMS[x.forma];K.oms[x.forma==='CONTADO'?'C':'F']++;K.oms.tot+=v;K.det.push({o:'Clientes OMS',cli:x.cliente,veh:x.placa,tipo:x.forma==='CONTADO'?'Contado':'Financiado',est:x.estado,v:v,nota:cn?'Cancelada (sí se cuenta)':''})});
+    (EXTRA.soat.lista||[]).forEach(function(x){
+      if(!esKelli(x.asesor))return;var r=mesAnio({mes:'',anio:'',fechaFirmaISO:x.fechaISO||x.inicioISO});if(r.m!==mes||r.a!==anio)return;
+      K.soat.n++;K.det.push({o:'SOAT',cli:x.cliente,veh:x.placa,tipo:x.tipo||'',est:'',v:sv===null?null:sv,nota:sv===null?'Falta definir el valor por SOAT':''})});
+    K.soat.tot=K.soat.n*(sv||0);K.total=K.prot.tot+K.oms.tot+K.soat.tot;K.sinSoatValor=sv===null&&K.soat.n>0;return K}
+  function pintarKelli(){
+    if(!calc)return;var K=calc.K=ventasKelli(),mkk=mk(),cant=function(n){return '<td style="text-align:center">'+n+'</td>'},fila=function(c,n,u,t){return '<tr><td>'+c+'</td>'+cant(n)+'<td class="num">'+pesos(u)+'</td><td class="num"><b>'+pesos(t)+'</b></td></tr>'};
+    var avisos=[];
+    if(calc.pendK.length)avisos.push('<div class="alerta"><b>Hay '+calc.pendK.length+' caso(s) especial(es) de Protect de Kelli por decidir</b> (arriba, en «Casos especiales»). Hasta entonces no puede descargar.</div>');
+    if(K.sinSoatValor)avisos.push('<div class="alerta"><b>Falta el valor que se le paga a Kelli por cada SOAT.</b> Tiene '+K.soat.n+' SOAT este mes; escriba el valor arriba para poder descargar.</div>');
+    ['oms','soat'].forEach(function(src){var E=EXTRA[src];avisos.push('<div class="'+(E.ok&&!/⚠️/.test(E.txt)?'okb':'aviso')+'">'+(src==='oms'?'Clientes OMS: ':'SOAT: ')+esc(E.txt)+'</div>')});
+    K.warn.forEach(function(w){avisos.push('<div class="aviso">'+esc(w)+'</div>')});
+    $('bannerK').innerHTML=avisos.join('');
+    var bloq=calc.pendK.length>0||K.sinSoatValor;['kPdf','kRes','kDet'].forEach(function(i){$(i).disabled=bloq});
+    if(document.activeElement!==$('kSoat'))$('kSoat').value=numCfg('soat_kelli')===null?'':numCfg('soat_kelli');$('kCanc').checked=cfg['cfg:oms_cancel']==='1';
+    $('informeK').innerHTML='<div class="tt">INFORME DE BONIFICACIONES – KELLI – '+MESES[mes-1]+' '+anio+'</div><div class="st">PROTECT MOTOS &nbsp;–&nbsp; Ventas en Protect, SOAT y Clientes OMS</div>'+
+      '<div class="ln"><span><b>Mes:</b> '+MESES[mes-1]+' / '+anio+'</span><span>Elaborado por: <u>&nbsp;&nbsp;'+esc($('elab').value)+'&nbsp;&nbsp;</u></span></div>'+
+      '<div class="tar">Protect: igual al informe general · Clientes OMS: contado $40.000, financiado $15.000 · SOAT: '+(numCfg('soat_kelli')===null?'valor por definir':pesos(numCfg('soat_kelli'))+' por SOAT')+'</div>'+
+      '<table><thead><tr><th>CONCEPTO</th><th style="width:90px">CANTIDAD</th><th>VALOR UNITARIO</th><th>SUBTOTAL ($COP)</th></tr></thead><tbody>'+
+      '<tr class="sec"><td colspan="4">PROTECT</td></tr>'+fila('PM + RC contado',K.prot.CRC,40000,K.prot.CRC*40000)+fila('PM contado',K.prot.C,25000,K.prot.C*25000)+fila('PM + RC financiado',K.prot.FRC,15000,K.prot.FRC*15000)+fila('PM financiado',K.prot.F,10000,K.prot.F*10000)+
+      (K.prot.esp?'<tr><td>Casos especiales pagados</td>'+cant('—')+'<td></td><td class="num"><b>'+pesos(K.prot.esp)+'</b></td></tr>':'')+
+      '<tr class="sec"><td colspan="4">CLIENTES OMS</td></tr>'+fila('Pólizas OMS de contado',K.oms.C,40000,K.oms.C*40000)+fila('Pólizas OMS financiadas',K.oms.F,15000,K.oms.F*15000)+
+      '<tr class="sec"><td colspan="4">SOAT</td></tr>'+fila('SOAT vendidos',K.soat.n,K.soat.valor,K.soat.tot)+
+      '<tr class="tot"><td colspan="3">TOTAL A PAGAR</td><td class="num">'+pesos(K.total)+'</td></tr></tbody></table>'+
+      '<div class="firmas"><div>Elaboró<br><b>'+esc($('elab').value)+'</b></div><div>Aprobó (Gerencia)</div><div>Recibido – Contabilidad</div></div>';
+    $('detK').innerHTML=K.det.map(function(d){return '<tr><td>'+d.o+'</td><td>'+esc(d.cli)+'</td><td>'+esc(d.veh)+'</td><td>'+esc(d.tipo)+'</td><td>'+esc(d.est)+'</td><td class="num">'+(d.v===null?'<span style="color:#dc2626">sin definir</span>':'<b>'+pesos(d.v)+'</b>')+'</td><td>'+esc(d.nota)+'</td></tr>'}).join('')||'<tr><td colspan="7" style="color:#6b7280">Kelli no tiene ventas en este período.</td></tr>';
+  }
+  $('kSoat').addEventListener('change',function(){var v=this.value.trim();guardar('cfg:soat_kelli',v,function(){cfg['cfg:soat_kelli']=v;est('✓ Valor por SOAT guardado.','ok');pintarKelli()})});
+  $('kCanc').addEventListener('change',function(){var v=this.checked?'1':'0';guardar('cfg:oms_cancel',v,function(){cfg['cfg:oms_cancel']=v;pintarKelli()})});
+  $('kRes').addEventListener('click',function(){var K=calc.K,f=[['INFORME DE BONIFICACIONES – KELLI – '+MESES[mes-1]+' '+anio],['Elaborado por',$('elab').value],[],['Origen','Concepto','Cantidad','Valor unitario','Subtotal (COP)'],
+    ['Protect','PM + RC contado',K.prot.CRC,40000,K.prot.CRC*40000],['Protect','PM contado',K.prot.C,25000,K.prot.C*25000],['Protect','PM + RC financiado',K.prot.FRC,15000,K.prot.FRC*15000],['Protect','PM financiado',K.prot.F,10000,K.prot.F*10000],['Protect','Casos especiales pagados','','',K.prot.esp],
+    ['Clientes OMS','Contado',K.oms.C,40000,K.oms.C*40000],['Clientes OMS','Financiado',K.oms.F,15000,K.oms.F*15000],['SOAT','SOAT vendidos',K.soat.n,K.soat.valor,K.soat.tot],['','TOTAL A PAGAR','','',K.total]];bajar('comisiones_kelli_'+mk()+'_resumen.csv',csv(f))});
+  $('kDet').addEventListener('click',function(){var f=[['Origen','Cliente','Placa / Vehículo','Tipo','Estado','Comisión','Nota']];calc.K.det.forEach(function(d){f.push([d.o,d.cli,d.veh,d.tipo,d.est,d.v===null?'':d.v,d.nota])});bajar('comisiones_kelli_'+mk()+'_detalle.csv',csv(f))});
+  $('kPdf').addEventListener('click',function(){var t='INFORME DE BONIFICACIONES KELLI - '+MESES[mes-1]+' '+anio,antes=document.title;document.title=t;var enM=window.parent!==window;if(enM){try{window.parent.postMessage({pmTitulo:t},'*')}catch(e){}}
+    var fin=function(){document.title=antes;if(enM){try{window.parent.postMessage({pmTitulo:null},'*')}catch(e){}}window.removeEventListener('afterprint',fin)};window.addEventListener('afterprint',fin);window.print()});
+  document.querySelector('.tabs').addEventListener('click',function(e){var b=e.target.closest('.tab');if(!b)return;var k=b.dataset.t==='k';
+    [].forEach.call(document.querySelectorAll('.tab'),function(x){x.classList.toggle('on',x===b)});
+    $('pInforme').style.display=k?'none':'';$('pDetG').style.display=k?'none':'';$('pDif').style.display=k?'none':(calc&&calc.dif.length?'block':'none');$('pKelli').style.display=k?'block':'none';tabK=k});
+  var tabK=false;
   cargar();
 })();
 </script>

@@ -211,9 +211,9 @@ function accionAgregar(p) {
     }
     var nueva = ult + 1;
     if (ult > FILA_ENCABEZADOS) hoja.getRange(ult, 1, 1, ncol).copyTo(hoja.getRange(nueva, 1, 1, ncol), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
-    var val = { cliente: cliente, cedula: aNumeroSiPuede(ced), vehiculo: veh, valor: valor, celular: aNumeroSiPuede(d.celular), forma: compra, inicio: ini, fin: fin, estado: estadoTxt };
+    var val = { cliente: cliente, cedula: aNumeroSiPuede(ced), vehiculo: veh, valor: valor, celular: aNumeroSiPuede(d.celular), forma: compra, inicio: ini, fin: fin, estado: estadoTxt, asesor: texto(d.asesor) };
     var asignada = {}, omitidos = [];
-    ['cliente', 'cedula', 'vehiculo', 'valor', 'celular', 'forma', 'inicio', 'fin', 'estado'].forEach(function (k) {
+    ['cliente', 'cedula', 'vehiculo', 'valor', 'celular', 'forma', 'inicio', 'fin', 'estado', 'asesor'].forEach(function (k) {
       var col = idx[k]; if (col === undefined || col < 0) return;
       var v = val[k]; if (v === undefined || v === '' || v === null) return;
       if (!coincideNombre(enc, [k])) { omitidos.push(k); return; }   // no se escribe en una columna que no se reconoce por su título

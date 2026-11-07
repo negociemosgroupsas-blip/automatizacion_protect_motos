@@ -399,6 +399,7 @@
       <div class="campo-form"><label>Vehículo (moto) *</label><input type="text" id="nvVeh" autocomplete="off" list="nvVehs" placeholder="Ej. ADX 150"><datalist id="nvVehs"></datalist></div>
       <div class="campo-form"><label>Forma de compra *</label><select id="nvCompra"><option value="FINANCIADO">Financiado</option><option value="Contado">De contado</option></select></div>
       <div class="campo-form"><label id="nvValorEt">Valor de la cuota *</label><input type="number" id="nvValor" min="0" step="1"><span class="ayuda" id="nvValorAy">Financiado: el valor de cada cuota (igual que en tu hoja).</span></div>
+      <div class="campo-form"><label>Asesor (quien vendió)</label><input type="text" id="nvAsesor" autocomplete="off" list="nvAsesores" placeholder="Ej. Kelli"><datalist id="nvAsesores"></datalist></div>
       <div class="campo-form"><label>Estado</label><select id="nvEstado"><option>Activo</option><option>Cancelado</option><option>Finalizado</option></select></div>
       <div class="campo-form"><label>Fecha de inicio *</label><input type="date" id="nvInicio"></div>
       <div class="campo-form"><label>Fecha fin</label><input type="date" id="nvFin"><span class="ayuda">Se calcula sola: un año después del inicio. Puedes cambiarla.</span></div>
@@ -559,6 +560,8 @@
     function etiqueta(){var f=$('nvCompra').value==='FINANCIADO';$('nvValorEt').textContent=f?'Valor de la cuota *':'Valor total de la venta *';$('nvValorAy').textContent=f?'Financiado: el valor de cada cuota (igual que en tu hoja).':'De contado: el valor total que pagó el cliente.'}
     function abrir(){
       ['nvNombre','nvCedula','nvCel','nvVeh','nvValor'].forEach(function(i){$(i).value=''});
+      try{if(!$('nvAsesor').value)$('nvAsesor').value=localStorage.getItem('pm_asesor_ultimo')||''}catch(e){}
+      var as_={};estado.clientes.forEach(function(c){if(c.asesor)as_[c.asesor]=1});$('nvAsesores').innerHTML=Object.keys(as_).sort().map(function(v){return '<option value="'+esc(v)+'">'}).join('');
       $('nvCompra').value='FINANCIADO';$('nvEstado').value='Activo';$('nvInicio').value=iso(new Date());$('nvFin').value=masAnio($('nvInicio').value);finManual=false;etiqueta();
       var vs={};estado.clientes.forEach(function(c){if(c.placa)vs[c.placa.toUpperCase()]=1});$('nvVehs').innerHTML=Object.keys(vs).sort().map(function(v){return '<option value="'+esc(v)+'">'}).join('');
       msg('nvMsg');msg('nvNota');$('nvGuardar').disabled=false;modal.classList.add('abierto');setTimeout(function(){$('nvNombre').focus()},50);
@@ -577,7 +580,7 @@
       if(!$('nvNombre').value)$('nvNombre').value=prev.cliente;if(!$('nvCel').value)$('nvCel').value=prev.celular||'';
       msg('nvNota','nota','Esta cédula ya está en la hoja ('+prev.cliente+'). Se llenaron su nombre y celular; si es una póliza nueva, completa el vehículo y las fechas.');
     });
-    function datos(forzar){return {cliente:$('nvNombre').value.trim(),cedula:$('nvCedula').value.trim(),celular:$('nvCel').value.trim(),vehiculo:$('nvVeh').value.trim(),compra:$('nvCompra').value,valor:$('nvValor').value,estado:$('nvEstado').value,inicio:$('nvInicio').value,fin:$('nvFin').value,forzar:forzar?1:0}}
+    function datos(forzar){return {cliente:$('nvNombre').value.trim(),cedula:$('nvCedula').value.trim(),celular:$('nvCel').value.trim(),vehiculo:$('nvVeh').value.trim(),compra:$('nvCompra').value,valor:$('nvValor').value,estado:$('nvEstado').value,asesor:$('nvAsesor').value.trim(),inicio:$('nvInicio').value,fin:$('nvFin').value,forzar:forzar?1:0}}
     function enviar(forzar){
       var d=datos(forzar);
       if(!d.cliente){msg('nvMsg','error','Escribe el nombre completo.');return}
@@ -586,6 +589,7 @@
       if(!(Number(d.valor)>0)){msg('nvMsg','error','Escribe el valor.');return}
       if(!d.inicio){msg('nvMsg','error','Elige la fecha de inicio.');return}
       guardando=true;$('nvGuardar').disabled=true;msg('nvMsg','nota','Guardando en la hoja de Google…');
+      try{if(d.asesor)localStorage.setItem('pm_asesor_ultimo',d.asesor)}catch(e){}
       llamar({action:'agregar',fila:JSON.stringify(d)}).then(function(r){
         guardando=false;$('nvGuardar').disabled=false;
         if(r&&r.duplicado){msg('nvMsg','aviso',r.error);if(confirm(r.error+'\n\n¿Guardarlo de todas formas?'))enviar(true);return}

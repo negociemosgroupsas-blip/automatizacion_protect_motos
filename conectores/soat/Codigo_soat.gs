@@ -31,7 +31,8 @@ var COLS = [
   { clave: 'ganancia',    pos: 11, nombres: ['ganancia'] },
   { clave: 'total',       pos: 12, nombres: ['total consignado', 'total a consignar', 'total'] },
   { clave: 'forma',       pos: 13, nombres: ['forma de pago', 'forma pago', 'pago'] },
-  { clave: 'celular',     pos: 14, nombres: ['celular', 'telefono', 'cel', 'whatsapp'] }
+  { clave: 'celular',     pos: 14, nombres: ['celular', 'telefono', 'cel', 'whatsapp'] },
+  { clave: 'asesor',      pos: 0,  nombres: ['asesor'] }   // opcional: columna «Asesor» al final de la hoja
 ];
 
 var ENCABEZADOS_GESTIONES = ['Fecha de gestión', 'Clave SOAT', 'Cédula', 'Cliente', 'Placa', 'Acción', 'Registrado por'];
@@ -48,7 +49,7 @@ function doGet(e) {
       if (accion === 'datos') salida = accionDatos();
       else if (accion === 'registrarGestion') salida = accionRegistrarGestion(params);
       else if (accion === 'agregar') salida = accionAgregar(params);
-      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de SOAT activo', version: 'soat-2' };
+      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de SOAT activo', version: 'soat-3' };
       else salida = { ok: false, error: 'Acción no disponible: ' + accion };
     }
   } catch (err) {
@@ -112,7 +113,7 @@ function leerSoat(hoja) {
       inicio: fmt(inicio), inicioISO: iso(inicio),
       vence: fmt(vence), venceISO: iso(vence),
       valor: numero(get('valor')), ganancia: numero(get('ganancia')), total: numero(get('total')),
-      forma: texto(get('forma')), celular: texto(get('celular'))
+      forma: texto(get('forma')), celular: texto(get('celular')), asesor: texto(get('asesor'))
     });
   }
   return out;
@@ -199,7 +200,7 @@ function accionAgregar(p) {
     var nueva = ult + 1;
     if (ult > FILA_ENCABEZADOS) hoja.getRange(ult, 1, 1, ncol).copyTo(hoja.getRange(nueva, 1, 1, ncol), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
     var val = { fecha: venta, cliente: cliente, cedula: aNumeroSiPuede(d.cedula), placa: placa, tipo: texto(d.tipo).toUpperCase(), cilindraje: numero(d.cilindraje) || texto(d.cilindraje),
-      inicio: ini, vence: ven, valor: valor, ganancia: ganancia, total: total, forma: texto(d.forma), celular: aNumeroSiPuede(d.celular) };
+      inicio: ini, vence: ven, valor: valor, ganancia: ganancia, total: total, forma: texto(d.forma), celular: aNumeroSiPuede(d.celular), asesor: texto(d.asesor) };
     var asignada = {}, omitidos = [];
     COLS.forEach(function (c) {
       var col = idx[c.clave]; if (col < 0 || c.clave === 'num') return;
