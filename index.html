@@ -464,7 +464,8 @@
   #v-inicio .vmc{grid-column:1/-1;--acc:#60a5fa} .vmc{cursor:default;max-width:none} .vmc:hover{box-shadow:none;transform:none}
   #v-inicio .vmc{grid-column:1/-1!important;order:3!important}
   #v-inicio .cmc{grid-column:1/-1!important;order:20!important;--acc:#34d399} .cmc{cursor:default;max-width:none} .cmc:hover{box-shadow:none;transform:none}
-  .cmc .tot{font-size:.8rem;color:var(--suave);margin:0 0 12px}
+  .cmc .tot{font-size:.8rem;color:var(--suave);margin:0 0 12px} .cmc .tot em{font-style:normal;color:#fdc33e;font-weight:700}
+  .cm-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:2px 0 16px} .cm-k .in-k{cursor:default} .cm-k .in-k:hover{transform:none} .cm-k .in-kt b{font-size:1.55rem} .cm-k .in-kt small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .cmc .asr-l{display:grid;grid-auto-flow:column;column-gap:28px;grid-template-rows:repeat(var(--f,10),auto)} .cmc .fila-a{display:grid;grid-template-columns:22px minmax(80px,170px) 1fr 92px 44px;gap:8px;margin:3px 0;font-size:.82rem;align-items:center} .cmc .fila-a .pista{height:16px;border-radius:5px;background:var(--borde,#e3e6eb)} .cmc .fila-a .barra{height:100%;border-radius:5px;background:var(--btn,var(--azul))} .cmc .fila-a.top .barra{background:var(--dorado)} .cmc .fila-a .rk,.cmc .fila-a .pc{color:var(--suave);font-size:.72rem;text-align:right} .cmc .fila-a b{text-align:right;font-variant-numeric:tabular-nums}
   @media(max-width:720px){.cmc .asr-l{grid-auto-flow:row;grid-template-rows:none} .cmc .fila-a{grid-template-columns:18px minmax(60px,110px) 1fr 80px 0}}
   .cf-ays{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:14px} .cf-ay{background:var(--fondo,#f3f4f8);border-radius:14px;padding:12px 14px;min-width:0}
@@ -954,7 +955,7 @@
   window.pintarVM=pintarVM;
   /* ===== Comisiones pagadas (mismas reglas del botón Comisiones) ===== */
   var cmc=document.createElement('div');cmc.className='card cmc';
-  cmc.innerHTML='<h3>Comisiones pagadas</h3><p class="tot" id="cmTot">Se muestra al conectar el CRM.</p><div class="ed-per"><label>Ver <select id="cmVista"><option value="mes">Mes a mes</option><option value="asesor">Por asesor</option><option value="anios">Año a año</option></select></label><label id="cmLAnio">Año <select id="cmAnio"></select></label><label id="cmLMes">Mes <select id="cmMes"></select></label><label id="cmLAs">Asesor <select id="cmAs"></select></label></div><div class="cf-ley" id="cmLey"></div><div id="cmCuerpo"></div>';
+  cmc.innerHTML='<h3>Comisiones pagadas</h3><p class="tot" id="cmTot">Se muestra al conectar el CRM.</p><div class="ed-per"><label>Ver <select id="cmVista"><option value="mes">Mes a mes</option><option value="asesor">Por asesor</option><option value="anios">Año a año</option></select></label><label id="cmLAnio">Año <select id="cmAnio"></select></label><label id="cmLMes">Mes <select id="cmMes"></select></label><label id="cmLAs">Asesor <select id="cmAs"></select></label></div><div class="cm-k" id="cmKpis"></div><div class="cf-ley" id="cmLey"></div><div id="cmCuerpo"></div>';
   tarjetas.appendChild(cmc);
   var cmV='mes',cmY=String(new Date().getFullYear()),cmM='0',cmA='';
   document.getElementById('cmVista').addEventListener('change',function(){cmV=this.value;pintarCM()});
@@ -1139,7 +1140,12 @@
     var F=recs.filter(function(r){return (cmV==='anios'||cmY==='todos'||r.y===+cmY)&&(cmV==='mes'||cmM==='0'||r.m===+cmM)&&(cmV==='asesor'||!cmA||r.as===cmA)});
     var T=F.reduce(function(s_,r){return s_+r.pay},0),per=(cmV==='anios'||cmY==='todos'?'todos los años':'año '+cmY)+(cmV!=='mes'&&cmM!=='0'?' · '+MES_LARGO[+cmM-1]:'');
     var nota=(cmPend?' · ⚠️ '+cmPend+' caso(s) especial(es) sin decidir no están sumados (decídalos en Comisiones)':'')+(window.PM_OMS?'':' · las pólizas OMS de Kelli aún no se han cargado');
-    tot.textContent=T?'Comisiones pagadas · '+per+(cmA&&cmV!=='asesor'?' · '+(cmA==='KELLI'?'Kelli':cmA):'')+' · Total: '+cmPesos(T)+nota:'No hay comisiones en el período elegido.'+nota;
+    var pnd=(cmPend?' <em>⚠️ '+cmPend+' caso(s) especial(es) sin decidir no están sumados (decídalos en Comisiones)</em>':'')+(window.PM_OMS?'':' <em>Las pólizas OMS de Kelli aún no se han cargado</em>');
+    tot.innerHTML=(T?'Comisiones pagadas · '+per+(cmA&&cmV!=='asesor'?' · '+(cmA==='KELLI'?'Kelli':cmA):''):'No hay comisiones en el período elegido.')+pnd;
+    (function(){var mm={},aa={};F.forEach(function(r){var k=r.y*12+r.m;mm[k]=(mm[k]||0)+r.pay;aa[r.as]=(aa[r.as]||0)+r.pay});
+      var ks=Object.keys(mm).filter(function(k){return mm[k]>0}).sort(function(p,q){return mm[q]-mm[p]}),top=Object.keys(aa).sort(function(p,q){return aa[q]-aa[p]})[0],kb=ks[0]?+ks[0]:0,ky=kb?Math.floor((kb-1)/12):0,km=kb-ky*12;
+      var K=function(c,i,l,v,sm){return '<div class="in-k '+c+'"><div class="in-ki">'+i+'</div><div class="in-kt"><span>'+l+'</span><b>'+v+'</b><small>'+sm+'</small></div></div>'};
+      document.getElementById('cmKpis').innerHTML=T?K('k-oro','💵','Total pagado',cmPesos(T),F.length+' póliza(s) · '+per)+K('k-cian','📆','Promedio por mes',cmPesos(T/ks.length),'en '+ks.length+' mes(es) con comisiones')+K('k-vio','🏅','Mejor mes',cmPesos(mm[kb]),MES_LARGO[km-1]+' '+ky)+K('k-azu','👤','Mayor comisión',cmPesos(aa[top]),(top==='KELLI'?'Kelli':top)):'';})();
     ley.innerHTML='';
     if(cmV==='asesor'){
       var v={};F.forEach(function(r){v[r.as]=(v[r.as]||0)+r.pay});
