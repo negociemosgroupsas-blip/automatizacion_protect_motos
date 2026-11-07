@@ -285,6 +285,10 @@
     tbody td{border:none;padding:5px 2px;display:flex;justify-content:space-between;gap:10px;}
     tbody td::before{content:attr(data-etiqueta);font-weight:700;color:var(--texto-suave);font-size:.7rem;text-transform:uppercase;}
   }
+  .seg-fil{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 12px} .seg-fil label{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--texto-suave)} .seg-fil select{border:1px solid var(--borde);background:#fff;border-radius:8px;padding:5px 9px;font-size:.84rem}
+  .seg-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+  .seg-t{background:var(--tarjeta);border:1px solid var(--borde);border-left:5px solid var(--c,#13223f);border-radius:12px;padding:12px 14px} .seg-t b{display:block;font-size:1.8rem;line-height:1.1;color:var(--azul)} .seg-t span{font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;color:var(--texto-suave)} .seg-t small{display:block;margin-top:3px;font-size:.78rem;color:var(--texto-suave)}
+  .seg-tabla-w{overflow-x:auto} .seg-nota{font-size:.78rem;color:var(--texto-suave);margin:10px 0 0;line-height:1.4}
 </style>
 <style>
   .rep-w{position:relative;display:inline-block} .rep-m{position:absolute;right:0;top:calc(100% + 6px);z-index:60;min-width:290px;background:#13223f;color:#eef2ff;border:1px solid #3b4f8f;border-radius:12px;padding:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:2px}
@@ -424,6 +428,20 @@
         <tbody id="cuerpoRenovarEnviadas"></tbody>
       </table>
       <div class="vacio" id="vacioRenovarEnviadas" style="display:none;">No hay renovaciones esperando respuesta.</div>
+    </div>
+  </section>
+
+  <section class="panel" id="panelSeguimiento">
+    <div class="cabecera">
+      <h2>Seguimiento de renovaciones</h2>
+      <span class="sub">A cuántos clientes se les ha enviado el mensaje de renovación y cuántos aceptaron</span>
+    </div>
+    <div class="contenido-panel">
+      <div class="seg-fil"><label>Año <select id="segAnio"></select></label><label>Mes del envío <select id="segMes"></select></label></div>
+      <div class="seg-tiles" id="segTiles"></div>
+      <div class="seg-tabla-w"><table id="tablaSeg"><thead><tr><th>Mes en que se envió</th><th>Mensajes enviados</th><th>Aceptaron</th><th>No aceptaron</th><th>Sin responder (vencieron)</th><th>Esperando respuesta</th><th>% que aceptó</th></tr></thead><tbody id="cuerpoSeg"></tbody></table></div>
+      <div class="vacio" id="vacioSeg" style="display:none;">Todavía no hay mensajes de renovación registrados en este período.</div>
+      <p class="seg-nota" id="segNota"></p>
     </div>
   </section>
 
@@ -952,11 +970,77 @@
   // Vuelve a dibujar todo con los datos que ya están en memoria, sin
   // pedirle nada nuevo al servidor (para que "Ya cobré hoy" se sienta
   // instantáneo y se pueda pasar rápido al siguiente cliente).
+
+  // ==================== SEGUIMIENTO DE RENOVACIONES ====================
+  // Cuenta, por cliente (contrato), lo que dice la hoja Gestiones: mensaje de renovación enviado, renovación aceptada / no aceptada
+  // y cancelado automático por vencer sin respuesta. Cada contrato cuenta una sola vez, en el mes de su primer mensaje.
+  var ACCION_ACEPTADA = 'Renovación aceptada', ACCION_NO_ACEPTADA = 'Renovación no aceptada';
+  var segAnio = 'todos', segMes = '0';
+  var MESES_SEG = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  function seguimientoRenovaciones(){
+    var porContrato = {};
+    (estado.gestiones||[]).forEach(function(g){
+      var a = g.accion, k = g.contrato; if(!k) return;
+      if(a!==ACCION_RENOVACION_ENVIADA && a!==ACCION_ACEPTADA && a!==ACCION_NO_ACEPTADA && a!==ACCION_RENOVACION_VENCIDA) return;
+      var o = porContrato[k] = porContrato[k] || {contrato:k, cliente:g.cliente, cedula:g.cedula, envio:'', resp:'', respISO:''};
+      var f = g.fechaGestionISO||'';
+      if(a===ACCION_RENOVACION_ENVIADA){ if(!o.envio || (f && f<o.envio)) o.envio = f; }
+      else if(!o.respISO || f>=o.respISO){ o.resp = a===ACCION_ACEPTADA?'acepto':a===ACCION_NO_ACEPTADA?'no':'vencio'; o.respISO = f; }
+      if(g.cliente) o.cliente = g.cliente;
+    });
+    var lista = [], sinEnvio = 0;
+    Object.keys(porContrato).forEach(function(k){
+      var o = porContrato[k];
+      if(!o.envio){ if(o.resp==='acepto') sinEnvio++; return; }      // sin envío registrado: no entra en el cálculo
+      var c = estado.contratos.filter(function(x){return x.contrato===k})[0];
+      o.placa = c ? c.placa : ''; o.celular = c ? c.celular : '';
+      o.resultado = o.resp==='acepto' ? 'Aceptó' : o.resp==='no' ? 'No aceptó' : o.resp==='vencio' ? 'Venció sin responder' : 'Esperando respuesta';
+      lista.push(o);
+    });
+    return {lista:lista, sinEnvio:sinEnvio};
+  }
+  function renderizarSeguimiento(){
+    var cuerpo = document.getElementById('cuerpoSeg'); if(!cuerpo) return;
+    var S = seguimientoRenovaciones(), L = S.lista, ys = {};
+    L.forEach(function(o){ ys[o.envio.slice(0,4)] = 1; });
+    var sa = document.getElementById('segAnio'), sm = document.getElementById('segMes');
+    sa.innerHTML = '<option value="todos">Todos los años</option>' + Object.keys(ys).sort().reverse().map(function(y){return '<option value="'+y+'">'+y+'</option>';}).join('');
+    sm.innerHTML = '<option value="0">Todos los meses</option>' + MESES_SEG.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>';}).join('');
+    if(segAnio!=='todos' && !ys[segAnio]) segAnio = 'todos';
+    sa.value = segAnio; sm.value = segMes;
+    var F = L.filter(function(o){
+      if(segAnio!=='todos' && o.envio.slice(0,4)!==segAnio) return false;
+      if(segMes!=='0' && +o.envio.slice(5,7)!==+segMes) return false;
+      return true;
+    });
+    var cnt = function(arr, r){ return arr.filter(function(o){return o.resultado===r;}).length; };
+    var n = F.length, ac = cnt(F,'Aceptó'), no = cnt(F,'No aceptó'), ve = cnt(F,'Venció sin responder'), es = cnt(F,'Esperando respuesta');
+    var pct = function(a,b){ return b ? Math.round(a/b*100) : 0; };
+    document.getElementById('segTiles').innerHTML =
+      '<div class="seg-t" style="--c:#13223f"><span>Mensajes enviados</span><b>'+n+'</b><small>clientes distintos</small></div>'+
+      '<div class="seg-t" style="--c:#1f9d55"><span>Aceptaron</span><b>'+ac+'</b><small>'+pct(ac,n)+' % de los enviados</small></div>'+
+      '<div class="seg-t" style="--c:#d97706"><span>No aceptaron</span><b>'+no+'</b><small>'+pct(no,n)+' % de los enviados</small></div>'+
+      '<div class="seg-t" style="--c:#5b78c7"><span>Esperando respuesta</span><b>'+es+'</b><small>'+pct(es,n)+' % de los enviados</small></div>'+
+      '<div class="seg-t" style="--c:#dc2626"><span>Vencieron sin responder</span><b>'+ve+'</b><small>'+pct(ve,n)+' % de los enviados</small></div>';
+    // tabla por mes del envío
+    var meses = {};
+    F.forEach(function(o){ var k = o.envio.slice(0,7); var m = meses[k] = meses[k] || {n:0,a:0,no:0,v:0,e:0}; m.n++; if(o.resultado==='Aceptó')m.a++; else if(o.resultado==='No aceptó')m.no++; else if(o.resultado==='Venció sin responder')m.v++; else m.e++; });
+    var ks = Object.keys(meses).sort().reverse();
+    cuerpo.innerHTML = ks.map(function(k){ var m = meses[k], p = k.split('-');
+      return '<tr><td data-etiqueta="Mes">'+MESES_SEG[+p[1]-1]+' '+p[0]+'</td><td data-etiqueta="Enviados"><strong>'+m.n+'</strong></td><td data-etiqueta="Aceptaron">'+m.a+'</td><td data-etiqueta="No aceptaron">'+m.no+'</td><td data-etiqueta="Vencieron">'+m.v+'</td><td data-etiqueta="Esperando">'+m.e+'</td><td data-etiqueta="% aceptó"><strong>'+pct(m.a,m.n)+' %</strong></td></tr>'; }).join('');
+    document.getElementById('vacioSeg').style.display = n ? 'none' : 'block';
+    document.getElementById('tablaSeg').style.display = n ? '' : 'none';
+    document.getElementById('segNota').textContent = 'Cada cliente cuenta una sola vez, en el mes de su primer mensaje de renovación enviado. «Aceptaron» y «No aceptaron» salen de los botones «Acepto renovación» y «No acepto renovación».' + (S.sinEnvio ? ' Además, '+S.sinEnvio+' cliente(s) aceptaron sin que se hubiera anotado el envío del mensaje; no entran en este cálculo.' : '');
+  }
+  document.getElementById('segAnio').addEventListener('change', function(){ segAnio = this.value; renderizarSeguimiento(); });
+  document.getElementById('segMes').addEventListener('change', function(){ segMes = this.value; renderizarSeguimiento(); });
+
   function renderizarVistas(mapaPagos){
     renderizarContadores(mapaPagos);
     renderizarCobros(mapaPagos);
     renderizarRenovaciones();
     renderizarRenovacionesEnviadas();
+    renderizarSeguimiento();
     renderizarFiltro(mapaPagos);
   }
 
@@ -2336,8 +2420,8 @@
     }
     var MESN=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     function dIso(iso){if(!iso)return '';var p=String(iso).split('-');return p.length===3?(+p[2])+'/'+(+p[1])+'/'+p[0]:iso}
-    var DESC=[["Todos los clientes", "Una fila por cada cliente de la hoja Protect, con su estado, cuotas pagadas y saldo.", "Cuotas pagadas y saldo solo aplican a clientes financiados; la cuota 1 se da por pagada al firmar. El estado sale de la columna AR."], ["Pendientes de cobro", "Clientes financiados activos que tienen una cuota vencida sin pagar.", "Los más atrasados aparecen primero. «Días de atraso» cuenta desde la fecha en que venció la cuota."], ["Pólizas por renovar", "Pólizas que vencen en 8 días o menos (o vencieron hace menos de 30 días).", "«Días para vencer» negativo significa que ya venció. Son los clientes a los que hay que volver a hablarles."], ["Pagos registrados", "Todos los pagos anotados en la hoja Pagos.", "Cada fila es un pago de una o varias cuotas. «Registrado por» es quien lo anotó."], ["Gestiones de cobro", "Las veces que se marcó «Ya cobré hoy» u otra acción de cobro.", "Sirve para saber a quién ya se le escribió y cuándo."]];
-    var YCM=[6, 6, 6, 0, 0],TITM=[0, 0, 0, 0, 0],per='';try{per=localStorage.getItem('pm_rep_anio_mod')||''}catch(e){}
+    var DESC=[["Todos los clientes", "Una fila por cada cliente de la hoja Protect, con su estado, cuotas pagadas y saldo.", "Cuotas pagadas y saldo solo aplican a clientes financiados; la cuota 1 se da por pagada al firmar. El estado sale de la columna AR."], ["Pendientes de cobro", "Clientes financiados activos que tienen una cuota vencida sin pagar.", "Los más atrasados aparecen primero. «Días de atraso» cuenta desde la fecha en que venció la cuota."], ["Pólizas por renovar", "Pólizas que vencen en 8 días o menos (o vencieron hace menos de 30 días).", "«Días para vencer» negativo significa que ya venció. Son los clientes a los que hay que volver a hablarles."], ["Pagos registrados", "Todos los pagos anotados en la hoja Pagos.", "Cada fila es un pago de una o varias cuotas. «Registrado por» es quien lo anotó."], ["Seguimiento de renovaciones", "A cuántos clientes se les envió el mensaje de renovación y cuántos aceptaron.", "Cada fila es un cliente, con la fecha de su primer mensaje y el resultado: Aceptó, No aceptó, Venció sin responder o Esperando respuesta. «Fecha del primer mensaje» es la que usa el filtro de período."], ["Gestiones de cobro", "Las veces que se marcó «Ya cobré hoy» u otra acción de cobro.", "Sirve para saber a quién ya se le escribió y cuándo."]];
+    var YCM=[6, 6, 6, 0, 5, 0],TITM=[0, 0, 0, 0, 0, 0],per='';try{per=localStorage.getItem('pm_rep_anio_mod')||''}catch(e){}
     function perTxt(y){return y?'año '+y:'histórico (todos los años)'}
     function filt(filas,i,y){if(!y||YCM[i]==null)return filas;var out=[filas[0]];for(var k=1;k<filas.length;k++){var v=filas[k][YCM[i]],mm=String(v==null?'':v).match(/(?:^|\D)(20\d{2})(?:\D|$)/);if(mm){if(mm[1]===y)out.push(filas[k])}else if(TITM[i])out.push(filas[k])}return out}
     var modo=false;try{modo=localStorage.getItem('pm_rep_texto_mod')==='1'}catch(e){}
@@ -2351,6 +2435,8 @@
       ['🔔 Pólizas por renovar (8 días o menos)',function(){var f=[['Cliente','Cédula','Placa','N° contrato','Celular','Forma de pago','Vence la póliza','Días para vencer']],h=hoy();
         estado.contratos.forEach(function(c){if(c.estado==='CANCELADO'||!c.finISO)return;var d=diferenciaDias(parsearISO(c.finISO),h);if(d>8||d<-30)return;f.push([c.cliente,c.cedula,c.placa,c.contrato,c.celular,c.forma,c.fin,d])});f.sort(function(a,b){return a[7]-b[7]});return ['polizas_por_renovar',f]}],
       ['💰 Pagos registrados',function(){var f=[['Fecha de pago','N° contrato','Cédula','Cliente','Cuota','Valor pagado','Nota','Registrado por']];estado.pagos.forEach(function(p){f.push([p.fechaPago,p.contrato,p.cedula,p.cliente,p.cuota,p.valorPagado,p.nota,p.registradoPor])});return ['pagos_registrados',f]}],
+      ['📈 Seguimiento de renovaciones (enviados y aceptaron)',function(){var S=seguimientoRenovaciones(),f=[['Cliente','Cédula','N° contrato','Placa','Celular','Fecha del primer mensaje','Resultado','Fecha de la respuesta']];
+        S.lista.sort(function(a,b){return (b.envio||'').localeCompare(a.envio||'')}).forEach(function(o){f.push([o.cliente,o.cedula,o.contrato,o.placa,o.celular,dIso(o.envio),o.resultado,dIso(o.respISO)])});return ['seguimiento_renovaciones',f]}],
       ['📝 Gestiones de cobro',function(){var f=[['Fecha','N° contrato','Cédula','Cliente','Acción','Registrado por']];(estado.gestiones||[]).forEach(function(g){f.push([g.fechaGestion,g.contrato,g.cedula,g.cliente,g.accion,g.registradoPor])});return ['gestiones_de_cobro',f]}]
     ];
     var m=document.getElementById('repM');
