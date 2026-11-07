@@ -46,6 +46,13 @@
   .firmas div{flex:1;border-top:1px solid #333;text-align:center;padding-top:5px;color:#333}
   .tabs{display:flex;gap:8px;margin-bottom:14px} .tab{border:1px solid var(--borde);background:#fff;border-radius:10px;padding:9px 16px;font-size:.88rem;font-weight:600;cursor:pointer;color:var(--azul)} .tab.on{background:var(--azul);color:#fff;border-color:var(--azul)}
   .infk{background:#fff;border:2px solid var(--azul2);border-radius:4px;padding:0 0 14px} .infk .tt{background:#eaf1fb;color:var(--azul2);text-align:center;font-size:1.45rem;font-weight:800;padding:14px 10px;border-bottom:2px solid var(--azul2)} .infk .st{text-align:center;color:#555;padding:6px 10px 2px} .infk .ln{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:2px 14px;font-size:.85rem;color:#444} .infk table th{background:#1f4e79;color:#fff;text-align:center;font-size:.72rem;border:1px solid #fff} .infk table td{border:1px solid #333;padding:6px 8px} .infk .sec td{background:#dfe9f6;font-weight:800;color:#1f4e79} .infk .tot td{background:#bdd7ee;color:#1f4e79;font-weight:800} .infk .tar{text-align:center;font-size:.8rem;color:#555;padding:4px 10px 10px}
+  .rk{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:4px 0 16px} .rk .k{border-radius:16px;padding:14px 16px;color:#fff;position:relative;overflow:hidden;box-shadow:0 6px 16px rgba(19,34,63,.18)} .rk .k::after{content:"";position:absolute;right:-26px;top:-26px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.14)}
+  .rk .k span{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;opacity:.92;position:relative;z-index:1} .rk .k b{display:block;font-size:1.6rem;margin:5px 0 2px;position:relative;z-index:1} .rk .k small{display:block;font-size:.74rem;opacity:.95;position:relative;z-index:1}
+  .k-oro{background:linear-gradient(135deg,#fdc33e,#e08a00);color:#1b1300!important} .k-cian{background:linear-gradient(135deg,#0e7490,#22d3ee)} .k-vio{background:linear-gradient(135deg,#6d28d9,#a78bfa)} .k-azu{background:linear-gradient(135deg,#1d4ed8,#60a5fa)}
+  .rley{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--suave);margin:0 0 6px} .rley i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  .rch{display:flex;align-items:flex-end;gap:8px;height:270px;padding-top:26px;overflow-x:auto} .rg{flex:1;min-width:34px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%} .rbs{display:flex;align-items:flex-end;justify-content:center;gap:3px;flex:1;width:100%;border-bottom:2px solid var(--borde)} .rb{width:clamp(10px,2.2vw,30px);border-radius:5px 5px 0 0;position:relative} .rb i{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:.66rem;font-style:normal;font-weight:700;color:var(--azul);white-space:nowrap}
+  .rl{font-size:.72rem;color:var(--suave);margin-top:4px;height:18px}
+  .rfa{display:grid;grid-template-columns:24px minmax(90px,170px) 1fr 100px 46px;gap:8px;align-items:center;margin:5px 0;font-size:.85rem} .rfa .p{height:16px;border-radius:5px;background:#e9edf3} .rfa .br{height:100%;border-radius:5px;background:#5b78c7} .rfa.top .br{background:var(--dorado)} .rfa .n,.rfa .pc{color:var(--suave);font-size:.72rem;text-align:right} .rfa b{text-align:right}
   .infa table th{background:#1f4e79;color:#fff;font-size:.68rem;text-align:center;border:1px solid #fff;padding:6px 4px} .infa table td{border:1px solid #333;padding:5px 6px;font-size:.78rem} .infa .tt{background:#eaf1fb;color:var(--azul2);text-align:center;font-size:1.3rem;font-weight:800;padding:12px;border:2px solid var(--azul2);border-bottom:0} .infa .sec td{background:#dfe9f6;font-weight:800;color:#1f4e79} .infa .tot td{background:#bdd7ee;color:#1f4e79;font-weight:800} .infa .num{text-align:right}
   #informeH{display:none} #informeH.ver{display:block}
   .ayuda{font-size:.8rem;color:var(--suave);line-height:1.5}
@@ -60,7 +67,7 @@
 </style>
 </head>
 <body>
-<header><h1>💵 Comisiones de asesores</h1><p>Informe de bonificaciones del mes, calculado con la hoja Protect · los anulados y cancelados no generan comisión</p><p style="font-size:.72rem;opacity:.6;margin-top:6px">Pantalla Comisiones · versión del sistema: <b>SC-07nov-B</b></p></header>
+<header><h1>💵 Comisiones de asesores</h1><p>Informe de bonificaciones del mes, calculado con la hoja Protect · los anulados y cancelados no generan comisión</p><p style="font-size:.72rem;opacity:.6;margin-top:6px">Pantalla Comisiones · versión del sistema: <b>SC-07nov-C</b></p></header>
 <main>
   <section class="panel">
     <h2>1. Elija el mes</h2>
@@ -73,7 +80,21 @@
     <p class="estado" id="est">Cargando…</p>
   </section>
 
-  <div class="tabs nop"><button type="button" class="tab on" data-t="g">📋 Informe general</button><button type="button" class="tab" data-t="k">👩‍💼 Informe de Kelli (aparte)</button><button type="button" class="tab" data-t="a">📅 Anual / varios años</button><button type="button" class="tab" data-t="h">📚 Histórico guardado</button></div>
+  <div class="tabs nop"><button type="button" class="tab on" data-t="r">📊 Resumen</button><button type="button" class="tab" data-t="g">📋 Informe general</button><button type="button" class="tab" data-t="k">👩‍💼 Informe de Kelli (aparte)</button><button type="button" class="tab" data-t="a">📅 Anual / varios años</button><button type="button" class="tab" data-t="h">📚 Histórico guardado</button></div>
+
+  <section class="panel" id="pRes">
+    <h2>📊 ¿Cuánto pagamos en comisiones?</h2>
+    <p class="sub" id="rTot">Cargando…</p>
+    <div class="fil" style="margin-bottom:12px">
+      <label>Ver <select id="rVista"><option value="mes">Mes a mes</option><option value="asesor">Por asesor</option><option value="anios">Año a año</option></select></label>
+      <label id="rLAnio">Año <select id="rAnio"></select></label>
+      <label id="rLMes">Mes <select id="rMes"></select></label>
+      <label id="rLAs">Asesor <select id="rAs"></select></label>
+    </div>
+    <div class="rk" id="rKpis"></div>
+    <div class="rley" id="rLey"></div>
+    <div id="rCuerpo"></div>
+  </section>
 
   <section class="panel" id="pCasos" style="display:none">
     <h2>2. ⚠️ Casos especiales: revise y decida</h2>
@@ -87,7 +108,7 @@
     <div class="scroll"><table><thead><tr><th>Cliente</th><th>Asesor</th><th>Tipo</th><th class="num">Columna S</th><th class="num">Según tarifa</th></tr></thead><tbody id="dif"></tbody></table></div>
   </section>
 
-  <section class="panel" id="pInforme">
+  <section class="panel" id="pInforme" style="display:none">
     <h2>Informe de bonificaciones</h2>
     <p class="sub">Así se imprime. Puede escribir observaciones por asesor (se guardan solas).</p>
     <div class="nop" id="banner"></div>
@@ -141,7 +162,7 @@
     <div id="informeH"></div>
   </section>
 
-  <section class="panel" id="pDetG">
+  <section class="panel" id="pDetG" style="display:none">
     <h2>Detalle: de dónde sale cada valor</h2>
     <p class="sub">Cada contrato del mes, con la comisión que se le pagará al asesor.</p>
     <div class="fil nop" style="margin-bottom:10px"><label>Asesor <select id="fAs"></select></label><button class="btn g" id="bDetAs" type="button">⬇ Excel de este asesor (detalle del mes)</button></div>
@@ -262,7 +283,7 @@
       if(!r||!r.ok){E.ok=false;E.lista=[];E.txt=r&&r.sinUrl?'sin conector (se cuenta 0)':(r&&r.error)||'sin respuesta';if(datos)pintarKelli();return}
       E.ok=true;E.lista=r.contratos||[];E.txt=E.lista.length+' registros leídos';
       var falta=E.lista.length&&E.lista.every(function(x){return x.asesor===undefined});if(falta)E.txt+=' — ⚠️ la hoja o el conector no traen la columna «Asesor»';
-      if(datos){pintarKelli();if(tabA)pintarAnual()}},src);
+      if(datos){pintarKelli();pintarRes();if(tabA)pintarAnual()}},src);
   }
 
   function llenarFiltros(){
@@ -278,7 +299,7 @@
     var mk=anio+'-'+('0'+mes).slice(-2);
     // casos especiales
     var esp=espList();
-    $('pCasos').style.display=esp.length?'block':'none';
+    $('pCasos').style.display=(esp.length&&(tabT==='g'||tabT==='k'))?'block':'none';
     $('casos').innerHTML=esp.map(function(f,i){var d=f.dec,x=f.x;
       var rg=f.raro&&(!d||d.d==='regla');
       return '<div class="caso'+(d?' dec':'')+'" data-i="'+i+'"><h4>'+(rg?'ℹ️':d?'✅':'⚠️')+' '+esc(x.cliente)+' <small>· Asesor: '+esc(f.as)+' · Placa '+esc(x.placa)+' · '+esc(x.forma||'sin forma')+' · RC: '+esc(x.rc||'—')+' · AP: '+esc(x.ap||'—')+' · Columna S: '+pesos(x.comision)+'</small></h4>'+
@@ -288,7 +309,7 @@
         '<label>Nota (opcional) <input type="text" class="cn" value="'+esc(d&&d.nota||'')+'" style="width:230px"></label>'+
         '<button class="btn d cg" type="button">Guardar decisión</button></div></div>'}).join('');
     // diferencias
-    $('pDif').style.display=(calc.dif.length&&!tabK)?'block':'none';
+    $('pDif').style.display=(calc.dif.length&&tabT==='g')?'block':'none';
     $('dif').innerHTML=calc.dif.map(function(f){return '<tr><td>'+esc(f.x.cliente)+'</td><td>'+esc(f.as)+'</td><td>'+NOM[f.cat]+'</td><td class="num">'+pesos(f.x.comision)+'</td><td class="num"><b>'+pesos(f.tarifa)+'</b></td></tr>'}).join('');
     // banner
     var b='';
@@ -316,7 +337,7 @@
     calc.T=T;
     // detalle
     var sel=$('fAs'),prev=sel.value;sel.innerHTML='<option value="">Todos</option>'+calc.lista.map(function(o){return '<option>'+esc(o.n)+'</option>'}).join('');sel.value=prev;if(sel.value!==prev)sel.value='';
-    pintarDetalle();pintarKelli();
+    pintarDetalle();pintarKelli();pintarRes();
   }
   function tipoTxt(f){return f.cat?NOM[f.cat]:'Caso especial'}
   function pintarDetalle(){
@@ -509,11 +530,52 @@
   $('aAnio').addEventListener('change',pintarAnual);$('aAs').addEventListener('change',pintarAnual);
   $('bDetAs').addEventListener('click',function(){var a=$('fAs').value;if(!a){window.alert('Elija primero un asesor en la lista «Asesor».');return}
     var f=detG().filter(function(r,i){return i===0||r[0]===a});bajar('comisiones_'+mk()+'_'+a.toLowerCase().replace(/\W+/g,'_')+'_detalle.csv',csv(f))});
-  document.querySelector('.tabs').addEventListener('click',function(e){var b=e.target.closest('.tab');if(!b)return;var t=b.dataset.t;tabK=t==='k';
+
+  // ---------- RESUMEN (tarjetas + gráfica, igual a la del Inicio) ----------
+  var rV='mes',rY=String(new Date().getFullYear()),rM='0',rA='',RCOL=['#5b78c7','#fdc33e','#38bdf8','#e08a00','#1f9d55','#8b5cf6'];
+  function recsRes(){
+    var out=[],pend=0;
+    (datos.contratos||[]).forEach(function(x){
+      if(!String(x.cliente||'').trim()||anulado(x)||String(x.estado||'').trim().toUpperCase()==='CANCELADO')return;
+      var r=mesAnio(x);if(!r.m||!r.a)return;var cl=clasificar(x),k=clave(x),cat=cl.cat,pay=0,dd,as=esKelli(x.asesor)?'KELLI':((x.asesor||'').trim().toUpperCase()||'SIN ASESOR');
+      if(cat){var dr=cl.raro?decision(k):null;if(cl.raro&&dr&&dr.d!=='regla'){if(dr.d==='pagar')pay=+dr.valor||0}else pay=TARIFAS[cat]}
+      else{dd=decision(k);if(!dd){pend++;return}if(dd.d==='pagar')pay=+dd.valor||0}
+      out.push({y:r.a,m:r.m,as:as,pay:pay})});
+    (EXTRA.oms.lista||[]).forEach(function(x){
+      if(!esKelli(x.asesor)||!String(x.cliente||'').trim()||/cancel|anulad/i.test(x.estado||'')||!T_OMS[x.forma])return;
+      var d=x.fechaFirmaISO;if(!d||!/^\d{4}-\d{2}/.test(d))return;out.push({y:+d.slice(0,4),m:+d.slice(5,7),as:'KELLI',pay:T_OMS[x.forma]})});
+    return {recs:out,pend:pend}}
+  function pintarRes(){
+    if(!datos||!$('rCuerpo'))return;var R=recsRes(),recs=R.recs,yA=new Date().getFullYear(),ys={};ys[yA]=1;recs.forEach(function(r){ys[r.y]=1});
+    var lst=Object.keys(ys).map(Number).sort(function(a,b){return a-b}),sa=$('rAnio'),sm=$('rMes'),ss=$('rAs');
+    sa.innerHTML='<option value="todos">Todos los años</option>'+lst.slice().reverse().map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');if(rY!=='todos'&&!ys[rY])rY=String(yA);sa.value=rY;
+    sm.innerHTML='<option value="0">Todo el año</option>'+MESES.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>'}).join('');sm.value=rM;
+    var nom={};recs.forEach(function(r){nom[r.as]=1});ss.innerHTML='<option value="">Todos</option>'+Object.keys(nom).sort().map(function(n){return '<option value="'+n+'">'+(n==='KELLI'?'Kelli (Protect + OMS)':n)+'</option>'}).join('');if(rA&&!nom[rA])rA='';ss.value=rA;$('rVista').value=rV;
+    $('rLAnio').style.display=rV==='anios'?'none':'';$('rLMes').style.display=rV==='mes'?'none':'';$('rLAs').style.display=rV==='asesor'?'none':'';
+    var F=recs.filter(function(r){return (rV==='anios'||rY==='todos'||r.y===+rY)&&(rV==='mes'||rM==='0'||r.m===+rM)&&(rV==='asesor'||!rA||r.as===rA)});
+    var T=F.reduce(function(a,r){return a+r.pay},0),per=(rV==='anios'||rY==='todos'?'todos los años':'año '+rY)+(rV!=='mes'&&rM!=='0'?' · '+MESES[+rM-1]:'');
+    var av=(R.pend?' ⚠️ '+R.pend+' caso(s) especial(es) sin decidir no están sumados (decídalos en «Informe general»).':'')+(EXTRA.oms.ok?'':' Las pólizas OMS de Kelli no se han cargado.');
+    $('rTot').textContent=(T?'Comisiones pagadas · '+per+(rA&&rV!=='asesor'?' · '+(rA==='KELLI'?'Kelli':rA):''):'No hay comisiones en el período elegido.')+av;
+    var mm={},aa={};F.forEach(function(r){var k=r.y*12+r.m;mm[k]=(mm[k]||0)+r.pay;aa[r.as]=(aa[r.as]||0)+r.pay});
+    var ks=Object.keys(mm).filter(function(k){return mm[k]>0}).sort(function(a,b){return mm[b]-mm[a]}),top=Object.keys(aa).sort(function(a,b){return aa[b]-aa[a]})[0],kb=ks[0]?+ks[0]:0,ky=kb?Math.floor((kb-1)/12):0,km=kb-ky*12;
+    var K=function(c,l,v,sm_){return '<div class="k '+c+'"><span>'+l+'</span><b>'+v+'</b><small>'+sm_+'</small></div>'};
+    $('rKpis').innerHTML=T?K('k-oro','Total pagado',pesos(T),F.length+' póliza(s) · '+per)+K('k-cian','Promedio por mes',pesos(T/ks.length),'en '+ks.length+' mes(es) con comisiones')+K('k-vio','Mejor mes',pesos(mm[kb]),MESES[km-1]+' '+ky)+K('k-azu','Mayor comisión',pesos(aa[top]),top==='KELLI'?'Kelli':top):'';
+    var cu=$('rCuerpo'),ley=$('rLey');ley.innerHTML='';
+    if(rV==='asesor'){var lista=Object.keys(aa).map(function(k){return [k,aa[k]]}).sort(function(a,b){return b[1]-a[1]}),mx=lista.length?lista[0][1]:1;
+      cu.innerHTML=lista.map(function(x,i){return '<div class="rfa'+(i===0?' top':'')+'"><span class="n">'+(i+1)+'</span><span>'+(x[0]==='KELLI'?'Kelli':esc(x[0]))+'</span><div class="p"><div class="br" style="width:'+Math.round(x[1]/mx*100)+'%"></div></div><b>'+pesos(x[1])+'</b><span class="pc">'+(T?Math.round(x[1]/T*100):0)+' %</span></div>'}).join('');return}
+    var grupos,series,etq,mx2=1;
+    if(rV==='mes'){series=rY==='todos'?lst:[+rY];etq=MES3;grupos=etq.map(function(_,i){return series.map(function(y){return F.filter(function(r){return r.y===y&&r.m===i+1}).reduce(function(a,r){return a+r.pay},0)})});
+      ley.innerHTML=series.map(function(y,si){return '<span><i style="background:'+RCOL[lst.indexOf(y)%6]+'"></i><b>'+y+'</b> · '+pesos(F.filter(function(r){return r.y===y}).reduce(function(a,r){return a+r.pay},0))+'</span>'}).join('')+'<span>Números en miles de pesos (385 = $385.000)</span>'}
+    else{series=[0];etq=lst.map(String);grupos=lst.map(function(y){return [F.filter(function(r){return r.y===y}).reduce(function(a,r){return a+r.pay},0)]});ley.innerHTML='<span>Total pagado en cada año · números en miles de pesos</span>'}
+    grupos.forEach(function(g){g.forEach(function(v){if(v>mx2)mx2=v})});
+    cu.innerHTML='<div class="rch">'+grupos.map(function(g,gi){return '<div class="rg"><div class="rbs">'+g.map(function(v,si){var col=rV==='mes'?RCOL[lst.indexOf(series[si])%6]:'#fdc33e';return '<div class="rb" title="'+esc(etq[gi]+(rV==='mes'&&series.length>1?' '+series[si]:'')+': '+pesos(v))+'" style="height:'+Math.round(v/mx2*210)+'px;background:'+col+'">'+(v?'<i>'+Math.round(v/1000)+'</i>':'')+'</div>'}).join('')+'</div><div class="rl">'+etq[gi]+'</div></div>'}).join('')+'</div>';
+  }
+  $('rVista').addEventListener('change',function(){rV=this.value;pintarRes()});$('rAnio').addEventListener('change',function(){rY=this.value;pintarRes()});$('rMes').addEventListener('change',function(){rM=this.value;pintarRes()});$('rAs').addEventListener('change',function(){rA=this.value;pintarRes()});
+  document.querySelector('.tabs').addEventListener('click',function(e){var b=e.target.closest('.tab');if(!b)return;var t=b.dataset.t;tabK=t==='k';tabT=t;
     [].forEach.call(document.querySelectorAll('.tab'),function(x){x.classList.toggle('on',x===b)});
-    var g=t==='g';$('pInforme').style.display=g?'':'none';$('pDetG').style.display=g?'':'none';$('pDif').style.display=(g&&calc&&calc.dif.length)?'block':'none';$('pKelli').style.display=t==='k'?'block':'none';$('pHist').style.display=t==='h'?'block':'none';$('pAnual').style.display=t==='a'?'block':'none';tabA=t==='a';if(t==='a')pintarAnual();
-    $('pCasos').style.display=((t==='g'||t==='k')&&calc&&espList().length)?'block':'none';if(t==='h')listarHist()});
-  var tabK=false,tabA=false;
+    var g=t==='g';$('pRes').style.display=t==='r'?'block':'none';$('pInforme').style.display=g?'':'none';$('pDetG').style.display=g?'':'none';$('pDif').style.display=(g&&calc&&calc.dif.length)?'block':'none';$('pKelli').style.display=t==='k'?'block':'none';$('pHist').style.display=t==='h'?'block':'none';$('pAnual').style.display=t==='a'?'block':'none';tabA=t==='a';if(t==='a')pintarAnual();
+    $('pCasos').style.display=((t==='g'||t==='k')&&calc&&espList().length)?'block':'none';if(t==='h')listarHist();if(t==='r')pintarRes()});
+  var tabK=false,tabA=false,tabT='r';
   cargar();
 })();
 </script>
