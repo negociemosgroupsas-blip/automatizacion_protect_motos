@@ -46,12 +46,13 @@
   .firmas div{flex:1;border-top:1px solid #333;text-align:center;padding-top:5px;color:#333}
   .tabs{display:flex;gap:8px;margin-bottom:14px} .tab{border:1px solid var(--borde);background:#fff;border-radius:10px;padding:9px 16px;font-size:.88rem;font-weight:600;cursor:pointer;color:var(--azul)} .tab.on{background:var(--azul);color:#fff;border-color:var(--azul)}
   .infk{background:#fff;border:2px solid var(--azul2);border-radius:4px;padding:0 0 14px} .infk .tt{background:#eaf1fb;color:var(--azul2);text-align:center;font-size:1.45rem;font-weight:800;padding:14px 10px;border-bottom:2px solid var(--azul2)} .infk .st{text-align:center;color:#555;padding:6px 10px 2px} .infk .ln{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:2px 14px;font-size:.85rem;color:#444} .infk table th{background:#1f4e79;color:#fff;text-align:center;font-size:.72rem;border:1px solid #fff} .infk table td{border:1px solid #333;padding:6px 8px} .infk .sec td{background:#dfe9f6;font-weight:800;color:#1f4e79} .infk .tot td{background:#bdd7ee;color:#1f4e79;font-weight:800} .infk .tar{text-align:center;font-size:.8rem;color:#555;padding:4px 10px 10px}
+  .infa table th{background:#1f4e79;color:#fff;font-size:.68rem;text-align:center;border:1px solid #fff;padding:6px 4px} .infa table td{border:1px solid #333;padding:5px 6px;font-size:.78rem} .infa .tt{background:#eaf1fb;color:var(--azul2);text-align:center;font-size:1.3rem;font-weight:800;padding:12px;border:2px solid var(--azul2);border-bottom:0} .infa .sec td{background:#dfe9f6;font-weight:800;color:#1f4e79} .infa .tot td{background:#bdd7ee;color:#1f4e79;font-weight:800} .infa .num{text-align:right}
   #informeH{display:none} #informeH.ver{display:block}
   .ayuda{font-size:.8rem;color:var(--suave);line-height:1.5}
   @media print{
     @page{size:landscape;margin:12mm}
-    body{background:#fff} header,main>.panel:not(#pInforme):not(#pKelli):not(#pHist),.nop,.estado,#pKelli>h2,#pKelli>.sub,#pHist>h2,#pHist>.sub{display:none!important}
-    main{padding:0;max-width:none} #pInforme,#pKelli,#pHist{border:0;padding:0;margin:0} #informeH{display:block!important} #pInforme>h2,#pInforme>.sub{display:none}
+    body{background:#fff} header,main>.panel:not(#pInforme):not(#pKelli):not(#pHist):not(#pAnual),.nop,.estado,#pKelli>h2,#pKelli>.sub,#pHist>h2,#pHist>.sub,#pAnual>h2,#pAnual>.sub{display:none!important}
+    main{padding:0;max-width:none} #pInforme,#pKelli,#pHist,#pAnual{border:0;padding:0;margin:0} #informeH{display:block!important} #pInforme>h2,#pInforme>.sub{display:none}
     .inf .obs textarea{display:none} .inf .obsp{display:block}
     .inf,.infk{border-radius:0}
     *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -72,7 +73,7 @@
     <p class="estado" id="est">Cargando…</p>
   </section>
 
-  <div class="tabs nop"><button type="button" class="tab on" data-t="g">📋 Informe general</button><button type="button" class="tab" data-t="k">👩‍💼 Informe de Kelli (aparte)</button><button type="button" class="tab" data-t="h">📚 Histórico guardado</button></div>
+  <div class="tabs nop"><button type="button" class="tab on" data-t="g">📋 Informe general</button><button type="button" class="tab" data-t="k">👩‍💼 Informe de Kelli (aparte)</button><button type="button" class="tab" data-t="a">📅 Anual / varios años</button><button type="button" class="tab" data-t="h">📚 Histórico guardado</button></div>
 
   <section class="panel" id="pCasos" style="display:none">
     <h2>2. ⚠️ Casos especiales: revise y decida</h2>
@@ -115,6 +116,20 @@
     <div class="scroll nop"><table><thead><tr><th>Origen</th><th>Cliente</th><th>Placa / Vehículo</th><th>Tipo</th><th>Estado</th><th class="num">Comisión</th><th>Nota</th></tr></thead><tbody id="detK"></tbody></table></div>
   </section>
 
+  <section class="panel" id="pAnual" style="display:none">
+    <h2>📅 Comisiones por asesor: todo el año o todos los años</h2>
+    <p class="sub">Cuánto ganó cada asesor mes a mes en un año, o año por año si elige «Todos los años». Usa las mismas reglas del informe mensual (sin anulados ni cancelados). Kelli va en su propio cuadro.</p>
+    <div class="nop fil" style="margin-bottom:12px">
+      <label>Período <select id="aAnio"></select></label>
+      <label>Asesor <select id="aAs"></select></label>
+      <button class="btn d" id="aPdf" type="button">🖨️ Descargar PDF (imprimir)</button>
+      <button class="btn" id="aRes" type="button">⬇ Excel resumen</button>
+      <button class="btn" id="aDet" type="button">⬇ Excel detalle por mes</button>
+    </div>
+    <div class="nop" id="aAviso"></div>
+    <div id="informeA" class="infa"></div>
+  </section>
+
   <section class="panel" id="pHist" style="display:none">
     <h2>📚 Histórico de informes guardados</h2>
     <p class="sub">Cada vez que usted guarda un informe queda aquí, listo para que cualquiera lo descargue otra vez (PDF o Excel) tal como se firmó, aunque los datos de la hoja cambien después.</p>
@@ -129,7 +144,7 @@
   <section class="panel" id="pDetG">
     <h2>Detalle: de dónde sale cada valor</h2>
     <p class="sub">Cada contrato del mes, con la comisión que se le pagará al asesor.</p>
-    <div class="fil nop" style="margin-bottom:10px"><label>Asesor <select id="fAs"></select></label></div>
+    <div class="fil nop" style="margin-bottom:10px"><label>Asesor <select id="fAs"></select></label><button class="btn g" id="bDetAs" type="button">⬇ Excel de este asesor (detalle del mes)</button></div>
     <div class="scroll"><table><thead><tr><th>#</th><th>Asesor</th><th>Cliente</th><th>Placa</th><th>Forma</th><th>RC</th><th>AP</th><th>Tipo</th><th class="num">Comisión</th><th>Nota</th></tr></thead><tbody id="det"></tbody></table></div>
     <p class="ayuda">Tarifas: contado con RC y AP $40.000 · contado sin RC y sin AP $25.000 · financiado con RC y AP $15.000 · financiado sin RC y sin AP $10.000. Contado con solo RC o solo AP $40.000 · financiado con solo RC $15.000 (se muestran como caso para revisar). Cualquier otra combinación es un caso especial que usted decide.</p>
   </section>
@@ -242,7 +257,7 @@
       if(!r||!r.ok){E.ok=false;E.lista=[];E.txt=r&&r.sinUrl?'sin conector (se cuenta 0)':(r&&r.error)||'sin respuesta';if(datos)pintarKelli();return}
       E.ok=true;E.lista=r.contratos||[];E.txt=E.lista.length+' registros leídos';
       var falta=E.lista.length&&E.lista.every(function(x){return x.asesor===undefined});if(falta)E.txt+=' — ⚠️ la hoja o el conector no traen la columna «Asesor»';
-      if(datos)pintarKelli()},src);
+      if(datos){pintarKelli();if(tabA)pintarAnual()}},src);
   }
 
   function llenarFiltros(){
@@ -423,11 +438,77 @@
         var t='INFORME DE BONIFICACIONES'+(sn.tipo==='kelli'?' KELLI':'')+' - '+MESES[sn.mes-1]+' '+sn.anio,antes=document.title;document.title=t;var enM=window.parent!==window;if(enM){try{window.parent.postMessage({pmTitulo:t},'*')}catch(x){}}
         var fin=function(){document.title=antes;h.className='';h.innerHTML='';if(enM){try{window.parent.postMessage({pmTitulo:null},'*')}catch(x){}}window.removeEventListener('afterprint',fin)};window.addEventListener('afterprint',fin);setTimeout(function(){window.print()},50)}})});
   $('hRec').addEventListener('click',listarHist);$('hAnio').addEventListener('change',pintarHist);$('hTipo').addEventListener('change',pintarHist);
+
+  // ---------- ANUAL / VARIOS AÑOS ----------
+  var MES3=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],ANU=null;
+  function calcAnual(){
+    var ay=+$('aAnio').value||0,G={},KP={},KO={},pend=0,sin=0,canc=0,cols={};
+    function acc(o,col,cat,pay,esp){var c=o[col]=o[col]||{CRC:0,C:0,FRC:0,F:0,esp:0,tot:0};if(cat)c[cat]++;else if(esp)c.esp+=pay;c.tot+=pay;cols[col]=1}
+    (datos.contratos||[]).forEach(function(x){
+      if(!String(x.cliente||'').trim()||anulado(x))return;
+      if(String(x.estado||'').trim().toUpperCase()==='CANCELADO'){canc++;return}
+      var r=mesAnio(x);if(!r.m||!r.a){sin++;return}if(ay&&r.a!==ay)return;
+      var col=ay?r.m:r.a,cl=clasificar(x),k=clave(x),cat=cl.cat,pay=0,esp=false,as=(x.asesor||'').trim().toUpperCase()||'SIN ASESOR',dd;
+      if(cat){var dr=cl.raro?decision(k):null;if(cl.raro&&dr&&dr.d!=='regla'){cat=null;if(dr.d==='pagar'){pay=+dr.valor||0;esp=true}}else pay=TARIFAS[cat]}
+      else{dd=decision(k);if(!dd){pend++;return}if(dd.d==='pagar'){pay=+dd.valor||0;esp=true}}
+      if(esKelli(as))acc(KP,col,cat,pay,esp);else acc(G[as]=G[as]||{},col,cat,pay,esp)});
+    (EXTRA.oms.lista||[]).forEach(function(x){
+      if(!esKelli(x.asesor)||!String(x.cliente||'').trim()||/cancel|anulad/i.test(x.estado||''))return;
+      var r=mesAnio({mes:'',anio:'',fechaFirmaISO:x.fechaFirmaISO});if(!r.m||!r.a||(ay&&r.a!==ay))return;
+      if(x.forma!=='CONTADO'&&x.forma!=='FINANCIADO')return;var col=ay?r.m:r.a,c=KO[col]=KO[col]||{C:0,F:0,tot:0};c[x.forma==='CONTADO'?'C':'F']++;c.tot+=T_OMS[x.forma];cols[col]=1});
+    var cl=ay?[1,2,3,4,5,6,7,8,9,10,11,12]:Object.keys(cols).map(Number).sort();
+    return {ay:ay,G:G,KP:KP,KO:KO,cols:cl,pend:pend,sin:sin,canc:canc}
+  }
+  function llenarAnual(){
+    var ys={};ys[new Date().getFullYear()]=1;(datos.contratos||[]).forEach(function(x){var a=mesAnio(x).a;if(a)ys[a]=1});
+    var sa=$('aAnio'),va=sa.value||String(new Date().getFullYear());sa.innerHTML='<option value="0">Todos los años</option>'+Object.keys(ys).sort(function(a,b){return b-a}).map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');sa.value=va;if(sa.value!==va)sa.value=String(new Date().getFullYear());
+  }
+  function pintarAnual(){
+    if(!datos)return;if(!$('aAnio').options.length)llenarAnual();
+    var A=ANU=calcAnual(),nom=Object.keys(A.G).sort(),sel=$('aAs'),va=sel.value;
+    sel.innerHTML='<option value="">Todos</option>'+nom.map(function(n){return '<option>'+esc(n)+'</option>'}).join('')+'<option value="__K">Kelli</option>';sel.value=va;if(sel.value!==va)sel.value='';
+    var f=sel.value,hd=function(c){return A.ay?MES3[c-1]:c},money=function(v){return v?pesos(v):'<span style="color:#aaa">–</span>'};
+    var cab='<tr><th style="text-align:left">'+(A.ay?'ASESOR':'ASESOR')+'</th>'+A.cols.map(function(c){return '<th>'+hd(c)+'</th>'}).join('')+'<th>TOTAL</th></tr>';
+    var filas=(f==='__K'?[]:nom.filter(function(n){return !f||n===f})),tc={},tt=0;
+    var cuerpo=filas.map(function(n){var t=0;return '<tr><td><b>'+esc(n)+'</b></td>'+A.cols.map(function(c){var v=(A.G[n][c]||{}).tot||0;t+=v;tc[c]=(tc[c]||0)+v;return '<td class="num">'+money(v)+'</td>'}).join('')+'<td class="num"><b>'+pesos(t)+'</b></td></tr>'}).join('');
+    filas.forEach(function(n){A.cols.forEach(function(c){tt+=(A.G[n][c]||{}).tot||0})});
+    var html='<div class="tt">COMISIONES POR ASESOR – '+(A.ay?A.ay:'TODOS LOS AÑOS')+'</div><div class="scroll"><table><thead>'+cab+'</thead><tbody>'+(f==='__K'?'':cuerpo+'<tr class="tot"><td>TOTAL ASESORES</td>'+A.cols.map(function(c){return '<td class="num">'+money(tc[c])+'</td>'}).join('')+'<td class="num">'+pesos(tt)+'</td></tr>')+'</tbody></table></div>';
+    var kt=0;if(!f||f==='__K'){var kc={};
+      var r1=A.cols.map(function(c){var v=(A.KP[c]||{}).tot||0;kc[c]=(kc[c]||0)+v;return v}),r2=A.cols.map(function(c){var v=(A.KO[c]||{}).tot||0;kc[c]=(kc[c]||0)+v;return v});
+      kt=r1.concat(r2).reduce(function(a,b){return a+b},0);
+      html+='<div class="scroll" style="margin-top:12px"><table><thead>'+cab.replace('ASESOR','KELLI')+'</thead><tbody><tr><td>Protect</td>'+r1.map(function(v){return '<td class="num">'+money(v)+'</td>'}).join('')+'<td class="num"><b>'+pesos(r1.reduce(function(a,b){return a+b},0))+'</b></td></tr><tr><td>Clientes OMS</td>'+r2.map(function(v){return '<td class="num">'+money(v)+'</td>'}).join('')+'<td class="num"><b>'+pesos(r2.reduce(function(a,b){return a+b},0))+'</b></td></tr><tr class="tot"><td>TOTAL KELLI</td>'+A.cols.map(function(c){return '<td class="num">'+money(kc[c])+'</td>'}).join('')+'<td class="num">'+pesos(kt)+'</td></tr></tbody></table></div>'}
+    if(!f)html+='<table style="margin-top:12px"><tbody><tr class="tot"><td>TOTAL GENERAL (asesores + Kelli)</td><td class="num" style="width:200px">'+pesos(tt+kt)+'</td></tr></tbody></table>';
+    $('informeA').innerHTML=html;
+    var av=[];if(A.pend)av.push('<div class="alerta"><b>'+A.pend+' caso(s) especial(es) sin decidir en este período:</b> no están sumados. Decídalos en las pestañas mensuales (se muestran en «Casos especiales» al elegir su mes).</div>');
+    if(A.sin)av.push('<div class="aviso">'+A.sin+' contrato(s) sin mes o año en la hoja no se pudieron ubicar.</div>');
+    if(A.canc)av.push('<div class="aviso">'+A.canc+' contrato(s) cancelados no se cuentan.</div>');
+    if(!EXTRA.oms.ok)av.push('<div class="aviso">Clientes OMS: '+esc(EXTRA.oms.txt)+' (las pólizas OMS de Kelli podrían faltar).</div>');
+    $('aAviso').innerHTML=av.join('');['aPdf','aRes','aDet'].forEach(function(i){$(i).disabled=false});
+  }
+  function filasAnual(){var A=ANU,f=$('aAs').value,hd=function(c){return A.ay?MES3[c-1]:c},out=[['COMISIONES POR ASESOR – '+(A.ay?A.ay:'TODOS LOS AÑOS')],[],['Asesor'].concat(A.cols.map(hd),['Total'])],tc={},tt=0;
+    if(f!=='__K')Object.keys(A.G).sort().filter(function(n){return !f||n===f}).forEach(function(n){var t=0;out.push([n].concat(A.cols.map(function(c){var v=(A.G[n][c]||{}).tot||0;t+=v;tc[c]=(tc[c]||0)+v;return v}),[t]));tt+=t});
+    if(f!=='__K')out.push(['TOTAL ASESORES'].concat(A.cols.map(function(c){return tc[c]||0}),[tt]));
+    if(!f||f==='__K'){var a=0,b=0;out.push([],['Kelli'].concat(A.cols.map(hd),['Total']));
+      out.push(['Protect'].concat(A.cols.map(function(c){var v=(A.KP[c]||{}).tot||0;a+=v;return v}),[a]));out.push(['Clientes OMS'].concat(A.cols.map(function(c){var v=(A.KO[c]||{}).tot||0;b+=v;return v}),[b]));out.push(['TOTAL KELLI'].concat(A.cols.map(function(c){return ((A.KP[c]||{}).tot||0)+((A.KO[c]||{}).tot||0)}),[a+b]));
+      if(!f)out.push([],['TOTAL GENERAL (asesores + Kelli)'].concat(A.cols.map(function(){return ''}),[tt+a+b]))}
+    return out}
+  function detAnual(){var A=ANU,f=$('aAs').value,mm=function(c){return A.ay?MESES[c-1]:''},aa=function(c){return A.ay?A.ay:c},out=[['Informe','Asesor','Año','Mes','PM + RC contado','PM contado','PM + RC financiado','PM financiado','Casos especiales pagados','OMS contado','OMS financiado','Total comisión (COP)']];
+    if(f!=='__K')Object.keys(A.G).sort().filter(function(n){return !f||n===f}).forEach(function(n){A.cols.forEach(function(c){var v=A.G[n][c];if(v)out.push(['General',n,aa(c),mm(c),v.CRC,v.C,v.FRC,v.F,v.esp,'','',v.tot])})});
+    if(!f||f==='__K')A.cols.forEach(function(c){var p=A.KP[c],o=A.KO[c];if(p||o)out.push(['Kelli','KELLI',aa(c),mm(c),p?p.CRC:0,p?p.C:0,p?p.FRC:0,p?p.F:0,p?p.esp:0,o?o.C:0,o?o.F:0,(p?p.tot:0)+(o?o.tot:0)])});
+    return out}
+  var nomAnual=function(){return (ANU.ay||'todos_los_anios')+($('aAs').value?'_'+($('aAs').value==='__K'?'kelli':$('aAs').value.toLowerCase().replace(/\W+/g,'_')):'')};
+  $('aRes').addEventListener('click',function(){bajar('comisiones_anual_'+nomAnual()+'_resumen.csv',csv(filasAnual()))});
+  $('aDet').addEventListener('click',function(){bajar('comisiones_anual_'+nomAnual()+'_detalle.csv',csv(detAnual()))});
+  $('aPdf').addEventListener('click',function(){var t='COMISIONES POR ASESOR - '+(ANU.ay||'TODOS LOS AÑOS'),antes=document.title;document.title=t;var enM=window.parent!==window;if(enM){try{window.parent.postMessage({pmTitulo:t},'*')}catch(e){}}
+    var fin=function(){document.title=antes;if(enM){try{window.parent.postMessage({pmTitulo:null},'*')}catch(e){}}window.removeEventListener('afterprint',fin)};window.addEventListener('afterprint',fin);window.print()});
+  $('aAnio').addEventListener('change',pintarAnual);$('aAs').addEventListener('change',pintarAnual);
+  $('bDetAs').addEventListener('click',function(){var a=$('fAs').value;if(!a){window.alert('Elija primero un asesor en la lista «Asesor».');return}
+    var f=detG().filter(function(r,i){return i===0||r[0]===a});bajar('comisiones_'+mk()+'_'+a.toLowerCase().replace(/\W+/g,'_')+'_detalle.csv',csv(f))});
   document.querySelector('.tabs').addEventListener('click',function(e){var b=e.target.closest('.tab');if(!b)return;var t=b.dataset.t;tabK=t==='k';
     [].forEach.call(document.querySelectorAll('.tab'),function(x){x.classList.toggle('on',x===b)});
-    var g=t==='g';$('pInforme').style.display=g?'':'none';$('pDetG').style.display=g?'':'none';$('pDif').style.display=(g&&calc&&calc.dif.length)?'block':'none';$('pKelli').style.display=t==='k'?'block':'none';$('pHist').style.display=t==='h'?'block':'none';
-    $('pCasos').style.display=(t!=='h'&&calc&&espList().length)?'block':'none';if(t==='h')listarHist()});
-  var tabK=false;
+    var g=t==='g';$('pInforme').style.display=g?'':'none';$('pDetG').style.display=g?'':'none';$('pDif').style.display=(g&&calc&&calc.dif.length)?'block':'none';$('pKelli').style.display=t==='k'?'block':'none';$('pHist').style.display=t==='h'?'block':'none';$('pAnual').style.display=t==='a'?'block':'none';tabA=t==='a';if(t==='a')pintarAnual();
+    $('pCasos').style.display=((t==='g'||t==='k')&&calc&&espList().length)?'block':'none';if(t==='h')listarHist()});
+  var tabK=false,tabA=false;
   cargar();
 })();
 </script>
