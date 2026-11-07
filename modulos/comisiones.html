@@ -232,6 +232,7 @@
     window[n]=function(r){fin();cb(r)};
     t=setTimeout(function(){if(window[n]){fin();cb({ok:false,error:'El conector tardó demasiado en responder.'})}},45000);
     s.onerror=function(){if(window[n]){fin();cb({ok:false,error:'No se pudo conectar. Revisa la URL en «Conexiones».'})}};
+    s.onload=function(){if(window[n]){fin();cb({ok:false,error:'El conector no devolvió datos. Casi siempre es una de dos cosas: (1) «Quién tiene acceso» no está en «Cualquier usuario», o (2) falta autorizar el código nuevo. En Apps Script: elija la función accionDatos, toque ▶ Ejecutar y acepte los permisos; luego Implementar → Administrar implementaciones → ✏️ → Nueva versión → Implementar.'})}};
     var q='?';for(var k in params){q+=encodeURIComponent(k)+'='+encodeURIComponent(params[k])+'&'}
     s.src=url+(url.indexOf('?')<0?q:'&'+q.slice(1))+'token='+encodeURIComponent(tok)+'&callback='+n+'&_='+Date.now();
     document.head.appendChild(s);
@@ -241,7 +242,7 @@
     cb&&cb()})}
 
   function cargar(){
-    est('Leyendo la hoja Protect…');
+    est('Leyendo la hoja Protect… puede tardar hasta 30 segundos');
     llamar({action:'datos'},function(r){
       if(!r||!r.ok){est((r&&r.error)||'No se pudo leer.','er');return}
       datos=r;cfg=r.comisionesCfg||{};
