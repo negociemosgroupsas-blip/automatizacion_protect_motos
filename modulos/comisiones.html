@@ -54,6 +54,9 @@
   .rl{font-size:.72rem;color:var(--suave);margin-top:4px;height:18px}
   .rfa{display:grid;grid-template-columns:24px minmax(90px,170px) 1fr 140px 46px;gap:8px;align-items:center;margin:5px 0;font-size:.85rem} .rfa .p{height:16px;border-radius:5px;background:#e9edf3} .rfa .br{height:100%;border-radius:5px;background:#5b78c7} .rfa.top .br{background:var(--dorado)} .rfa .n,.rfa .pc{color:var(--suave);font-size:.72rem;text-align:right} .rfa b{text-align:right}
   .rgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:20px} .rcard{border:1px solid var(--borde);border-radius:14px;padding:14px 16px;background:#fff} .rcard h3{margin:0 0 2px;font-size:.98rem;color:var(--azul)} .rcard .sub{margin:0 0 10px} .rc12{grid-column:1/-1} @media(max-width:860px){.rgrid{grid-template-columns:1fr}}
+  .rt{width:100%;border-collapse:collapse;font-size:.84rem} .rt th{font-size:.7rem;text-transform:uppercase;letter-spacing:.3px;color:var(--suave);text-align:left;padding:7px 8px;border-bottom:2px solid var(--borde)} .rt td{padding:8px;border-bottom:1px solid var(--borde);vertical-align:middle} .rt .num{text-align:right;white-space:nowrap}
+  .mini{position:relative;height:20px;min-width:90px;background:#e9edf3;border-radius:5px;overflow:hidden} .mini i{display:block;height:100%;border-radius:5px} .mini span{position:absolute;left:8px;top:0;line-height:20px;font-size:.72rem;font-weight:700;color:#13223f}
+  .rfrase{background:#f3f7ff;border-left:5px solid #5b78c7;border-radius:8px;padding:10px 14px;margin:0 0 12px;font-size:.9rem;color:#13223f}
   .rsb{display:flex;height:34px;border-radius:9px;overflow:hidden;margin:6px 0 10px} .rsb div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:.78rem;font-weight:700}
   .infa table th{background:#1f4e79;color:#fff;font-size:.68rem;text-align:center;border:1px solid #fff;padding:6px 4px} .infa table td{border:1px solid #333;padding:5px 6px;font-size:.78rem} .infa .tt{background:#eaf1fb;color:var(--azul2);text-align:center;font-size:1.3rem;font-weight:800;padding:12px;border:2px solid var(--azul2);border-bottom:0} .infa .sec td{background:#dfe9f6;font-weight:800;color:#1f4e79} .infa .tot td{background:#bdd7ee;color:#1f4e79;font-weight:800} .infa .num{text-align:right}
   #informeH{display:none} #informeH.ver{display:block}
@@ -69,7 +72,7 @@
 </style>
 </head>
 <body>
-<header><h1>💵 Comisiones de asesores</h1><p>Informe de bonificaciones del mes, calculado con la hoja Protect · los anulados y cancelados no generan comisión</p><p style="font-size:.72rem;opacity:.6;margin-top:6px">Pantalla Comisiones · versión del sistema: <b>SC-07nov-D</b></p></header>
+<header><h1>💵 Comisiones de asesores</h1><p>Informe de bonificaciones del mes, calculado con la hoja Protect · los anulados y cancelados no generan comisión</p><p style="font-size:.72rem;opacity:.6;margin-top:6px">Pantalla Comisiones · versión del sistema: <b>SC-07nov-F</b></p></header>
 <main>
   <div class="panel" style="padding:12px 18px"><div class="fil" style="align-items:center"><button class="btn g" id="bRec" type="button">🔄 Volver a leer la hoja</button><span class="estado" id="est" style="margin:0;flex:1">Cargando…</span></div></div>
 
@@ -96,8 +99,8 @@
     <div class="rgrid">
       <div class="rcard"><h3>Comisión por tipo de póliza</h3><p class="sub" id="rTipoS"></p><div id="rTipo"></div></div>
       <div class="rcard"><h3>Contado frente a financiado</h3><p class="sub" id="rCFS"></p><div id="rCF"></div></div>
-      <div class="rcard rc12"><h3>Quién aportó a cada mes (por asesor)</h3><p class="sub" id="rApiS"></p><div class="rley" id="rApiL"></div><div id="rApi"></div></div>
-      <div class="rcard rc12"><h3>Acumulado de comisiones</h3><p class="sub" id="rAcuS"></p><div id="rAcu"></div></div>
+      <div class="rcard rc12"><h3>¿Cuánto nos cuesta vender? Comisión frente a lo vendido</h3><p class="sub" id="rApiS"></p><div class="rley" id="rApiL"></div><div id="rApi"></div></div>
+      <div class="rcard rc12"><h3>Rendimiento de cada asesor</h3><p class="sub" id="rAcuS"></p><div id="rAcu"></div></div>
     </div>
   </section>
 
@@ -548,10 +551,10 @@
       var r=mesAnio(x);if(!r.m||!r.a)return;var cl=clasificar(x),k=clave(x),cat=cl.cat,pay=0,dd,as=esKelli(x.asesor)?'KELLI':((x.asesor||'').trim().toUpperCase()||'SIN ASESOR');
       if(cat){var dr=cl.raro?decision(k):null;if(cl.raro&&dr&&dr.d!=='regla'){if(dr.d==='pagar')pay=+dr.valor||0}else pay=TARIFAS[cat]}
       else{dd=decision(k);if(!dd){pend++;return}if(dd.d==='pagar')pay=+dd.valor||0}
-      out.push({y:r.a,m:r.m,as:as,pay:pay,t:(cat&&!(cl.raro&&dr0(cl,k)))?cat:'ESP'})});
+      out.push({y:r.a,m:r.m,as:as,pay:pay,v:(+x.valorProtect||0),t:(cat&&!(cl.raro&&dr0(cl,k)))?cat:'ESP'})});
     (EXTRA.oms.lista||[]).forEach(function(x){
       if(!esKelli(x.asesor)||!String(x.cliente||'').trim()||/cancel|anulad/i.test(x.estado||'')||!T_OMS[x.forma])return;
-      var d=x.fechaFirmaISO;if(!d||!/^\d{4}-\d{2}/.test(d))return;out.push({y:+d.slice(0,4),m:+d.slice(5,7),as:'KELLI',pay:T_OMS[x.forma],t:x.forma==='CONTADO'?'OMSC':'OMSF'})});
+      var d=x.fechaFirmaISO;if(!d||!/^\d{4}-\d{2}/.test(d))return;out.push({y:+d.slice(0,4),m:+d.slice(5,7),as:'KELLI',pay:T_OMS[x.forma],v:(+x.valorProtect||0),t:x.forma==='CONTADO'?'OMSC':'OMSF'})});
     return {recs:out,pend:pend}}
 
   function pintarResExtra(Fs){
@@ -563,15 +566,34 @@
     var C=0,Fi=0,nC=0,nF=0;Fs.forEach(function(r){if(r.t==='CRC'||r.t==='C'||r.t==='OMSC'){C+=r.pay;nC++}else if(r.t==='FRC'||r.t==='F'||r.t==='OMSF'){Fi+=r.pay;nF++}});var tt=C+Fi||1;
     $('rCFS').textContent=(C+Fi)?'De cada $100 pagados en comisiones, cuánto viene de ventas de contado y cuánto de financiadas.':'Sin datos en el período.';
     $('rCF').innerHTML=(C+Fi)?'<div class="rsb"><div style="width:'+(C/tt*100)+'%;background:#e08a00">'+Math.round(C/tt*100)+' %</div><div style="width:'+(Fi/tt*100)+'%;background:#5b78c7">'+Math.round(Fi/tt*100)+' %</div></div><div class="rley"><span><i style="background:#e08a00"></i><b>De contado</b> · '+pesosC(C)+' · '+nC+' póliza(s)</span><span><i style="background:#5b78c7"></i><b>Financiadas</b> · '+pesosC(Fi)+' · '+nF+' póliza(s)</span></div>':'';
-    var porY=rY==='todos',cols=porY?Object.keys(Fs.reduce(function(o,r){o[r.y]=1;return o},{})).map(Number).sort():[1,2,3,4,5,6,7,8,9,10,11,12],lab=function(c){return porY?String(c):MES3[c-1]},colOf=function(r){return porY?r.y:r.m};
-    var tas={};Fs.forEach(function(r){tas[r.as]=(tas[r.as]||0)+r.pay});var ord=Object.keys(tas).sort(function(a,b){return tas[b]-tas[a]}),top=ord.slice(0,8),hasO=ord.length>8,PAL=['#5b78c7','#fdc33e','#38bdf8','#e08a00','#1f9d55','#8b5cf6','#ef4444','#14b8a6','#9aa4b8'];
-    var G=cols.map(function(c){var o={};Fs.forEach(function(r){if(colOf(r)!==c)return;var k=top.indexOf(r.as)>=0?r.as:'OTROS';o[k]=(o[k]||0)+r.pay});return o}),mxs=Math.max.apply(null,G.map(function(o){return Object.keys(o).reduce(function(a,k){return a+o[k]},0)}).concat(1));
-    var seg=top.concat(hasO?['OTROS']:[]);$('rApiS').textContent=T?'Cada columna es un '+(porY?'año':'mes')+' y cada color un asesor: así se ve quién aporta más a lo que se paga (pesos colombianos, COP).':'Sin datos en el período.';
-    $('rApiL').innerHTML=seg.map(function(k,i){return '<span><i style="background:'+PAL[i]+'"></i>'+(k==='KELLI'?'Kelli':esc(k))+'</span>'}).join('');
-    $('rApi').innerHTML=T?'<div class="rch">'+G.map(function(o,gi){var tot=Object.keys(o).reduce(function(a,k){return a+o[k]},0);return '<div class="rg"><div class="rbs" style="justify-content:center;align-items:flex-end"><div style="display:flex;flex-direction:column-reverse;width:clamp(16px,3.2vw,44px);position:relative">'+seg.map(function(k,i){return o[k]?'<div title="'+esc((k==='KELLI'?'Kelli':k)+' · '+lab(cols[gi])+': '+pesosC(o[k]))+'" style="height:'+Math.max(2,Math.round(o[k]/mxs*205))+'px;background:'+PAL[i]+'"></div>':''}).join('')+(tot?'<i style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:.66rem;font-style:normal;font-weight:700;color:#13223f;white-space:nowrap">'+Math.round(tot/1000)+'</i>':'')+'</div></div><div class="rl">'+lab(cols[gi])+'</div></div>'}).join('')+'</div><p class="sub" style="margin-top:6px">Números sobre las columnas: miles de pesos colombianos (385 = $385.000 COP).</p>':'';
-    var run=0,acu=cols.map(function(c){run+=Fs.filter(function(r){return colOf(r)===c}).reduce(function(a,r){return a+r.pay},0);return run}),ma=Math.max.apply(null,acu.concat(1));
-    $('rAcuS').textContent=T?'Cuánto se lleva pagado en total a medida que avanza '+(porY?'cada año':'el año')+' (pesos colombianos, COP).':'Sin datos en el período.';
-    $('rAcu').innerHTML=T?'<div class="rch">'+acu.map(function(v,i){return '<div class="rg"><div class="rbs"><div class="rb" title="'+esc(lab(cols[i])+': '+pesosC(v))+'" style="height:'+Math.round(v/ma*210)+'px;background:#1f9d55;width:clamp(14px,3vw,40px)">'+(v?'<i>'+Math.round(v/1000)+'</i>':'')+'</div></div><div class="rl">'+lab(cols[i])+'</div></div>'}).join('')+'</div><p class="sub" style="margin-top:6px">Números sobre las columnas: miles de pesos colombianos. Última columna = total pagado: '+pesosC(run)+'.</p>':'';
+    // ---- columnas de tiempo: mes a mes (todos los años = línea de tiempo continua) ----
+    var MM=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],cols=[],keyOf;
+    if(rM!=='0'&&rY==='todos'){var yy={};Fs.forEach(function(r){yy[r.y]=1});cols=Object.keys(yy).map(Number).sort().map(function(y){return {k:y,lab:String(y)}});keyOf=function(r){return r.y}}
+    else if(rY==='todos'){var mn=1e9,mxk=-1;Fs.forEach(function(r){var k=r.y*12+r.m-1;if(k<mn)mn=k;if(k>mxk)mxk=k});if(mxk<0){mn=0;mxk=-1}if(mxk-mn>35)mn=mxk-35;for(var k=mn;k<=mxk;k++){var m0=k%12;cols.push({k:k,lab:MM[m0],sub:(m0===0||k===mn)?String(Math.floor(k/12)):''})}keyOf=function(r){return r.y*12+r.m-1}}
+    else if(rM!=='0'){cols=[{k:+rM,lab:MESES[+rM-1]}];keyOf=function(r){return r.m}}
+    else{for(var q=1;q<=12;q++)cols.push({k:q,lab:MM[q-1]});keyOf=function(r){return r.m}}
+    var cortoC=function(v){v=Math.round(v||0);if(v>=1e6)return '$'+(v/1e6).toFixed(1).replace('.',',').replace(',0','')+' M';if(v>=1e3)return '$'+Math.round(v/1e3)+' mil';return '$'+v};
+    var tas={};Fs.forEach(function(r){tas[r.as]=(tas[r.as]||0)+r.pay});var ord=Object.keys(tas).sort(function(a,b){return tas[b]-tas[a]}),top=ord.slice(0,8),hasO=ord.length>8,PAL=['#5b78c7','#fdc33e','#38bdf8','#e08a00','#1f9d55','#8b5cf6','#ef4444','#14b8a6','#9aa4b8'],seg=top.concat(hasO?['OTROS']:[]);
+    var G=cols.map(function(c){var o={};Fs.forEach(function(r){if(keyOf(r)!==c.k)return;var k=top.indexOf(r.as)>=0?r.as:'OTROS';o[k]=(o[k]||0)+r.pay});return o});
+    var totC=G.map(function(o){return Object.keys(o).reduce(function(a,k){return a+o[k]},0)});
+    var W=920,H=330,pl=70,pr=16,pt=34,pb=cols.some(function(c){return c.sub})?52:36,iw=W-pl-pr,ih=H-pt-pb,n=Math.max(cols.length,1),slot=iw/n;
+    function nice(v){v=Math.max(v,4000);var raw=v/4,mag=Math.pow(10,Math.floor(Math.log(raw)/Math.LN10)),st=[1,2,2.5,5,10].filter(function(m){return m*mag>=raw})[0]*mag;return st*4}
+    function ejes(mx){var o='';for(var t=0;t<=4;t++){var v=mx*t/4,y=pt+ih-ih*t/4;o+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y+'" y2="'+y+'" stroke="'+(t?'#e3e6eb':'#9aa4b8')+'" stroke-width="'+(t?1:1.5)+'"'+(t?' stroke-dasharray="4 4"':'')+'/><text x="'+(pl-8)+'" y="'+(y+4)+'" text-anchor="end" font-size="11" fill="#6b7280">'+cortoC(v)+'</text>'}return o}
+    function etqX(){return cols.map(function(c,i){var x=pl+slot*(i+.5);return '<text x="'+x+'" y="'+(pt+ih+17)+'" text-anchor="middle" font-size="11.5" fill="#44506a">'+esc(c.lab)+'</text>'+(c.sub?'<text x="'+x+'" y="'+(pt+ih+32)+'" text-anchor="middle" font-size="10.5" font-weight="700" fill="#13223f">'+esc(c.sub)+'</text>':'')}).join('')}
+    // 3) ¿Cuánto nos cuesta vender?: lo vendido frente a la comisión pagada
+    var vC=cols.map(function(c){return Fs.filter(function(r){return keyOf(r)===c.k}).reduce(function(a,r){return a+r.v},0)}),V=vC.reduce(function(a,b){return a+b},0),pct=function(a,b){return b?(a/b*100):0},fp=function(x){return x.toFixed(1).replace('.',',')+' %'};
+    $('rApiS').textContent=V&&T?'Cada columna azul es lo vendido en el mes (valor de las pólizas) y la dorada, lo que se pagó en comisiones. Arriba va el porcentaje que se va en comisión (pesos colombianos, COP).':'Sin datos en el período.';
+    $('rApiL').innerHTML=(V&&T)?'<span><i style="background:#5b78c7"></i>Vendido (valor de las pólizas)</span><span><i style="background:#fdc33e"></i>Comisión pagada</span>':'';
+    var mx1=nice(Math.max.apply(null,vC.concat(1))*1.1);
+    $('rApi').innerHTML=(V&&T)?'<div class="rfrase">Por cada <b>$100</b> vendidos se pagan <b>$'+pct(T,V).toFixed(1).replace('.',',')+'</b> en comisión. Vendido: <b>'+pesosC(V)+'</b> · Comisiones: <b>'+pesosC(T)+'</b>.</div><svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block" role="img" aria-label="Comisión frente a lo vendido">'+ejes(mx1)+cols.map(function(c,i){var x=pl+slot*(i+.5),bw=Math.min(46,slot*.34),hv=vC[i]/mx1*ih,hc=totC[i]/mx1*ih,out='';
+      if(vC[i]){out+='<rect x="'+(x-bw-1)+'" y="'+(pt+ih-hv)+'" width="'+bw+'" height="'+hv+'" rx="3" fill="#5b78c7"><title>'+esc(c.lab+(c.sub?' '+c.sub:'')+' · vendido: '+pesosC(vC[i]))+'</title></rect><rect x="'+(x+1)+'" y="'+(pt+ih-Math.max(hc,2))+'" width="'+bw+'" height="'+Math.max(hc,2)+'" rx="3" fill="#fdc33e"><title>'+esc(c.lab+(c.sub?' '+c.sub:'')+' · comisión: '+pesosC(totC[i]))+'</title></rect><text x="'+x+'" y="'+(pt+ih-hv-8)+'" text-anchor="middle" font-size="11" font-weight="800" fill="#13223f">'+fp(pct(totC[i],vC[i]))+'</text>'}
+      return out}).join('')+etqX()+'<text x="'+pl+'" y="16" font-size="11" fill="#6b7280">Valores en pesos colombianos (COP) · el % de arriba es la comisión sobre lo vendido</text></svg>':'<p class="sub">No hay valor de venta en la hoja para este período, por eso no se puede calcular el costo de vender.</p>';
+    // 4) rendimiento de cada asesor
+    var AS={};Fs.forEach(function(r){var o=AS[r.as]=AS[r.as]||{n:0,c:0,v:0,rc:0,nrc:0,co:0,nco:0};o.n++;o.c+=r.pay;o.v+=r.v;if(r.t==='CRC'||r.t==='FRC'){o.rc++;o.nrc++}else if(r.t==='C'||r.t==='F'){o.nrc++}if(r.t==='CRC'||r.t==='C'||r.t==='OMSC'){o.co++;o.nco++}else if(r.t==='FRC'||r.t==='F'||r.t==='OMSF'){o.nco++}});
+    var LA=Object.keys(AS).map(function(k){var o=AS[k];return {k:k,n:o.n,c:o.c,v:o.v,pp:o.n?o.c/o.n:0,prc:pct(o.rc,o.nrc),nrc:o.nrc,pco:pct(o.co,o.nco),nco:o.nco}}).sort(function(a,b){return b.c-a.c}),mpp=Math.max.apply(null,LA.map(function(a){return a.pp}).concat(1));
+    $('rAcuS').textContent=T?'Cada fila es un asesor: cuántas pólizas vendió, cuánto ganó, cuánto gana por póliza y qué calidad de venta tiene (con RC y AP paga más; de contado paga más).':'Sin datos en el período.';
+    var mjp=LA.slice().sort(function(a,b){return b.pp-a.pp})[0],mrc=LA.filter(function(a){return a.nrc>=3}).sort(function(a,b){return b.prc-a.prc})[0],mnrc=LA.filter(function(a){return a.nrc>=3}).sort(function(a,b){return a.prc-b.prc})[0];
+    $('rAcu').innerHTML=T?'<div class="rfrase">'+(mjp?'Quien gana más por póliza: <b>'+(mjp.k==='KELLI'?'Kelli':esc(mjp.k))+'</b> ('+pesosC(mjp.pp)+' en promedio). ':'')+(mrc&&mnrc&&mrc!==mnrc?'Vende más con RC y AP: <b>'+(mrc.k==='KELLI'?'Kelli':esc(mrc.k))+'</b> ('+Math.round(mrc.prc)+' %). Oportunidad: <b>'+(mnrc.k==='KELLI'?'Kelli':esc(mnrc.k))+'</b> solo lo logra en '+Math.round(mnrc.prc)+' % de sus ventas.':'')+'</div><div class="scroll"><table class="rt"><thead><tr><th>Asesor</th><th class="num">Pólizas</th><th class="num">Comisión total (COP)</th><th>Comisión por póliza (COP)</th><th>% con RC y AP</th><th>% de contado</th></tr></thead><tbody>'+LA.map(function(a){return '<tr><td><b>'+(a.k==='KELLI'?'Kelli':esc(a.k))+'</b></td><td class="num">'+a.n+'</td><td class="num"><b>'+pesosC(a.c)+'</b></td><td><div class="mini"><i style="width:'+Math.round(a.pp/mpp*100)+'%;background:#fdc33e"></i><span>'+pesosC(a.pp)+'</span></div></td><td>'+(a.nrc?'<div class="mini" title="'+a.nrc+' pólizas de Protect"><i style="width:'+Math.round(a.prc)+'%;background:#1f9d55"></i><span>'+Math.round(a.prc)+' %</span></div>':'<span class="sub">—</span>')+'</td><td>'+(a.nco?'<div class="mini" title="'+a.nco+' pólizas"><i style="width:'+Math.round(a.pco)+'%;background:#5b78c7"></i><span>'+Math.round(a.pco)+' %</span></div>':'<span class="sub">—</span>')+'</td></tr>'}).join('')+'</tbody></table></div><p class="sub" style="margin:8px 0 0">«% con RC y AP» se calcula sobre las pólizas de Protect (las de OMS no tienen RC ni AP). Todo en pesos colombianos (COP).</p>':'';
   }
   function pintarRes(){
     if(!datos||!$('rCuerpo'))return;var R=recsRes(),recs=R.recs,yA=new Date().getFullYear(),ys={};ys[yA]=1;recs.forEach(function(r){ys[r.y]=1});
