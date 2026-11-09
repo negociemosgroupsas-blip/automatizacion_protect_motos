@@ -60,7 +60,7 @@ function doGet(e) {
       else if (accion === 'estado') salida = accionCambiarEstado(params);
       else if (accion === 'registrarGestion') salida = accionRegistrarGestion(params);
       else if (accion === 'agregar') salida = accionAgregar(params);
-      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de Clientes OMS activo', version: 'oms-2' };
+      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de Clientes OMS activo', version: 'oms-3' };
       else salida = { ok: false, error: 'Acción desconocida: ' + accion };
     }
   } catch (err) {
