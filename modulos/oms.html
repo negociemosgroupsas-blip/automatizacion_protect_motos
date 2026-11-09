@@ -295,6 +295,12 @@
   .tag.ven{background:#fde8e8;color:#b91c1c} .tag.hecho{background:#e8eefc;color:#13223f} .tag.no{background:#eee;color:#555}
   .nota-sm{font-size:.78rem;color:var(--texto-suave);margin:6px 0 0}
   #tablero{margin-bottom:18px}
+  .seg-fil{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 12px} .seg-fil label{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--texto-suave)} .seg-fil select,.seg-fil input{border:1px solid var(--borde);background:#fff;border-radius:8px;padding:5px 9px;font-size:.84rem}
+  .seg-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+  .seg-t{background:var(--tarjeta);border:1px solid var(--borde);border-left:5px solid var(--c,#13223f);border-radius:12px;padding:12px 14px} .seg-t b{display:block;font-size:1.7rem;line-height:1.1;color:var(--azul)} .seg-t span{font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;color:var(--texto-suave)} .seg-t small{display:block;margin-top:3px;font-size:.78rem;color:var(--texto-suave)}
+  .seg-tabla-w{overflow-x:auto} .seg-nota{font-size:.78rem;color:var(--texto-suave);margin:10px 0 0;line-height:1.4}
+  .fic-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 16px;margin:8px 0 12px} .fic-g div{font-size:.84rem} .fic-g span{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.3px;color:var(--texto-suave)}
+  .lnk{color:var(--azul);font-weight:700;text-decoration:none} .lnk:hover{text-decoration:underline}
 </style>
 <style>
   .rep-w{position:relative;display:inline-block} .rep-m{position:absolute;right:0;top:calc(100% + 6px);z-index:60;min-width:290px;background:#13223f;color:#eef2ff;border:1px solid #3b4f8f;border-radius:12px;padding:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:2px}
@@ -335,6 +341,7 @@
   <div class="estado-conexion" id="estadoConexion"></div>
 
   <div class="acciones-top"><div class="acc-nuevo"><button class="btn btn-oro btn-registrar" id="btnNuevo" type="button">➕ Registrar cliente OMS nuevo</button><span class="acc-ayuda">Anota un cliente nuevo y se guarda solo en la hoja «Historico polizas».</span></div>
+    <div class="acc-nuevo"><button class="btn btn-verde btn-registrar" id="btnPago" type="button">💳 Registrar pago con comprobante</button><span class="acc-ayuda">Guarda el pago de un cliente y la captura del comprobante.</span></div>
     <span class="rep-w"><button class="btn btn-verde" id="btnRep" type="button">⬇ Descarga de reportes</button><div class="rep-m" id="repM" hidden></div></span></div>
 
   <div id="tablero"></div>
@@ -367,6 +374,40 @@
     </div>
   </section>
 
+  <section class="panel" id="panelSeguimiento">
+    <div class="cabecera"><h2>Seguimiento de renovaciones</h2><span class="sub">A cuántos clientes se les ha enviado el mensaje de renovación y cuántos renovaron</span></div>
+    <div class="contenido-panel">
+      <div class="seg-fil"><label>Año <select id="segAnio"></select></label><label>Mes del envío <select id="segMes"></select></label></div>
+      <div class="seg-tiles" id="segTiles"></div>
+      <div class="seg-tabla-w"><table id="tablaSeg"><thead><tr><th>Mes en que se envió</th><th>Mensajes enviados</th><th>Renovaron</th><th>No renovarán</th><th>Sin responder (vencieron)</th><th>Esperando respuesta</th><th>% que renovó</th></tr></thead><tbody id="cuerpoSeg"></tbody></table></div>
+      <div class="vacio" id="vacioSeg" style="display:none;">Todavía no hay mensajes de renovación registrados en este período.</div>
+      <p class="seg-nota" id="segNota"></p>
+    </div>
+  </section>
+
+  <section class="panel" id="panelSegCli">
+    <div class="cabecera"><h2>Seguimiento a clientes de renovación</h2><span class="sub">Hasta 3 mensajes de seguimiento (cada uno diferente) y el registro de quién renovó y quién no</span></div>
+    <div class="contenido-panel">
+      <div class="seg-tiles" id="scTiles"></div>
+      <div class="seg-fil"><label>Ver <select id="scFiltro"><option value="pend">Pendientes de respuesta</option><option value="renovo">Renovaron</option><option value="no">No renovarán</option><option value="todos">Todos</option></select></label><label>Buscar <input id="scBusca" type="search" placeholder="nombre, placa o referencia"></label></div>
+      <div class="seg-tabla-w"><table id="tablaSC"><thead><tr><th>Cliente</th><th>Celular</th><th>Vehículo</th><th>Cumple su año</th><th>Mensajes enviados</th><th>Resultado</th><th>Acciones</th></tr></thead><tbody id="cuerpoSC"></tbody></table></div>
+      <div class="vacio" id="vacioSC" style="display:none;">No hay clientes en esta lista.</div>
+      <h3 style="margin:18px 0 8px;color:var(--azul);font-size:.95rem;">¿Con qué mensaje renovaron?</h3>
+      <div class="seg-tabla-w"><table><thead><tr><th>Mensaje</th><th>Renovaron</th><th>% de los que renovaron</th></tr></thead><tbody id="cuerpoSCef"></tbody></table></div>
+      <p class="seg-nota">Entra aquí todo cliente al que ya se le envió el mensaje de renovación. El botón de WhatsApp abre el mensaje de seguimiento que toca (1, 2 o 3, cada uno distinto) y, al confirmar, queda anotado. Si el cliente ya había vencido y luego renueva, pasa a «Renovaron».</p>
+    </div>
+  </section>
+
+  <section class="panel" id="panelPagos">
+    <div class="cabecera"><h2>Pagos y comprobantes</h2><span class="sub">Los pagos que los clientes han hecho, con la captura del comprobante (valores en pesos colombianos, COP)</span></div>
+    <div class="contenido-panel">
+      <div class="seg-fil"><label>Año <select id="pgAnio"></select></label><label>Mes <select id="pgMes"></select></label></div>
+      <div class="seg-tiles" id="pgTiles"></div>
+      <div class="seg-tabla-w"><table id="tablaPagos"><thead><tr><th>Fecha</th><th>Cliente</th><th>Vehículo</th><th>Concepto</th><th>Valor (COP)</th><th>Registrado por</th><th>Comprobante</th><th>Nota</th></tr></thead><tbody id="cuerpoPagos"></tbody></table></div>
+      <div class="vacio" id="vacioPagos" style="display:none;">Todavía no hay pagos registrados en este período.</div>
+    </div>
+  </section>
+
   <section class="panel" id="panelTodos">
     <div class="cabecera">
       <h2>Todos los clientes</h2>
@@ -378,7 +419,7 @@
         <button data-f="todos" class="act">Todos</button><button data-f="vigente">Vigentes</button><button data-f="renovar">Por renovar</button><button data-f="vencido">Vencidos</button><button data-f="renovado">Renovados</button><button data-f="cancelado">Cancelados</button>
       </div>
       <table>
-        <thead><tr><th>Cliente</th><th>Cédula</th><th>Vehículo</th><th>Aseguradora</th><th>Compra</th><th>Valor</th><th>Inicio</th><th>Cumple su año</th><th>Celular</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Cédula</th><th>Vehículo</th><th>Aseguradora</th><th>Compra</th><th>Valor</th><th>Inicio</th><th>Cumple su año</th><th>Celular</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody id="cuerpoTodos"></tbody>
       </table>
       <div class="vacio" id="vacioTodos" style="display:none;">No hay clientes para mostrar.</div>
@@ -409,6 +450,26 @@
     <div class="modal-acciones"><button class="btn btn-gris" id="nvCancelar" type="button">Cancelar</button><button class="btn btn-verde" id="nvGuardar" type="button">Guardar en la hoja</button></div>
   </div>
 </div>
+<div class="modal-fondo" id="modalPago">
+  <div class="modal ancho">
+    <h3>Registrar pago con comprobante</h3>
+    <div class="sub">Se guarda en la hoja «Pagos_OMS» y la captura queda en su Drive. No se cobra nada desde aquí: solo se deja el registro.</div>
+    <div class="fgrid">
+      <div class="campo-form full"><label>Cliente *</label><input type="text" id="pgBusca" list="pgLista" autocomplete="off" placeholder="Escriba el nombre, la placa o la cédula y elija de la lista"><datalist id="pgLista"></datalist><span class="ayuda" id="pgCtx"></span></div>
+      <div class="campo-form"><label>Concepto *</label><select id="pgConcepto"><option>Pago de la póliza</option><option>Cuota</option><option>Renovación</option><option>Otro</option></select></div>
+      <div class="campo-form"><label>Valor pagado (pesos colombianos, COP) *</label><input type="number" id="pgValor" min="1" step="1"></div>
+      <div class="campo-form"><label>Fecha del pago</label><input type="date" id="pgFecha"></div>
+      <div class="campo-form"><label>Registrado por</label><input type="text" id="pgPor" placeholder="Su nombre"></div>
+      <div class="campo-form full"><label>Nota (opcional)</label><textarea id="pgNota" rows="2" placeholder="N° de comprobante, observación..."></textarea></div>
+      <div class="campo-form full"><label>Comprobante: foto, captura o PDF</label><input type="file" id="pgArchivo" accept="image/*,application/pdf"><div id="pgPegar" class="zona-pegar" tabindex="0">📋 O haga clic aquí y pegue la captura con Ctrl+V</div><img id="pgPrev" style="display:none;max-width:100%;max-height:170px;margin-top:8px;border-radius:8px;border:1px solid var(--borde)"><span class="ayuda" id="pgAyuda"></span></div>
+    </div>
+    <div class="msg-modal" id="pgMsg"></div>
+    <div class="modal-acciones"><button class="btn btn-gris" id="pgCancel" type="button">Cancelar</button><button class="btn btn-verde" id="pgGuardar" type="button">Guardar pago</button></div>
+  </div>
+</div>
+<div class="modal-fondo" id="modalFicha">
+  <div class="modal ancho" id="fichaCuerpo"></div>
+</div>
 <footer>Protect Motos © <span id="anioActual"></span> — Clientes OMS</footer>
 
 <script src="../assets/dash_oms.js"></script>
@@ -417,7 +478,7 @@
   "use strict";
   var TOKEN = 'PM-OMS-2026', CLAVE_URL = 'pm_oms_url_conector', AUTO_MS = 60000, TIMEOUT_MS = 60000;
   var D = window.PMDashOMS, ACC_ENV = D.ACC_ENV, ACC_REN = D.ACC_REN, ACC_NO = D.ACC_NO;
-  var estado = { clientes: [], gestiones: [], url: localStorage.getItem(CLAVE_URL) || '', filtro: 'todos', q: '' };
+  var estado = { clientes: [], gestiones: [], pagos: [], url: localStorage.getItem(CLAVE_URL) || '', filtro: 'todos', q: '' };
 
   function esc(t){ var d = document.createElement('div'); d.textContent = t==null?'':String(t); return d.innerHTML; }
   function dinero(v){ v = Math.round(Number(v)||0); return '$'+String(v).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
@@ -459,7 +520,7 @@
     llamar({action:'datos'}).then(function(r){
       enCarga = false;
       if(!r || !r.ok){ mostrar('error', (r && r.error) ? r.error : 'Respuesta inválida del conector.'); return; }
-      estado.clientes = r.contratos || []; estado.gestiones = r.gestiones || [];
+      estado.clientes = r.contratos || []; estado.gestiones = r.gestiones || []; estado.pagos = r.pagos || [];
       pintar();
       if(!silencioso) mostrar('ok','Datos al día ✔ ('+estado.clientes.length+' clientes)');
     }).catch(function(e){ enCarga = false; mostrar('error', e.message); });
@@ -474,6 +535,7 @@
     pintarFilas('cuerpoRenovar','vacioRenovar',renovar,false);
     pintarFilas('cuerpoEnviadas','vacioEnviadas',enviadas,true);
     pintarTodos(a);
+    if(window.OMSX) window.OMSX.pintar(a);
   }
 
   function pintarFilas(idCuerpo, idVacio, lista, enviadas){
@@ -510,7 +572,7 @@
     var tot = filas.length; filas = filas.slice(0,300);
     document.getElementById('cuerpoTodos').innerHTML = filas.map(function(x){
       var c = x.c, e = ETQ[x.tipo];
-      return '<tr><td data-etiqueta="Cliente"><strong>'+esc(c.cliente)+'</strong></td><td data-etiqueta="Cédula">'+esc(c.cedula)+'</td><td data-etiqueta="Vehículo">'+esc(c.placa)+'</td><td data-etiqueta="Aseguradora">'+esc(c.aseguradora||'—')+'</td><td data-etiqueta="Compra">'+esc(c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma)+'</td><td data-etiqueta="Valor">'+(c.valorProtect?dinero(c.valorProtect):'—')+'</td><td data-etiqueta="Inicio">'+fechaCO(c.fechaFirmaISO)+'</td><td data-etiqueta="Cumple su año">'+fechaCO(c.finISO)+'</td><td data-etiqueta="Celular">'+esc(c.celular)+'</td><td data-etiqueta="Estado"><span class="tag '+e[0]+'">'+e[1]+'</span></td></tr>';
+      return '<tr><td data-etiqueta="Cliente"><strong>'+esc(c.cliente)+'</strong></td><td data-etiqueta="Cédula">'+esc(c.cedula)+'</td><td data-etiqueta="Vehículo">'+esc(c.placa)+'</td><td data-etiqueta="Aseguradora">'+esc(c.aseguradora||'—')+'</td><td data-etiqueta="Compra">'+esc(c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma)+'</td><td data-etiqueta="Valor">'+(c.valorProtect?dinero(c.valorProtect):'—')+'</td><td data-etiqueta="Inicio">'+fechaCO(c.fechaFirmaISO)+'</td><td data-etiqueta="Cumple su año">'+fechaCO(c.finISO)+'</td><td data-etiqueta="Celular">'+esc(c.celular)+'</td><td data-etiqueta="Estado"><span class="tag '+e[0]+'">'+e[1]+'</span></td><td data-etiqueta="Acciones"><div class="acciones-fila"><button class="btn btn-gris btn-sm" data-a="ficha" data-r="'+esc(c.contrato)+'">Ficha</button><button class="btn btn-verde btn-sm" data-a="pago" data-r="'+esc(c.contrato)+'">💳 Pago</button></div></td></tr>';
     }).join('');
     document.getElementById('vacioTodos').style.display = tot ? 'none' : 'block';
     document.getElementById('notaTodos').textContent = tot>300 ? 'Se muestran 300 de '+tot+'. Usa el buscador para encontrar uno específico.' : '';
@@ -603,6 +665,132 @@
     $('nvGuardar').addEventListener('click',function(){enviar(false)});
   })();
 
+  /* ===== Pagos con comprobante, ficha del cliente y seguimientos de renovación (como en Cobros, sin cobrar cuotas) ===== */
+  (function(){
+    var $=function(i){return document.getElementById(i)},MN=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],SEG=D.ACC_SEG;
+    function cop(n){return dinero(n)+' COP'}
+    function hoyD(){var d=new Date();d.setHours(0,0,0,0);return d}
+    function isoD(d){var z=function(n){return ('0'+n).slice(-2)};return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())}
+    function pFecha(iso){if(!iso)return null;var p=String(iso).split('-');return p.length===3?new Date(+p[0],+p[1]-1,+p[2]):null}
+    function porRef(r){return estado.clientes.filter(function(c){return c.contrato===r})[0]}
+    function etqCli(c){return c.cliente+' · '+(c.placa||'sin vehículo')+' · inicio '+fechaCO(c.fechaFirmaISO)}
+    function pct(a,b){return b?Math.round(a/b*100):0}
+
+    // ---------- Pagos y comprobantes ----------
+    var pgY='todos',pgM='0';
+    function pintarPagos(){
+      var P=(estado.pagos||[]).slice(),ys={};ys[new Date().getFullYear()]=1;P.forEach(function(p){if(p.fechaPagoISO)ys[p.fechaPagoISO.slice(0,4)]=1});
+      var sa=$('pgAnio'),sm=$('pgMes');sa.innerHTML='<option value="todos">Todos los años</option>'+Object.keys(ys).sort().reverse().map(function(y){return '<option>'+y+'</option>'}).join('');if(pgY!=='todos'&&!ys[pgY])pgY='todos';sa.value=pgY;
+      sm.innerHTML='<option value="0">Todos los meses</option>'+MN.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>'}).join('');sm.value=pgM;
+      var F=P.filter(function(p){return p.fechaPagoISO&&(pgY==='todos'||p.fechaPagoISO.slice(0,4)===pgY)&&(pgM==='0'||+p.fechaPagoISO.slice(5,7)===+pgM)}).sort(function(a,b){return b.fechaPagoISO.localeCompare(a.fechaPagoISO)});
+      var T=F.reduce(function(a,p){return a+p.valorPagado},0),cc=F.filter(function(p){return p.comprobante}).length;
+      $('pgTiles').innerHTML='<div class="seg-t" style="--c:#1f9d55"><span>Total recibido</span><b>'+cop(T)+'</b><small>'+F.length+' pago(s)</small></div><div class="seg-t" style="--c:#13223f"><span>Pagos registrados</span><b>'+F.length+'</b><small>en el período elegido</small></div><div class="seg-t" style="--c:#d97706"><span>Con comprobante</span><b>'+cc+'</b><small>'+pct(cc,F.length)+' % de los pagos</small></div>';
+      $('cuerpoPagos').innerHTML=F.slice(0,300).map(function(p){var c=porRef(p.contrato);return '<tr><td data-etiqueta="Fecha">'+fechaCO(p.fechaPagoISO)+'</td><td data-etiqueta="Cliente"><strong>'+esc(p.cliente)+'</strong><br><small style="color:var(--texto-suave)">'+esc(p.cedula)+'</small></td><td data-etiqueta="Vehículo">'+esc(c?c.placa:'—')+'</td><td data-etiqueta="Concepto">'+esc(p.concepto||'—')+'</td><td data-etiqueta="Valor (COP)"><strong>'+cop(p.valorPagado)+'</strong></td><td data-etiqueta="Registrado por">'+esc(p.registradoPor)+'</td><td data-etiqueta="Comprobante">'+(p.comprobante?'<a class="lnk" href="'+esc(p.comprobante)+'" target="_blank" rel="noopener">📎 Ver</a>':'—')+'</td><td data-etiqueta="Nota">'+esc(p.nota)+'</td></tr>'}).join('');
+      $('vacioPagos').style.display=F.length?'none':'block';$('tablaPagos').style.display=F.length?'':'none';
+    }
+    $('pgAnio').addEventListener('change',function(){pgY=this.value;pintarPagos()});$('pgMes').addEventListener('change',function(){pgM=this.value;pintarPagos()});
+
+    // ---------- Modal: registrar pago ----------
+    var modal=$('modalPago'),guardandoP=false,mapaCli={};
+    function pmsg(t,tipo){var e=$('pgMsg');e.className='msg-modal'+(tipo?' '+tipo:'');e.textContent=t||''}
+    function clienteElegido(){return mapaCli[$('pgBusca').value.trim()]||null}
+    function ctx(){var c=clienteElegido();$('pgCtx').textContent=c?('Cédula '+c.cedula+' · '+(c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma)+(c.valorCuota?' · cuota '+cop(c.valorCuota):'')):'';if(c&&!$('pgValor').value)$('pgValor').value=(c.forma==='FINANCIADO'&&c.valorCuota)?c.valorCuota:(c.valorProtect||'')}
+    function abrirPago(c){
+      mapaCli={};$('pgLista').innerHTML=estado.clientes.map(function(x){var l=etqCli(x);mapaCli[l]=x;return '<option value="'+esc(l)+'">'}).join('');
+      $('pgBusca').value=c?etqCli(c):'';$('pgConcepto').value='Pago de la póliza';$('pgValor').value='';$('pgFecha').value=isoD(new Date());$('pgNota').value='';$('pgArchivo').value='';$('pgPrev').style.display='none';$('pgAyuda').textContent='';
+      try{$('pgPor').value=localStorage.getItem('pm_cobros_registrado_por')||localStorage.getItem('pm_oms_registrado_por')||''}catch(e){}
+      pmsg('');ctx();$('pgGuardar').disabled=false;guardandoP=false;modal.classList.add('abierto');setTimeout(function(){(c?$('pgValor'):$('pgBusca')).focus()},60);
+    }
+    $('btnPago').addEventListener('click',function(){abrirPago(null)});
+    $('pgCancel').addEventListener('click',function(){modal.classList.remove('abierto')});
+    $('pgBusca').addEventListener('input',ctx);
+    function vistaPrevia(){var f=$('pgArchivo').files[0],im=$('pgPrev');if(!f){im.style.display='none';return}
+      if(f.size>8*1024*1024){$('pgAyuda').textContent='El archivo pesa más de 8 MB: use una foto más liviana.';$('pgArchivo').value='';im.style.display='none';return}
+      if(/^image\//.test(f.type)){var r=new FileReader();r.onload=function(){im.src=r.result;im.style.display='block'};r.readAsDataURL(f);$('pgAyuda').textContent=f.name}else{im.style.display='none';$('pgAyuda').textContent='Archivo listo: '+f.name}}
+    $('pgArchivo').addEventListener('change',vistaPrevia);
+    $('pgPegar').addEventListener('paste',function(ev){var it=(ev.clipboardData||{}).items||[];for(var i=0;i<it.length;i++){if(/^image\//.test(it[i].type)){var f=it[i].getAsFile();if(f){var dt=new DataTransfer();dt.items.add(new File([f],'captura-'+Date.now()+'.png',{type:f.type}));$('pgArchivo').files=dt.files;vistaPrevia();ev.preventDefault();return}}}});
+    function subir(file,c,concepto,fecha){return new Promise(function(ok,fail){var r=new FileReader();r.onerror=function(){fail(new Error('No se pudo leer el archivo.'))};r.onload=function(){
+      fetch(estado.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:TOKEN,action:'subirComprobante',contrato:c.contrato,cedula:c.cedula,cliente:c.cliente,concepto:concepto,fecha:fecha,nombreArchivo:file.name,tipoMime:file.type||'image/jpeg',datosBase64:String(r.result).split(',')[1]||''})}).then(function(x){return x.json()}).then(function(d){d.ok?ok(d.url):fail(new Error(d.error||'El conector rechazó el archivo.'))}).catch(fail)};r.readAsDataURL(file)})}
+    $('pgGuardar').addEventListener('click',function(){
+      if(guardandoP)return;var c=clienteElegido(),valor=Number($('pgValor').value)||0,fecha=$('pgFecha').value,concepto=$('pgConcepto').value,por=$('pgPor').value.trim(),nota=$('pgNota').value.trim(),f=$('pgArchivo').files[0]||null;
+      if(!c){pmsg('Elija un cliente de la lista (escriba y seleccione una de las opciones).','error');return}
+      if(valor<=0){pmsg('Escriba el valor pagado.','error');return}if(!fecha){pmsg('Elija la fecha del pago.','error');return}
+      try{if(por)localStorage.setItem('pm_oms_registrado_por',por)}catch(e){}
+      guardandoP=true;$('pgGuardar').disabled=true;
+      function guardar(url){pmsg('Guardando el pago…');llamar({action:'registrarPago',contrato:c.contrato,cedula:c.cedula,cliente:c.cliente,concepto:concepto,valor:valor,nota:nota,fecha:fecha,registradoPor:por,comprobante:url||''}).then(function(r){
+        if(!r||!r.ok){guardandoP=false;$('pgGuardar').disabled=false;pmsg((r&&r.error)||'No se pudo guardar el pago.','error');return}
+        estado.pagos.push({fechaPago:fechaCO(fecha),fechaPagoISO:fecha,contrato:c.contrato,cedula:c.cedula,cliente:c.cliente,concepto:concepto,valorPagado:valor,nota:nota,registradoPor:por,comprobante:url||''});
+        pmsg('✓ Pago guardado'+(url?' con comprobante':''),'ok');pintarPagos();mostrar('ok','Pago de '+c.cliente+' guardado ✔ '+cop(valor));setTimeout(function(){modal.classList.remove('abierto');cargar(true)},700)
+      }).catch(function(e){guardandoP=false;$('pgGuardar').disabled=false;pmsg(e.message,'error')})}
+      if(f){pmsg('Subiendo el comprobante…');subir(f,c,concepto,fecha).then(guardar).catch(function(e){guardandoP=false;$('pgGuardar').disabled=false;pmsg('No se pudo subir el comprobante: '+e.message+'. Puede quitar el archivo y guardar el pago sin comprobante, o intentar de nuevo.','error')})}else guardar('');
+    });
+
+    // ---------- Ficha del cliente ----------
+    function abrirFicha(c){
+      var a=D.analizar(estado.clientes,estado.gestiones).filter(function(x){return x.c===c})[0],pg=(estado.pagos||[]).filter(function(p){return p.contrato===c.contrato}).sort(function(x,y){return y.fechaPagoISO.localeCompare(x.fechaPagoISO)}),gs=(estado.gestiones||[]).filter(function(g){return g.contrato===c.contrato}).sort(function(x,y){return (y.fechaGestionISO||'').localeCompare(x.fechaGestionISO||'')});
+      var e=a?ETQ[a.tipo]:['vig','—'],dato=function(l,v){return '<div><span>'+l+'</span>'+(v||'—')+'</div>'};
+      $('fichaCuerpo').innerHTML='<h3>'+esc(c.cliente)+'</h3><div class="sub">Ficha del cliente OMS · referencia '+esc(c.contrato)+'</div><div class="fic-g">'+dato('Cédula',esc(c.cedula))+dato('Celular',esc(c.celular))+dato('Vehículo',esc(c.placa))+dato('Aseguradora',esc(c.aseguradora))+dato('Asesor',esc(c.asesor))+dato('Compra',esc(c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma))+dato('Valor de la póliza',c.valorProtect?cop(c.valorProtect):'')+dato('Inicio',fechaCO(c.fechaFirmaISO))+dato('Cumple su año',fechaCO(c.finISO)+(a&&a.d!==null?' · '+etqDias(a.d):''))+dato('Estado de renovación','<span class="tag '+e[0]+'">'+e[1]+'</span>')+'</div>'+
+        '<div class="acciones-fila" style="margin-bottom:14px"><button class="btn btn-verde btn-sm" id="fcPago" type="button">💳 Registrar pago</button><button class="btn btn-oro btn-sm" id="fcWa" type="button">WhatsApp</button></div>'+
+        '<h3 style="font-size:.95rem;margin:6px 0">Pagos y comprobantes</h3>'+(pg.length?'<div class="seg-tabla-w"><table><thead><tr><th>Fecha</th><th>Concepto</th><th>Valor (COP)</th><th>Comprobante</th><th>Nota</th></tr></thead><tbody>'+pg.map(function(p){return '<tr><td>'+fechaCO(p.fechaPagoISO)+'</td><td>'+esc(p.concepto)+'</td><td><strong>'+cop(p.valorPagado)+'</strong></td><td>'+(p.comprobante?'<a class="lnk" href="'+esc(p.comprobante)+'" target="_blank" rel="noopener">📎 Ver</a>':'—')+'</td><td>'+esc(p.nota)+'</td></tr>'}).join('')+'</tbody></table></div>':'<p class="seg-nota">Todavía no hay pagos registrados para este cliente.</p>')+
+        '<h3 style="font-size:.95rem;margin:14px 0 6px">Historial de renovación</h3>'+(gs.length?'<div class="seg-tabla-w"><table><thead><tr><th>Fecha</th><th>Acción</th><th>Registrado por</th></tr></thead><tbody>'+gs.map(function(g){return '<tr><td>'+esc(g.fechaGestion)+'</td><td>'+esc(g.accion)+'</td><td>'+esc(g.registradoPor)+'</td></tr>'}).join('')+'</tbody></table></div>':'<p class="seg-nota">Sin mensajes ni gestiones de renovación todavía.</p>')+
+        '<div class="modal-acciones"><button class="btn btn-gris" id="fcCerrar" type="button">Cerrar</button></div>';
+      $('modalFicha').classList.add('abierto');
+      $('fcCerrar').addEventListener('click',function(){$('modalFicha').classList.remove('abierto')});
+      $('fcPago').addEventListener('click',function(){$('modalFicha').classList.remove('abierto');abrirPago(c)});
+      $('fcWa').addEventListener('click',function(){abrirWA(c)});
+    }
+    $('cuerpoTodos').addEventListener('click',function(ev){var b=ev.target.closest('button[data-a]');if(!b)return;var c=porRef(b.dataset.r);if(!c)return;if(b.dataset.a==='ficha')abrirFicha(c);else abrirPago(c)});
+    [$('modalPago'),$('modalFicha')].forEach(function(m){m.addEventListener('click',function(ev){if(ev.target===m&&m.id==='modalFicha')m.classList.remove('abierto')})});
+
+    // ---------- Seguimiento de renovaciones (estadísticas) ----------
+    var segY='todos',segM='0';
+    function datosSeg(){
+      var por={};(estado.gestiones||[]).forEach(function(g){var k=g.contrato,a=g.accion;if(!k)return;if(a!==D.ACC_ENV&&a!==D.ACC_REN&&a!==D.ACC_NO&&SEG.indexOf(a)<0)return;
+        var o=por[k]=por[k]||{contrato:k,envio:'',seg:[],resp:'',respISO:''},f=g.fechaGestionISO||'',i=SEG.indexOf(a);
+        if(a===D.ACC_ENV){if(!o.envio||(f&&f<o.envio))o.envio=f}else if(i>=0){o.seg[i]=f||'0'}else if(!o.respISO||f>=o.respISO){o.resp=a===D.ACC_REN?'renovo':'no';o.respISO=f}});
+      var L=[],sinEnvio=0,h=hoyD();
+      Object.keys(por).forEach(function(k){var o=por[k];if(!o.envio){if(o.resp==='renovo')sinEnvio++;return}var c=porRef(k);if(!c)return;o.c=c;
+        o.nSeg=[0,1,2].filter(function(i){return o.seg[i]}).length;o.msgs=1+o.nSeg;var fin=pFecha(c.finISO);
+        o.res=o.resp==='renovo'?'Renovó':o.resp==='no'?'No renovará':(fin&&fin<h?'Venció sin responder':'Esperando respuesta');
+        o.conCual=o.resp==='renovo'?[0,1,2].filter(function(i){return o.seg[i]&&o.seg[i]<=o.respISO}).length:0;L.push(o)});
+      return {lista:L,sinEnvio:sinEnvio}}
+    function pintarSeg(){
+      var S=datosSeg(),L=S.lista,ys={};L.forEach(function(o){ys[o.envio.slice(0,4)]=1});
+      var sa=$('segAnio'),sm=$('segMes');sa.innerHTML='<option value="todos">Todos los años</option>'+Object.keys(ys).sort().reverse().map(function(y){return '<option>'+y+'</option>'}).join('');if(segY!=='todos'&&!ys[segY])segY='todos';sa.value=segY;
+      sm.innerHTML='<option value="0">Todos los meses</option>'+MN.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>'}).join('');sm.value=segM;
+      var F=L.filter(function(o){return (segY==='todos'||o.envio.slice(0,4)===segY)&&(segM==='0'||+o.envio.slice(5,7)===+segM)}),cnt=function(r){return F.filter(function(o){return o.res===r}).length},n=F.length,ac=cnt('Renovó'),no=cnt('No renovará'),ve=cnt('Venció sin responder'),es=cnt('Esperando respuesta');
+      $('segTiles').innerHTML='<div class="seg-t" style="--c:#13223f"><span>Mensajes enviados</span><b>'+n+'</b><small>clientes distintos</small></div><div class="seg-t" style="--c:#1f9d55"><span>Renovaron</span><b>'+ac+'</b><small>'+pct(ac,n)+' % de los enviados</small></div><div class="seg-t" style="--c:#d97706"><span>No renovarán</span><b>'+no+'</b><small>'+pct(no,n)+' %</small></div><div class="seg-t" style="--c:#5b78c7"><span>Esperando respuesta</span><b>'+es+'</b><small>'+pct(es,n)+' %</small></div><div class="seg-t" style="--c:#dc2626"><span>Vencieron sin responder</span><b>'+ve+'</b><small>'+pct(ve,n)+' %</small></div>';
+      var meses={};F.forEach(function(o){var k=o.envio.slice(0,7),m=meses[k]=meses[k]||{n:0,a:0,no:0,v:0,e:0};m.n++;if(o.res==='Renovó')m.a++;else if(o.res==='No renovará')m.no++;else if(o.res==='Venció sin responder')m.v++;else m.e++});
+      $('cuerpoSeg').innerHTML=Object.keys(meses).sort().reverse().map(function(k){var m=meses[k],p=k.split('-');return '<tr><td data-etiqueta="Mes">'+MN[+p[1]-1]+' '+p[0]+'</td><td data-etiqueta="Enviados"><strong>'+m.n+'</strong></td><td data-etiqueta="Renovaron">'+m.a+'</td><td data-etiqueta="No renovarán">'+m.no+'</td><td data-etiqueta="Vencieron">'+m.v+'</td><td data-etiqueta="Esperando">'+m.e+'</td><td data-etiqueta="% renovó"><strong>'+pct(m.a,m.n)+' %</strong></td></tr>'}).join('');
+      $('vacioSeg').style.display=n?'none':'block';$('tablaSeg').style.display=n?'':'none';
+      $('segNota').textContent='Cada cliente cuenta una sola vez, en el mes de su primer mensaje de renovación enviado. «Renovaron» y «No renovarán» salen de los botones «Renovó» y «No renovará».'+(S.sinEnvio?' Además, '+S.sinEnvio+' cliente(s) renovaron sin que se hubiera anotado el envío del mensaje; no entran en este cálculo.':'')}
+    $('segAnio').addEventListener('change',function(){segY=this.value;pintarSeg()});$('segMes').addEventListener('change',function(){segM=this.value;pintarSeg()});
+
+    // ---------- Seguimiento a clientes de renovación (3 mensajes) ----------
+    var scF='pend',scQ='';
+    function textoSeg(n,c){var fin=pFecha(c.finISO),venc=fin&&fin<hoyD(),cuando=fin?(venc?'cumplió su año el ':'cumple su año el ')+fechaCO(c.finISO):'está por cumplir su año',pl=c.placa?' de la moto '+c.placa:'';
+      if(n===1)return 'Hola, '+c.cliente+' 😊\nTe escribimos de Protect Motos. Hace unos días te contamos que tu póliza'+pl+' '+cuando+'.\n\n¿Pudiste revisar la información? Con gusto resolvemos tus dudas y te ayudamos a renovarla en un momento 💙💛';
+      if(n===2)return 'Hola, '+c.cliente+', ¿cómo estás? 🏍️\nTe recordamos que tu póliza'+pl+' '+cuando+'. Renovarla a tiempo te permite seguir protegido y evitar costos inesperados.\n\n¿Te parece si la renovamos hoy? Solo respóndenos y nosotros hacemos el resto 💛';
+      return 'Hola, '+c.cliente+' 👋\nEste es nuestro último mensaje sobre tu póliza'+pl+' ('+cuando+'). No queremos que te quedes sin respaldo.\n\nSi quieres renovar, escríbenos ahora; si ya no te interesa, cuéntanos para dejar tu solicitud cerrada. ¡Gracias por confiar en Protect Motos! 💙'}
+    function pintarSC(){
+      var L=datosSeg().lista,n=L.length,ac=L.filter(function(o){return o.resp==='renovo'}),no=L.filter(function(o){return o.resp==='no'}),pe=n-ac.length-no.length,tm=L.reduce(function(t,o){return t+o.msgs},0);
+      $('scTiles').innerHTML='<div class="seg-t" style="--c:#13223f"><span>Clientes en seguimiento</span><b>'+n+'</b><small>'+tm+' mensajes en total ('+(tm-n)+' de seguimiento)</small></div><div class="seg-t" style="--c:#5b78c7"><span>Pendientes de respuesta</span><b>'+pe+'</b><small>'+pct(pe,n)+' %</small></div><div class="seg-t" style="--c:#1f9d55"><span>Renovaron</span><b>'+ac.length+'</b><small>'+pct(ac.length,n)+' % de los contactados</small></div><div class="seg-t" style="--c:#d97706"><span>No renovarán</span><b>'+no.length+'</b><small>'+pct(no.length,n)+' %</small></div><div class="seg-t" style="--c:#7c3aed"><span>Mensajes por cliente que renovó</span><b>'+(ac.length?(ac.reduce(function(t,o){return t+o.msgs},0)/ac.length).toFixed(1):'0')+'</b><small>promedio</small></div>';
+      $('cuerpoSCef').innerHTML=['Mensaje inicial de renovación','Después del seguimiento 1','Después del seguimiento 2','Después del seguimiento 3'].map(function(t,i){var k=ac.filter(function(o){return o.conCual===i}).length;return '<tr><td>'+t+'</td><td><strong>'+k+'</strong></td><td>'+pct(k,ac.length)+' %</td></tr>'}).join('');
+      var q=scQ.toLowerCase(),F=L.filter(function(o){if(scF==='pend'&&o.resp)return false;if(scF==='renovo'&&o.resp!=='renovo')return false;if(scF==='no'&&o.resp!=='no')return false;return !q||(o.c.cliente+' '+o.c.placa+' '+o.c.contrato).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return (a.c.finISO||'').localeCompare(b.c.finISO||'')});
+      var cu=$('cuerpoSC');cu.innerHTML='';$('vacioSC').style.display=F.length?'none':'block';$('tablaSC').style.display=F.length?'':'none';
+      F.forEach(function(o){var c=o.c,sig=o.nSeg+1,cerrado=!!o.resp,pt=[0,1,2].map(function(i){return '<span title="Seguimiento '+(i+1)+(o.seg[i]?' enviado':' sin enviar')+'" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:3px;background:'+(o.seg[i]?'#1f9d55':'#cbd5e1')+'"></span>'}).join('');
+        var acc=cerrado?'':(sig<=3?'<button class="btn btn-verde btn-sm" data-a="wa">WhatsApp seguimiento '+sig+'</button>':'<span class="seg-nota" style="margin:0">3 de 3 enviados</span>')+'<button class="btn btn-azul btn-sm" data-a="si">Renovó</button><button class="btn btn-rojo btn-sm" data-a="no">No renovará</button>';
+        var tr=document.createElement('tr');tr.innerHTML='<td data-etiqueta="Cliente"><strong>'+esc(c.cliente)+'</strong></td><td data-etiqueta="Celular">'+esc(c.celular)+'</td><td data-etiqueta="Vehículo">'+esc(c.placa)+'</td><td data-etiqueta="Cumple su año">'+fechaCO(c.finISO)+'</td><td data-etiqueta="Mensajes"><strong>'+o.msgs+'</strong> <small>(1 inicial + '+o.nSeg+' de seguimiento)</small><br>'+pt+'</td><td data-etiqueta="Resultado">'+(o.resp==='renovo'?'✅ Renovó':o.resp==='no'?'❌ No renovará':'⏳ '+(o.res==='Venció sin responder'?'Venció sin responder':'Pendiente'))+'</td><td data-etiqueta="Acciones"><div class="acciones-fila">'+acc+'</div></td>';
+        var b=function(a){return tr.querySelector('[data-a="'+a+'"]')};
+        if(b('wa'))b('wa').addEventListener('click',function(e){var btn=e.currentTarget;window.open('https://wa.me/'+numeroWA(c.celular)+'?text='+encodeURIComponent(textoSeg(sig,c)),'_blank');if(confirm('¿Ya enviaste el mensaje de seguimiento '+sig+' a '+c.cliente+'?\n\nAcepta para dejarlo anotado.'))gestionar(c,SEG[sig-1],btn)});
+        if(b('si'))b('si').addEventListener('click',function(e){if(confirm('¿Confirmas que '+c.cliente+' RENOVÓ?'))gestionar(c,D.ACC_REN,e.currentTarget)});
+        if(b('no'))b('no').addEventListener('click',function(e){if(confirm('¿Confirmas que '+c.cliente+' NO va a renovar?'))gestionar(c,D.ACC_NO,e.currentTarget)});
+        cu.appendChild(tr)})}
+    $('scFiltro').addEventListener('change',function(){scF=this.value;pintarSC()});$('scBusca').addEventListener('input',function(){scQ=this.value.trim();pintarSC()});
+
+    window.OMSX={pintar:function(){pintarPagos();pintarSeg();pintarSC()},seg:datosSeg,pagos:function(){return estado.pagos}};
+  })();
+
   /* ===== Descarga de reportes de este módulo (Excel .csv) ===== */
   (function(){
     function aviso(t){var a=document.getElementById('repAviso');if(!a){a=document.createElement('div');a.id='repAviso';document.body.appendChild(a)}a.textContent=t;a.style.display='block';clearTimeout(a._t);a._t=setTimeout(function(){a.style.display='none'},3500)}
@@ -614,7 +802,8 @@
     var MESN=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     function dIso(iso){if(!iso)return '';var p=String(iso).split('-');return p.length===3?(+p[2])+'/'+(+p[1])+'/'+p[0]:iso}
     var DESC=[["Todos los clientes OMS", "Una fila por cada cliente OMS (cada cliente es una póliza), con su estado de renovación.", "«Cumple su año» es la fecha fin de la póliza. No se cobra: es la fecha en que hay que volver a hablarle para renovar."], ["Clientes OMS por renovar", "Clientes cuya póliza cumple el año en 8 días o menos.", "«Días» negativo significa que ya cumplió su año. Son los clientes a los que hay que escribirles."], ["Pólizas por mes y por moto", "Cuántas pólizas OMS se vendieron cada mes y de qué moto.", "La primera tabla cuenta por mes de la fecha de inicio; la segunda, las pólizas por moto en cada año."], ["Mensajes y gestiones", "Los avisos de renovación enviados y sus respuestas.", "Sale de la pestaña Gestiones_OMS que crea el CRM."]];
-    var YCM=[5, 5, 0, 0],TITM=[0, 0, 1, 0],per='';try{per=localStorage.getItem('pm_rep_anio_mod')||''}catch(e){}
+    DESC.splice(3,0,["Pagos y comprobantes", "Cada pago registrado de un cliente OMS, con el valor en pesos colombianos (COP) y el enlace a la captura del comprobante.", "«Comprobante» es el enlace a la imagen guardada en el Drive. «Referencia» identifica al cliente."],["Seguimiento a clientes de renovación", "Cada cliente al que se le envió el mensaje de renovación, cuántos mensajes de seguimiento (1 a 3) recibió y si renovó o no.", "«Con qué mensaje renovó» indica cuántos seguimientos se habían enviado cuando renovó (0 = con el mensaje inicial)."]);
+    var YCM=[5, 5, 0, 0, 5, 0],TITM=[0, 0, 1, 0, 0, 0],per='';try{per=localStorage.getItem('pm_rep_anio_mod')||''}catch(e){}
     function perTxt(y){return y?'año '+y:'histórico (todos los años)'}
     function filt(filas,i,y){if(!y||YCM[i]==null)return filas;var out=[filas[0]];for(var k=1;k<filas.length;k++){var v=filas[k][YCM[i]],mm=String(v==null?'':v).match(/(?:^|\D)(20\d{2})(?:\D|$)/);if(mm){if(mm[1]===y)out.push(filas[k])}else if(TITM[i])out.push(filas[k])}return out}
     var modo=false;try{modo=localStorage.getItem('pm_rep_texto_mod')==='1'}catch(e){}
@@ -627,6 +816,9 @@
       ['🏍️ Pólizas vendidas por mes y por moto',function(){var mm={},vv={};estado.clientes.forEach(function(c){var d=(c.fechaFirmaISO||'').split('-');if(d.length<3)return;var k=d[0]+'|'+(+d[1]);mm[k]=(mm[k]||0)+1;var vk=d[0]+'|'+String(c.placa||'(sin dato)').toUpperCase().trim();vv[vk]=(vv[vk]||0)+1});
         var f=[['PÓLIZAS VENDIDAS POR MES'],['Año','Mes','Pólizas']];Object.keys(mm).sort(function(a,b){var x=a.split('|'),y=b.split('|');return (+x[0]-+y[0])||(+x[1]-+y[1])}).forEach(function(k){var p=k.split('|');f.push([p[0],MESN[p[1]-1],mm[k]])});
         f.push([]);f.push(['PÓLIZAS POR MOTO']);f.push(['Año','Moto','Pólizas']);Object.keys(vv).sort(function(a,b){var x=a.split('|'),y=b.split('|');return (+x[0]-+y[0])||(vv[b]-vv[a])}).forEach(function(k){var p=k.split('|');f.push([p[0],p[1],vv[k]])});return ['OMS_polizas_por_mes_y_moto',f]}],
+      ['💳 Pagos y comprobantes',function(){var f=[['Fecha de pago','Referencia','Cédula','Cliente','Vehículo','Concepto','Valor pagado (COP)','Registrado por','Comprobante','Nota']];(estado.pagos||[]).forEach(function(p){var c=estado.clientes.filter(function(x){return x.contrato===p.contrato})[0];f.push([dIso(p.fechaPagoISO),p.contrato,p.cedula,p.cliente,c?c.placa:'',p.concepto,p.valorPagado,p.registradoPor,p.comprobante,p.nota])});return ['OMS_pagos_y_comprobantes',f]}],
+      ['🎯 Seguimiento a clientes de renovación',function(){var f=[['Cliente','Cédula','Referencia','Vehículo','Celular','Fecha del primer mensaje','Mensajes enviados (total)','Seguimiento 1','Seguimiento 2','Seguimiento 3','Resultado','Fecha de la respuesta','Con qué mensaje renovó']];
+        window.OMSX.seg().lista.sort(function(a,b){return (b.envio||'').localeCompare(a.envio||'')}).forEach(function(o){f.push([o.c.cliente,o.c.cedula,o.c.contrato,o.c.placa,o.c.celular,dIso(o.envio),o.msgs,dIso(o.seg[0]||''),dIso(o.seg[1]||''),dIso(o.seg[2]||''),o.res,dIso(o.respISO),o.resp==='renovo'?(o.conCual?'Seguimiento '+o.conCual:'Mensaje inicial'):''])});return ['OMS_seguimiento_renovaciones',f]}],
       ['📝 Mensajes y gestiones de renovación',function(){var f=[['Fecha','Referencia','Cédula','Cliente','Acción','Registrado por']];estado.gestiones.forEach(function(g){f.push([g.fechaGestion,g.contrato,g.cedula,g.cliente,g.accion,g.registradoPor])});return ['OMS_gestiones',f]}]
     ];
     var m=document.getElementById('repM');

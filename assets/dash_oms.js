@@ -6,6 +6,7 @@
   var MC = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   var DIAS_AVISO = 8, DIAS_VENCIDO = 30;
   var ACC_ENV = 'Mensaje de renovación enviado', ACC_REN = 'Renovó', ACC_NO = 'No renovará';
+  var ACC_SEG = ['Seguimiento 1 de renovación enviado', 'Seguimiento 2 de renovación enviado', 'Seguimiento 3 de renovación enviado'];
   var YEARSEL = {};   // año elegido por cada tablero
   var LAST = {};      // últimos datos de cada tablero (para repintar al cambiar el año desde fuera)
 
@@ -47,7 +48,7 @@
       else if (acc === ACC_NO) tipo = 'norenovara';
       else if (d === null) tipo = 'vigente';
       else if (d < -DIAS_VENCIDO) tipo = 'vencido';
-      else if (d <= DIAS_AVISO) tipo = acc === ACC_ENV ? 'enviado' : 'renovar';
+      else if (d <= DIAS_AVISO) tipo = (acc === ACC_ENV || ACC_SEG.indexOf(acc) >= 0) ? 'enviado' : 'renovar';
       else tipo = 'vigente';
       return { c: c, ini: ini, fin: fin, d: d, tipo: tipo, g: g, valor: Number(c.valorProtect) || 0, forma: c.forma || 'SIN DATO', veh: String(c.placa || '').trim() };
     });
@@ -387,5 +388,5 @@
   function reset(root) { if (!root || !root.id || !LAST[root.id]) return; delete ST[root.id]; delete TOP[root.id]; render(root, LAST[root.id]); }
 
   window.PMAyuda = { wire: ayWire, boton: ayBoton, css: ayCss };
-  window.PMDashOMS = { marcaDe: marcaDe, render: render, setYear: setYear, setPeriodo: aplicar, reset: reset, resumen: resumen, analizar: analizar, DIAS_AVISO: DIAS_AVISO, ACC_ENV: ACC_ENV, ACC_REN: ACC_REN, ACC_NO: ACC_NO };
+  window.PMDashOMS = { marcaDe: marcaDe, render: render, setYear: setYear, setPeriodo: aplicar, reset: reset, resumen: resumen, analizar: analizar, DIAS_AVISO: DIAS_AVISO, ACC_ENV: ACC_ENV, ACC_SEG: ACC_SEG, ACC_REN: ACC_REN, ACC_NO: ACC_NO };
 })();

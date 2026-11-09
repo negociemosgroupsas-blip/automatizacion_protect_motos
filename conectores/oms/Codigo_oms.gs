@@ -8,6 +8,8 @@
  *   3) Implementar > Nueva implementación > Aplicación web.  Ejecutar como: Yo.  Quién tiene acceso: Cualquier usuario.
  *   4) Copia la URL que termina en /exec y pégala en el botón «Clientes OMS» del CRM.
  *
+ * Pagos y comprobantes: se guardan en la pestaña «Pagos_OMS» (se crea sola) y las imágenes en la carpeta «Comprobantes de pago OMS» de su Drive.
+ *
  * Lee la hoja de clientes (columnas: Nombre completo, Cedula, Vehiculo, Valor a pagar, Celular, Compra, Fecha inicio,
  * Fecha fin, Estado). NO cobra: sirve para avisar la renovación al año. Guarda los avisos (mensaje enviado, renovó,
  * no renovará) en la pestaña «Gestiones_OMS» (se crea sola). No toca ninguna otra hoja.
@@ -46,6 +48,9 @@ var COLS_OPC = [
 ];
 
 var ENCABEZADOS_GESTIONES = ['Fecha de gestión', 'Referencia', 'Cédula', 'Cliente', 'Acción', 'Registrado por'];
+var HOJA_PAGOS = 'Pagos_OMS';
+var ENCABEZADOS_PAGOS = ['Fecha de pago', 'Referencia', 'Cédula', 'Cliente', 'Concepto', 'Valor pagado', 'Nota', 'Registrado por', 'Comprobante'];
+var CARPETA_COMPROBANTES = 'Comprobantes de pago OMS';
 
 // ==================== PUNTO DE ENTRADA ====================
 function doGet(e) {
@@ -60,13 +65,28 @@ function doGet(e) {
       else if (accion === 'estado') salida = accionCambiarEstado(params);
       else if (accion === 'registrarGestion') salida = accionRegistrarGestion(params);
       else if (accion === 'agregar') salida = accionAgregar(params);
-      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de Clientes OMS activo', version: 'oms-3' };
+      else if (accion === 'registrarPago') salida = accionRegistrarPago(params);
+      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de Clientes OMS activo', version: 'oms-4' };
       else salida = { ok: false, error: 'Acción desconocida: ' + accion };
     }
   } catch (err) {
     salida = { ok: false, error: 'Error en el servidor: ' + err.message };
   }
   return responder(salida, params.callback);
+}
+
+// Solo para subir la imagen del comprobante (no cabe en una URL de GET).
+function doPost(e) {
+  var salida;
+  try {
+    var body = (e && e.postData && e.postData.contents) ? JSON.parse(e.postData.contents) : {};
+    if (body.token !== TOKEN) salida = { ok: false, error: 'Token inválido.' };
+    else if (body.action === 'subirComprobante') salida = accionSubirComprobante(body);
+    else salida = { ok: false, error: 'Acción desconocida: ' + body.action };
+  } catch (err) {
+    salida = { ok: false, error: 'Error en el servidor: ' + err.message };
+  }
+  return responder(salida, null);
 }
 
 function responder(objeto, callback) {
@@ -96,7 +116,7 @@ function abrirSS() {
 function accionDatos() {
   var ss = abrirSS();
   var hoja = hojaClientes(ss);
-  return { ok: true, contratos: leerClientes(hoja).lista, pagos: [], gestiones: leerGestiones(ss.getSheetByName(HOJA_GESTIONES)) };
+  return { ok: true, contratos: leerClientes(hoja).lista, pagos: leerPagos(ss.getSheetByName(HOJA_PAGOS)), gestiones: leerGestiones(ss.getSheetByName(HOJA_GESTIONES)) };
 }
 
 // Devuelve cada cliente con el mismo formato que usa el módulo de Cobros.
@@ -319,3 +339,69 @@ function fmt(d) { return d ? d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.ge
 function iso(d) { return d ? d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2) : ''; }
 function parsearFecha(t) { return aFecha(t) || (function () { var f = new Date(t); return isNaN(f.getTime()) ? null : f; })(); }
 function fechaParaNombre(t) { var f = parsearFecha(t); return f ? ('0' + f.getDate()).slice(-2) + '-' + ('0' + (f.getMonth() + 1)).slice(-2) + '-' + f.getFullYear() : ''; }
+
+
+// ==================== PAGOS Y COMPROBANTES ====================
+function leerPagos(hoja) {
+  if (!hoja || hoja.getLastRow() < 2) return [];
+  var d = hoja.getRange(2, 1, hoja.getLastRow() - 1, 9).getValues(), out = [];
+  for (var i = 0; i < d.length; i++) {
+    var ref = texto(d[i][1]);
+    if (!ref) continue;
+    out.push({ fechaPago: fmt(aFecha(d[i][0])), fechaPagoISO: iso(aFecha(d[i][0])), contrato: ref, cedula: texto(d[i][2]), cliente: texto(d[i][3]),
+      concepto: texto(d[i][4]), valorPagado: Number(d[i][5]) || 0, nota: texto(d[i][6]), registradoPor: texto(d[i][7]), comprobante: texto(d[i][8]) });
+  }
+  return out;
+}
+
+function accionRegistrarPago(p) {
+  var ref = texto(p.contrato), valor = Number(p.valor) || 0;
+  if (!ref) return { ok: false, error: 'Falta la referencia del cliente.' };
+  if (valor <= 0) return { ok: false, error: 'El valor pagado debe ser mayor a 0.' };
+  var fecha = parsearFecha(texto(p.fecha)) || new Date();
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
+  try {
+    var ss = abrirSS(), hoja = ss.getSheetByName(HOJA_PAGOS);
+    if (!hoja) { hoja = ss.insertSheet(HOJA_PAGOS); hoja.getRange(1, 1, 1, ENCABEZADOS_PAGOS.length).setValues([ENCABEZADOS_PAGOS]).setFontWeight('bold'); hoja.setFrozenRows(1); }
+    hoja.appendRow([fecha, ref, texto(p.cedula), texto(p.cliente), texto(p.concepto), valor, texto(p.nota), texto(p.registradoPor), texto(p.comprobante)]);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo guardar el pago: ' + err.message };
+  } finally { lock.releaseLock(); }
+}
+
+function accionSubirComprobante(b) {
+  var ref = texto(b.contrato), ced = texto(b.cedula), cliente = texto(b.cliente), concepto = texto(b.concepto);
+  var nombreArchivo = texto(b.nombreArchivo) || 'comprobante', tipo = texto(b.tipoMime) || 'image/jpeg';
+  if (!ref) return { ok: false, error: 'Falta la referencia del cliente.' };
+  if (!b.datosBase64) return { ok: false, error: 'No se recibió ningún archivo.' };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
+  try {
+    var ext = (nombreArchivo.match(/\.[a-zA-Z0-9]+$/) || [''])[0];
+    var partes = []; if (concepto) partes.push(concepto); var f = fechaParaNombre(texto(b.fecha)); if (f) partes.push(f);
+    var nombre = (partes.length ? partes.join(' - ') : 'comprobante') + ext;
+    var blob = Utilities.newBlob(Utilities.base64Decode(b.datosBase64), tipo, nombre);
+    var archivo = carpetaCliente(ced || ref, cliente).createFile(blob);
+    archivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return { ok: true, url: 'https://drive.google.com/file/d/' + archivo.getId() + '/view' };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo subir el comprobante: ' + err.message };
+  } finally { lock.releaseLock(); }
+}
+
+function carpetaCliente(clave, nombre) {
+  var raiz = DriveApp.getFoldersByName(CARPETA_COMPROBANTES);
+  var carpeta = raiz.hasNext() ? raiz.next() : DriveApp.createFolder(CARPETA_COMPROBANTES);
+  var nom = (clave + (nombre ? ' - ' + nombre : '')).replace(/[\\\/:*?"<>|]/g, ' ').trim(), sub = carpeta.getFoldersByName(nom);
+  return sub.hasNext() ? sub.next() : carpeta.createFolder(nom);
+}
+
+// Ejecútela UNA vez desde el editor (▶) para aceptar los permisos de Drive y Sheets que necesitan los comprobantes.
+function autorizarPermisos() {
+  abrirSS();
+  DriveApp.getRootFolder();
+  LockService.getScriptLock();
+  return 'Permisos listos';
+}
