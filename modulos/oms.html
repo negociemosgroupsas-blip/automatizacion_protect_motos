@@ -341,7 +341,7 @@
   <div class="estado-conexion" id="estadoConexion"></div>
 
   <div class="acciones-top"><div class="acc-nuevo"><button class="btn btn-oro btn-registrar" id="btnNuevo" type="button">➕ Registrar cliente OMS nuevo</button><span class="acc-ayuda">Anota un cliente nuevo y se guarda solo en la hoja «Historico polizas».</span></div>
-    <div class="acc-nuevo"><button class="btn btn-verde btn-registrar" id="btnPago" type="button">💳 Registrar pago con comprobante</button><span class="acc-ayuda">Guarda el pago de un cliente y la captura del comprobante.</span></div>
+    <div class="acc-nuevo"><button class="btn btn-verde btn-registrar" id="btnPago" type="button">💳 Registrar primer pago</button><span class="acc-ayuda">Deja el primer pago de un cliente con la captura del comprobante.</span></div>
     <span class="rep-w"><button class="btn btn-verde" id="btnRep" type="button">⬇ Descarga de reportes</button><div class="rep-m" id="repM" hidden></div></span></div>
 
   <div id="tablero"></div>
@@ -399,12 +399,12 @@
   </section>
 
   <section class="panel" id="panelPagos">
-    <div class="cabecera"><h2>Pagos y comprobantes</h2><span class="sub">Los pagos que los clientes han hecho, con la captura del comprobante (valores en pesos colombianos, COP)</span></div>
+    <div class="cabecera"><h2>Primer pago de los clientes</h2><span class="sub">Aquí solo se deja constancia del primer pago de cada cliente (con su comprobante) o de que no pagó. Valores en pesos colombianos (COP)</span></div>
     <div class="contenido-panel">
-      <div class="seg-fil"><label>Año <select id="pgAnio"></select></label><label>Mes <select id="pgMes"></select></label></div>
+      <div class="seg-fil"><label>Año de la venta <select id="pgAnio"></select></label><label>Mes <select id="pgMes"></select></label><label>Ver <select id="pgEst"><option value="todos">Todos</option><option value="pago">Pagaron</option><option value="no">No pagaron</option><option value="sin">Sin registrar</option></select></label><label>Buscar <input id="pgBq" type="search" placeholder="nombre, placa o cédula"></label></div>
       <div class="seg-tiles" id="pgTiles"></div>
-      <div class="seg-tabla-w"><table id="tablaPagos"><thead><tr><th>Fecha</th><th>Cliente</th><th>Vehículo</th><th>Concepto</th><th>Valor (COP)</th><th>Registrado por</th><th>Comprobante</th><th>Nota</th></tr></thead><tbody id="cuerpoPagos"></tbody></table></div>
-      <div class="vacio" id="vacioPagos" style="display:none;">Todavía no hay pagos registrados en este período.</div>
+      <div class="seg-tabla-w"><table id="tablaPagos"><thead><tr><th>Cliente</th><th>Vehículo</th><th>Venta</th><th>Primer pago</th><th>Valor (COP)</th><th>Fecha del pago</th><th>Comprobante</th><th>Nota</th><th>Acciones</th></tr></thead><tbody id="cuerpoPagos"></tbody></table></div>
+      <div class="vacio" id="vacioPagos" style="display:none;">No hay clientes en este período.</div>
     </div>
   </section>
 
@@ -419,7 +419,7 @@
         <button data-f="todos" class="act">Todos</button><button data-f="vigente">Vigentes</button><button data-f="renovar">Por renovar</button><button data-f="vencido">Vencidos</button><button data-f="renovado">Renovados</button><button data-f="cancelado">Cancelados</button>
       </div>
       <table>
-        <thead><tr><th>Cliente</th><th>Cédula</th><th>Vehículo</th><th>Aseguradora</th><th>Compra</th><th>Valor</th><th>Inicio</th><th>Cumple su año</th><th>Celular</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Cédula</th><th>Vehículo</th><th>Aseguradora</th><th>Compra</th><th>Valor</th><th>Inicio</th><th>Cumple su año</th><th>Celular</th><th>Estado</th><th>Primer pago</th><th>Acciones</th></tr></thead>
         <tbody id="cuerpoTodos"></tbody>
       </table>
       <div class="vacio" id="vacioTodos" style="display:none;">No hay clientes para mostrar.</div>
@@ -452,11 +452,11 @@
 </div>
 <div class="modal-fondo" id="modalPago">
   <div class="modal ancho">
-    <h3>Registrar pago con comprobante</h3>
-    <div class="sub">Se guarda en la hoja «Pagos_OMS» y la captura queda en su Drive. No se cobra nada desde aquí: solo se deja el registro.</div>
+    <h3>Registrar el primer pago</h3>
+    <div class="sub">Solo se registra el primer pago del cliente. Se guarda en la hoja «Pagos_OMS» y la captura queda en su Drive. No se cobra nada desde aquí.</div>
     <div class="fgrid">
       <div class="campo-form full"><label>Cliente *</label><input type="text" id="pgBusca" list="pgLista" autocomplete="off" placeholder="Escriba el nombre, la placa o la cédula y elija de la lista"><datalist id="pgLista"></datalist><span class="ayuda" id="pgCtx"></span></div>
-      <div class="campo-form"><label>Concepto *</label><select id="pgConcepto"><option>Pago de la póliza</option><option>Cuota</option><option>Renovación</option><option>Otro</option></select></div>
+      <div class="campo-form"><label>Concepto</label><select id="pgConcepto"><option>Primer pago</option></select></div>
       <div class="campo-form"><label>Valor pagado (pesos colombianos, COP) *</label><input type="number" id="pgValor" min="1" step="1"></div>
       <div class="campo-form"><label>Fecha del pago</label><input type="date" id="pgFecha"></div>
       <div class="campo-form"><label>Registrado por</label><input type="text" id="pgPor" placeholder="Su nombre"></div>
@@ -572,7 +572,7 @@
     var tot = filas.length; filas = filas.slice(0,300);
     document.getElementById('cuerpoTodos').innerHTML = filas.map(function(x){
       var c = x.c, e = ETQ[x.tipo];
-      return '<tr><td data-etiqueta="Cliente"><strong>'+esc(c.cliente)+'</strong></td><td data-etiqueta="Cédula">'+esc(c.cedula)+'</td><td data-etiqueta="Vehículo">'+esc(c.placa)+'</td><td data-etiqueta="Aseguradora">'+esc(c.aseguradora||'—')+'</td><td data-etiqueta="Compra">'+esc(c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma)+'</td><td data-etiqueta="Valor">'+(c.valorProtect?dinero(c.valorProtect):'—')+'</td><td data-etiqueta="Inicio">'+fechaCO(c.fechaFirmaISO)+'</td><td data-etiqueta="Cumple su año">'+fechaCO(c.finISO)+'</td><td data-etiqueta="Celular">'+esc(c.celular)+'</td><td data-etiqueta="Estado"><span class="tag '+e[0]+'">'+e[1]+'</span></td><td data-etiqueta="Acciones"><div class="acciones-fila"><button class="btn btn-gris btn-sm" data-a="ficha" data-r="'+esc(c.contrato)+'">Ficha</button><button class="btn btn-verde btn-sm" data-a="pago" data-r="'+esc(c.contrato)+'">💳 Pago</button></div></td></tr>';
+      return '<tr><td data-etiqueta="Cliente"><strong>'+esc(c.cliente)+'</strong></td><td data-etiqueta="Cédula">'+esc(c.cedula)+'</td><td data-etiqueta="Vehículo">'+esc(c.placa)+'</td><td data-etiqueta="Aseguradora">'+esc(c.aseguradora||'—')+'</td><td data-etiqueta="Compra">'+esc(c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma)+'</td><td data-etiqueta="Valor">'+(c.valorProtect?dinero(c.valorProtect):'—')+'</td><td data-etiqueta="Inicio">'+fechaCO(c.fechaFirmaISO)+'</td><td data-etiqueta="Cumple su año">'+fechaCO(c.finISO)+'</td><td data-etiqueta="Celular">'+esc(c.celular)+'</td><td data-etiqueta="Estado"><span class="tag '+e[0]+'">'+e[1]+'</span></td><td data-etiqueta="Primer pago">'+(window.OMSX?window.OMSX.badge(c):'')+'</td><td data-etiqueta="Acciones"><div class="acciones-fila"><button class="btn btn-gris btn-sm" data-a="ficha" data-r="'+esc(c.contrato)+'">Ficha</button>'+(window.OMSX?window.OMSX.botones(c):'')+'</div></td></tr>';
     }).join('');
     document.getElementById('vacioTodos').style.display = tot ? 'none' : 'block';
     document.getElementById('notaTodos').textContent = tot>300 ? 'Se muestran 300 de '+tot+'. Usa el buscador para encontrar uno específico.' : '';
@@ -676,28 +676,40 @@
     function etqCli(c){return c.cliente+' · '+(c.placa||'sin vehículo')+' · inicio '+fechaCO(c.fechaFirmaISO)}
     function pct(a,b){return b?Math.round(a/b*100):0}
 
-    // ---------- Pagos y comprobantes ----------
-    var pgY='todos',pgM='0';
+    // ---------- Primer pago de cada cliente ----------
+    var NOPAGO='Primer pago: no pagó';
+    function primerPago(c){
+      var ps=(estado.pagos||[]).filter(function(p){return p.contrato===c.contrato}).sort(function(a,b){return (a.fechaPagoISO||'').localeCompare(b.fechaPagoISO||'')});
+      if(ps.length)return {est:'pago',p:ps[0],n:ps.length};
+      var gs=(estado.gestiones||[]).filter(function(g){return g.contrato===c.contrato&&g.accion===NOPAGO}).sort(function(a,b){return (b.fechaGestionISO||'').localeCompare(a.fechaGestionISO||'')});
+      return gs.length?{est:'no',g:gs[0]}:{est:'sin'}}
+    function badge(c){var x=primerPago(c);return x.est==='pago'?'<span class="tag hecho" title="'+esc(cop(x.p.valorPagado))+'">✅ Pagó</span>':x.est==='no'?'<span class="tag no">❌ No pagó</span>':'<span class="tag vig" style="background:#eef0f4;color:#6b7280">⏳ Sin registrar</span>'}
+    function botones(c){var x=primerPago(c);return (x.est==='pago'?'':'<button class="btn btn-verde btn-sm" data-a="pago" data-r="'+esc(c.contrato)+'">💳 Primer pago</button>')+(x.est==='sin'?'<button class="btn btn-rojo btn-sm" data-a="nopago" data-r="'+esc(c.contrato)+'">No pagó</button>':'')+(x.est==='pago'&&x.p.comprobante?'<a class="btn btn-gris btn-sm" href="'+esc(x.p.comprobante)+'" target="_blank" rel="noopener" style="text-decoration:none">📎 Comprobante</a>':'')}
+    var pgY='todos',pgM='0',pgE='todos',pgQ='';
     function pintarPagos(){
-      var P=(estado.pagos||[]).slice(),ys={};ys[new Date().getFullYear()]=1;P.forEach(function(p){if(p.fechaPagoISO)ys[p.fechaPagoISO.slice(0,4)]=1});
+      var ys={};ys[new Date().getFullYear()]=1;estado.clientes.forEach(function(c){if(c.fechaFirmaISO)ys[c.fechaFirmaISO.slice(0,4)]=1});
       var sa=$('pgAnio'),sm=$('pgMes');sa.innerHTML='<option value="todos">Todos los años</option>'+Object.keys(ys).sort().reverse().map(function(y){return '<option>'+y+'</option>'}).join('');if(pgY!=='todos'&&!ys[pgY])pgY='todos';sa.value=pgY;
-      sm.innerHTML='<option value="0">Todos los meses</option>'+MN.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>'}).join('');sm.value=pgM;
-      var F=P.filter(function(p){return p.fechaPagoISO&&(pgY==='todos'||p.fechaPagoISO.slice(0,4)===pgY)&&(pgM==='0'||+p.fechaPagoISO.slice(5,7)===+pgM)}).sort(function(a,b){return b.fechaPagoISO.localeCompare(a.fechaPagoISO)});
-      var T=F.reduce(function(a,p){return a+p.valorPagado},0),cc=F.filter(function(p){return p.comprobante}).length;
-      $('pgTiles').innerHTML='<div class="seg-t" style="--c:#1f9d55"><span>Total recibido</span><b>'+cop(T)+'</b><small>'+F.length+' pago(s)</small></div><div class="seg-t" style="--c:#13223f"><span>Pagos registrados</span><b>'+F.length+'</b><small>en el período elegido</small></div><div class="seg-t" style="--c:#d97706"><span>Con comprobante</span><b>'+cc+'</b><small>'+pct(cc,F.length)+' % de los pagos</small></div>';
-      $('cuerpoPagos').innerHTML=F.slice(0,300).map(function(p){var c=porRef(p.contrato);return '<tr><td data-etiqueta="Fecha">'+fechaCO(p.fechaPagoISO)+'</td><td data-etiqueta="Cliente"><strong>'+esc(p.cliente)+'</strong><br><small style="color:var(--texto-suave)">'+esc(p.cedula)+'</small></td><td data-etiqueta="Vehículo">'+esc(c?c.placa:'—')+'</td><td data-etiqueta="Concepto">'+esc(p.concepto||'—')+'</td><td data-etiqueta="Valor (COP)"><strong>'+cop(p.valorPagado)+'</strong></td><td data-etiqueta="Registrado por">'+esc(p.registradoPor)+'</td><td data-etiqueta="Comprobante">'+(p.comprobante?'<a class="lnk" href="'+esc(p.comprobante)+'" target="_blank" rel="noopener">📎 Ver</a>':'—')+'</td><td data-etiqueta="Nota">'+esc(p.nota)+'</td></tr>'}).join('');
+      sm.innerHTML='<option value="0">Todos los meses</option>'+MN.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>'}).join('');sm.value=pgM;$('pgEst').value=pgE;
+      var base=estado.clientes.filter(function(c){return c.fechaFirmaISO&&(pgY==='todos'||c.fechaFirmaISO.slice(0,4)===pgY)&&(pgM==='0'||+c.fechaFirmaISO.slice(5,7)===+pgM)}).map(function(c){return {c:c,x:primerPago(c)}});
+      var cn=function(e){return base.filter(function(r){return r.x.est===e}).length},n=base.length,T=base.reduce(function(a,r){return a+(r.x.est==='pago'?r.x.p.valorPagado:0)},0),q=pgQ.toLowerCase();
+      $('pgTiles').innerHTML='<div class="seg-t" style="--c:#13223f"><span>Clientes en el período</span><b>'+n+'</b><small>según su fecha de venta</small></div><div class="seg-t" style="--c:#1f9d55"><span>Pagaron el primer pago</span><b>'+cn('pago')+'</b><small>'+pct(cn('pago'),n)+' % · '+cop(T)+'</small></div><div class="seg-t" style="--c:#dc2626"><span>No pagaron</span><b>'+cn('no')+'</b><small>'+pct(cn('no'),n)+' %</small></div><div class="seg-t" style="--c:#d97706"><span>Sin registrar</span><b>'+cn('sin')+'</b><small>'+pct(cn('sin'),n)+' % · aún sin marcar</small></div>';
+      var F=base.filter(function(r){return (pgE==='todos'||r.x.est===pgE)&&(!q||(r.c.cliente+' '+r.c.placa+' '+r.c.cedula).toLowerCase().indexOf(q)>=0)}).sort(function(a,b){return (b.c.fechaFirmaISO||'').localeCompare(a.c.fechaFirmaISO||'')});
+      $('cuerpoPagos').innerHTML=F.slice(0,300).map(function(r){var c=r.c,x=r.x;return '<tr><td data-etiqueta="Cliente"><strong>'+esc(c.cliente)+'</strong><br><small style="color:var(--texto-suave)">'+esc(c.cedula)+'</small></td><td data-etiqueta="Vehículo">'+esc(c.placa)+'</td><td data-etiqueta="Venta">'+fechaCO(c.fechaFirmaISO)+'</td><td data-etiqueta="Primer pago">'+badge(c)+'</td><td data-etiqueta="Valor (COP)">'+(x.est==='pago'?'<strong>'+cop(x.p.valorPagado)+'</strong>':'—')+'</td><td data-etiqueta="Fecha del pago">'+(x.est==='pago'?fechaCO(x.p.fechaPagoISO):x.est==='no'?'Marcado '+esc(x.g.fechaGestion):'—')+'</td><td data-etiqueta="Comprobante">'+(x.est==='pago'&&x.p.comprobante?'<a class="lnk" href="'+esc(x.p.comprobante)+'" target="_blank" rel="noopener">📎 Ver</a>':'—')+'</td><td data-etiqueta="Nota">'+esc(x.est==='pago'?x.p.nota:'')+'</td><td data-etiqueta="Acciones"><div class="acciones-fila">'+botones(c).replace('📎 Comprobante','📎')+'</div></td></tr>'}).join('');
       $('vacioPagos').style.display=F.length?'none':'block';$('tablaPagos').style.display=F.length?'':'none';
     }
-    $('pgAnio').addEventListener('change',function(){pgY=this.value;pintarPagos()});$('pgMes').addEventListener('change',function(){pgM=this.value;pintarPagos()});
+    $('pgAnio').addEventListener('change',function(){pgY=this.value;pintarPagos()});$('pgMes').addEventListener('change',function(){pgM=this.value;pintarPagos()});$('pgEst').addEventListener('change',function(){pgE=this.value;pintarPagos()});$('pgBq').addEventListener('input',function(){pgQ=this.value.trim();pintarPagos()});
+    function accionesPago(ev){var b=ev.target.closest('button[data-a]');if(!b)return;var c=porRef(b.dataset.r);if(!c)return;
+      if(b.dataset.a==='pago')abrirPago(c);else if(b.dataset.a==='nopago'){if(confirm('¿Dejar constancia de que '+c.cliente+' NO pagó el primer pago?\n\nSi después paga, registre el pago y quedará como «Pagó».'))gestionar(c,NOPAGO,b)}else if(b.dataset.a==='ficha')abrirFicha(c)}
+    $('cuerpoPagos').addEventListener('click',accionesPago);
 
     // ---------- Modal: registrar pago ----------
     var modal=$('modalPago'),guardandoP=false,mapaCli={};
     function pmsg(t,tipo){var e=$('pgMsg');e.className='msg-modal'+(tipo?' '+tipo:'');e.textContent=t||''}
     function clienteElegido(){return mapaCli[$('pgBusca').value.trim()]||null}
-    function ctx(){var c=clienteElegido();$('pgCtx').textContent=c?('Cédula '+c.cedula+' · '+(c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma)+(c.valorCuota?' · cuota '+cop(c.valorCuota):'')):'';if(c&&!$('pgValor').value)$('pgValor').value=(c.forma==='FINANCIADO'&&c.valorCuota)?c.valorCuota:(c.valorProtect||'')}
+    function ctx(){var c=clienteElegido(),x=c?primerPago(c):null;$('pgCtx').textContent=c?('Cédula '+c.cedula+' · '+(c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma)+(c.valorCuota?' · cuota '+cop(c.valorCuota):'')+(x&&x.est==='pago'?' · ⚠️ ya tiene primer pago registrado ('+cop(x.p.valorPagado)+')':'')):'';if(c&&!$('pgValor').value)$('pgValor').value=(c.forma==='FINANCIADO'&&c.valorCuota)?c.valorCuota:(c.valorProtect||'')}
     function abrirPago(c){
       mapaCli={};$('pgLista').innerHTML=estado.clientes.map(function(x){var l=etqCli(x);mapaCli[l]=x;return '<option value="'+esc(l)+'">'}).join('');
-      $('pgBusca').value=c?etqCli(c):'';$('pgConcepto').value='Pago de la póliza';$('pgValor').value='';$('pgFecha').value=isoD(new Date());$('pgNota').value='';$('pgArchivo').value='';$('pgPrev').style.display='none';$('pgAyuda').textContent='';
+      $('pgBusca').value=c?etqCli(c):'';$('pgConcepto').value='Primer pago';$('pgValor').value='';$('pgFecha').value=isoD(new Date());$('pgNota').value='';$('pgArchivo').value='';$('pgPrev').style.display='none';$('pgAyuda').textContent='';
       try{$('pgPor').value=localStorage.getItem('pm_cobros_registrado_por')||localStorage.getItem('pm_oms_registrado_por')||''}catch(e){}
       pmsg('');ctx();$('pgGuardar').disabled=false;guardandoP=false;modal.classList.add('abierto');setTimeout(function(){(c?$('pgValor'):$('pgBusca')).focus()},60);
     }
@@ -715,6 +727,7 @@
       if(guardandoP)return;var c=clienteElegido(),valor=Number($('pgValor').value)||0,fecha=$('pgFecha').value,concepto=$('pgConcepto').value,por=$('pgPor').value.trim(),nota=$('pgNota').value.trim(),f=$('pgArchivo').files[0]||null;
       if(!c){pmsg('Elija un cliente de la lista (escriba y seleccione una de las opciones).','error');return}
       if(valor<=0){pmsg('Escriba el valor pagado.','error');return}if(!fecha){pmsg('Elija la fecha del pago.','error');return}
+      var ya=primerPago(c);if(ya.est==='pago'&&!confirm(c.cliente+' ya tiene el primer pago registrado ('+cop(ya.p.valorPagado)+' el '+fechaCO(ya.p.fechaPagoISO)+').\n\nEste módulo es solo para el primer pago. ¿Registrar otro de todas formas?'))return;
       try{if(por)localStorage.setItem('pm_oms_registrado_por',por)}catch(e){}
       guardandoP=true;$('pgGuardar').disabled=true;
       function guardar(url){pmsg('Guardando el pago…');llamar({action:'registrarPago',contrato:c.contrato,cedula:c.cedula,cliente:c.cliente,concepto:concepto,valor:valor,nota:nota,fecha:fecha,registradoPor:por,comprobante:url||''}).then(function(r){
@@ -729,9 +742,9 @@
     function abrirFicha(c){
       var a=D.analizar(estado.clientes,estado.gestiones).filter(function(x){return x.c===c})[0],pg=(estado.pagos||[]).filter(function(p){return p.contrato===c.contrato}).sort(function(x,y){return y.fechaPagoISO.localeCompare(x.fechaPagoISO)}),gs=(estado.gestiones||[]).filter(function(g){return g.contrato===c.contrato}).sort(function(x,y){return (y.fechaGestionISO||'').localeCompare(x.fechaGestionISO||'')});
       var e=a?ETQ[a.tipo]:['vig','—'],dato=function(l,v){return '<div><span>'+l+'</span>'+(v||'—')+'</div>'};
-      $('fichaCuerpo').innerHTML='<h3>'+esc(c.cliente)+'</h3><div class="sub">Ficha del cliente OMS · referencia '+esc(c.contrato)+'</div><div class="fic-g">'+dato('Cédula',esc(c.cedula))+dato('Celular',esc(c.celular))+dato('Vehículo',esc(c.placa))+dato('Aseguradora',esc(c.aseguradora))+dato('Asesor',esc(c.asesor))+dato('Compra',esc(c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma))+dato('Valor de la póliza',c.valorProtect?cop(c.valorProtect):'')+dato('Inicio',fechaCO(c.fechaFirmaISO))+dato('Cumple su año',fechaCO(c.finISO)+(a&&a.d!==null?' · '+etqDias(a.d):''))+dato('Estado de renovación','<span class="tag '+e[0]+'">'+e[1]+'</span>')+'</div>'+
-        '<div class="acciones-fila" style="margin-bottom:14px"><button class="btn btn-verde btn-sm" id="fcPago" type="button">💳 Registrar pago</button><button class="btn btn-oro btn-sm" id="fcWa" type="button">WhatsApp</button></div>'+
-        '<h3 style="font-size:.95rem;margin:6px 0">Pagos y comprobantes</h3>'+(pg.length?'<div class="seg-tabla-w"><table><thead><tr><th>Fecha</th><th>Concepto</th><th>Valor (COP)</th><th>Comprobante</th><th>Nota</th></tr></thead><tbody>'+pg.map(function(p){return '<tr><td>'+fechaCO(p.fechaPagoISO)+'</td><td>'+esc(p.concepto)+'</td><td><strong>'+cop(p.valorPagado)+'</strong></td><td>'+(p.comprobante?'<a class="lnk" href="'+esc(p.comprobante)+'" target="_blank" rel="noopener">📎 Ver</a>':'—')+'</td><td>'+esc(p.nota)+'</td></tr>'}).join('')+'</tbody></table></div>':'<p class="seg-nota">Todavía no hay pagos registrados para este cliente.</p>')+
+      $('fichaCuerpo').innerHTML='<h3>'+esc(c.cliente)+'</h3><div class="sub">Ficha del cliente OMS · referencia '+esc(c.contrato)+'</div><div class="fic-g">'+dato('Cédula',esc(c.cedula))+dato('Celular',esc(c.celular))+dato('Vehículo',esc(c.placa))+dato('Aseguradora',esc(c.aseguradora))+dato('Asesor',esc(c.asesor))+dato('Compra',esc(c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma))+dato('Valor de la póliza',c.valorProtect?cop(c.valorProtect):'')+dato('Inicio',fechaCO(c.fechaFirmaISO))+dato('Cumple su año',fechaCO(c.finISO)+(a&&a.d!==null?' · '+etqDias(a.d):''))+dato('Estado de renovación','<span class="tag '+e[0]+'">'+e[1]+'</span>')+dato('Primer pago',badge(c))+'</div>'+
+        '<div class="acciones-fila" style="margin-bottom:14px"><button class="btn btn-verde btn-sm" id="fcPago" type="button">💳 Registrar primer pago</button><button class="btn btn-oro btn-sm" id="fcWa" type="button">WhatsApp</button></div>'+
+        '<h3 style="font-size:.95rem;margin:6px 0">Primer pago y comprobante</h3>'+(pg.length?'<div class="seg-tabla-w"><table><thead><tr><th>Fecha</th><th>Concepto</th><th>Valor (COP)</th><th>Comprobante</th><th>Nota</th></tr></thead><tbody>'+pg.map(function(p){return '<tr><td>'+fechaCO(p.fechaPagoISO)+'</td><td>'+esc(p.concepto)+'</td><td><strong>'+cop(p.valorPagado)+'</strong></td><td>'+(p.comprobante?'<a class="lnk" href="'+esc(p.comprobante)+'" target="_blank" rel="noopener">📎 Ver</a>':'—')+'</td><td>'+esc(p.nota)+'</td></tr>'}).join('')+'</tbody></table></div>':'<p class="seg-nota">Todavía no hay primer pago registrado para este cliente.</p>')+
         '<h3 style="font-size:.95rem;margin:14px 0 6px">Historial de renovación</h3>'+(gs.length?'<div class="seg-tabla-w"><table><thead><tr><th>Fecha</th><th>Acción</th><th>Registrado por</th></tr></thead><tbody>'+gs.map(function(g){return '<tr><td>'+esc(g.fechaGestion)+'</td><td>'+esc(g.accion)+'</td><td>'+esc(g.registradoPor)+'</td></tr>'}).join('')+'</tbody></table></div>':'<p class="seg-nota">Sin mensajes ni gestiones de renovación todavía.</p>')+
         '<div class="modal-acciones"><button class="btn btn-gris" id="fcCerrar" type="button">Cerrar</button></div>';
       $('modalFicha').classList.add('abierto');
@@ -739,7 +752,7 @@
       $('fcPago').addEventListener('click',function(){$('modalFicha').classList.remove('abierto');abrirPago(c)});
       $('fcWa').addEventListener('click',function(){abrirWA(c)});
     }
-    $('cuerpoTodos').addEventListener('click',function(ev){var b=ev.target.closest('button[data-a]');if(!b)return;var c=porRef(b.dataset.r);if(!c)return;if(b.dataset.a==='ficha')abrirFicha(c);else abrirPago(c)});
+    $('cuerpoTodos').addEventListener('click',accionesPago);
     [$('modalPago'),$('modalFicha')].forEach(function(m){m.addEventListener('click',function(ev){if(ev.target===m&&m.id==='modalFicha')m.classList.remove('abierto')})});
 
     // ---------- Seguimiento de renovaciones (estadísticas) ----------
@@ -788,7 +801,7 @@
         cu.appendChild(tr)})}
     $('scFiltro').addEventListener('change',function(){scF=this.value;pintarSC()});$('scBusca').addEventListener('input',function(){scQ=this.value.trim();pintarSC()});
 
-    window.OMSX={pintar:function(){pintarPagos();pintarSeg();pintarSC()},seg:datosSeg,pagos:function(){return estado.pagos}};
+    window.OMSX={badge:badge,botones:botones,pintar:function(){pintarPagos();pintarSeg();pintarSC()},seg:datosSeg,pagos:function(){return estado.pagos}};
   })();
 
   /* ===== Descarga de reportes de este módulo (Excel .csv) ===== */
@@ -802,8 +815,8 @@
     var MESN=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     function dIso(iso){if(!iso)return '';var p=String(iso).split('-');return p.length===3?(+p[2])+'/'+(+p[1])+'/'+p[0]:iso}
     var DESC=[["Todos los clientes OMS", "Una fila por cada cliente OMS (cada cliente es una póliza), con su estado de renovación.", "«Cumple su año» es la fecha fin de la póliza. No se cobra: es la fecha en que hay que volver a hablarle para renovar."], ["Clientes OMS por renovar", "Clientes cuya póliza cumple el año en 8 días o menos.", "«Días» negativo significa que ya cumplió su año. Son los clientes a los que hay que escribirles."], ["Pólizas por mes y por moto", "Cuántas pólizas OMS se vendieron cada mes y de qué moto.", "La primera tabla cuenta por mes de la fecha de inicio; la segunda, las pólizas por moto en cada año."], ["Mensajes y gestiones", "Los avisos de renovación enviados y sus respuestas.", "Sale de la pestaña Gestiones_OMS que crea el CRM."]];
-    DESC.splice(3,0,["Pagos y comprobantes", "Cada pago registrado de un cliente OMS, con el valor en pesos colombianos (COP) y el enlace a la captura del comprobante.", "«Comprobante» es el enlace a la imagen guardada en el Drive. «Referencia» identifica al cliente."],["Seguimiento a clientes de renovación", "Cada cliente al que se le envió el mensaje de renovación, cuántos mensajes de seguimiento (1 a 3) recibió y si renovó o no.", "«Con qué mensaje renovó» indica cuántos seguimientos se habían enviado cuando renovó (0 = con el mensaje inicial)."]);
-    var YCM=[5, 5, 0, 0, 5, 0],TITM=[0, 0, 1, 0, 0, 0],per='';try{per=localStorage.getItem('pm_rep_anio_mod')||''}catch(e){}
+    DESC.splice(3,0,["Primer pago de los clientes", "Una fila por cada cliente OMS: si pagó el primer pago (con su valor en pesos colombianos, COP, y el enlace al comprobante), si se dejó constancia de que no pagó, o si aún no se ha registrado.", "«Comprobante» es el enlace a la imagen guardada en el Drive. «Sin registrar» significa que todavía nadie marcó si pagó."],["Seguimiento a clientes de renovación", "Cada cliente al que se le envió el mensaje de renovación, cuántos mensajes de seguimiento (1 a 3) recibió y si renovó o no.", "«Con qué mensaje renovó» indica cuántos seguimientos se habían enviado cuando renovó (0 = con el mensaje inicial)."]);
+    var YCM=[5, 5, 0, 4, 5, 0],TITM=[0, 0, 1, 0, 0, 0],per='';try{per=localStorage.getItem('pm_rep_anio_mod')||''}catch(e){}
     function perTxt(y){return y?'año '+y:'histórico (todos los años)'}
     function filt(filas,i,y){if(!y||YCM[i]==null)return filas;var out=[filas[0]];for(var k=1;k<filas.length;k++){var v=filas[k][YCM[i]],mm=String(v==null?'':v).match(/(?:^|\D)(20\d{2})(?:\D|$)/);if(mm){if(mm[1]===y)out.push(filas[k])}else if(TITM[i])out.push(filas[k])}return out}
     var modo=false;try{modo=localStorage.getItem('pm_rep_texto_mod')==='1'}catch(e){}
@@ -816,7 +829,7 @@
       ['🏍️ Pólizas vendidas por mes y por moto',function(){var mm={},vv={};estado.clientes.forEach(function(c){var d=(c.fechaFirmaISO||'').split('-');if(d.length<3)return;var k=d[0]+'|'+(+d[1]);mm[k]=(mm[k]||0)+1;var vk=d[0]+'|'+String(c.placa||'(sin dato)').toUpperCase().trim();vv[vk]=(vv[vk]||0)+1});
         var f=[['PÓLIZAS VENDIDAS POR MES'],['Año','Mes','Pólizas']];Object.keys(mm).sort(function(a,b){var x=a.split('|'),y=b.split('|');return (+x[0]-+y[0])||(+x[1]-+y[1])}).forEach(function(k){var p=k.split('|');f.push([p[0],MESN[p[1]-1],mm[k]])});
         f.push([]);f.push(['PÓLIZAS POR MOTO']);f.push(['Año','Moto','Pólizas']);Object.keys(vv).sort(function(a,b){var x=a.split('|'),y=b.split('|');return (+x[0]-+y[0])||(vv[b]-vv[a])}).forEach(function(k){var p=k.split('|');f.push([p[0],p[1],vv[k]])});return ['OMS_polizas_por_mes_y_moto',f]}],
-      ['💳 Pagos y comprobantes',function(){var f=[['Fecha de pago','Referencia','Cédula','Cliente','Vehículo','Concepto','Valor pagado (COP)','Registrado por','Comprobante','Nota']];(estado.pagos||[]).forEach(function(p){var c=estado.clientes.filter(function(x){return x.contrato===p.contrato})[0];f.push([dIso(p.fechaPagoISO),p.contrato,p.cedula,p.cliente,c?c.placa:'',p.concepto,p.valorPagado,p.registradoPor,p.comprobante,p.nota])});return ['OMS_pagos_y_comprobantes',f]}],
+      ['💳 Primer pago de los clientes',function(){var f=[['Cliente','Cédula','Referencia','Vehículo','Fecha de la venta','Primer pago','Fecha del pago','Valor pagado (COP)','Registrado por','Comprobante','Nota']];estado.clientes.forEach(function(c){var ps=(estado.pagos||[]).filter(function(p){return p.contrato===c.contrato}).sort(function(a,b){return (a.fechaPagoISO||'').localeCompare(b.fechaPagoISO||'')}),no=estado.gestiones.some(function(g){return g.contrato===c.contrato&&g.accion==='Primer pago: no pagó'}),p=ps[0];f.push([c.cliente,c.cedula,c.contrato,c.placa,dIso(c.fechaFirmaISO),p?'Pagó':no?'No pagó':'Sin registrar',p?dIso(p.fechaPagoISO):'',p?p.valorPagado:'',p?p.registradoPor:'',p?p.comprobante:'',p?p.nota:''])});return ['OMS_primer_pago',f]}],
       ['🎯 Seguimiento a clientes de renovación',function(){var f=[['Cliente','Cédula','Referencia','Vehículo','Celular','Fecha del primer mensaje','Mensajes enviados (total)','Seguimiento 1','Seguimiento 2','Seguimiento 3','Resultado','Fecha de la respuesta','Con qué mensaje renovó']];
         window.OMSX.seg().lista.sort(function(a,b){return (b.envio||'').localeCompare(a.envio||'')}).forEach(function(o){f.push([o.c.cliente,o.c.cedula,o.c.contrato,o.c.placa,o.c.celular,dIso(o.envio),o.msgs,dIso(o.seg[0]||''),dIso(o.seg[1]||''),dIso(o.seg[2]||''),o.res,dIso(o.respISO),o.resp==='renovo'?(o.conCual?'Seguimiento '+o.conCual:'Mensaje inicial'):''])});return ['OMS_seguimiento_renovaciones',f]}],
       ['📝 Mensajes y gestiones de renovación',function(){var f=[['Fecha','Referencia','Cédula','Cliente','Acción','Registrado por']];estado.gestiones.forEach(function(g){f.push([g.fechaGestion,g.contrato,g.cedula,g.cliente,g.accion,g.registradoPor])});return ['OMS_gestiones',f]}]

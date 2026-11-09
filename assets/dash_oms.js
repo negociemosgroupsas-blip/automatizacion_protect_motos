@@ -33,7 +33,7 @@
   /* ---------- estado de cada cliente ---------- */
   function ultimaGestion(gest) {
     var m = {};
-    (gest || []).forEach(function (g) { var k = g.contrato; if (!m[k] || (g.fechaGestionISO || '') >= (m[k].fechaGestionISO || '')) m[k] = g; });
+    (gest || []).forEach(function (g) { if (/^Primer pago/i.test(g.accion || '')) return; var k = g.contrato; if (!m[k] || (g.fechaGestionISO || '') >= (m[k].fechaGestionISO || '')) m[k] = g; });
     return m;
   }
   function analizar(clientes, gestiones) {
