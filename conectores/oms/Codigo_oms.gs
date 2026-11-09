@@ -66,7 +66,7 @@ function doGet(e) {
       else if (accion === 'registrarGestion') salida = accionRegistrarGestion(params);
       else if (accion === 'agregar') salida = accionAgregar(params);
       else if (accion === 'registrarPago') salida = accionRegistrarPago(params);
-      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de Clientes OMS activo', version: 'oms-4' };
+      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de Clientes OMS activo', version: 'oms-5' };
       else salida = { ok: false, error: 'Acción desconocida: ' + accion };
     }
   } catch (err) {
@@ -302,6 +302,7 @@ function indicesColumnas(enc) {
   var norm = enc.map(normalizar), idx = {};
   var buscar = function (c, porDefecto) {
     for (var n = 0; n < c.nombres.length; n++) { var b = normalizar(c.nombres[n]); for (var i = 0; i < norm.length; i++) if (norm[i] === b) return i; }
+    for (var n2 = 0; n2 < c.nombres.length; n2++) { var b2 = normalizar(c.nombres[n2]); if (b2.length < 5) continue; for (var j = 0; j < norm.length; j++) if (norm[j].indexOf(b2) === 0) return j; }   // «Aseguradora SOAT», «Asesor comercial»…
     return porDefecto;
   };
   COLS.forEach(function (c) { idx[c.clave] = buscar(c, c.pos - 1); });

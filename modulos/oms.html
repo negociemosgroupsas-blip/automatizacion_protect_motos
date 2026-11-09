@@ -522,7 +522,9 @@
       if(!r || !r.ok){ mostrar('error', (r && r.error) ? r.error : 'Respuesta inválida del conector.'); return; }
       estado.clientes = r.contratos || []; estado.gestiones = r.gestiones || []; estado.pagos = r.pagos || [];
       pintar();
-      if(!silencioso) mostrar('ok','Datos al día ✔ ('+estado.clientes.length+' clientes)');
+      var viejo = estado.clientes.length && estado.clientes.every(function(c){ return c.aseguradora===undefined; });
+      if(viejo) mostrar('error','⚠️ El conector de Clientes OMS todavía es la versión vieja (no envía Aseguradora, Asesor ni Pagos). Pegue el código nuevo en Apps Script y publique «Nueva versión»: la URL …'+estado.url.replace(/\/exec.*$/,'').slice(-8)+'/exec debe responder oms-5 al probar ?action=ping&token=PM-OMS-2026.');
+      else if(!silencioso) mostrar('ok','Datos al día ✔ ('+estado.clientes.length+' clientes)');
     }).catch(function(e){ enCarga = false; mostrar('error', e.message); });
   }
 

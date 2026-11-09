@@ -361,7 +361,8 @@
     var itA = Object.keys(ag).map(function (k) { return ag[k]; }).sort(function (p, r) { return (p.l === 'SIN REGISTRAR') - (r.l === 'SIN REGISTRAR') || r.n - p.n; });
     q('[data-s="10"]').textContent = nA ? nA + ' pólizas · ' + itA.filter(function (z) { return z.l !== 'SIN REGISTRAR'; }).length + ' aseguradoras · ' + cop(vA) + ' en total' : 'Sin ventas en el período';
     marcaBarras(q('[data-g="aseg"]'), itA, nA || 1, 'n');
-    q('[data-s="11"]').textContent = sinA ? sinA + ' póliza(s) no tienen aseguradora registrada. Escríbala en la columna «Aseguradora» de la hoja OMS (o al registrar el cliente) para que cuenten aquí.' : '';
+    var viejo = a.length && a.every(function (x) { return x.c.aseguradora === undefined; });
+    q('[data-s="11"]').textContent = viejo ? '⚠️ El conector de Clientes OMS todavía es la versión vieja: no envía la columna «Aseguradora». Pegue el código nuevo en Apps Script y publique «Nueva versión» (debe responder oms-5).' : sinA ? sinA + ' póliza(s) no tienen aseguradora registrada. Revise que la columna se llame «Aseguradora» y que tenga el nombre en esas filas (o escríbala al registrar el cliente).' : '';
     // 8) costo de la póliza por cliente
     var cs = [], sumC = 0;
     a.forEach(function (x) { if (!pasa(x, S.costo)) return; cs.push({ c: String(x.c.cliente || 'Sin nombre'), m: String(x.veh || '—').toUpperCase(), f: x.forma, cu: Number(x.c.valorCuota) || 0, pl: x.c.plazo, v: x.valor, d: x.ini }); sumC += x.valor; });
