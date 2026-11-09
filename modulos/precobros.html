@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cobros y precobros</title>
+<style>
+  :root{--azul:#13223f;--azul2:#1f4e79;--dorado:#d6a417;--fondo:#f4f5f7;--tarjeta:#fff;--texto:#1f2430;--suave:#6b7280;--borde:#e3e6eb;--verde:#1f9d55;--naranja:#d97706;--rojo:#dc2626}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fondo);color:var(--texto)}
+  header{background:linear-gradient(135deg,#13223f,#1c3050);color:#fff;padding:18px 24px}
+  header h1{margin:0;font-size:1.25rem} header p{margin:4px 0 0;font-size:.85rem;opacity:.8}
+  main{max-width:1250px;margin:0 auto;padding:18px}
+  .panel{background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .panel h2{margin:0 0 4px;font-size:1.02rem;color:var(--azul)} .sub{font-size:.8rem;color:var(--suave);margin:0 0 12px}
+  .estado{font-size:.82rem;color:var(--suave)} .estado.ok{color:var(--verde)} .estado.er{color:var(--rojo)}
+  .btn{border:0;border-radius:9px;padding:9px 15px;font-size:.86rem;font-weight:600;cursor:pointer;background:var(--azul);color:#fff} .btn.d{background:var(--dorado);color:#13223f} .btn.g{background:#e9edf3;color:var(--azul)} .btn.v{background:var(--verde)} .btn:disabled{opacity:.45;cursor:not-allowed}
+  .fil{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end} label{font-size:.78rem;color:var(--suave);display:flex;flex-direction:column;gap:4px}
+  select,input[type=search],input[type=text]{border:1px solid var(--borde);border-radius:8px;padding:7px 10px;font-size:.88rem;background:#fff;font-family:inherit}
+  .drop{border:2px dashed #b8c4d6;border-radius:14px;padding:28px 18px;text-align:center;background:#fbfdff;cursor:pointer;transition:.15s} .drop:hover,.drop.on{border-color:var(--azul2);background:#eef5ff} .drop b{display:block;font-size:1.02rem;color:var(--azul);margin-bottom:4px} .drop span{font-size:.82rem;color:var(--suave)}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:0 0 14px}
+  .t{background:#fff;border:1px solid var(--borde);border-left:5px solid var(--c,#13223f);border-radius:12px;padding:11px 14px} .t span{font-size:.7rem;text-transform:uppercase;letter-spacing:.3px;color:var(--suave)} .t b{display:block;font-size:1.45rem;color:var(--azul);line-height:1.15;margin:2px 0} .t small{font-size:.76rem;color:var(--suave)}
+  table{width:100%;border-collapse:collapse;font-size:.84rem} th,td{padding:7px 9px;border-bottom:1px solid var(--borde);text-align:left;vertical-align:top} th{font-size:.7rem;text-transform:uppercase;letter-spacing:.3px;color:var(--suave);background:#fafbfc} .num{text-align:right;white-space:nowrap}
+  .scroll{overflow-x:auto} .tag{display:inline-block;border-radius:999px;padding:2px 9px;font-size:.7rem;font-weight:700;margin:1px 2px 1px 0} .tr{background:#fdeaea;color:#b42318} .ta{background:#fff3e0;color:#b45309} .tb{background:#eaf1fd;color:#1d4ed8} .tv{background:#e7f8ee;color:#166534}
+  tr.noenc td{background:#fff7f7} tr.alerta td{background:#fffbf3}
+  .aviso{border:1px solid #f3d9a8;background:#fff3e0;border-left:6px solid var(--naranja);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:.86rem} .okb{border:1px solid #bfe6cf;background:#e7f8ee;border-left:6px solid var(--verde);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:.86rem} .alr{border:1px solid #f5c2c2;background:#fdeaea;border-left:6px solid var(--rojo);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:.86rem}
+  /* ===== hoja que se imprime ===== */
+  #hoja{background:#fff;border:2px solid var(--azul2);border-radius:4px;padding:0 0 12px}
+  #hoja .tt{background:#eaf1fb;color:var(--azul2);text-align:center;font-size:1.25rem;font-weight:800;padding:12px 10px;border-bottom:2px solid var(--azul2)}
+  #hoja .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:4px 18px;padding:10px 16px;font-size:.82rem;color:#333} #hoja .meta span{color:#6b7280;font-size:.68rem;text-transform:uppercase;display:block}
+  #hoja table th{background:#1f4e79;color:#fff;border:1px solid #fff;text-align:center;font-size:.68rem} #hoja table td{border:1px solid #333;padding:5px 7px;font-size:.78rem} #hoja .tot td{background:#bdd7ee;color:#1f4e79;font-weight:800}
+  #hoja h3{margin:14px 16px 6px;font-size:.92rem;color:var(--azul2)} #hoja .wrap{padding:0 12px}
+  #hoja table td{white-space:nowrap} #hoja table td:nth-child(2){white-space:normal;min-width:210px} #hoja table td.col-obs{white-space:normal} #hoja th:nth-child(6),#hoja td:nth-child(6){width:96px} #hoja td:nth-child(7){min-width:135px} #hoja td:nth-child(8){min-width:95px}
+  .pie-imp{display:none;font-size:.72rem;color:#555;padding:6px 16px 0}
+  @media print{
+    @page{size:landscape;margin:10mm}
+    body{background:#fff} #hoja table td{padding:3px 5px;font-size:.7rem} #hoja table th{padding:4px 5px} header,.nop{display:none!important} main{padding:0;max-width:none} #hoja{border:0} .pie-imp{display:block}
+    .panel.fuera{display:none!important} #hoja .tag{border:1px solid #bbb;background:#fff!important;color:#222!important}
+    tr.noenc td,tr.alerta td{background:#fff!important} *{-webkit-print-color-adjust:exact;print-color-adjust:exact} thead{display:table-header-group} tr{page-break-inside:avoid}
+    #hoja.sin-obs .col-obs{display:none}
+  }
+</style>
+</head>
+<body>
+<header><h1>🧾 Cobros y precobros</h1><p>Suba el archivo que le envía el proveedor cada mes: el sistema busca a cada cliente por su cédula y le pone el asesor y el número de contrato. Listo para imprimir.</p><p style="font-size:.72rem;opacity:.6;margin-top:6px">Pantalla Cobros y precobros · versión del sistema: <b>PC-09nov-A</b></p></header>
+<main>
+  <div class="panel nop" style="padding:12px 18px"><div class="fil" style="align-items:center"><button class="btn g" id="bRec" type="button">🔄 Volver a leer la hoja</button><span class="estado" id="est" style="flex:1">Cargando…</span></div></div>
+
+  <section class="panel nop" id="pSubir">
+    <h2>1. Suba el archivo del proveedor</h2>
+    <p class="sub">Excel (.xlsx o .xls) o .csv, tal como lo recibe. El archivo no se envía a ninguna parte: se lee aquí en su computador.</p>
+    <div class="drop" id="drop"><b>📂 Haga clic aquí o arrastre el archivo</b><span id="dropTxt">Ejemplo: PRECOBRO_OCT_2000725842__NEGOCIEMOS_GROUP_S.A.S.xlsx</span></div>
+    <input type="file" id="archivo" accept=".xlsx,.xls,.csv" style="display:none">
+  </section>
+
+  <div id="resultado" style="display:none">
+    <section class="panel nop fuera" id="pTiles">
+      <h2>2. Resumen y revisión</h2>
+      <div id="avisos"></div>
+      <div class="tiles" id="tiles"></div>
+    </section>
+
+    <section class="panel nop fuera">
+      <h2>3. Ajuste lo que va a imprimir</h2>
+      <div class="fil">
+        <label>Ordenar por <select id="fOrden"><option value="orig">Como viene en el archivo</option><option value="asesor">Asesor</option><option value="nombre">Nombre del asegurado</option></select></label>
+        <label>Mostrar <select id="fVer"><option value="todos">Todos</option><option value="rev">Solo los que hay que revisar</option><option value="sinas">Solo los sin asesor</option></select></label>
+        <label>Buscar <input type="search" id="fBusca" placeholder="nombre, cédula, asesor o contrato"></label>
+        <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="fObs" checked> Incluir columna «Revisar»</label>
+        <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="fRes" checked> Incluir resumen por asesor</label>
+        <button class="btn d" id="bPrint" type="button">🖨️ Imprimir / guardar PDF</button>
+        <button class="btn" id="bCsv" type="button">⬇ Excel (CSV)</button>
+      </div>
+    </section>
+
+    <div id="hoja"></div>
+  </div>
+</main>
+
+<script src="../assets/xlsx.mini.min.js"></script>
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function pesos(n){return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
+  function pesosC(n){return pesos(n)+' COP'}
+  function lsg(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
+  function est(t,c){var e=$('est');e.textContent=t;e.className='estado '+(c||'')}
+  var CRM=null,OMS=null,ARCH=null,FILAS=[];
+
+  // ---------- conexión (mismo conector del CRM; OMS opcional) ----------
+  function llamar(src,params,cb){
+    var url,tok;if(src==='oms'){url=lsg('pm_oms_url_conector');tok='PM-OMS-2026'}else{url=lsg('pm_crm_url');tok=lsg('pm_crm_token')||'PM-CRM-2026'}
+    if(!url){cb({ok:false,sinUrl:true,error:'Falta la URL del conector ('+(src==='oms'?'Clientes OMS':'CRM')+'). Pégala en «Conexiones».'});return}
+    var n='pmPre'+Date.now()+Math.floor(Math.random()*1e4),s=document.createElement('script'),t;
+    function fin(){clearTimeout(t);delete window[n];s.remove()}
+    window[n]=function(r){fin();cb(r)};
+    t=setTimeout(function(){if(window[n]){fin();cb({ok:false,error:'El conector tardó demasiado en responder.'})}},60000);
+    s.onerror=function(){if(window[n]){fin();cb({ok:false,error:'No se pudo conectar. Revisa la URL en «Conexiones».'})}};
+    s.onload=function(){if(window[n]){fin();cb({ok:false,error:'El conector no devolvió datos: revisa que «Quién tiene acceso» sea «Cualquier usuario» y que esté publicada la «Nueva versión».'})}};
+    var q='?';for(var k in params)q+=encodeURIComponent(k)+'='+encodeURIComponent(params[k])+'&';
+    s.src=url+(url.indexOf('?')<0?q:'&'+q.slice(1))+'token='+encodeURIComponent(tok)+'&callback='+n+'&_='+Date.now();
+    document.head.appendChild(s);
+  }
+  function cargar(){
+    est('Leyendo los contratos de la hoja Protect… puede tardar hasta 30 segundos');
+    llamar('crm',{action:'datos'},function(r){
+      if(!r||!r.ok){CRM=null;est((r&&r.error)||'No se pudo leer.','er');return}
+      CRM=r.contratos||[];est('Conectado ✔ · '+CRM.length+' contratos de Protect leídos','ok');
+      llamar('oms',{action:'datos'},function(o){if(o&&o.ok){OMS=o.contratos||[];est($('est').textContent+' · '+OMS.length+' clientes OMS','ok')}else OMS=[];if(ARCH)procesar()});
+      if(ARCH)procesar();
+    });
+  }
+  $('bRec').addEventListener('click',cargar);
+
+  // ---------- lectura del archivo ----------
+  function norm(t){return String(t==null?'':t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
+  function cedula(v){var t=String(v==null?'':v).replace(/\.0+$/,'').replace(/\D/g,'');return t.replace(/^0+/,'')}
+  function fechaISO(v){
+    if(v==null||v==='')return '';
+    if(typeof v==='number'&&v>20000&&v<80000){var d=new Date(Math.round((v-25569)*86400000));return d.getUTCFullYear()+'-'+('0'+(d.getUTCMonth()+1)).slice(-2)+'-'+('0'+d.getUTCDate()).slice(-2)}
+    var t=String(v).trim(),m=t.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);if(m)return m[1]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[3]).slice(-2);
+    m=t.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);if(m)return m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2);return ''}
+  function fCO(iso){if(!iso)return '—';var p=iso.split('-');return (+p[2])+'/'+(+p[1])+'/'+p[0]}
+  function num(v){if(typeof v==='number')return v;var t=String(v==null?'':v).replace(/[^0-9,.\-]/g,'');if(/,\d{1,2}$/.test(t))t=t.replace(/\./g,'').replace(',','.');else t=t.replace(/,/g,'');return Number(t)||0}
+  function leerArchivo(buf){
+    var wb=XLSX.read(buf,{type:'array'}),res=null;
+    wb.SheetNames.forEach(function(nm){if(res)return;var ws=wb.Sheets[nm],A=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''}),hi=-1;
+      for(var i=0;i<A.length&&hi<0;i++){var f=A[i].map(norm).join('|');if(/identificacion/.test(f)&&/asegurado/.test(f))hi=i}
+      if(hi<0)return;res={A:A,hi:hi,hoja:nm}});
+    if(!res)throw new Error('No encontré la tabla de asegurados. Busco una fila de títulos con «ASEGURADO» e «IDENTIFICACION ASEGURADO».');
+    var A=res.A,H=A[res.hi].map(norm),col=function(re){for(var i=0;i<H.length;i++)if(re.test(H[i]))return i;return -1};
+    var C={nom:col(/^asegurado$/),ced:col(/identificacion/),des:col(/periodo desde/),has:col(/periodo hasta/),pri:col(/^prima$/),tot:col(/^total$/),ctr:col(/nro contrato|numero de contrato/),pol:col(/nro poliza|numero de poliza/),cot:col(/cotizacion/)};
+    if(C.ced<0||C.nom<0)throw new Error('Faltan las columnas ASEGURADO o IDENTIFICACION ASEGURADO.');
+    var meta={},filas=[],pagador=null;
+    for(var i=0;i<res.hi;i++){var r=A[i],lab=norm(r[1]!==''?r[1]:r[0]),val=r.slice(2).filter(function(x){return x!==''&&x!=null});
+      if(/^compania/.test(lab)&&!meta.compania)meta.compania=String(r[1]).trim();
+      else if(/nombre del tomador/.test(lab))meta.tomador=String(val[0]||'').trim();
+      else if(/^numero de poliza/.test(lab))meta.poliza=String(val[0]||'').trim();
+      else if(/^numero de contrato/.test(lab))meta.contratoProv=String(val[0]||'').trim();
+      else if(/periodo de cobro/.test(lab)){meta.desde=fechaISO(val[0]);meta.hasta=fechaISO(val[1])}
+      else if(/^producto/.test(lab))meta.producto=String(val[0]||'').trim();
+      else if(/^sub producto/.test(lab))meta.sub=String(val[0]||'').trim();
+      else if(/reporte|pre cobro/.test(lab)&&!meta.titulo)meta.titulo=String(r[0]!==''?r[0]:r[1]).trim()}
+    for(var k=res.hi+1;k<A.length;k++){var w=A[k],nom=String(w[C.nom]==null?'':w[C.nom]).replace(/\s+/g,' ').trim(),ced=cedula(w[C.ced]),first=norm(w[1]);
+      if(/^pagador/.test(first)||/^pagador/.test(norm(w[C.nom-1]))){pagador={total:C.tot>=0?num(w[C.tot]):0,prima:C.pri>=0?num(w[C.pri]):0};break}
+      if(!nom&&!ced)continue;if(!ced)continue;
+      filas.push({nombre:nom,ced:ced,cedTxt:String(w[C.ced]).trim(),desde:fechaISO(w[C.des]),hasta:fechaISO(w[C.has]),prima:num(w[C.pri]),total:C.tot>=0?num(w[C.tot]):num(w[C.pri]),ctrProv:C.ctr>=0?String(w[C.ctr]).trim():'',cot:C.cot>=0?String(w[C.cot]).trim():''})}
+    if(!filas.length)throw new Error('La tabla de asegurados está vacía.');
+    return {meta:meta,filas:filas,pagador:pagador,hoja:res.hoja}
+  }
+
+  // ---------- cruce con Protect / OMS ----------
+  function anulado(x){return /^\s*anulad[oa]\s*$/i.test(String(x.cliente||''))||String(x.estado||'').trim().toUpperCase()==='ANULADO'}
+  function dias(a,b){if(!a||!b)return 9999;return Math.abs((new Date(a)-new Date(b))/86400000)}
+  function mejor(cands,desde){
+    if(cands.length===1)return cands[0];
+    var buenos=cands.filter(function(x){return !anulado(x)});if(buenos.length)cands=buenos;
+    return cands.slice().sort(function(a,b){var da=dias(a.fechaFirmaISO,desde),db=dias(b.fechaFirmaISO,desde);if(Math.abs(da-db)>15)return da-db;return (b.ap==='SI')-(a.ap==='SI')||da-db})[0]}
+  function cruzar(D){
+    var idx={},idxO={};(CRM||[]).forEach(function(x){var k=cedula(x.cedula);if(k)(idx[k]=idx[k]||[]).push(x)});(OMS||[]).forEach(function(x){var k=cedula(x.cedula);if(k)(idxO[k]=idxO[k]||[]).push(x)});
+    var cnt={};D.filas.forEach(function(f){var k=String(Math.round(f.prima));cnt[k]=(cnt[k]||0)+1});var moda=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]})[0];moda=+moda;
+    D.filas.forEach(function(f,i){
+      f.n=i+1;f.rev=[];f.fuente='';f.asesor='';f.contrato='';f.placa='';f.estadoC='';f.firma='';f.varios=0;
+      var c=idx[f.ced];
+      if(c&&c.length){var m=mejor(c,f.desde);f.fuente='Protect';f.asesor=String(m.asesor||'').trim();f.contrato=String(m.contrato||'').trim();f.placa=String(m.placa||'').trim();f.estadoC=anulado(m)?'ANULADO':String(m.estado||'').trim();f.firma=m.fechaFirmaISO||'';f.varios=c.length;
+        if(!f.asesor)f.rev.push(['ta','Sin asesor en la hoja']);
+        if(m.ap!==undefined&&m.ap!=='SI')f.rev.push(['ta','Sin AP en Protect']);
+        if(f.estadoC==='ANULADO'||f.estadoC==='CANCELADO')f.rev.push(['ta','Contrato '+f.estadoC.toLowerCase()]);
+        if(c.length>1)f.rev.push(['tb',c.length+' contratos con esta cédula'])}
+      else if(idxO[f.ced]&&idxO[f.ced].length){var o=mejor(idxO[f.ced],f.desde);f.fuente='Clientes OMS';f.asesor=String(o.asesor||'').trim();f.contrato=String(o.contrato||'').trim();f.placa=String(o.placa||'').trim();f.estadoC=String(o.estado||'').trim();f.firma=o.fechaFirmaISO||'';f.varios=idxO[f.ced].length;
+        if(!f.asesor)f.rev.push(['ta','Sin asesor en la hoja OMS']);f.rev.push(['tb','Está en Clientes OMS, no en Protect'])}
+      else f.rev.push(['tr','No está en Protect ni en OMS']);
+      if(Math.abs(f.prima-moda)>1)f.rev.push(['tb','Prima distinta a la normal ('+pesos(f.prima)+')'])});
+    D.moda=moda;return D}
+
+  // ---------- pantalla ----------
+  function procesar(){
+    if(!ARCH)return;if(!CRM){$('resultado').style.display='none';est('Todavía no se han leído los contratos de la hoja Protect: espere o presione «Volver a leer la hoja».','er');return}
+    var D=cruzar(ARCH);FILAS=D.filas;pintar()}
+  function nomAsesor(f){return f.asesor?f.asesor.toUpperCase():'SIN ASESOR'}
+  function pintar(){
+    var D=ARCH,F=D.filas,tot=F.reduce(function(a,f){return a+f.prima},0),conAs=F.filter(function(f){return f.asesor}).length,noEnc=F.filter(function(f){return !f.fuente}).length,rev=F.filter(function(f){return f.rev.some(function(r){return r[0]==='tr'||r[0]==='ta'})}).length,pag=D.pagador?D.pagador.total||D.pagador.prima:0,dif=pag?Math.round(tot-pag):0;
+    $('resultado').style.display='block';
+    var av=[];
+    if(noEnc)av.push('<div class="alr"><b>'+noEnc+' asegurado(s) no están ni en Protect ni en Clientes OMS.</b> Salen marcados en rojo en la lista: revise la cédula o si falta registrarlos.</div>');
+    if(F.some(function(f){return f.fuente==='Protect'&&f.rev.some(function(r){return r[1]==='Sin AP en Protect'})}))av.push('<div class="aviso">Hay clientes que el proveedor cobra, pero que en Protect <b>no figuran con AP</b>. Puede ser un error de la hoja o un cobro que no corresponde.</div>');
+    if(pag&&Math.abs(dif)>1)av.push('<div class="aviso">La suma de las primas de la lista ('+pesosC(tot)+') no coincide con el total del proveedor ('+pesosC(pag)+'): diferencia de '+pesosC(Math.abs(dif))+'.</div>');
+    else if(pag)av.push('<div class="okb">La suma de las primas ('+pesosC(tot)+') coincide con el total del proveedor ✔</div>');
+    $('avisos').innerHTML=av.join('');
+    $('tiles').innerHTML='<div class="t" style="--c:#13223f"><span>Asegurados</span><b>'+F.length+'</b><small>en el archivo</small></div><div class="t" style="--c:#1f9d55"><span>Con asesor y contrato</span><b>'+conAs+'</b><small>'+Math.round(conAs/F.length*100)+' % encontrados</small></div><div class="t" style="--c:#dc2626"><span>No encontrados</span><b>'+noEnc+'</b><small>sin coincidir cédula</small></div><div class="t" style="--c:#d97706"><span>Para revisar</span><b>'+rev+'</b><small>sin asesor, sin AP o anulados</small></div><div class="t" style="--c:#d6a417"><span>Total a pagar al proveedor</span><b>'+pesosC(pag||tot)+'</b><small>suma de primas: '+pesosC(tot)+'</small></div>';
+    hoja()}
+  function hoja(){
+    var D=ARCH,M=D.meta,q=norm($('fBusca').value),ver=$('fVer').value,ord=$('fOrden').value,obs=$('fObs').checked,res=$('fRes').checked;
+    var F=D.filas.filter(function(f){if(ver==='rev'&&!f.rev.some(function(r){return r[0]==='tr'||r[0]==='ta'}))return false;if(ver==='sinas'&&f.asesor)return false;return !q||norm(f.nombre+' '+f.ced+' '+f.asesor+' '+f.contrato+' '+f.placa).indexOf(q)>=0});
+    if(ord==='asesor')F.sort(function(a,b){return nomAsesor(a)<nomAsesor(b)?-1:nomAsesor(a)>nomAsesor(b)?1:a.nombre<b.nombre?-1:1});else if(ord==='nombre')F.sort(function(a,b){return a.nombre<b.nombre?-1:1});
+    var tot=F.reduce(function(a,f){return a+f.prima},0),periodo=M.desde?fCO(M.desde)+' al '+fCO(M.hasta):'—';
+    var titulo='PRECOBRO — '+(M.compania||'Aseguradora');
+    var h='<div class="tt">'+esc(titulo)+'</div><div class="meta"><div><span>Tomador</span>'+esc(M.tomador||'—')+'</div><div><span>Póliza</span>'+esc(M.poliza||'—')+'</div><div><span>Contrato del proveedor</span>'+esc(M.contratoProv||'—')+'</div><div><span>Período de cobro</span>'+periodo+'</div><div><span>Producto</span>'+esc((M.producto||'')+(M.sub?' · '+M.sub:'')||'—')+'</div><div><span>Asegurados en esta lista</span>'+F.length+' de '+D.filas.length+'</div></div>';
+    h+='<div class="wrap"><table><thead><tr><th>#</th><th>Asegurado</th><th>Cédula</th><th>Período desde</th><th>Período hasta</th><th class="num">Prima (COP)</th><th>Asesor que lo vendió</th><th>N° de contrato</th><th>Placa</th>'+(obs?'<th class="col-obs">Revisar</th>':'')+'</tr></thead><tbody>'+F.map(function(f){var grave=!f.fuente,al=f.rev.some(function(r){return r[0]==='ta'});
+      return '<tr class="'+(grave?'noenc':al?'alerta':'')+'"><td>'+f.n+'</td><td><b>'+esc(f.nombre)+'</b></td><td>'+esc(f.cedTxt)+'</td><td>'+fCO(f.desde)+'</td><td>'+fCO(f.hasta)+'</td><td class="num">'+pesos(f.prima)+'</td><td><b>'+(f.asesor?esc(f.asesor):'<span style="color:#b42318">—</span>')+'</b></td><td>'+(f.contrato?esc(f.contrato):'—')+(f.fuente==='Clientes OMS'?' <span class="tag tb">OMS</span>':'')+'</td><td>'+esc(f.placa||'')+'</td>'+(obs?'<td class="col-obs">'+f.rev.map(function(r){return '<span class="tag '+r[0]+'">'+esc(r[1])+'</span>'}).join('')+'</td>':'')+'</tr>'}).join('')+'<tr class="tot"><td colspan="5">TOTAL DE ESTA LISTA</td><td class="num">'+pesos(tot)+'</td><td colspan="'+(obs?4:3)+'"></td></tr></tbody></table></div>';
+    if(res){var A={};F.forEach(function(f){var k=nomAsesor(f),o=A[k]=A[k]||{n:0,v:0};o.n++;o.v+=f.prima});var L=Object.keys(A).sort(function(a,b){return A[b].v-A[a].v});
+      h+='<h3>Resumen por asesor</h3><div class="wrap"><table style="max-width:620px"><thead><tr><th>Asesor</th><th>Asegurados</th><th class="num">Prima (COP)</th></tr></thead><tbody>'+L.map(function(k){return '<tr><td><b>'+esc(k)+'</b></td><td>'+A[k].n+'</td><td class="num">'+pesos(A[k].v)+'</td></tr>'}).join('')+'<tr class="tot"><td>TOTAL</td><td>'+F.length+'</td><td class="num">'+pesos(tot)+'</td></tr></tbody></table></div>'}
+    h+='<div class="pie-imp">Impreso el '+new Date().toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})+' · Cruce hecho con la hoja Protect de Negociemos Group S.A.S. · Valores en pesos colombianos (COP)</div>';
+    $('hoja').innerHTML=h;$('hoja').className=obs?'':'sin-obs'}
+  ['fOrden','fVer','fObs','fRes'].forEach(function(i){$(i).addEventListener('change',function(){if(ARCH)hoja()})});$('fBusca').addEventListener('input',function(){if(ARCH)hoja()});
+
+  function cargarArchivo(file){
+    if(!file)return;$('dropTxt').textContent='Leyendo '+file.name+'…';
+    var r=new FileReader();r.onerror=function(){$('dropTxt').textContent='No se pudo leer el archivo.'};
+    r.onload=function(){try{ARCH=leerArchivo(new Uint8Array(r.result));ARCH.nombreArchivo=file.name;$('dropTxt').textContent='✔ '+file.name+' · '+ARCH.filas.length+' asegurados leídos. Haga clic para cambiar el archivo.';procesar()}catch(e){ARCH=null;$('resultado').style.display='none';$('dropTxt').textContent='✖ '+e.message;window.alert('No se pudo leer el archivo:\n\n'+e.message)}};
+    r.readAsArrayBuffer(file)}
+  $('drop').addEventListener('click',function(){$('archivo').click()});
+  $('archivo').addEventListener('change',function(){cargarArchivo(this.files[0]);this.value=''});
+  ['dragenter','dragover'].forEach(function(ev){$('drop').addEventListener(ev,function(e){e.preventDefault();$('drop').classList.add('on')})});
+  ['dragleave','drop'].forEach(function(ev){$('drop').addEventListener(ev,function(e){e.preventDefault();$('drop').classList.remove('on')})});
+  $('drop').addEventListener('drop',function(e){cargarArchivo((e.dataTransfer.files||[])[0])});
+
+  // ---------- imprimir / Excel ----------
+  $('bPrint').addEventListener('click',function(){
+    var M=ARCH.meta,t='PRECOBRO '+(M.desde?fCO(M.desde).replace(/\//g,'-')+' - ':'')+(M.compania||'')+' - con asesor y contrato',antes=document.title;document.title=t;
+    var enM=window.parent!==window;if(enM){try{window.parent.postMessage({pmTitulo:t},'*')}catch(e){}}
+    var fin=function(){document.title=antes;if(enM){try{window.parent.postMessage({pmTitulo:null},'*')}catch(e){}}window.removeEventListener('afterprint',fin)};window.addEventListener('afterprint',fin);window.print()});
+  function csv(filas){return '﻿'+filas.map(function(r){return r.map(function(v){v=v==null?'':String(v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(';')}).join('\r\n')}
+  $('bCsv').addEventListener('click',function(){
+    var M=ARCH.meta,f=[['PRECOBRO — '+(M.compania||'')],['Póliza',M.poliza||''],['Período de cobro',M.desde?fCO(M.desde)+' al '+fCO(M.hasta):''],[],['#','Asegurado','Cédula','Período desde','Período hasta','Prima (COP)','Asesor','N° de contrato','Placa','Estado del contrato','Fuente','Revisar']];
+    ARCH.filas.forEach(function(x){f.push([x.n,x.nombre,x.cedTxt,fCO(x.desde),fCO(x.hasta),Math.round(x.prima),x.asesor,x.contrato,x.placa,x.estadoC,x.fuente,x.rev.map(function(r){return r[1]}).join(' | ')])});
+    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv(f)],{type:'text/csv;charset=utf-8'}));a.download='precobro_con_asesor_'+(M.desde||'')+'.csv';document.body.appendChild(a);a.click();setTimeout(function(){a.remove()},500)});
+
+  window.PRE={leerArchivo:leerArchivo};
+  cargar();
+})();
+</script>
+</body>
+</html>
