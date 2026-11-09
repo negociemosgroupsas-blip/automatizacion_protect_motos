@@ -50,7 +50,11 @@ var COLS_OPC = [
 var ENCABEZADOS_GESTIONES = ['Fecha de gestión', 'Referencia', 'Cédula', 'Cliente', 'Acción', 'Registrado por'];
 var HOJA_PAGOS = 'Pagos_OMS';
 var ENCABEZADOS_PAGOS = ['Fecha de pago', 'Referencia', 'Cédula', 'Cliente', 'Concepto', 'Valor pagado', 'Nota', 'Registrado por', 'Comprobante'];
-var CARPETA_COMPROBANTES = 'Comprobantes de pago OMS';
+var CARPETA_COMPROBANTES = 'Comprobantes de pago OMS';   // solo se usa si no se puede encontrar la carpeta donde está la hoja
+// Los comprobantes se guardan en la MISMA carpeta donde está la hoja «Historico polizas» (por ejemplo ...\11.Polizas OMS sura\SURA),
+// dentro de una subcarpeta con la cédula del cliente (se usa la que ya exista; si no, se crea).
+// Si quiere otra carpeta, pegue aquí su ID (lo que va después de /folders/ en la URL de la carpeta). Déjelo vacío para usar la de la hoja.
+var CARPETA_DESTINO_ID = '';
 
 // ==================== PUNTO DE ENTRADA ====================
 function doGet(e) {
@@ -66,7 +70,7 @@ function doGet(e) {
       else if (accion === 'registrarGestion') salida = accionRegistrarGestion(params);
       else if (accion === 'agregar') salida = accionAgregar(params);
       else if (accion === 'registrarPago') salida = accionRegistrarPago(params);
-      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de Clientes OMS activo', version: 'oms-5' };
+      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de Clientes OMS activo', version: 'oms-6' };
       else salida = { ok: false, error: 'Acción desconocida: ' + accion };
     }
   } catch (err) {
@@ -392,11 +396,21 @@ function accionSubirComprobante(b) {
   } finally { lock.releaseLock(); }
 }
 
-function carpetaCliente(clave, nombre) {
+function carpetaBase() {
+  if (CARPETA_DESTINO_ID) return DriveApp.getFolderById(CARPETA_DESTINO_ID);
+  try {
+    var padres = DriveApp.getFileById(abrirSS().getId()).getParents();
+    if (padres.hasNext()) return padres.next();           // la carpeta donde está la hoja (SURA)
+  } catch (e) {}
   var raiz = DriveApp.getFoldersByName(CARPETA_COMPROBANTES);
-  var carpeta = raiz.hasNext() ? raiz.next() : DriveApp.createFolder(CARPETA_COMPROBANTES);
-  var nom = (clave + (nombre ? ' - ' + nombre : '')).replace(/[\\\/:*?"<>|]/g, ' ').trim(), sub = carpeta.getFoldersByName(nom);
-  return sub.hasNext() ? sub.next() : carpeta.createFolder(nom);
+  return raiz.hasNext() ? raiz.next() : DriveApp.createFolder(CARPETA_COMPROBANTES);
+}
+
+function carpetaCliente(clave, nombre) {
+  var base = carpetaBase(), nom = String(clave).replace(/[\\\/:*?"<>|]/g, ' ').trim();
+  var existentes = base.getFoldersByName(nom);
+  if (existentes.hasNext()) return existentes.next();     // la carpeta de la cédula que ya tiene
+  return base.createFolder(nom);
 }
 
 // Ejecútela UNA vez desde el editor (▶) para aceptar los permisos de Drive y Sheets que necesitan los comprobantes.
