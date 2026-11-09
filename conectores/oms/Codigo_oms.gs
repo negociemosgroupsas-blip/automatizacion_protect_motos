@@ -41,6 +41,7 @@ var COLS_OPC = [
   { clave: 'correo',   nombres: ['correo', 'email', 'correo electronico'] },
   { clave: 'asesor',   nombres: ['asesor'] },
   { clave: 'marca',    nombres: ['marca', 'marca de la moto'] },
+  { clave: 'aseguradora', nombres: ['aseguradora', 'compania de seguros', 'compania aseguradora', 'seguro'] },
   { clave: 'direccion',nombres: ['direccion'] }
 ];
 
@@ -121,7 +122,7 @@ function leerClientes(hoja) {
     if (!ref) ref = (cedula || 'SIN-CEDULA') + '-' + (inicio ? iso(inicio).replace(/-/g, '') : 'F' + (FILA_ENCABEZADOS + 1 + i));
     if (usados[ref]) { usados[ref]++; ref = ref + '-' + usados[ref]; } else { usados[ref] = 1; }
     var reg = {
-      asesor: texto(g('asesor')), marca: texto(g('marca')),
+      asesor: texto(g('asesor')), marca: texto(g('marca')), aseguradora: texto(g('aseguradora')),
       cedula: cedula, cliente: cliente,
       fechaFirma: fmt(inicio), fechaFirmaISO: iso(inicio),
       fin: fmt(fin), finISO: iso(fin),
@@ -212,9 +213,9 @@ function accionAgregar(p) {
     }
     var nueva = ult + 1;
     if (ult > FILA_ENCABEZADOS) hoja.getRange(ult, 1, 1, ncol).copyTo(hoja.getRange(nueva, 1, 1, ncol), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
-    var val = { cliente: cliente, cedula: aNumeroSiPuede(ced), vehiculo: veh, valor: valor, celular: aNumeroSiPuede(d.celular), forma: compra, inicio: ini, fin: fin, estado: estadoTxt, asesor: texto(d.asesor) };
+    var val = { cliente: cliente, cedula: aNumeroSiPuede(ced), vehiculo: veh, valor: valor, celular: aNumeroSiPuede(d.celular), forma: compra, inicio: ini, fin: fin, estado: estadoTxt, asesor: texto(d.asesor), aseguradora: texto(d.aseguradora) };
     var asignada = {}, omitidos = [];
-    ['cliente', 'cedula', 'vehiculo', 'valor', 'celular', 'forma', 'inicio', 'fin', 'estado', 'asesor'].forEach(function (k) {
+    ['cliente', 'cedula', 'vehiculo', 'valor', 'celular', 'forma', 'inicio', 'fin', 'estado', 'asesor', 'aseguradora'].forEach(function (k) {
       var col = idx[k]; if (col === undefined || col < 0) return;
       var v = val[k]; if (v === undefined || v === '' || v === null) return;
       if (!coincideNombre(enc, [k])) { omitidos.push(k); return; }   // no se escribe en una columna que no se reconoce por su título

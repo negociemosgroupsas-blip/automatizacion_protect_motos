@@ -378,7 +378,7 @@
         <button data-f="todos" class="act">Todos</button><button data-f="vigente">Vigentes</button><button data-f="renovar">Por renovar</button><button data-f="vencido">Vencidos</button><button data-f="renovado">Renovados</button><button data-f="cancelado">Cancelados</button>
       </div>
       <table>
-        <thead><tr><th>Cliente</th><th>Cédula</th><th>Vehículo</th><th>Compra</th><th>Valor</th><th>Inicio</th><th>Cumple su año</th><th>Celular</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Cédula</th><th>Vehículo</th><th>Aseguradora</th><th>Compra</th><th>Valor</th><th>Inicio</th><th>Cumple su año</th><th>Celular</th><th>Estado</th></tr></thead>
         <tbody id="cuerpoTodos"></tbody>
       </table>
       <div class="vacio" id="vacioTodos" style="display:none;">No hay clientes para mostrar.</div>
@@ -400,6 +400,7 @@
       <div class="campo-form"><label>Forma de compra *</label><select id="nvCompra"><option value="FINANCIADO">Financiado</option><option value="Contado">De contado</option></select></div>
       <div class="campo-form"><label id="nvValorEt">Valor de la cuota *</label><input type="number" id="nvValor" min="0" step="1"><span class="ayuda" id="nvValorAy">Financiado: el valor de cada cuota (igual que en tu hoja).</span></div>
       <div class="campo-form"><label>Asesor (quien vendió)</label><input type="text" id="nvAsesor" autocomplete="off" list="nvAsesores" placeholder="Ej. Kelli"><datalist id="nvAsesores"></datalist></div>
+      <div class="campo-form"><label>Aseguradora (con quién va el cliente)</label><input type="text" id="nvAseg" autocomplete="off" list="nvAsegs" placeholder="Ej. SURA"><datalist id="nvAsegs"></datalist></div>
       <div class="campo-form"><label>Estado</label><select id="nvEstado"><option>Activo</option><option>Cancelado</option><option>Finalizado</option></select></div>
       <div class="campo-form"><label>Fecha de inicio *</label><input type="date" id="nvInicio"></div>
       <div class="campo-form"><label>Fecha fin</label><input type="date" id="nvFin"><span class="ayuda">Se calcula sola: un año después del inicio. Puedes cambiarla.</span></div>
@@ -509,7 +510,7 @@
     var tot = filas.length; filas = filas.slice(0,300);
     document.getElementById('cuerpoTodos').innerHTML = filas.map(function(x){
       var c = x.c, e = ETQ[x.tipo];
-      return '<tr><td data-etiqueta="Cliente"><strong>'+esc(c.cliente)+'</strong></td><td data-etiqueta="Cédula">'+esc(c.cedula)+'</td><td data-etiqueta="Vehículo">'+esc(c.placa)+'</td><td data-etiqueta="Compra">'+esc(c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma)+'</td><td data-etiqueta="Valor">'+(c.valorProtect?dinero(c.valorProtect):'—')+'</td><td data-etiqueta="Inicio">'+fechaCO(c.fechaFirmaISO)+'</td><td data-etiqueta="Cumple su año">'+fechaCO(c.finISO)+'</td><td data-etiqueta="Celular">'+esc(c.celular)+'</td><td data-etiqueta="Estado"><span class="tag '+e[0]+'">'+e[1]+'</span></td></tr>';
+      return '<tr><td data-etiqueta="Cliente"><strong>'+esc(c.cliente)+'</strong></td><td data-etiqueta="Cédula">'+esc(c.cedula)+'</td><td data-etiqueta="Vehículo">'+esc(c.placa)+'</td><td data-etiqueta="Aseguradora">'+esc(c.aseguradora||'—')+'</td><td data-etiqueta="Compra">'+esc(c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma)+'</td><td data-etiqueta="Valor">'+(c.valorProtect?dinero(c.valorProtect):'—')+'</td><td data-etiqueta="Inicio">'+fechaCO(c.fechaFirmaISO)+'</td><td data-etiqueta="Cumple su año">'+fechaCO(c.finISO)+'</td><td data-etiqueta="Celular">'+esc(c.celular)+'</td><td data-etiqueta="Estado"><span class="tag '+e[0]+'">'+e[1]+'</span></td></tr>';
     }).join('');
     document.getElementById('vacioTodos').style.display = tot ? 'none' : 'block';
     document.getElementById('notaTodos').textContent = tot>300 ? 'Se muestran 300 de '+tot+'. Usa el buscador para encontrar uno específico.' : '';
@@ -562,6 +563,7 @@
       ['nvNombre','nvCedula','nvCel','nvVeh','nvValor'].forEach(function(i){$(i).value=''});
       try{if(!$('nvAsesor').value)$('nvAsesor').value=localStorage.getItem('pm_asesor_ultimo')||''}catch(e){}
       var as_={};estado.clientes.forEach(function(c){if(c.asesor)as_[c.asesor]=1});$('nvAsesores').innerHTML=Object.keys(as_).sort().map(function(v){return '<option value="'+esc(v)+'">'}).join('');
+      $('nvAseg').value='SURA';var ag_={SURA:1,ALLIANZ:1,MAPFRE:1,'SEGUROS BOLÍVAR':1,'LIBERTY':1,'AXA COLPATRIA':1,HDI:1,'LA EQUIDAD':1,'LA PREVISORA':1,ZURICH:1,SOLIDARIA:1};estado.clientes.forEach(function(c){if(c.aseguradora)ag_[String(c.aseguradora).toUpperCase()]=1});$('nvAsegs').innerHTML=Object.keys(ag_).sort().map(function(v){return '<option value="'+esc(v)+'">'}).join('');
       $('nvCompra').value='FINANCIADO';$('nvEstado').value='Activo';$('nvInicio').value=iso(new Date());$('nvFin').value=masAnio($('nvInicio').value);finManual=false;etiqueta();
       var vs={};estado.clientes.forEach(function(c){if(c.placa)vs[c.placa.toUpperCase()]=1});$('nvVehs').innerHTML=Object.keys(vs).sort().map(function(v){return '<option value="'+esc(v)+'">'}).join('');
       msg('nvMsg');msg('nvNota');$('nvGuardar').disabled=false;modal.classList.add('abierto');setTimeout(function(){$('nvNombre').focus()},50);
@@ -580,7 +582,7 @@
       if(!$('nvNombre').value)$('nvNombre').value=prev.cliente;if(!$('nvCel').value)$('nvCel').value=prev.celular||'';
       msg('nvNota','nota','Esta cédula ya está en la hoja ('+prev.cliente+'). Se llenaron su nombre y celular; si es una póliza nueva, completa el vehículo y las fechas.');
     });
-    function datos(forzar){return {cliente:$('nvNombre').value.trim(),cedula:$('nvCedula').value.trim(),celular:$('nvCel').value.trim(),vehiculo:$('nvVeh').value.trim(),compra:$('nvCompra').value,valor:$('nvValor').value,estado:$('nvEstado').value,asesor:$('nvAsesor').value.trim(),inicio:$('nvInicio').value,fin:$('nvFin').value,forzar:forzar?1:0}}
+    function datos(forzar){return {cliente:$('nvNombre').value.trim(),cedula:$('nvCedula').value.trim(),celular:$('nvCel').value.trim(),vehiculo:$('nvVeh').value.trim(),compra:$('nvCompra').value,valor:$('nvValor').value,estado:$('nvEstado').value,aseguradora:$('nvAseg').value.trim(),asesor:$('nvAsesor').value.trim(),inicio:$('nvInicio').value,fin:$('nvFin').value,forzar:forzar?1:0}}
     function enviar(forzar){
       var d=datos(forzar);
       if(!d.cliente){msg('nvMsg','error','Escribe el nombre completo.');return}
