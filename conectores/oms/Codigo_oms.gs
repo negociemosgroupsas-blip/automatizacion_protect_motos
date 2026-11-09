@@ -49,7 +49,7 @@ var COLS_OPC = [
 
 var ENCABEZADOS_GESTIONES = ['Fecha de gestión', 'Referencia', 'Cédula', 'Cliente', 'Acción', 'Registrado por'];
 var HOJA_PAGOS = 'Pagos_OMS';
-var ENCABEZADOS_PAGOS = ['Fecha de pago', 'Referencia', 'Cédula', 'Cliente', 'Concepto', 'Valor pagado', 'Nota', 'Registrado por', 'Comprobante'];
+var ENCABEZADOS_PAGOS = ['Fecha de pago', 'Referencia', 'Cédula', 'Cliente', 'Concepto', 'Valor pagado', 'Nota', 'Registrado por', 'Comprobante', 'Carpeta'];
 var CARPETA_COMPROBANTES = 'Comprobantes de pago OMS';   // solo se usa si no se puede encontrar la carpeta donde está la hoja
 // Los comprobantes se guardan en la MISMA carpeta donde está la hoja «Historico polizas» (por ejemplo ...\11.Polizas OMS sura\SURA),
 // dentro de una subcarpeta con la cédula del cliente (se usa la que ya exista; si no, se crea).
@@ -70,7 +70,7 @@ function doGet(e) {
       else if (accion === 'registrarGestion') salida = accionRegistrarGestion(params);
       else if (accion === 'agregar') salida = accionAgregar(params);
       else if (accion === 'registrarPago') salida = accionRegistrarPago(params);
-      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de Clientes OMS activo', version: 'oms-6' };
+      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de Clientes OMS activo', version: 'oms-7' };
       else salida = { ok: false, error: 'Acción desconocida: ' + accion };
     }
   } catch (err) {
@@ -349,12 +349,12 @@ function fechaParaNombre(t) { var f = parsearFecha(t); return f ? ('0' + f.getDa
 // ==================== PAGOS Y COMPROBANTES ====================
 function leerPagos(hoja) {
   if (!hoja || hoja.getLastRow() < 2) return [];
-  var d = hoja.getRange(2, 1, hoja.getLastRow() - 1, 9).getValues(), out = [];
+  var d = hoja.getRange(2, 1, hoja.getLastRow() - 1, 10).getValues(), out = [];
   for (var i = 0; i < d.length; i++) {
     var ref = texto(d[i][1]);
     if (!ref) continue;
     out.push({ fechaPago: fmt(aFecha(d[i][0])), fechaPagoISO: iso(aFecha(d[i][0])), contrato: ref, cedula: texto(d[i][2]), cliente: texto(d[i][3]),
-      concepto: texto(d[i][4]), valorPagado: Number(d[i][5]) || 0, nota: texto(d[i][6]), registradoPor: texto(d[i][7]), comprobante: texto(d[i][8]) });
+      concepto: texto(d[i][4]), valorPagado: Number(d[i][5]) || 0, nota: texto(d[i][6]), registradoPor: texto(d[i][7]), comprobante: texto(d[i][8]), carpeta: texto(d[i][9]) });
   }
   return out;
 }
@@ -369,7 +369,8 @@ function accionRegistrarPago(p) {
   try {
     var ss = abrirSS(), hoja = ss.getSheetByName(HOJA_PAGOS);
     if (!hoja) { hoja = ss.insertSheet(HOJA_PAGOS); hoja.getRange(1, 1, 1, ENCABEZADOS_PAGOS.length).setValues([ENCABEZADOS_PAGOS]).setFontWeight('bold'); hoja.setFrozenRows(1); }
-    hoja.appendRow([fecha, ref, texto(p.cedula), texto(p.cliente), texto(p.concepto), valor, texto(p.nota), texto(p.registradoPor), texto(p.comprobante)]);
+    if (!texto(hoja.getRange(1, 10).getValue())) hoja.getRange(1, 10).setValue('Carpeta').setFontWeight('bold');
+    hoja.appendRow([fecha, ref, texto(p.cedula), texto(p.cliente), texto(p.concepto), valor, texto(p.nota), texto(p.registradoPor), texto(p.comprobante), texto(p.carpeta)]);
     return { ok: true };
   } catch (err) {
     return { ok: false, error: 'No se pudo guardar el pago: ' + err.message };
@@ -388,9 +389,10 @@ function accionSubirComprobante(b) {
     var partes = []; if (concepto) partes.push(concepto); var f = fechaParaNombre(texto(b.fecha)); if (f) partes.push(f);
     var nombre = (partes.length ? partes.join(' - ') : 'comprobante') + ext;
     var blob = Utilities.newBlob(Utilities.base64Decode(b.datosBase64), tipo, nombre);
-    var archivo = carpetaCliente(ced || ref, cliente).createFile(blob);
+    var carp = carpetaCliente(ced || ref, cliente), archivo = carp.createFile(blob), ruta = '';
     archivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    return { ok: true, url: 'https://drive.google.com/file/d/' + archivo.getId() + '/view' };
+    try { var pad = carp.getParents(); ruta = (pad.hasNext() ? pad.next().getName() + ' / ' : '') + carp.getName() + ' / ' + archivo.getName(); } catch (e2) { ruta = carp.getName() + ' / ' + archivo.getName(); }
+    return { ok: true, url: 'https://drive.google.com/file/d/' + archivo.getId() + '/view', carpetaUrl: carp.getUrl(), ruta: ruta };
   } catch (err) {
     return { ok: false, error: 'No se pudo subir el comprobante: ' + err.message };
   } finally { lock.releaseLock(); }
