@@ -32,6 +32,7 @@
   #hoja h3{margin:14px 16px 6px;font-size:.92rem;color:var(--azul2)} #hoja .wrap{padding:0 12px}
   #hoja table td{white-space:nowrap} #hoja table td:nth-child(2){white-space:normal;min-width:210px} #hoja table td.col-obs{white-space:normal} #hoja th:nth-child(6),#hoja td:nth-child(6){width:96px} #hoja td:nth-child(7){min-width:135px} #hoja td:nth-child(8){min-width:95px}
   input.man{width:100%;min-width:120px;border:1px solid #f0b4b4;background:#fff8f8;border-radius:6px;padding:4px 7px;font-size:.8rem;font-family:inherit} input.man:focus{outline:2px solid #93c5fd;background:#fff} .imp{display:none} .lapiz{border:0;background:#eef2f9;border-radius:6px;cursor:pointer;font-size:.8rem;padding:1px 6px;color:#1f4e79} .lapiz:hover{background:#dbe7f7}
+  .numc{font-weight:800;color:#1f4e79;text-align:center}
   .pie-imp{display:none;font-size:.72rem;color:#555;padding:6px 16px 0}
   @media print{
     @page{size:landscape;margin:10mm}
@@ -43,7 +44,7 @@
 </style>
 </head>
 <body>
-<header><h1>🧾 Cobros y precobros</h1><p>Suba el archivo que le envía el proveedor cada mes: el sistema busca a cada cliente por su cédula y le pone el asesor y el número de contrato. Listo para imprimir.</p><p style="font-size:.72rem;opacity:.6;margin-top:6px">Pantalla Cobros y precobros · versión del sistema: <b>PC-10nov-E</b></p></header>
+<header><h1>🧾 Cobros y precobros</h1><p>Suba el archivo que le envía el proveedor cada mes: el sistema busca a cada cliente por su cédula y le pone el asesor y el número de contrato. Listo para imprimir.</p><p style="font-size:.72rem;opacity:.6;margin-top:6px">Pantalla Cobros y precobros · versión del sistema: <b>PC-10nov-F</b></p></header>
 <main>
   <div class="panel nop" style="padding:12px 18px"><div class="fil" style="align-items:center"><button class="btn g" id="bRec" type="button">🔄 Volver a leer la hoja</button><span class="estado" id="est" style="flex:1">Cargando…</span></div></div>
 
@@ -60,6 +61,18 @@
       <h2>2. Resumen y revisión</h2>
       <div id="avisos"></div>
       <div class="tiles" id="tiles"></div>
+    </section>
+
+    <section class="panel nop fuera" id="pNum">
+      <h2>Número de este precobro para las hojas de Google</h2>
+      <p class="sub" id="numTxt"></p>
+      <div class="fil">
+        <label id="lTipoSel" style="display:none">Este precobro es de <select id="numTipo"><option value="">— elegir —</option><option value="AP">AP (Accidentes Personales)</option><option value="RC">RC (Responsabilidad Civil)</option></select></label>
+        <label>Número del precobro <input type="text" id="numPre" inputmode="numeric" autocomplete="off" placeholder="Ej. 8" style="width:150px;font-weight:700"></label>
+        <button class="btn g" id="bNumVer" type="button">👁 Ver qué se va a escribir</button>
+        <button class="btn v" id="bNumPon" type="button">💾 Poner número en las hojas de Google</button>
+      </div>
+      <div id="numRes" style="margin-top:10px"></div>
     </section>
 
     <section class="panel nop fuera">
@@ -193,8 +206,8 @@
     ARCHS.forEach(function(a){cruzar(a)});FILAS=ARCH.filas;
     var as={};(CRM||[]).concat(OMS||[]).forEach(function(x){var a=String(x.asesor||'').trim().toUpperCase();if(a)as[a]=1});$('dlAs').innerHTML=Object.keys(as).sort().map(function(a){return '<option value="'+esc(a)+'">'}).join('');
     var sel=$('fArch');sel.innerHTML=ARCHS.map(function(a,i){return '<option value="'+i+'">'+esc(a.nombreArchivo)+'</option>'}).join('');sel.value=String(ARCHS.indexOf(ARCH));$('lArch').style.display=ARCHS.length>1?'':'none';$('bXlsxAll').style.display=ARCHS.length>1?'':'none';
-    pintar()}
-  $('fArch').addEventListener('change',function(){ARCH=ARCHS[+this.value];FILAS=ARCH.filas;pintar()});
+    pintarNum();pintar()}
+  $('fArch').addEventListener('change',function(){ARCH=ARCHS[+this.value];FILAS=ARCH.filas;pintarNum();pintar()});
   function celda(f,k,ph){var v=f[k]||'',ed=!v||f.edit;
     if(ed)return '<input class="man" data-c="'+esc(f.ced)+'" data-k="'+k+'" value="'+esc(v)+'" placeholder="'+ph+'"'+(k==='asesor'?' list="dlAs"':'')+' autocomplete="off"><span class="imp'+(v?'':' vacio')+'">'+(v?esc(v):(k==='asesor'?'NO ENCONTRADO':'—'))+'</span>';
     return '<b>'+esc(v)+'</b>'+(k==='contrato'&&f.manual?' <span class="tag tb nop">a mano</span>':'')+' <button class="lapiz nop" type="button" data-c="'+esc(f.ced)+'" data-a="ed" title="Cambiar a mano">✎</button>'+(f.manual&&k==='contrato'?' <button class="lapiz nop" type="button" data-c="'+esc(f.ced)+'" data-a="rest" title="Volver a lo que dice Protect">↺</button>':'')}
@@ -219,12 +232,12 @@
     if(ord==='asesor')F.sort(function(a,b){return nomAsesor(a)<nomAsesor(b)?-1:nomAsesor(a)>nomAsesor(b)?1:a.nombre<b.nombre?-1:1});else if(ord==='nombre')F.sort(function(a,b){return a.nombre<b.nombre?-1:1});
     var simple=$('fSimple').checked;
     if(simple){var ps=M.desde?fCO(M.desde)+' al '+fCO(M.hasta):'';
-      $('hoja').className='';$('hoja').innerHTML='<div class="tt">CLIENTES DEL PRECOBRO — ASESOR Y N° DE CONTRATO</div><div class="meta"><div><span>Aseguradora</span>'+esc(M.compania||'—')+'</div><div><span>Póliza</span>'+esc(M.poliza||'—')+'</div><div><span>Período de cobro</span>'+(ps||'—')+'</div><div><span>Clientes</span>'+F.length+'</div></div><div class="wrap"><table><thead><tr><th>#</th><th>Cédula</th><th>Cliente</th><th>Asesor que lo vendió</th><th>N° de contrato</th></tr></thead><tbody>'+F.map(function(f,i){return '<tr class="'+((f.asesor&&f.contrato)?'':'noenc')+'" data-c="'+esc(f.ced)+'"><td>'+(i+1)+'</td><td>'+esc(f.cedTxt)+'</td><td>'+esc(f.nombre)+'</td><td>'+celda(f,'asesor','Asesor')+'</td><td>'+celda(f,'contrato','N° de contrato')+(f.fuente==='Clientes OMS'?' <span class="tag tb">OMS</span>':'')+'</td></tr>'}).join('')+'</tbody></table></div><div class="pie-imp">Impreso el '+new Date().toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})+' · Cruce con la hoja Protect de Negociemos Group S.A.S.</div>';return}
+      $('hoja').className='';$('hoja').innerHTML='<div class="tt">CLIENTES DEL PRECOBRO — ASESOR Y N° DE CONTRATO</div><div class="meta"><div><span>Aseguradora</span>'+esc(M.compania||'—')+'</div><div><span>Póliza</span>'+esc(M.poliza||'—')+'</div><div><span>Período de cobro</span>'+(ps||'—')+'</div><div><span>Clientes</span>'+F.length+'</div></div><div class="wrap"><table><thead><tr><th>#</th><th>Cédula</th><th>Cliente</th><th>Asesor que lo vendió</th><th>N° de contrato</th>'+(ARCH.num?'<th>'+esc(numLabel(ARCH))+'</th>':'')+'</tr></thead><tbody>'+F.map(function(f,i){return '<tr class="'+((f.asesor&&f.contrato)?'':'noenc')+'" data-c="'+esc(f.ced)+'"><td>'+(i+1)+'</td><td>'+esc(f.cedTxt)+'</td><td>'+esc(f.nombre)+'</td><td>'+celda(f,'asesor','Asesor')+'</td><td>'+celda(f,'contrato','N° de contrato')+(f.fuente==='Clientes OMS'?' <span class="tag tb">OMS</span>':'')+'</td>'+(ARCH.num?'<td class="numc">'+esc(ARCH.num)+'</td>':'')+'</tr>'}).join('')+'</tbody></table></div><div class="pie-imp">Impreso el '+new Date().toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})+' · Cruce con la hoja Protect de Negociemos Group S.A.S.</div>';return}
     var tot=F.reduce(function(a,f){return a+f.prima},0),periodo=M.desde?fCO(M.desde)+' al '+fCO(M.hasta):'—';
     var titulo='PRECOBRO — '+(M.compania||'Aseguradora');
     var h='<div class="tt">'+esc(titulo)+'</div><div class="meta"><div><span>Tomador</span>'+esc(M.tomador||'—')+'</div><div><span>Póliza</span>'+esc(M.poliza||'—')+'</div><div><span>Contrato del proveedor</span>'+esc(M.contratoProv||'—')+'</div><div><span>Período de cobro</span>'+periodo+'</div><div><span>Producto</span>'+esc((M.producto||'')+(M.sub?' · '+M.sub:'')||'—')+'</div><div><span>Asegurados en esta lista</span>'+F.length+' de '+D.filas.length+'</div></div>';
-    h+='<div class="wrap"><table><thead><tr><th>#</th><th>Asegurado</th><th>Cédula</th><th>Período desde</th><th>Período hasta</th><th class="num">Prima (COP)</th><th>Asesor que lo vendió</th><th>N° de contrato</th><th>Placa</th>'+(obs?'<th class="col-obs">Revisar</th>':'')+'</tr></thead><tbody>'+F.map(function(f){var grave=!f.fuente,al=f.rev.some(function(r){return r[0]==='ta'});
-      return '<tr class="'+(grave?'noenc':al?'alerta':'')+'"><td>'+f.n+'</td><td><b>'+esc(f.nombre)+'</b></td><td>'+esc(f.cedTxt)+'</td><td>'+fCO(f.desde)+'</td><td>'+fCO(f.hasta)+'</td><td class="num">'+pesos(f.prima)+'</td><td><b>'+(f.asesor?esc(f.asesor):'<span style="color:#b42318">—</span>')+'</b></td><td>'+(f.contrato?esc(f.contrato):'—')+(f.fuente==='Clientes OMS'?' <span class="tag tb">OMS</span>':'')+'</td><td>'+esc(f.placa||'')+'</td>'+(obs?'<td class="col-obs">'+f.rev.map(function(r){return '<span class="tag '+r[0]+'">'+esc(r[1])+'</span>'}).join('')+'</td>':'')+'</tr>'}).join('')+'<tr class="tot"><td colspan="5">TOTAL DE ESTA LISTA</td><td class="num">'+pesos(tot)+'</td><td colspan="'+(obs?4:3)+'"></td></tr></tbody></table></div>';
+    h+='<div class="wrap"><table><thead><tr><th>#</th><th>Asegurado</th><th>Cédula</th><th>Período desde</th><th>Período hasta</th><th class="num">Prima (COP)</th><th>Asesor que lo vendió</th><th>N° de contrato</th>'+(D.num?'<th>'+esc(numLabel(D))+'</th>':'')+'<th>Placa</th>'+(obs?'<th class="col-obs">Revisar</th>':'')+'</tr></thead><tbody>'+F.map(function(f){var grave=!f.fuente,al=f.rev.some(function(r){return r[0]==='ta'});
+      return '<tr class="'+(grave?'noenc':al?'alerta':'')+'"><td>'+f.n+'</td><td><b>'+esc(f.nombre)+'</b></td><td>'+esc(f.cedTxt)+'</td><td>'+fCO(f.desde)+'</td><td>'+fCO(f.hasta)+'</td><td class="num">'+pesos(f.prima)+'</td><td><b>'+(f.asesor?esc(f.asesor):'<span style="color:#b42318">—</span>')+'</b></td><td>'+(f.contrato?esc(f.contrato):'—')+(f.fuente==='Clientes OMS'?' <span class="tag tb">OMS</span>':'')+'</td>'+(D.num?'<td class="numc">'+esc(D.num)+'</td>':'')+'<td>'+esc(f.placa||'')+'</td>'+(obs?'<td class="col-obs">'+f.rev.map(function(r){return '<span class="tag '+r[0]+'">'+esc(r[1])+'</span>'}).join('')+'</td>':'')+'</tr>'}).join('')+'<tr class="tot"><td colspan="5">TOTAL DE ESTA LISTA</td><td class="num">'+pesos(tot)+'</td><td colspan="'+((obs?4:3)+(D.num?1:0))+'"></td></tr></tbody></table></div>';
     if(res){var A={};F.forEach(function(f){var k=nomAsesor(f),o=A[k]=A[k]||{n:0,v:0};o.n++;o.v+=f.prima});var L=Object.keys(A).sort(function(a,b){return A[b].v-A[a].v});
       h+='<h3>Resumen por asesor</h3><div class="wrap"><table style="max-width:620px"><thead><tr><th>Asesor</th><th>Asegurados</th><th class="num">Prima (COP)</th></tr></thead><tbody>'+L.map(function(k){return '<tr><td><b>'+esc(k)+'</b></td><td>'+A[k].n+'</td><td class="num">'+pesos(A[k].v)+'</td></tr>'}).join('')+'<tr class="tot"><td>TOTAL</td><td>'+F.length+'</td><td class="num">'+pesos(tot)+'</td></tr></tbody></table></div>'}
     h+='<div class="pie-imp">Impreso el '+new Date().toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})+' · Cruce hecho con la hoja Protect de Negociemos Group S.A.S. · Valores en pesos colombianos (COP)</div>';
@@ -239,16 +252,66 @@
   $('hoja').addEventListener('click',function(e){var b=e.target.closest('button[data-c]');if(!b)return;var ced=b.dataset.c;
     if(b.dataset.a==='ed'){ARCH.filas.forEach(function(f){if(f.ced===ced)f.edit=true});hoja()}
     else if(b.dataset.a==='rest'){delete MAN[ced];manSave(MAN);ARCHS.forEach(function(A){A.filas.forEach(function(f){delete f.edit})});procesar()}});
+
+  // ---------- Número del precobro: se escribe en las hojas de Accidentes Personales (AP) o Responsabilidad Civil (RC) ----------
+  var POL={'2000725842':'AP','2000743946':'RC'},TOKEN_C='PM-9K3ZQ-2026',URL_C_DEF='https://script.google.com/macros/s/AKfycbzTtIFxDqYxVj7b9umSt4o0PB4fSokj-9__ei0Nn248QjGndnmxUBgqpGASEg-OrfuL/exec';
+  function jget(k){try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return {}}} function jset(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  function claveArch(A){return (A.meta.poliza||'sin-poliza')+'|'+(A.meta.desde||A.nombreArchivo)}
+  function tipoArch(A){var pol=String(A.meta.poliza||'').trim();return POL[pol]||jget('pm_pre_pol')[pol]||''}
+  function colTxt(t){return t==='AP'?'A de la hoja de Accidentes Personales':t==='RC'?'B de la hoja de Responsabilidad Civil':''}
+  function numLabel(A){var t=tipoArch(A);return t?'N° '+t:'N° precobro'}
+  function pintarNum(){
+    if(!ARCH)return;var A=ARCH,t=tipoArch(A),k=claveArch(A),g=jget('pm_pre_num')[k]||{};if(A.num===undefined)A.num=g.num||'';if(!A.escr&&g.escr)A.escr=g.escr;
+    $('numPre').value=A.num||'';$('lTipoSel').style.display=t?'none':'';$('numTipo').value=t||'';
+    $('numTxt').innerHTML=t?('La póliza <b>'+esc(A.meta.poliza||'')+'</b> es de <b>'+(t==='AP'?'Accidentes Personales (AP)':'Responsabilidad Civil (RC)')+'</b>: el número se escribe en la <b>columna '+colTxt(t)+'</b>, en la fila de cada cliente (se busca por cédula). Un solo número para todos los clientes de este archivo.'):('No reconozco la póliza <b>'+esc(A.meta.poliza||'—')+'</b>. Elija si este precobro es de AP o de RC.');
+    $('numRes').innerHTML=A.escr?('<div class="okb">✔ Ya se escribió el número <b>'+esc(A.escr.numero)+'</b> en la hoja el '+esc(A.escr.fecha)+' ('+A.escr.escritos+' cliente(s)).'+(A.escr.noEnc&&A.escr.noEnc.length?' No estaban en la hoja: '+esc(A.escr.noEnc.join(', '))+'.':'')+' Lo que ya escribió no se borra al subir otro precobro.</div>'):''}
+  function guardarNum(){var A=ARCH;if(!A)return;var g=jget('pm_pre_num');g[claveArch(A)]={num:A.num||'',escr:A.escr||null};jset('pm_pre_num',g)}
+  $('numTipo').addEventListener('change',function(){if(!ARCH||!this.value)return;var m=jget('pm_pre_pol');m[String(ARCH.meta.poliza||'').trim()]=this.value;jset('pm_pre_pol',m);pintarNum();hoja()});
+  $('numPre').addEventListener('input',function(){if(!ARCH)return;ARCH.num=this.value.trim();guardarNum();hoja()});
+  function llamarC(params,cb){
+    var url=lsg('pm_gsurl')||URL_C_DEF,n='pmNum'+Date.now()+Math.floor(Math.random()*1e4),sc=document.createElement('script'),t;
+    function fin(){clearTimeout(t);delete window[n];sc.remove()}
+    window[n]=function(r){fin();cb(r)};
+    t=setTimeout(function(){if(window[n]){fin();cb({ok:false,error:'El conector de Contratos tardó demasiado en responder.'})}},60000);
+    sc.onerror=function(){if(window[n]){fin();cb({ok:false,error:'No se pudo conectar con el conector de Contratos.'})}};
+    sc.onload=function(){if(window[n]){fin();cb({ok:false,error:'El conector de Contratos todavía es la versión vieja (v8). Pegue el código nuevo (v9) en Apps Script y publique «Nueva versión».'})}};
+    var q='?';for(var k in params)q+=encodeURIComponent(k)+'='+encodeURIComponent(params[k])+'&';
+    sc.src=url+(url.indexOf('?')<0?q:'&'+q.slice(1))+'action=poner_numero&token='+encodeURIComponent(TOKEN_C)+'&callback='+n+'&_='+Date.now();document.head.appendChild(sc)}
+  function enLotes(tipo,numero,ceds,modo,reemplazar,cb){var res={ok:true,hoja:'',columna:'',encontrados:0,escritos:0,yaTenian:0,conflictos:[],noEncontrados:[]},i=0;
+    (function sig(){if(i>=ceds.length){cb(res);return}var lote=ceds.slice(i,i+150);i+=150;
+      llamarC({tipo:tipo,numero:numero,ceds:JSON.stringify(lote),modo:modo,reemplazar:reemplazar?'1':'0'},function(r){if(!r||!r.ok){cb({ok:false,error:(r&&r.error)||'Sin respuesta.'});return}
+        res.hoja=r.hoja;res.columna=r.columna;['encontrados','escritos','yaTenian'].forEach(function(k){res[k]+=r[k]});res.conflictos=res.conflictos.concat(r.conflictos);res.noEncontrados=res.noEncontrados.concat(r.noEncontrados);sig()})})()}
+  function datosNum(){var A=ARCH,t=tipoArch(A),n=(A.num||'').trim();
+    if(!t){window.alert('Primero elija si este precobro es de AP o de RC.');return null}
+    if(!n){window.alert('Escriba el número del precobro en la casilla.');$('numPre').focus();return null}
+    var ceds=[],v={};A.filas.forEach(function(f){if(f.ced&&!v[f.ced]){v[f.ced]=1;ceds.push(f.ced)}});return {tipo:t,numero:n,ceds:ceds}}
+  function nombreDe(ced){var f=ARCH.filas.filter(function(x){return x.ced===ced})[0];return f?f.nombre+' ('+ced+')':ced}
+  function resumenNum(r,d,modo){return '<div class="aviso"><b>'+(modo==='vista'?'Se escribiría':'Resultado')+'</b> en la hoja de <b>'+esc(r.hoja)+'</b>, columna <b>'+r.columna+'</b>, el número <b>'+esc(d.numero)+'</b>:<br>• Clientes encontrados en la hoja: <b>'+r.encontrados+'</b> de '+d.ceds.length+'<br>• '+(modo==='vista'?'Celdas vacías donde se escribiría':'Celdas escritas')+': <b>'+r.escritos+'</b><br>• Ya tenían ese mismo número: <b>'+r.yaTenian+'</b><br>• Con otro número distinto: <b>'+r.conflictos.length+'</b>'+(r.conflictos.length?' ('+esc(r.conflictos.slice(0,8).map(function(c){return nombreDe(c.ced)+' tiene '+c.actual}).join('; '))+(r.conflictos.length>8?'…':'')+')':'')+'<br>• No están en la hoja: <b>'+r.noEncontrados.length+'</b>'+(r.noEncontrados.length?' ('+esc(r.noEncontrados.slice(0,10).map(nombreDe).join('; '))+(r.noEncontrados.length>10?'…':'')+')':'')+'</div>'}
+  $('bNumVer').addEventListener('click',function(){var d=datosNum();if(!d)return;$('numRes').innerHTML='<p class="estado">Consultando la hoja… (no se escribe nada)</p>';
+    enLotes(d.tipo,d.numero,d.ceds,'vista',false,function(r){$('numRes').innerHTML=r.ok?resumenNum(r,d,'vista'):'<div class="alr">'+esc(r.error)+'</div>'})});
+  $('bNumPon').addEventListener('click',function(){var d=datosNum();if(!d)return;var b=this;b.disabled=true;$('numRes').innerHTML='<p class="estado">Revisando la hoja antes de escribir…</p>';
+    enLotes(d.tipo,d.numero,d.ceds,'vista',false,function(v){
+      if(!v.ok){b.disabled=false;$('numRes').innerHTML='<div class="alr">'+esc(v.error)+'</div>';return}
+      $('numRes').innerHTML=resumenNum(v,d,'vista');
+      if(!v.escritos&&!v.conflictos.length){b.disabled=false;window.alert('No hay nada que escribir: '+(v.yaTenian?'todos esos clientes ya tienen el número '+d.numero+'.':'ningún cliente de este precobro está en la hoja de '+v.hoja+'.'));return}
+      if(!window.confirm('Se va a escribir el número '+d.numero+' en la hoja de '+v.hoja+' (columna '+v.columna+'):\n\n• '+v.escritos+' cliente(s) con la celda vacía\n• '+v.yaTenian+' ya lo tienen\n• '+v.conflictos.length+' tienen OTRO número (no se tocan, salvo que usted lo pida)\n• '+v.noEncontrados.length+' no están en la hoja\n\n¿Escribir ahora?')){b.disabled=false;return}
+      var reemplazar=false;if(v.conflictos.length)reemplazar=window.confirm(v.conflictos.length+' cliente(s) ya tienen otro número en esa celda.\n\nAceptar = REEMPLAZARLO por '+d.numero+'.\nCancelar = dejarlo como está (solo se llenan las vacías).');
+      $('numRes').innerHTML='<p class="estado">Escribiendo en la hoja…</p>';
+      enLotes(d.tipo,d.numero,d.ceds,'escribir',reemplazar,function(r){b.disabled=false;
+        if(!r.ok){$('numRes').innerHTML='<div class="alr">'+esc(r.error)+'</div>';return}
+        var h=new Date();ARCH.escr={numero:d.numero,fecha:h.toLocaleDateString('es-CO')+' '+h.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}),escritos:r.escritos,noEnc:r.noEncontrados.map(nombreDe)};guardarNum();
+        $('numRes').innerHTML=resumenNum(r,d,'escribir')+'<div class="okb">✔ Listo. El número <b>'+esc(d.numero)+'</b> quedó en la hoja de Google al frente de cada cliente y ya sale en la tabla. Descargue o imprima cuando quiera.</div>'})})});
   function cargarArchivos(files){
     files=[].slice.call(files||[]);if(!files.length)return;$('dropTxt').textContent='Leyendo '+files.length+' archivo(s)…';
-    var fallos=[],pend=files.length;
-    files.forEach(function(file){var r=new FileReader();
+    var fallos=[],pend=files.length,leidos=new Array(files.length);
+    files.forEach(function(file,ix){var r=new FileReader();
       function listo(){pend--;if(pend>0)return;
+        leidos.forEach(function(D){if(!D)return;ARCHS=ARCHS.filter(function(a){return a.nombreArchivo!==D.nombreArchivo});ARCHS.push(D)});
         if(ARCHS.length){ARCH=ARCHS[ARCHS.length-1];$('dropTxt').textContent='✔ '+ARCHS.length+' archivo(s) leídos · '+ARCHS.reduce(function(a,x){return a+x.filas.length},0)+' asegurados en total. Haga clic para agregar o cambiar archivos.';procesar()}
         else{$('resultado').style.display='none';$('dropTxt').textContent='✖ '+(fallos[0]||'No se pudo leer el archivo.')}
         if(fallos.length)window.alert('No se pudo leer:\n\n'+fallos.join('\n'))}
       r.onerror=function(){fallos.push(file.name+': no se pudo abrir');listo()};
-      r.onload=function(){try{var D=leerArchivo(new Uint8Array(r.result));D.nombreArchivo=file.name;ARCHS=ARCHS.filter(function(a){return a.nombreArchivo!==file.name});ARCHS.push(D)}catch(e){fallos.push(file.name+': '+e.message)}listo()};
+      r.onload=function(){try{var D=leerArchivo(new Uint8Array(r.result));D.nombreArchivo=file.name;leidos[ix]=D}catch(e){fallos.push(file.name+': '+e.message)}listo()};
       r.readAsArrayBuffer(file)})}
   $('drop').addEventListener('click',function(){$('archivo').click()});
   $('bElegir').addEventListener('click',function(e){e.stopPropagation();$('archivo').click()});
@@ -266,13 +329,16 @@
   function csv(filas){return '﻿'+filas.map(function(r){return r.map(function(v){v=v==null?'':String(v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(';')}).join('\r\n')}
   function ordenado(A){var F=A.filas.slice(),ord=$('fOrden').value;if(ord==='asesor')F.sort(function(a,b){return nomAsesor(a)<nomAsesor(b)?-1:nomAsesor(a)>nomAsesor(b)?1:a.nombre<b.nombre?-1:1});else if(ord==='nombre')F.sort(function(a,b){return a.nombre<b.nombre?-1:1});return F}
   function filasExcel(A){var M=A.meta,F=ordenado(A);
-    if($('fSimple').checked){var o=[['CLIENTES DEL PRECOBRO — ASESOR Y N° DE CONTRATO'],['Aseguradora',M.compania||''],['Póliza',M.poliza||''],['Período de cobro',M.desde?fCO(M.desde)+' al '+fCO(M.hasta):''],[],['#','Cédula','Cliente','ASESOR QUE LO VENDIÓ','N° DE CONTRATO']],ini0=o.length;F.forEach(function(x,i){o.push([i+1,x.cedTxt,x.nombre,x.asesor||(x.fuente?'':'NO ENCONTRADO'),x.contrato||''])});return {filas:o,ini:ini0,n:F.length,simple:true}}
+    if($('fSimple').checked){var o=[['CLIENTES DEL PRECOBRO — ASESOR Y N° DE CONTRATO'],['Aseguradora',M.compania||''],['Póliza',M.poliza||''],['Período de cobro',M.desde?fCO(M.desde)+' al '+fCO(M.hasta):''],[],['#','Cédula','Cliente','ASESOR QUE LO VENDIÓ','N° DE CONTRATO']],ini0=o.length;F.forEach(function(x,i){o.push([i+1,x.cedTxt,x.nombre,x.asesor||(x.fuente?'':'NO ENCONTRADO'),x.contrato||''])});
+      if(A.num){o[ini0-1].push(numLabel(A));for(var q=ini0;q<o.length;q++)o[q].push(A.num)}
+      return {filas:o,ini:ini0,n:F.length,simple:true}}
     var tot=F.reduce(function(a,f){return a+f.prima},0),pag=A.pagador?A.pagador.total||A.pagador.prima:0;
     var out=[['PRECOBRO — '+(M.compania||'')],['Tomador',M.tomador||''],['Póliza',M.poliza||''],['Contrato del proveedor',M.contratoProv||''],['Período de cobro',M.desde?fCO(M.desde)+' al '+fCO(M.hasta):''],['Producto',((M.producto||'')+(M.sub?' · '+M.sub:''))],[],
       ['#','Asegurado','Cédula','Período desde','Período hasta','Prima (COP)','ASESOR QUE LO VENDIÓ','N° DE CONTRATO','Placa','Estado del contrato','Fuente','Revisar']],ini=out.length;
     F.forEach(function(x){out.push([x.n,x.nombre,x.cedTxt,fCO(x.desde),fCO(x.hasta),Math.round(x.prima),x.asesor||'',x.contrato||'',x.placa||'',x.estadoC||'',x.fuente||'No encontrado',x.rev.map(function(r){return r[1]}).join(' | ')])});
-    out.push(['','TOTAL DE LA LISTA','','','',Math.round(tot),'','','','','',pag?'Total del proveedor: '+pesos(pag):'']);return {filas:out,ini:ini,n:F.length}}
-  function hojaXlsx(A){var R=filasExcel(A),ws=XLSX.utils.aoa_to_sheet(R.filas);if(R.simple){ws['!cols']=[{wch:5},{wch:14},{wch:40},{wch:26},{wch:18}];return ws}ws['!cols']=[{wch:5},{wch:38},{wch:14},{wch:13},{wch:13},{wch:13},{wch:24},{wch:16},{wch:10},{wch:14},{wch:13},{wch:46}];
+    out.push(['','TOTAL DE LA LISTA','','','',Math.round(tot),'','','','','',pag?'Total del proveedor: '+pesos(pag):'']);if(A.num){out[ini-1].push(numLabel(A));for(var q=ini;q<out.length-1;q++)out[q].push(A.num)}
+    return {filas:out,ini:ini,n:F.length}}
+  function hojaXlsx(A){var R=filasExcel(A),ws=XLSX.utils.aoa_to_sheet(R.filas);if(R.simple){ws['!cols']=[{wch:5},{wch:14},{wch:40},{wch:26},{wch:18},{wch:14}];return ws}ws['!cols']=[{wch:5},{wch:38},{wch:14},{wch:13},{wch:13},{wch:13},{wch:24},{wch:16},{wch:10},{wch:14},{wch:13},{wch:46}];
     for(var i=R.ini;i<R.filas.length;i++){var c=XLSX.utils.encode_cell({r:i,c:5});if(ws[c]){ws[c].t='n';ws[c].z='$ #,##0'}}return ws}
   function nombreHoja(A,i){var t=('Precobro '+(A.meta.desde||i+1)).replace(/[\\\/?*\[\]:]/g,'-');return t.slice(0,31)}
   function bajarXlsx(archs,nombre){var wb=XLSX.utils.book_new(),usados={};archs.forEach(function(A,i){var n=nombreHoja(A,i);if(usados[n])n=n.slice(0,28)+'-'+(i+1);usados[n]=1;XLSX.utils.book_append_sheet(wb,hojaXlsx(A),n)});

@@ -1,5 +1,5 @@
 /**
- * PROTECT MOTOS · Conector (v8 — anti-duplicados + base de Fasecolda)
+ * PROTECT MOTOS · Conector (v9 — anti-duplicados + Fasecolda + número del precobro)
  * ------------------------------------------------------------------
  * Archivo: "Seguimiento Protec Motos 2026 ACTUAL"
  * Pestaña principal de clientes: "Protect"  (títulos fila 2, datos desde fila 3)
@@ -9,6 +9,10 @@
  *      - action=fase_list  -> devuelve todos los códigos guardados.
  *      - action=fase_save  -> guarda / actualiza un código (marca, línea, cilindraje, modelo, tipo).
  *      (Lo demás queda EXACTAMENTE igual; no se tocan los guardados de contratos, RC ni AP.)
+ *
+ * v9:  action=poner_numero -> pone el número del PRECOBRO (que solo usted sabe) al frente de cada cliente en la hoja de
+ *      Accidentes Personales (columna A) o de Responsabilidad Civil (columna B), buscando por cédula. No borra nada ni
+ *      crea filas: solo escribe en celdas vacías (o reemplaza si usted lo confirma).
  *
  * Corre  diagnostico()  una vez para verificar.
  */
@@ -36,6 +40,12 @@ function doGet(e) {
     if (accion === 'fase_save') {
       if (e.parameter.token !== TOKEN) return out_(cb, { ok:false, error:'CLAVE_INCORRECTA' });
       return out_(cb, faseSave_(e.parameter));
+    }
+
+    // ===== NÚMERO DEL PRECOBRO EN LAS HOJAS DE AP / RC =====
+    if (accion === 'poner_numero') {
+      if (e.parameter.token !== TOKEN) return out_(cb, { ok:false, error:'CLAVE_INCORRECTA' });
+      return out_(cb, ponerNumero_(e.parameter));
     }
 
     // ===== GUARDAR CONTRATO (igual que v7) =====
@@ -89,6 +99,42 @@ function doGet(e) {
   } finally {
     try { lock.releaseLock(); } catch (e) {}
   }
+}
+
+/* ============ NÚMERO DEL PRECOBRO ============ */
+// AP (Accidentes Personales): cédula en la columna J, número en la columna A.
+// RC (Responsabilidad Civil): cédula en la columna G, número en la columna B.
+// Si una cédula está en varias filas, se usa la ÚLTIMA (la más reciente).
+function ponerNumero_(p) {
+  var tipo = String(p.tipo || '').toUpperCase();
+  if (tipo !== 'AP' && tipo !== 'RC') return { ok:false, error:'Tipo no válido: debe ser AP o RC.' };
+  var numero = String(p.numero || '').trim();
+  if (!numero) return { ok:false, error:'Falta el número.' };
+  var ceds; try { ceds = JSON.parse(p.ceds || '[]'); } catch (x) { return { ok:false, error:'La lista de cédulas no es válida.' }; }
+  var escribir = p.modo === 'escribir', reemplazar = p.reemplazar === '1';
+  var cfg = tipo === 'AP' ? { id: SHEET3_ID, colCed: 10, colNum: 1, nombre: 'Accidentes Personales' } : { id: SHEET2_ID, colCed: 7, colNum: 2, nombre: 'Responsabilidad Civil' };
+  var sh = SpreadsheetApp.openById(cfg.id).getSheets()[0], last = sh.getLastRow();
+  var norm = function (v) { return String(v == null ? '' : v).replace(/\.0+$/, '').replace(/\D/g, '').replace(/^0+/, ''); };
+  var out = { ok:true, tipo:tipo, hoja:cfg.nombre, columna: tipo === 'AP' ? 'A' : 'B', escribir:escribir, encontrados:0, escritos:0, yaTenian:0, conflictos:[], noEncontrados:[] };
+  if (last < 2) { out.noEncontrados = ceds.slice(); return out; }
+  var C = sh.getRange(1, cfg.colCed, last, 1).getValues(), N = sh.getRange(1, cfg.colNum, last, 1).getValues(), idx = {}, r;
+  for (r = 1; r < last; r++) { var k = norm(C[r][0]); if (k) idx[k] = r + 1; }
+  var valor = /^\d{1,15}$/.test(numero) ? Number(numero) : numero, vistos = {};
+  ceds.forEach(function (c) {
+    var k = norm(c); if (!k || vistos[k]) return; vistos[k] = true;
+    var fila = idx[k];
+    if (!fila) { out.noEncontrados.push(k); return; }
+    out.encontrados++;
+    var actual = String(N[fila - 1][0] == null ? '' : N[fila - 1][0]).trim();
+    if (actual === '') { if (escribir) { sh.getRange(fila, cfg.colNum).setValue(valor); out.escritos++; } else out.escritos++; }
+    else if (actual === numero) out.yaTenian++;
+    else {
+      out.conflictos.push({ ced:k, fila:fila, actual:actual });
+      if (escribir && reemplazar) { sh.getRange(fila, cfg.colNum).setValue(valor); out.escritos++; }
+    }
+  });
+  if (escribir) SpreadsheetApp.flush();
+  return out;
 }
 
 function out_(cb, obj) {
