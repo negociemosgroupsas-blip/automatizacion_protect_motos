@@ -111,13 +111,14 @@ function ponerNumero_(p) {
   var numero = String(p.numero || '').trim();
   if (!numero) return { ok:false, error:'Falta el número.' };
   var ceds; try { ceds = JSON.parse(p.ceds || '[]'); } catch (x) { return { ok:false, error:'La lista de cédulas no es válida.' }; }
-  var escribir = p.modo === 'escribir', reemplazar = p.reemplazar === '1';
-  var cfg = tipo === 'AP' ? { id: SHEET3_ID, colCed: 10, colNum: 1, nombre: 'Accidentes Personales' } : { id: SHEET2_ID, colCed: 7, colNum: 2, nombre: 'Responsabilidad Civil' };
+  var escribir = p.modo === 'escribir', reemplazar = p.reemplazar === '1', aut = {};
+  try { (JSON.parse(p.autorizar || '[]')).forEach(function (c) { aut[String(c).replace(/\D/g, '').replace(/^0+/, '')] = true; }); } catch (xa) {}
+  var cfg = tipo === 'AP' ? { id: SHEET3_ID, colCed: 10, colNum: 1, nombre: 'Accidentes Personales', colNom: 4, nNom: 3 } : { id: SHEET2_ID, colCed: 7, colNum: 2, nombre: 'Responsabilidad Civil', colNom: 5, nNom: 1 };
   var sh = SpreadsheetApp.openById(cfg.id).getSheets()[0], last = sh.getLastRow();
   var norm = function (v) { return String(v == null ? '' : v).replace(/\.0+$/, '').replace(/\D/g, '').replace(/^0+/, ''); };
   var out = { ok:true, tipo:tipo, hoja:cfg.nombre, columna: tipo === 'AP' ? 'A' : 'B', escribir:escribir, encontrados:0, escritos:0, yaTenian:0, conflictos:[], noEncontrados:[] };
   if (last < 2) { out.noEncontrados = ceds.slice(); return out; }
-  var C = sh.getRange(1, cfg.colCed, last, 1).getValues(), N = sh.getRange(1, cfg.colNum, last, 1).getValues(), idx = {}, r;
+  var C = sh.getRange(1, cfg.colCed, last, 1).getValues(), N = sh.getRange(1, cfg.colNum, last, 1).getValues(), NM = sh.getRange(1, cfg.colNom, last, cfg.nNom).getValues(), idx = {}, r;
   for (r = 1; r < last; r++) { var k = norm(C[r][0]); if (k) idx[k] = r + 1; }
   var valor = /^\d{1,15}$/.test(numero) ? Number(numero) : numero, vistos = {};
   ceds.forEach(function (c) {
@@ -129,8 +130,8 @@ function ponerNumero_(p) {
     if (actual === '') { if (escribir) { sh.getRange(fila, cfg.colNum).setValue(valor); out.escritos++; } else out.escritos++; }
     else if (actual === numero) out.yaTenian++;
     else {
-      out.conflictos.push({ ced:k, fila:fila, actual:actual });
-      if (escribir && reemplazar) { sh.getRange(fila, cfg.colNum).setValue(valor); out.escritos++; }
+      out.conflictos.push({ ced:k, fila:fila, actual:actual, nombre: NM[fila - 1].join(' ').replace(/\s+/g, ' ').trim() });
+      if (escribir && (reemplazar || aut[k])) { sh.getRange(fila, cfg.colNum).setValue(valor); out.escritos++; out.reemplazados = (out.reemplazados || 0) + 1; }
     }
   });
   if (escribir) SpreadsheetApp.flush();
