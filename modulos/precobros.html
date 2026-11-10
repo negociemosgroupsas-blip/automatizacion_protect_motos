@@ -31,18 +31,19 @@
   #hoja table th{background:#1f4e79;color:#fff;border:1px solid #fff;text-align:center;font-size:.68rem} #hoja table td{border:1px solid #333;padding:5px 7px;font-size:.78rem} #hoja .tot td{background:#bdd7ee;color:#1f4e79;font-weight:800}
   #hoja h3{margin:14px 16px 6px;font-size:.92rem;color:var(--azul2)} #hoja .wrap{padding:0 12px}
   #hoja table td{white-space:nowrap} #hoja table td:nth-child(2){white-space:normal;min-width:210px} #hoja table td.col-obs{white-space:normal} #hoja th:nth-child(6),#hoja td:nth-child(6){width:96px} #hoja td:nth-child(7){min-width:135px} #hoja td:nth-child(8){min-width:95px}
+  input.man{width:100%;min-width:120px;border:1px solid #f0b4b4;background:#fff8f8;border-radius:6px;padding:4px 7px;font-size:.8rem;font-family:inherit} input.man:focus{outline:2px solid #93c5fd;background:#fff} .imp{display:none} .lapiz{border:0;background:#eef2f9;border-radius:6px;cursor:pointer;font-size:.8rem;padding:1px 6px;color:#1f4e79} .lapiz:hover{background:#dbe7f7}
   .pie-imp{display:none;font-size:.72rem;color:#555;padding:6px 16px 0}
   @media print{
     @page{size:landscape;margin:10mm}
     body{background:#fff} #hoja table td{padding:3px 5px;font-size:.7rem} #hoja table th{padding:4px 5px} header,.nop{display:none!important} main{padding:0;max-width:none} #hoja{border:0} .pie-imp{display:block}
     .panel.fuera{display:none!important} #hoja .tag{border:1px solid #bbb;background:#fff!important;color:#222!important}
     tr.noenc td,tr.alerta td{background:#fff!important} *{-webkit-print-color-adjust:exact;print-color-adjust:exact} thead{display:table-header-group} tr{page-break-inside:avoid}
-    #hoja.sin-obs .col-obs{display:none}
+    #hoja.sin-obs .col-obs{display:none} input.man,.lapiz{display:none!important} .imp{display:inline!important} .imp.vacio{color:#b42318;font-weight:700}
   }
 </style>
 </head>
 <body>
-<header><h1>🧾 Cobros y precobros</h1><p>Suba el archivo que le envía el proveedor cada mes: el sistema busca a cada cliente por su cédula y le pone el asesor y el número de contrato. Listo para imprimir.</p><p style="font-size:.72rem;opacity:.6;margin-top:6px">Pantalla Cobros y precobros · versión del sistema: <b>PC-10nov-D</b></p></header>
+<header><h1>🧾 Cobros y precobros</h1><p>Suba el archivo que le envía el proveedor cada mes: el sistema busca a cada cliente por su cédula y le pone el asesor y el número de contrato. Listo para imprimir.</p><p style="font-size:.72rem;opacity:.6;margin-top:6px">Pantalla Cobros y precobros · versión del sistema: <b>PC-10nov-E</b></p></header>
 <main>
   <div class="panel nop" style="padding:12px 18px"><div class="fil" style="align-items:center"><button class="btn g" id="bRec" type="button">🔄 Volver a leer la hoja</button><span class="estado" id="est" style="flex:1">Cargando…</span></div></div>
 
@@ -82,6 +83,7 @@
   </div>
 </main>
 
+<datalist id="dlAs"></datalist>
 <script src="../assets/xlsx.mini.min.js"></script>
 <script>
 (function(){
@@ -92,6 +94,9 @@
   function lsg(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
   function est(t,c){var e=$('est');e.textContent=t;e.className='estado '+(c||'')}
   var CRM=null,OMS=null,ARCH=null,ARCHS=[],FILAS=[];
+  function manLoad(){try{return JSON.parse(localStorage.getItem('pm_pre_manual')||'{}')}catch(e){return {}}}
+  function manSave(m){try{localStorage.setItem('pm_pre_manual',JSON.stringify(m))}catch(e){}}
+  var MAN=manLoad();
 
   // ---------- conexión (mismo conector del CRM; OMS opcional) ----------
   function llamar(src,params,cb){
@@ -177,20 +182,29 @@
         if(!f.asesor)f.rev.push(['ta','Sin asesor en la hoja OMS']);f.rev.push(['tb','Está en Clientes OMS, no en Protect'])}
       else f.rev.push(['tr','No está en Protect ni en OMS']);
       if(Math.abs(f.prima-moda)>1)f.rev.push(['tb','Prima distinta a la normal ('+pesos(f.prima)+')'])});
+    D.filas.forEach(function(f){var m=MAN[f.ced];if(!m)return;
+      if(m.asesor)f.asesor=m.asesor;if(m.contrato)f.contrato=m.contrato;f.manual=true;if(!f.fuente)f.fuente='Manual';
+      f.rev=f.rev.filter(function(r){return !/No está en Protect|Sin asesor|Está en Clientes OMS/.test(r[1])});f.rev.push(['tb','Escrito a mano'])});
     D.moda=moda;return D}
 
   // ---------- pantalla ----------
   function procesar(){
     if(!ARCH)return;if(!CRM){$('resultado').style.display='none';est('Todavía no se han leído los contratos de la hoja Protect: espere o presione «Volver a leer la hoja».','er');return}
     ARCHS.forEach(function(a){cruzar(a)});FILAS=ARCH.filas;
+    var as={};(CRM||[]).concat(OMS||[]).forEach(function(x){var a=String(x.asesor||'').trim().toUpperCase();if(a)as[a]=1});$('dlAs').innerHTML=Object.keys(as).sort().map(function(a){return '<option value="'+esc(a)+'">'}).join('');
     var sel=$('fArch');sel.innerHTML=ARCHS.map(function(a,i){return '<option value="'+i+'">'+esc(a.nombreArchivo)+'</option>'}).join('');sel.value=String(ARCHS.indexOf(ARCH));$('lArch').style.display=ARCHS.length>1?'':'none';$('bXlsxAll').style.display=ARCHS.length>1?'':'none';
     pintar()}
   $('fArch').addEventListener('change',function(){ARCH=ARCHS[+this.value];FILAS=ARCH.filas;pintar()});
+  function celda(f,k,ph){var v=f[k]||'',ed=!v||f.edit;
+    if(ed)return '<input class="man" data-c="'+esc(f.ced)+'" data-k="'+k+'" value="'+esc(v)+'" placeholder="'+ph+'"'+(k==='asesor'?' list="dlAs"':'')+' autocomplete="off"><span class="imp'+(v?'':' vacio')+'">'+(v?esc(v):(k==='asesor'?'NO ENCONTRADO':'—'))+'</span>';
+    return '<b>'+esc(v)+'</b>'+(k==='contrato'&&f.manual?' <span class="tag tb nop">a mano</span>':'')+' <button class="lapiz nop" type="button" data-c="'+esc(f.ced)+'" data-a="ed" title="Cambiar a mano">✎</button>'+(f.manual&&k==='contrato'?' <button class="lapiz nop" type="button" data-c="'+esc(f.ced)+'" data-a="rest" title="Volver a lo que dice Protect">↺</button>':'')}
   function nomAsesor(f){return f.asesor?f.asesor.toUpperCase():'SIN ASESOR'}
+  function miniTxt(){var F=ARCH?ARCH.filas:[],ok=F.filter(function(f){return f.asesor&&f.contrato}).length,falta=F.length-ok,man=F.filter(function(f){return f.manual}).length;
+    $('mini').innerHTML='<b>'+ok+' de '+F.length+'</b> clientes con asesor y contrato'+(falta?' · <span style="color:#b42318"><b>'+falta+' faltan</b>: escríbalos a mano en la tabla (casillas rojas)</span>':' ✔')+(man?' · '+man+' escrito(s) a mano':'')}
   function pintar(){
     var D=ARCH,F=D.filas,tot=F.reduce(function(a,f){return a+f.prima},0),conAs=F.filter(function(f){return f.asesor}).length,noEnc=F.filter(function(f){return !f.fuente}).length,rev=F.filter(function(f){return f.rev.some(function(r){return r[0]==='tr'||r[0]==='ta'})}).length,pag=D.pagador?D.pagador.total||D.pagador.prima:0,dif=pag?Math.round(tot-pag):0;
     $('resultado').style.display='block';var simple=$('fSimple').checked;$('pTiles').style.display=simple?'none':'';
-    $('mini').innerHTML='<b>'+conAs+' de '+F.length+'</b> clientes encontrados en Protect'+(noEnc?' · <span style="color:#b42318"><b>'+noEnc+' no se encontraron</b> (salen marcados en rojo)</span>':' ✔');
+    miniTxt();
     var av=[];
     if(noEnc)av.push('<div class="alr"><b>'+noEnc+' asegurado(s) no están ni en Protect ni en Clientes OMS.</b> Salen marcados en rojo en la lista: revise la cédula o si falta registrarlos.</div>');
     if(F.some(function(f){return f.fuente==='Protect'&&f.rev.some(function(r){return r[1]==='Sin AP en Protect'})}))av.push('<div class="aviso">Hay clientes que el proveedor cobra, pero que en Protect <b>no figuran con AP</b>. Puede ser un error de la hoja o un cobro que no corresponde.</div>');
@@ -205,7 +219,7 @@
     if(ord==='asesor')F.sort(function(a,b){return nomAsesor(a)<nomAsesor(b)?-1:nomAsesor(a)>nomAsesor(b)?1:a.nombre<b.nombre?-1:1});else if(ord==='nombre')F.sort(function(a,b){return a.nombre<b.nombre?-1:1});
     var simple=$('fSimple').checked;
     if(simple){var ps=M.desde?fCO(M.desde)+' al '+fCO(M.hasta):'';
-      $('hoja').className='';$('hoja').innerHTML='<div class="tt">CLIENTES DEL PRECOBRO — ASESOR Y N° DE CONTRATO</div><div class="meta"><div><span>Aseguradora</span>'+esc(M.compania||'—')+'</div><div><span>Póliza</span>'+esc(M.poliza||'—')+'</div><div><span>Período de cobro</span>'+(ps||'—')+'</div><div><span>Clientes</span>'+F.length+'</div></div><div class="wrap"><table><thead><tr><th>#</th><th>Cédula</th><th>Cliente</th><th>Asesor que lo vendió</th><th>N° de contrato</th></tr></thead><tbody>'+F.map(function(f,i){return '<tr class="'+(f.fuente?'':'noenc')+'"><td>'+(i+1)+'</td><td>'+esc(f.cedTxt)+'</td><td>'+esc(f.nombre)+'</td><td><b>'+(f.asesor?esc(f.asesor):'<span style="color:#b42318">'+(f.fuente?'—':'NO ENCONTRADO')+'</span>')+'</b></td><td><b>'+(f.contrato?esc(f.contrato):'—')+'</b>'+(f.fuente==='Clientes OMS'?' <span class="tag tb">OMS</span>':'')+'</td></tr>'}).join('')+'</tbody></table></div><div class="pie-imp">Impreso el '+new Date().toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})+' · Cruce con la hoja Protect de Negociemos Group S.A.S.</div>';return}
+      $('hoja').className='';$('hoja').innerHTML='<div class="tt">CLIENTES DEL PRECOBRO — ASESOR Y N° DE CONTRATO</div><div class="meta"><div><span>Aseguradora</span>'+esc(M.compania||'—')+'</div><div><span>Póliza</span>'+esc(M.poliza||'—')+'</div><div><span>Período de cobro</span>'+(ps||'—')+'</div><div><span>Clientes</span>'+F.length+'</div></div><div class="wrap"><table><thead><tr><th>#</th><th>Cédula</th><th>Cliente</th><th>Asesor que lo vendió</th><th>N° de contrato</th></tr></thead><tbody>'+F.map(function(f,i){return '<tr class="'+((f.asesor&&f.contrato)?'':'noenc')+'" data-c="'+esc(f.ced)+'"><td>'+(i+1)+'</td><td>'+esc(f.cedTxt)+'</td><td>'+esc(f.nombre)+'</td><td>'+celda(f,'asesor','Asesor')+'</td><td>'+celda(f,'contrato','N° de contrato')+(f.fuente==='Clientes OMS'?' <span class="tag tb">OMS</span>':'')+'</td></tr>'}).join('')+'</tbody></table></div><div class="pie-imp">Impreso el '+new Date().toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})+' · Cruce con la hoja Protect de Negociemos Group S.A.S.</div>';return}
     var tot=F.reduce(function(a,f){return a+f.prima},0),periodo=M.desde?fCO(M.desde)+' al '+fCO(M.hasta):'—';
     var titulo='PRECOBRO — '+(M.compania||'Aseguradora');
     var h='<div class="tt">'+esc(titulo)+'</div><div class="meta"><div><span>Tomador</span>'+esc(M.tomador||'—')+'</div><div><span>Póliza</span>'+esc(M.poliza||'—')+'</div><div><span>Contrato del proveedor</span>'+esc(M.contratoProv||'—')+'</div><div><span>Período de cobro</span>'+periodo+'</div><div><span>Producto</span>'+esc((M.producto||'')+(M.sub?' · '+M.sub:'')||'—')+'</div><div><span>Asegurados en esta lista</span>'+F.length+' de '+D.filas.length+'</div></div>';
@@ -217,6 +231,14 @@
     $('hoja').innerHTML=h;$('hoja').className=obs?'':'sin-obs'}
   ['fOrden','fVer','fObs','fRes'].forEach(function(i){$(i).addEventListener('change',function(){if(ARCH)hoja()})});$('fSimple').addEventListener('change',function(){if(ARCH)pintar()});$('fBusca').addEventListener('input',function(){if(ARCH)hoja()});
 
+  $('hoja').addEventListener('change',function(e){var t=e.target;if(!t.classList.contains('man'))return;var ced=t.dataset.c,k=t.dataset.k,v=t.value.trim();if(k==='asesor')v=v.toUpperCase();
+    var m=MAN[ced]=MAN[ced]||{};if(v)m[k]=v;else delete m[k];if(!m.asesor&&!m.contrato)delete MAN[ced];manSave(MAN);
+    ARCHS.forEach(function(A){A.filas.forEach(function(f){if(f.ced!==ced)return;f[k]=v||(MAN[ced]?'':f[k]);if(v){f.manual=true;if(!f.fuente)f.fuente='Manual';f.rev=f.rev.filter(function(r){return !/No está en Protect|Sin asesor|Está en Clientes OMS/.test(r[1])})}})});
+    var sp=t.parentNode.querySelector('.imp');if(sp){sp.textContent=v||(k==='asesor'?'NO ENCONTRADO':'—');sp.className='imp'+(v?'':' vacio')}
+    var tr=t.closest('tr'),f0=ARCH.filas.filter(function(f){return f.ced===ced})[0];if(tr&&f0)tr.className=(f0.asesor&&f0.contrato)?'':'noenc';miniTxt()});
+  $('hoja').addEventListener('click',function(e){var b=e.target.closest('button[data-c]');if(!b)return;var ced=b.dataset.c;
+    if(b.dataset.a==='ed'){ARCH.filas.forEach(function(f){if(f.ced===ced)f.edit=true});hoja()}
+    else if(b.dataset.a==='rest'){delete MAN[ced];manSave(MAN);ARCHS.forEach(function(A){A.filas.forEach(function(f){delete f.edit})});procesar()}});
   function cargarArchivos(files){
     files=[].slice.call(files||[]);if(!files.length)return;$('dropTxt').textContent='Leyendo '+files.length+' archivo(s)…';
     var fallos=[],pend=files.length;
