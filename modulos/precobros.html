@@ -42,14 +42,14 @@
 </style>
 </head>
 <body>
-<header><h1>🧾 Cobros y precobros</h1><p>Suba el archivo que le envía el proveedor cada mes: el sistema busca a cada cliente por su cédula y le pone el asesor y el número de contrato. Listo para imprimir.</p><p style="font-size:.72rem;opacity:.6;margin-top:6px">Pantalla Cobros y precobros · versión del sistema: <b>PC-10nov-B</b></p></header>
+<header><h1>🧾 Cobros y precobros</h1><p>Suba el archivo que le envía el proveedor cada mes: el sistema busca a cada cliente por su cédula y le pone el asesor y el número de contrato. Listo para imprimir.</p><p style="font-size:.72rem;opacity:.6;margin-top:6px">Pantalla Cobros y precobros · versión del sistema: <b>PC-10nov-C</b></p></header>
 <main>
   <div class="panel nop" style="padding:12px 18px"><div class="fil" style="align-items:center"><button class="btn g" id="bRec" type="button">🔄 Volver a leer la hoja</button><span class="estado" id="est" style="flex:1">Cargando…</span></div></div>
 
   <section class="panel nop" id="pSubir">
     <h2>1. Suba el archivo del proveedor</h2>
     <p class="sub">Excel (.xlsx o .xls) o .csv, tal como lo recibe. Si el proveedor le envía varios durante el mes, puede subirlos todos. El archivo no se envía a ninguna parte: se lee aquí en su computador.</p>
-    <div class="drop" id="drop"><b>📂 Haga clic aquí o arrastre el archivo (o varios a la vez)</b><span id="dropTxt">Ejemplo: PRECOBRO_OCT_2000725842__NEGOCIEMOS_GROUP_S.A.S.xlsx</span></div>
+    <div class="drop" id="drop" tabindex="0"><b>📂 Arrastre aquí el archivo, o elíjalo con el botón</b><button class="btn d" id="bElegir" type="button" style="margin:6px 0">📎 Elegir archivo</button><span id="dropTxt">También puede copiar el archivo en su computador y pegarlo aquí con Ctrl+V. Ejemplo: PRECOBRO_OCT_2000725842__NEGOCIEMOS_GROUP_S.A.S.xlsx</span></div>
     <input type="file" id="archivo" accept=".xlsx,.xls,.csv" multiple style="display:none">
   </section>
 
@@ -223,6 +223,8 @@
       r.onload=function(){try{var D=leerArchivo(new Uint8Array(r.result));D.nombreArchivo=file.name;ARCHS=ARCHS.filter(function(a){return a.nombreArchivo!==file.name});ARCHS.push(D)}catch(e){fallos.push(file.name+': '+e.message)}listo()};
       r.readAsArrayBuffer(file)})}
   $('drop').addEventListener('click',function(){$('archivo').click()});
+  $('bElegir').addEventListener('click',function(e){e.stopPropagation();$('archivo').click()});
+  document.addEventListener('paste',function(e){var f=(e.clipboardData&&e.clipboardData.files)||[];if(f.length){e.preventDefault();cargarArchivos(f)}});
   $('archivo').addEventListener('change',function(){cargarArchivos(this.files);this.value=''});
   ['dragenter','dragover'].forEach(function(ev){$('drop').addEventListener(ev,function(e){e.preventDefault();$('drop').classList.add('on')})});
   ['dragleave','drop'].forEach(function(ev){$('drop').addEventListener(ev,function(e){e.preventDefault();$('drop').classList.remove('on')})});
