@@ -568,6 +568,13 @@
       <p id="crmEstado" class="nota" style="margin-top:10px">Sin conectar.</p>
     </div>
     <div class="caja" style="margin-top:14px">
+      <h3 style="margin:0 0 6px">💾 Copia de mis conexiones (para otro computador)</h3>
+      <p style="margin:0 0 10px">Guarda en un archivo <b>todas las URLs y ajustes</b> que ha escrito en el sistema (Cobros, CRM, Conciliación, Clientes OMS, SOAT, Contratos, comisiones y lo que escribió a mano en los precobros). En el otro computador, abra el sistema y cárguelo: no tiene que pegar las URLs una por una. <b>Guarde ese archivo en un lugar privado</b>: contiene las direcciones de sus conectores.</p>
+      <div class="f-acc" style="margin-top:0"><button id="cxExportar" type="button">⬇ Guardar mis conexiones</button><button id="cxImportar" type="button" class="sec">⬆ Cargar mis conexiones</button></div>
+      <input id="cxArchivo" type="file" accept=".json,application/json" style="display:none">
+      <p id="cxEstado" class="nota" style="margin-top:10px"></p>
+    </div>
+    <div class="caja" style="margin-top:14px">
       <h3 style="margin:0 0 6px">Los demás conectores</h3>
       <ul style="margin:6px 0">
         <li><b>Cobros</b> → <code>Codigo_cobros.gs</code> (hojas Protect, Pagos, Gestiones). Su URL se guarda dentro del módulo Cobros.</li>
@@ -1897,6 +1904,20 @@
     try{u.value=localStorage.getItem('pm_crm_url')||'';t.value=localStorage.getItem('pm_crm_token')||''}catch(x){}
     function estado(txt,cl){e.textContent=txt;e.style.color=cl||''}
     if(u.value)estado('URL guardada. Pulsa «Probar conexión» para comprobarla.');
+    /* ===== Copia de conexiones: guardar y cargar (URLs y ajustes del navegador) ===== */
+    (function(){
+      var EXC={pm_fasedb:1};   // caché grande que se vuelve a bajar sola
+      var msg=function(t,c){var e=document.getElementById('cxEstado');e.textContent=t;e.style.color=c||''};
+      document.getElementById('cxExportar').addEventListener('click',function(){
+        var o={},n=0;try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(/^(pm_|conc_)/.test(k)&&!EXC[k]){o[k]=localStorage.getItem(k);n++}}}catch(e){}
+        if(!n){msg('Todavía no hay conexiones guardadas en este navegador.','#dc2626');return}
+        var h=new Date(),z=function(x){return ('0'+x).slice(-2)},blob=new Blob([JSON.stringify({sistema:'Protect Motos',version:1,guardado:h.toISOString(),datos:o},null,1)],{type:'application/json'}),a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);a.download='MIS_CONEXIONES_Protect_Motos_'+h.getFullYear()+'-'+z(h.getMonth()+1)+'-'+z(h.getDate())+'.json';document.body.appendChild(a);a.click();a.remove();msg('✔ Guardado: '+n+' ajuste(s) en el archivo '+a.download+'. Llévelo al otro computador y use «Cargar mis conexiones».','#1f9d55')});
+      document.getElementById('cxImportar').addEventListener('click',function(){document.getElementById('cxArchivo').click()});
+      document.getElementById('cxArchivo').addEventListener('change',function(){var f=this.files[0];this.value='';if(!f)return;var r=new FileReader();
+        r.onload=function(){try{var j=JSON.parse(r.result),d=j&&j.datos;if(!d||typeof d!=='object')throw new Error('El archivo no es una copia de conexiones del sistema.');var n=0;Object.keys(d).forEach(function(k){if(/^(pm_|conc_)/.test(k)&&typeof d[k]==='string'){try{localStorage.setItem(k,d[k]);n++}catch(e){}}});
+          msg('✔ Cargadas '+n+' conexiones y ajustes. Recargando…','#1f9d55');setTimeout(function(){location.reload()},900)}catch(e){msg('No se pudo cargar: '+e.message,'#dc2626')}};r.readAsText(f)});
+    })();
     document.getElementById('crmGuardar').addEventListener('click',function(){
       var v=u.value.trim();
       if(v&&!/^https:\/\/script\.google\.com\//.test(v)){estado('La URL debe empezar con https://script.google.com/ y terminar en /exec.','#dc2626');return}
