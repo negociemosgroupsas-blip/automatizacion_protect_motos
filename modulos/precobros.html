@@ -42,15 +42,15 @@
 </style>
 </head>
 <body>
-<header><h1>🧾 Cobros y precobros</h1><p>Suba el archivo que le envía el proveedor cada mes: el sistema busca a cada cliente por su cédula y le pone el asesor y el número de contrato. Listo para imprimir.</p><p style="font-size:.72rem;opacity:.6;margin-top:6px">Pantalla Cobros y precobros · versión del sistema: <b>PC-09nov-A</b></p></header>
+<header><h1>🧾 Cobros y precobros</h1><p>Suba el archivo que le envía el proveedor cada mes: el sistema busca a cada cliente por su cédula y le pone el asesor y el número de contrato. Listo para imprimir.</p><p style="font-size:.72rem;opacity:.6;margin-top:6px">Pantalla Cobros y precobros · versión del sistema: <b>PC-10nov-B</b></p></header>
 <main>
   <div class="panel nop" style="padding:12px 18px"><div class="fil" style="align-items:center"><button class="btn g" id="bRec" type="button">🔄 Volver a leer la hoja</button><span class="estado" id="est" style="flex:1">Cargando…</span></div></div>
 
   <section class="panel nop" id="pSubir">
     <h2>1. Suba el archivo del proveedor</h2>
-    <p class="sub">Excel (.xlsx o .xls) o .csv, tal como lo recibe. El archivo no se envía a ninguna parte: se lee aquí en su computador.</p>
-    <div class="drop" id="drop"><b>📂 Haga clic aquí o arrastre el archivo</b><span id="dropTxt">Ejemplo: PRECOBRO_OCT_2000725842__NEGOCIEMOS_GROUP_S.A.S.xlsx</span></div>
-    <input type="file" id="archivo" accept=".xlsx,.xls,.csv" style="display:none">
+    <p class="sub">Excel (.xlsx o .xls) o .csv, tal como lo recibe. Si el proveedor le envía varios durante el mes, puede subirlos todos. El archivo no se envía a ninguna parte: se lee aquí en su computador.</p>
+    <div class="drop" id="drop"><b>📂 Haga clic aquí o arrastre el archivo (o varios a la vez)</b><span id="dropTxt">Ejemplo: PRECOBRO_OCT_2000725842__NEGOCIEMOS_GROUP_S.A.S.xlsx</span></div>
+    <input type="file" id="archivo" accept=".xlsx,.xls,.csv" multiple style="display:none">
   </section>
 
   <div id="resultado" style="display:none">
@@ -63,13 +63,16 @@
     <section class="panel nop fuera">
       <h2>3. Ajuste lo que va a imprimir</h2>
       <div class="fil">
+        <label id="lArch" style="display:none">Archivo <select id="fArch"></select></label>
         <label>Ordenar por <select id="fOrden"><option value="orig">Como viene en el archivo</option><option value="asesor">Asesor</option><option value="nombre">Nombre del asegurado</option></select></label>
         <label>Mostrar <select id="fVer"><option value="todos">Todos</option><option value="rev">Solo los que hay que revisar</option><option value="sinas">Solo los sin asesor</option></select></label>
         <label>Buscar <input type="search" id="fBusca" placeholder="nombre, cédula, asesor o contrato"></label>
         <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="fObs" checked> Incluir columna «Revisar»</label>
         <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="fRes" checked> Incluir resumen por asesor</label>
         <button class="btn d" id="bPrint" type="button">🖨️ Imprimir / guardar PDF</button>
-        <button class="btn" id="bCsv" type="button">⬇ Excel (CSV)</button>
+        <button class="btn v" id="bXlsx" type="button">⬇ Excel con asesor y contrato</button>
+        <button class="btn g" id="bXlsxAll" type="button" style="display:none">⬇ Excel con todos los archivos</button>
+        <button class="btn g" id="bCsv" type="button">CSV</button>
       </div>
     </section>
 
@@ -86,7 +89,7 @@
   function pesosC(n){return pesos(n)+' COP'}
   function lsg(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
   function est(t,c){var e=$('est');e.textContent=t;e.className='estado '+(c||'')}
-  var CRM=null,OMS=null,ARCH=null,FILAS=[];
+  var CRM=null,OMS=null,ARCH=null,ARCHS=[],FILAS=[];
 
   // ---------- conexión (mismo conector del CRM; OMS opcional) ----------
   function llamar(src,params,cb){
@@ -177,7 +180,10 @@
   // ---------- pantalla ----------
   function procesar(){
     if(!ARCH)return;if(!CRM){$('resultado').style.display='none';est('Todavía no se han leído los contratos de la hoja Protect: espere o presione «Volver a leer la hoja».','er');return}
-    var D=cruzar(ARCH);FILAS=D.filas;pintar()}
+    ARCHS.forEach(function(a){cruzar(a)});FILAS=ARCH.filas;
+    var sel=$('fArch');sel.innerHTML=ARCHS.map(function(a,i){return '<option value="'+i+'">'+esc(a.nombreArchivo)+'</option>'}).join('');sel.value=String(ARCHS.indexOf(ARCH));$('lArch').style.display=ARCHS.length>1?'':'none';$('bXlsxAll').style.display=ARCHS.length>1?'':'none';
+    pintar()}
+  $('fArch').addEventListener('change',function(){ARCH=ARCHS[+this.value];FILAS=ARCH.filas;pintar()});
   function nomAsesor(f){return f.asesor?f.asesor.toUpperCase():'SIN ASESOR'}
   function pintar(){
     var D=ARCH,F=D.filas,tot=F.reduce(function(a,f){return a+f.prima},0),conAs=F.filter(function(f){return f.asesor}).length,noEnc=F.filter(function(f){return !f.fuente}).length,rev=F.filter(function(f){return f.rev.some(function(r){return r[0]==='tr'||r[0]==='ta'})}).length,pag=D.pagador?D.pagador.total||D.pagador.prima:0,dif=pag?Math.round(tot-pag):0;
@@ -205,16 +211,22 @@
     $('hoja').innerHTML=h;$('hoja').className=obs?'':'sin-obs'}
   ['fOrden','fVer','fObs','fRes'].forEach(function(i){$(i).addEventListener('change',function(){if(ARCH)hoja()})});$('fBusca').addEventListener('input',function(){if(ARCH)hoja()});
 
-  function cargarArchivo(file){
-    if(!file)return;$('dropTxt').textContent='Leyendo '+file.name+'…';
-    var r=new FileReader();r.onerror=function(){$('dropTxt').textContent='No se pudo leer el archivo.'};
-    r.onload=function(){try{ARCH=leerArchivo(new Uint8Array(r.result));ARCH.nombreArchivo=file.name;$('dropTxt').textContent='✔ '+file.name+' · '+ARCH.filas.length+' asegurados leídos. Haga clic para cambiar el archivo.';procesar()}catch(e){ARCH=null;$('resultado').style.display='none';$('dropTxt').textContent='✖ '+e.message;window.alert('No se pudo leer el archivo:\n\n'+e.message)}};
-    r.readAsArrayBuffer(file)}
+  function cargarArchivos(files){
+    files=[].slice.call(files||[]);if(!files.length)return;$('dropTxt').textContent='Leyendo '+files.length+' archivo(s)…';
+    var fallos=[],pend=files.length;
+    files.forEach(function(file){var r=new FileReader();
+      function listo(){pend--;if(pend>0)return;
+        if(ARCHS.length){ARCH=ARCHS[ARCHS.length-1];$('dropTxt').textContent='✔ '+ARCHS.length+' archivo(s) leídos · '+ARCHS.reduce(function(a,x){return a+x.filas.length},0)+' asegurados en total. Haga clic para agregar o cambiar archivos.';procesar()}
+        else{$('resultado').style.display='none';$('dropTxt').textContent='✖ '+(fallos[0]||'No se pudo leer el archivo.')}
+        if(fallos.length)window.alert('No se pudo leer:\n\n'+fallos.join('\n'))}
+      r.onerror=function(){fallos.push(file.name+': no se pudo abrir');listo()};
+      r.onload=function(){try{var D=leerArchivo(new Uint8Array(r.result));D.nombreArchivo=file.name;ARCHS=ARCHS.filter(function(a){return a.nombreArchivo!==file.name});ARCHS.push(D)}catch(e){fallos.push(file.name+': '+e.message)}listo()};
+      r.readAsArrayBuffer(file)})}
   $('drop').addEventListener('click',function(){$('archivo').click()});
-  $('archivo').addEventListener('change',function(){cargarArchivo(this.files[0]);this.value=''});
+  $('archivo').addEventListener('change',function(){cargarArchivos(this.files);this.value=''});
   ['dragenter','dragover'].forEach(function(ev){$('drop').addEventListener(ev,function(e){e.preventDefault();$('drop').classList.add('on')})});
   ['dragleave','drop'].forEach(function(ev){$('drop').addEventListener(ev,function(e){e.preventDefault();$('drop').classList.remove('on')})});
-  $('drop').addEventListener('drop',function(e){cargarArchivo((e.dataTransfer.files||[])[0])});
+  $('drop').addEventListener('drop',function(e){cargarArchivos(e.dataTransfer.files)});
 
   // ---------- imprimir / Excel ----------
   $('bPrint').addEventListener('click',function(){
@@ -222,10 +234,20 @@
     var enM=window.parent!==window;if(enM){try{window.parent.postMessage({pmTitulo:t},'*')}catch(e){}}
     var fin=function(){document.title=antes;if(enM){try{window.parent.postMessage({pmTitulo:null},'*')}catch(e){}}window.removeEventListener('afterprint',fin)};window.addEventListener('afterprint',fin);window.print()});
   function csv(filas){return '﻿'+filas.map(function(r){return r.map(function(v){v=v==null?'':String(v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(';')}).join('\r\n')}
-  $('bCsv').addEventListener('click',function(){
-    var M=ARCH.meta,f=[['PRECOBRO — '+(M.compania||'')],['Póliza',M.poliza||''],['Período de cobro',M.desde?fCO(M.desde)+' al '+fCO(M.hasta):''],[],['#','Asegurado','Cédula','Período desde','Período hasta','Prima (COP)','Asesor','N° de contrato','Placa','Estado del contrato','Fuente','Revisar']];
-    ARCH.filas.forEach(function(x){f.push([x.n,x.nombre,x.cedTxt,fCO(x.desde),fCO(x.hasta),Math.round(x.prima),x.asesor,x.contrato,x.placa,x.estadoC,x.fuente,x.rev.map(function(r){return r[1]}).join(' | ')])});
-    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv(f)],{type:'text/csv;charset=utf-8'}));a.download='precobro_con_asesor_'+(M.desde||'')+'.csv';document.body.appendChild(a);a.click();setTimeout(function(){a.remove()},500)});
+  function ordenado(A){var F=A.filas.slice(),ord=$('fOrden').value;if(ord==='asesor')F.sort(function(a,b){return nomAsesor(a)<nomAsesor(b)?-1:nomAsesor(a)>nomAsesor(b)?1:a.nombre<b.nombre?-1:1});else if(ord==='nombre')F.sort(function(a,b){return a.nombre<b.nombre?-1:1});return F}
+  function filasExcel(A){var M=A.meta,F=ordenado(A),tot=F.reduce(function(a,f){return a+f.prima},0),pag=A.pagador?A.pagador.total||A.pagador.prima:0;
+    var out=[['PRECOBRO — '+(M.compania||'')],['Tomador',M.tomador||''],['Póliza',M.poliza||''],['Contrato del proveedor',M.contratoProv||''],['Período de cobro',M.desde?fCO(M.desde)+' al '+fCO(M.hasta):''],['Producto',((M.producto||'')+(M.sub?' · '+M.sub:''))],[],
+      ['#','Asegurado','Cédula','Período desde','Período hasta','Prima (COP)','ASESOR QUE LO VENDIÓ','N° DE CONTRATO','Placa','Estado del contrato','Fuente','Revisar']],ini=out.length;
+    F.forEach(function(x){out.push([x.n,x.nombre,x.cedTxt,fCO(x.desde),fCO(x.hasta),Math.round(x.prima),x.asesor||'',x.contrato||'',x.placa||'',x.estadoC||'',x.fuente||'No encontrado',x.rev.map(function(r){return r[1]}).join(' | ')])});
+    out.push(['','TOTAL DE LA LISTA','','','',Math.round(tot),'','','','','',pag?'Total del proveedor: '+pesos(pag):'']);return {filas:out,ini:ini,n:F.length}}
+  function hojaXlsx(A){var R=filasExcel(A),ws=XLSX.utils.aoa_to_sheet(R.filas);ws['!cols']=[{wch:5},{wch:38},{wch:14},{wch:13},{wch:13},{wch:13},{wch:24},{wch:16},{wch:10},{wch:14},{wch:13},{wch:46}];
+    for(var i=R.ini;i<R.filas.length;i++){var c=XLSX.utils.encode_cell({r:i,c:5});if(ws[c]){ws[c].t='n';ws[c].z='$ #,##0'}}return ws}
+  function nombreHoja(A,i){var t=('Precobro '+(A.meta.desde||i+1)).replace(/[\\\/?*\[\]:]/g,'-');return t.slice(0,31)}
+  function bajarXlsx(archs,nombre){var wb=XLSX.utils.book_new(),usados={};archs.forEach(function(A,i){var n=nombreHoja(A,i);if(usados[n])n=n.slice(0,28)+'-'+(i+1);usados[n]=1;XLSX.utils.book_append_sheet(wb,hojaXlsx(A),n)});
+    var out=XLSX.write(wb,{type:'array',bookType:'xlsx'}),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download=nombre;document.body.appendChild(a);a.click();setTimeout(function(){a.remove()},500)}
+  $('bXlsx').addEventListener('click',function(){bajarXlsx([ARCH],ARCH.nombreArchivo.replace(/\.[^.]+$/,'')+'_CON_ASESOR_Y_CONTRATO.xlsx')});
+  $('bXlsxAll').addEventListener('click',function(){bajarXlsx(ARCHS,'PRECOBROS_CON_ASESOR_Y_CONTRATO.xlsx')});
+  $('bCsv').addEventListener('click',function(){var R=filasExcel(ARCH),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv(R.filas)],{type:'text/csv;charset=utf-8'}));a.download=ARCH.nombreArchivo.replace(/\.[^.]+$/,'')+'_CON_ASESOR_Y_CONTRATO.csv';document.body.appendChild(a);a.click();setTimeout(function(){a.remove()},500)});
 
   window.PRE={leerArchivo:leerArchivo};
   cargar();
