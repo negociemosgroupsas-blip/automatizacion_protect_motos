@@ -29,6 +29,13 @@
   .busqueda{display:flex;gap:10px;margin-bottom:14px}
   .busqueda input{flex:1;padding:14px 16px;border:2px solid var(--azul);border-radius:14px;font-size:1rem;background:#fff;font-family:inherit}
   .busqueda input:focus{outline:3px solid #bfd0f5}
+  .mm-w{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:16px 20px;margin-bottom:14px;box-shadow:0 2px 10px rgba(19,34,63,.06)}
+  .mm-w h2{margin:0 0 2px;font-size:1.02rem;color:var(--azul)} .mm-w .mm-s{font-size:.8rem;color:var(--suave);margin:0 0 10px}
+  .mm-f{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin:0 0 12px} .mm-f label{font-size:.76rem;color:var(--suave);display:flex;flex-direction:column;gap:4px} .mm-f select{border:1px solid var(--borde);border-radius:8px;padding:7px 10px;font-size:.86rem;background:#fff;font-family:inherit}
+  .mm-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:0 0 14px} .mm-k div{border-radius:14px;padding:12px 15px;color:#fff;position:relative;overflow:hidden} .mm-k span{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700;opacity:.92} .mm-k b{display:block;font-size:1.45rem;margin:4px 0 2px} .mm-k small{font-size:.74rem;opacity:.95}
+  .mk1{background:linear-gradient(135deg,#fdc33e,#e08a00);color:#1b1300!important} .mk2{background:linear-gradient(135deg,#0e7490,#22d3ee)} .mk3{background:linear-gradient(135deg,#6d28d9,#a78bfa)} .mk4{background:linear-gradient(135deg,#1d4ed8,#60a5fa)}
+  .mm-ley{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--suave);margin:0 0 6px} .mm-ley i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  .mm-aviso{font-size:.82rem;border-radius:10px;padding:9px 13px;margin:0 0 10px;background:var(--naranja-bg);color:#92400e;border-left:5px solid var(--naranja)}
   .titulo-lista{padding:10px 16px;font-size:.88rem;font-weight:700;color:var(--azul);border-bottom:1px solid var(--borde);background:#f8f9fb}
  .ficha-inline{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 10px rgba(19,34,63,.08)}
   .fichas-titulo{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 2px 10px;font-size:.88rem;font-weight:700;color:var(--azul)}
@@ -140,7 +147,7 @@
         <option value="0">Nunca</option><option value="1">1 min</option><option value="2">2 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hora</option>
       </select></label>
     <span id="notaSync" style="font-size:12px;opacity:.8"></span>
-    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-10-16.10</span>
+    <span style="font-size:11px;opacity:.55;margin-left:6px" title="Si no dice esta versión, estás abriendo un HTML viejo">HTML v2026-11-10.CM1</span>
   </div>
 </header>
 
@@ -161,6 +168,21 @@
   </div>
 
   <div id="fichasBusqueda" style="display:none"></div>
+
+  <section class="mm-w" id="panelMeses">
+    <h2>📈 ¿Cuánto se ha consolidado cada mes?</h2>
+    <p class="mm-s">Suma lo que aparece en la hoja Consolidado, según las columnas <b>Mes</b> y <b>Año</b> que usted escribe allí. Valores en pesos colombianos (COP).</p>
+    <div id="mmAviso"></div>
+    <div class="mm-f">
+      <label>Ver <select id="mmVista"><option value="mes">Mes a mes</option><option value="anio">Año a año</option></select></label>
+      <label id="mmLAnio">Año <select id="mmAnio"></select></label>
+      <label>Valor a sumar <select id="mmValor"><option value="auto">El que tenga cada pago (C o D)</option><option value="c">Columna C</option><option value="d">Columna D</option></select></label>
+      <button class="btn btn-azul" id="mmCsv" type="button">⬇ Consolidado por mes y año</button>
+    </div>
+    <div class="mm-k" id="mmKpis"></div>
+    <div class="mm-ley" id="mmLey"></div>
+    <div id="mmGraf"></div>
+  </section>
 
   <section class="panel">
     <div class="barra">
@@ -187,7 +209,7 @@
   var TOKEN = 'PM-CONC-3e97c3a8bb5298ef9d192391';
   var $ = function (id) { return document.getElementById(id); };
   var fmt = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });   // pesos colombianos: sin centavos
-  var guardando = 0, datos = [], estadosAR = null, lista = 'cons', soloMenos = false, soloRevisar = false, abierta = null, verTabla = false, ultimaConsulta = '';
+  var consMeses = null, colMesAnio = null, guardando = 0, datos = [], estadosAR = null, lista = 'cons', soloMenos = false, soloRevisar = false, abierta = null, verTabla = false, ultimaConsulta = '';
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; }
   function money(v) { return v === null || v === undefined || v === '' ? '—' : '$ ' + fmt.format(v); }
   function norm(s) { return String(s === null || s === undefined ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
@@ -316,13 +338,14 @@
   var timerSync = null, sincronizando = false;
   function recibir(r, textoEstado) {
     datos = r.filas || [];
+    consMeses = r.consMeses || null; colMesAnio = r.colMesAnio || null;
     estadosAR = r.estadosAR || null;
     var viejo = !r.acciones || r.acciones.indexOf('asignarlote') < 0 || r.acciones.indexOf('ajustar') < 0;
     var sinOtra = !viejo && (!r.capacidades || r.capacidades.indexOf('otraPersona') < 0);   // código de Apps Script anterior a «Consolidado a nombre de otra persona'
     viejo = viejo || sinOtra;
     mensaje('ok', textoEstado || ('Datos al día (' + r.generado + ').'));
     var av = $('avisoVersion'); av.style.display = viejo ? 'block' : 'none';
-    pintar();
+    pintar(); pintarMeses();
     if (abierta) { var f = datos.filter(function (x) { return x.claveAjuste === abierta; })[0]; if (f) { if (vistaModal === 'contrato' && !esMulti(f)) fichaContrato(f); else if (vistaModal === 'contrato') fichaContrato(f, function () { ficha(f); }); else ficha(f); } else cerrar(); }
   }
   // Segundo plano: escribe las columnas F/G de la hoja Consolidado y el historial. No bloquea la pantalla.
@@ -868,12 +891,59 @@
     if (!q && lista === 'cons' && (soloMenos || soloRevisar)) rows = rows.slice().sort(function (a, b) { return Math.abs(b.dif || 0) - Math.abs(a.dif || 0); });
     descargar(rows, q ? 'busqueda_clientes_' : (lista === 'cons' && soloMenos ? 'consolidados_pagaron_de_menos_' : lista === 'cons' && soloRevisar ? 'consolidados_revisar_valor_Protect_' : lista === 'cons' ? 'clientes_consolidados_' : lista === 'directo' ? 'clientes_pagaron_directo_' : lista === 'noaplica' ? 'clientes_anulados_' : 'clientes_faltan_por_consolidar_'));
   });
+
+  /* ===== ¿Cuánto se ha consolidado cada mes? (columnas Mes y Año de la hoja Consolidado) ===== */
+  var MES_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'], MES_C = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var MM_COL = ['#5b78c7','#fdc33e','#38bdf8','#e08a00','#1f9d55','#8b5cf6'];
+  function cop(n) { return '$' + Math.round(n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' COP'; }
+  function copC(v) { v = Math.round(v || 0); if (v >= 1e6) return '$' + (v / 1e6).toFixed(1).replace('.', ',').replace(',0', '') + ' M'; if (v >= 1e3) return '$' + Math.round(v / 1e3) + ' mil'; return '$' + v; }
+  function valorMes(o) { var m = $('mmValor').value; return m === 'c' ? o.c : m === 'd' ? o.d : o.auto; }
+  function pintarMeses() {
+    var w = $('panelMeses'); if (!w) return;
+    var av = $('mmAviso'), cm = consMeses;
+    if (!cm) { av.innerHTML = '<div class="mm-aviso">⚠ El código de Apps Script publicado todavía no envía el mes y el año (hay que pegar los códigos <b>PASO_1</b> y <b>PASO_2</b> nuevos y publicar «Nueva versión»; deben responder v12).</div>'; $('mmKpis').innerHTML = ''; $('mmGraf').innerHTML = ''; $('mmLey').innerHTML = ''; return; }
+    var nota = '';
+    if (colMesAnio && (colMesAnio.mes < 0 || colMesAnio.anio < 0)) nota = 'No encontré ' + (colMesAnio.mes < 0 && colMesAnio.anio < 0 ? 'las columnas «Mes» y «Año»' : colMesAnio.mes < 0 ? 'la columna «Mes»' : 'la columna «Año»') + ' en la fila 2 de la hoja Consolidado. Los títulos deben decir exactamente «Mes» y «Año».';
+    else if (cm.sinFecha && cm.sinFecha.n) nota = cm.sinFecha.n + ' pago(s) de la hoja Consolidado no tienen mes o año escrito, por eso no están en esta gráfica (suman ' + cop(cm.sinFecha.c || cm.sinFecha.d) + ').';
+    av.innerHTML = nota ? '<div class="mm-aviso">' + nota + '</div>' : '';
+    var L = cm.meses || [], ys = {}; L.forEach(function (o) { ys[o.anio] = 1; });
+    var yA = new Date().getFullYear(); ys[yA] = 1;
+    var lst = Object.keys(ys).map(Number).sort(function (a, b) { return a - b; }), sa = $('mmAnio'), va = sa.value || 'todos';
+    sa.innerHTML = '<option value="todos">Todos los años</option>' + lst.slice().reverse().map(function (y) { return '<option value="' + y + '">' + y + '</option>'; }).join('');
+    sa.value = va; if (sa.value !== va) sa.value = 'todos';
+    var vista = $('mmVista').value, ay = sa.value; $('mmLAnio').style.display = vista === 'anio' ? 'none' : '';
+    var F = L.filter(function (o) { return vista === 'anio' || ay === 'todos' || o.anio === +ay; });
+    var T = F.reduce(function (a, o) { return a + valorMes(o); }, 0), N = F.reduce(function (a, o) { return a + o.n; }, 0), meses = F.filter(function (o) { return valorMes(o) > 0; });
+    var mejor = meses.slice().sort(function (a, b) { return valorMes(b) - valorMes(a); })[0];
+    $('mmKpis').innerHTML = F.length ? '<div class="mk1"><span>Total consolidado</span><b>' + cop(T) + '</b><small>' + N + ' pago(s)</small></div><div class="mk2"><span>Promedio por mes</span><b>' + cop(meses.length ? T / meses.length : 0) + '</b><small>en ' + meses.length + ' mes(es)</small></div><div class="mk3"><span>Mejor mes</span><b>' + (mejor ? cop(valorMes(mejor)) : '—') + '</b><small>' + (mejor ? MES_L[mejor.mes - 1] + ' ' + mejor.anio : '') + '</small></div><div class="mk4"><span>Pagos por mes</span><b>' + (meses.length ? Math.round(N / meses.length) : 0) + '</b><small>en promedio</small></div>' : '<div class="mm-aviso" style="grid-column:1/-1">Todavía no hay pagos con mes y año escritos en la hoja Consolidado.</div>';
+    var cols, grupos, etq, series;
+    if (vista === 'anio') { series = [0]; etq = lst.map(String); grupos = lst.map(function (y) { return [L.filter(function (o) { return o.anio === y; }).reduce(function (a, o) { return a + valorMes(o); }, 0)]; }); $('mmLey').innerHTML = '<span>Total consolidado en cada año · números sobre las columnas en miles de pesos colombianos (COP)</span>'; cols = ['#fdc33e']; }
+    else { series = ay === 'todos' ? lst.filter(function (y) { return L.some(function (o) { return o.anio === y; }); }) : [+ay]; etq = MES_C; grupos = MES_C.map(function (_, i) { return series.map(function (y) { return L.filter(function (o) { return o.anio === y && o.mes === i + 1; }).reduce(function (a, o) { return a + valorMes(o); }, 0); }); }); cols = series.map(function (y) { return MM_COL[lst.indexOf(y) % 6]; }); $('mmLey').innerHTML = series.map(function (y, si) { return '<span><i style="background:' + cols[si] + '"></i><b>' + y + '</b> · ' + cop(L.filter(function (o) { return o.anio === y; }).reduce(function (a, o) { return a + valorMes(o); }, 0)) + '</span>'; }).join('') + '<span>Números sobre las columnas: miles de pesos colombianos (385 = $385.000 COP)</span>'; }
+    var mx = Math.max.apply(null, [].concat.apply([], grupos).concat(1)), W = 920, H = 300, pl = 66, pr = 14, pt = 30, pb = 30, iw = W - pl - pr, ih = H - pt - pb, n = Math.max(etq.length, 1), slot = iw / n;
+    function nice(v) { var raw = Math.max(v, 4000) * 1.1 / 4, mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10)), st = [1, 2, 2.5, 5, 10].filter(function (m) { return m * mag >= raw; })[0] * mag; return st * 4; }
+    var top = nice(mx), g = '';
+    for (var t = 0; t <= 4; t++) { var yy = pt + ih - ih * t / 4; g += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + yy + '" y2="' + yy + '" stroke="' + (t ? '#e3e6eb' : '#9aa4b8') + '" stroke-width="' + (t ? 1 : 1.5) + '"' + (t ? ' stroke-dasharray="4 4"' : '') + '/><text x="' + (pl - 8) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="11" fill="#6b7280">' + copC(top * t / 4) + '</text>'; }
+    grupos.forEach(function (gr, i) { var x0 = pl + slot * i, ns = gr.length, bw = Math.min(40, slot * 0.8 / ns), tw = bw * ns + 3 * (ns - 1), xs = x0 + slot / 2 - tw / 2;
+      gr.forEach(function (v, si) { var h = v / top * ih; if (v > 0) g += '<rect x="' + (xs + si * (bw + 3)) + '" y="' + (pt + ih - h) + '" width="' + bw + '" height="' + h + '" rx="4" fill="' + cols[si] + '"><title>' + etq[i] + (vista === 'mes' && ns > 1 ? ' ' + series[si] : '') + ': ' + cop(v) + '</title></rect><text x="' + (xs + si * (bw + 3) + bw / 2) + '" y="' + (pt + ih - h - 6) + '" text-anchor="middle" font-size="10" font-weight="800" fill="#13223f">' + Math.round(v / 1000) + '</text>'; });
+      g += '<text x="' + (x0 + slot / 2) + '" y="' + (pt + ih + 18) + '" text-anchor="middle" font-size="11.5" fill="#44506a">' + etq[i] + '</text>'; });
+    $('mmGraf').innerHTML = F.length ? '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block" role="img" aria-label="Consolidado por mes"><text x="' + pl + '" y="14" font-size="11" fill="#6b7280">Valores en pesos colombianos (COP)</text>' + g + '</svg>' : '';
+  }
+  ['mmVista', 'mmAnio', 'mmValor'].forEach(function (i) { $(i).addEventListener('change', pintarMeses); });
+  $('mmCsv').addEventListener('click', function () {
+    if (!consMeses) { mensaje('error', 'Primero pulsa «Actualizar datos» (y revisa que el código de Apps Script sea v12).'); return; }
+    var f = [['Año', 'Mes', 'N° de pagos', 'Valor columna C (COP)', 'Valor columna D (COP)', 'Valor consolidado (COP, el que tenga cada pago)']];
+    (consMeses.meses || []).forEach(function (o) { f.push([o.anio, MES_L[o.mes - 1], o.n, o.c, o.d, o.auto]); });
+    var sf = consMeses.sinFecha; if (sf && sf.n) f.push(['SIN MES O AÑO', '', sf.n, sf.c, sf.d, '']);
+    var csv = f.map(function (r) { return r.map(function (v) { v = v === null || v === undefined ? '' : String(v); return '"' + v.replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n'), h = new Date(), z = function (x) { return (x < 10 ? '0' : '') + x; };
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })); a.download = 'consolidado_por_mes_y_anio_' + h.getFullYear() + '-' + z(h.getMonth() + 1) + '-' + z(h.getDate()) + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+  });
+
   function descargar(rows, prefijo) {
-    var cab = ['Cédula', 'Nombre completo', '# Contrato', 'Placa', 'Fila en Consolidado', 'Valor pagado a Dugo Motos', 'Valor pagado en Consolidado (C)', 'Valor pagado en Consolidado (D)', 'Diferencia', 'Estado', 'Nota', 'Asesor', 'Celular', 'Fecha de firma', 'Mes', 'Año'];
+    var cab = ['Cédula', 'Nombre completo', '# Contrato', 'Placa', 'Fila en Consolidado', 'Valor pagado a Dugo Motos', 'Valor pagado en Consolidado (C)', 'Valor pagado en Consolidado (D)', 'Diferencia', 'Estado', 'Nota', 'Asesor', 'Celular', 'Fecha de firma', 'Mes de firma', 'Año de firma', 'Mes consolidado', 'Año consolidado'];
     var MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     var fechaMesAnio = function (t) { var m = String(t || '').match(/^\s*(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\s*$/); if (!m) return ['', '']; var mes = +m[2], an = +m[3]; if (an < 100) an += 2000; return mes >= 1 && mes <= 12 ? [MESES[mes - 1], an] : ['', '']; };
     var filas = rows.map(function (f) { var e = f.extra || {}, ma = fechaMesAnio(e.fechaFirma);
-      return [f.cedula, nombre(f), f.contrato, f.placa, f.filaCons, f.pagado, f.c, f.d, f.dif, f.estado + (f.revisado ? ' · revisado' : '') + (f.valor === 'Pagó de menos' && !f.revisado ? ' · pagó de menos' : ''), nota(f), e.asesor, e.celular, e.fechaFirma || '', ma[0], ma[1]]; });
+      return [f.cedula, nombre(f), f.contrato, f.placa, f.filaCons, f.pagado, f.c, f.d, f.dif, f.estado + (f.revisado ? ' · revisado' : '') + (f.valor === 'Pagó de menos' && !f.revisado ? ' · pagó de menos' : ''), nota(f), e.asesor, e.celular, e.fechaFirma || '', ma[0], ma[1], f.mesCons ? MESES[f.mesCons - 1] : '', f.anioCons || '']; });
     var csv = [cab].concat(filas).map(function (r) { return r.map(function (v) { v = v === null || v === undefined ? '' : String(v); return '"' + v.replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
     var h = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
     var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });

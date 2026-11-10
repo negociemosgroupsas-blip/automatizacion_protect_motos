@@ -134,6 +134,9 @@ function CONC_procesar(ss, tol, rapido) {
     var ajustes = CONC_leerAjustes(ss);
     var asignaciones = CONC_leerAsignaciones(ss);
     var res = CONC_calcular(protect, lectura.filas, tol, ajustes, asignaciones);
+    var porFila = {}; lectura.filas.forEach(function (r) { porFila[r.fila] = r; });
+    res.filas.forEach(function (f) { var u = String(f.filaCons || '').split(',')[0].trim(), r = u ? porFila[Number(u)] : null; f.mesCons = r ? r.mes : 0; f.anioCons = r ? r.anio : 0; });
+    var resumenMeses = CONC_resumenMeses(lectura.filas);
     var previos = CONC_leerHistorial(ss);
     var ah = CONC_aplicarHistorial(res.filas, previos, new Date());
     var estadoEnHoja = { escrito: false, rapido: true }, estadoProtect = { escrito: false };
@@ -146,7 +149,7 @@ function CONC_procesar(ss, tol, rapido) {
     }
     var estadosAR = {};
     protect.forEach(function (p) { var v = String((p.extra && p.extra.estadoCliente) || '').trim() || '(vacío)'; estadosAR[v] = (estadosAR[v] || 0) + 1; });
-    return { capacidades: ['otraPersona', 'asignarLote'], estadoProtect: estadoProtect, estadosAR: estadosAR, diag: CONC_diagnostico(protect, lectura.filas, res.filas), estadoEnHoja: estadoEnHoja, res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas), columnas: columnas };
+    return { capacidades: ['otraPersona', 'asignarLote'], estadoProtect: estadoProtect, estadosAR: estadosAR, diag: CONC_diagnostico(protect, lectura.filas, res.filas), estadoEnHoja: estadoEnHoja, res: res, hist: ah.resumen, atipicos: CONC_atipicos(res.filas), columnas: columnas, consMeses: resumenMeses, colMesAnio: { mes: lectura.colMes, anio: lectura.colAnio } };
   } finally {
     if (lock) lock.releaseLock();
   }
@@ -227,18 +230,59 @@ function CONC_leerConsolidados(hoja) {
   var ancho = Math.min(Math.max(4, hoja.getLastColumn()), 30);
   var datos = hoja.getRange(CONC_CONS_FILA_INICIO, 1, n, ancho).getValues();
   var encabezados = CONC_CONS_FILA_INICIO > 2 ? hoja.getRange(CONC_CONS_FILA_INICIO - 1, 1, 1, ancho).getValues()[0] : [];
+  var colMes = -1, colAnio = -1, h, hn;
+  for (h = 4; h < encabezados.length; h++) {   // Mes y Año: por el TÍTULO de la columna (a partir de la E), donde estén
+    if (h === CONC_COL_ESTADO_CONS - 1 || h === CONC_COL_CONTRATO_CONS - 1 || h === CONC_COL_VALOR_DUGO_CONS - 1) continue;
+    hn = CONC_normNombre(encabezados[h]);
+    if (colMes < 0 && hn === 'MES') colMes = h;
+    else if (colAnio < 0 && (hn === 'ANO' || hn === 'ANIO')) colAnio = h;
+  }
   var filas = [];
   for (var i = 0; i < datos.length; i++) {
     var f = datos[i];
     if (CONC_vacio(f[0]) && CONC_vacio(f[1]) && CONC_vacio(f[2]) && CONC_vacio(f[3])) continue;
     filas.push({
       fila: CONC_CONS_FILA_INICIO + i,
+      mes: colMes >= 0 ? CONC_mesNum(f[colMes]) : 0, anio: colAnio >= 0 ? CONC_anioNum(f[colAnio]) : 0,
       cedula: f[0], cliente: f[1],
       c: CONC_sinCero(CONC_corregirMiles(CONC_aNumero(f[2]))), d: CONC_sinCero(CONC_corregirMiles(CONC_aNumero(f[3]))),
       extra: f.slice(4)
     });
   }
-  return { filas: filas, encabezados: encabezados };
+  return { filas: filas, encabezados: encabezados, colMes: colMes, colAnio: colAnio };
+}
+
+// Mes (1-12) a partir de un número, un nombre («Octubre», «oct») o una fecha. 0 si no se entiende.
+function CONC_mesNum(v) {
+  if (CONC_vacio(v)) return 0;
+  if (v instanceof Date) return v.getMonth() + 1;
+  var t = String(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  if (/^\d{1,2}$/.test(t)) { var n = Number(t); return n >= 1 && n <= 12 ? n : 0; }
+  var N = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  var k = t.slice(0, 3); if (k === 'set') k = 'sep';
+  var i = N.indexOf(k);
+  return i >= 0 ? i + 1 : 0;
+}
+// Año de 4 cifras a partir de un número, un texto («2026», «26») o una fecha. 0 si no se entiende.
+function CONC_anioNum(v) {
+  if (CONC_vacio(v)) return 0;
+  if (v instanceof Date) return v.getFullYear();
+  var n = parseInt(String(v).replace(/[^0-9]/g, '').slice(-4), 10);
+  if (isNaN(n)) return 0;
+  if (n < 100) n += 2000;
+  return n >= 2000 && n <= 2100 ? n : 0;
+}
+
+// Resumen de lo consolidado por mes y año, con las columnas Mes y Año de la hoja Consolidado.
+function CONC_resumenMeses(filas) {
+  var m = {}, sin = { n: 0, c: 0, d: 0 };
+  filas.forEach(function (r) {
+    var c = r.c || 0, d = r.d || 0;
+    if (!r.mes || !r.anio) { sin.n++; sin.c += c; sin.d += d; return; }
+    var k = r.anio * 100 + r.mes, o = m[k] = m[k] || { anio: r.anio, mes: r.mes, n: 0, c: 0, d: 0, auto: 0 };
+    o.n++; o.c += c; o.d += d; o.auto += (c || d);
+  });
+  return { meses: Object.keys(m).sort().map(function (k) { return m[k]; }), sinFecha: sin };
 }
 
 // Busca en Consolidados (columnas E en adelante) cuál trae la placa y cuál el número de contrato.
