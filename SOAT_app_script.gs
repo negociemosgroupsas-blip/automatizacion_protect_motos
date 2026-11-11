@@ -151,7 +151,10 @@ function accionListar() {
 
 // ==================== UTILIDADES ====================
 function normalizar(t) {
-  return String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  var s = String(t).trim();
+  if (s === '#') return 'numero';
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/[_\-\s]+/g, ' ').replace(/\b(de|del)\b/g, '').replace(/[^a-z0-9]/g, '');
 }
 
 // Devuelve la clave del grupo al que pertenece un encabezado o un nombre de campo
