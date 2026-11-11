@@ -7,7 +7,7 @@ gs = (aqui / 'Codigo_cobros.gs').read_text(encoding='utf-8')
 html = (aqui / 'Protect_Motos_Cobros.html').read_text(encoding='utf-8')
 
 # El panel usa la URL del propio conector (se inyecta al servirlo) y oculta la barra de URL.
-html = html.replace("localStorage.getItem(CLAVE_URL) || ''",
+html = html.replace("localStorage.getItem(CLAVE_URL) || URL_CONECTOR_FIJA",
                     "(window.PM_URL_FIJA || localStorage.getItem(CLAVE_URL) || '')", 1)
 html = html.replace('<div class="barra-conector">',
                     '<div class="barra-conector"><script>window.PM_URL_FIJA="__URL_CONECTOR__";</script>', 1)

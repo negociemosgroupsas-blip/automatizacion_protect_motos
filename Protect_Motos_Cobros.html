@@ -451,6 +451,8 @@
 
   // ==================== CONFIGURACIÓN ====================
   var TOKEN = 'PM-COBROS-2026';
+  // Pega aquí la URL del conector (termina en /exec) para que este HTML funcione en cualquier computador sin configurarla.
+  var URL_CONECTOR_FIJA = '';
   var CLAVE_URL = 'pm_cobros_url_conector';
   var UMBRAL_DIAS_ROJO = 5; // días de atraso para pasar de naranja a rojo
   var DIAS_AVISO_RENOVACION = 8;
@@ -470,7 +472,7 @@
     contratos: [],
     pagos: [],
     gestiones: [],
-    urlConector: localStorage.getItem(CLAVE_URL) || '',
+    urlConector: localStorage.getItem(CLAVE_URL) || URL_CONECTOR_FIJA,
     filtroActivo: null
   };
 

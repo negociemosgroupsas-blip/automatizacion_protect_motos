@@ -7,6 +7,12 @@
 
 > Para cambiar de computador solo abres la misma URL (guárdala en favoritos). Si editas `Codigo_cobros.gs` o el HTML, ejecuta `python3 construir_unico.py` para regenerar el archivo único y pégalo de nuevo (Implementar → Administrar implementaciones → Nueva versión).
 
+## Si prefieres tener el archivo HTML en tu computador
+
+Con el conector ya publicado (pasos 2 y 3 de arriba):
+1. Abre `Protect_Motos_Cobros.html` con el Bloc de notas, busca `URL_CONECTOR_FIJA = ''`, pega tu URL `/exec` entre las comillas y guarda.
+2. Copia ese HTML a cualquier computador y ábrelo con doble clic: queda conectado solo. (Si dejas la línea vacía, pegas la URL en el panel y el navegador la recuerda.)
+
 ---
 # Instalación por separado (método anterior, sigue funcionando)
 
