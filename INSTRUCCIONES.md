@@ -1,3 +1,15 @@
+# Instalación rápida (un solo archivo)
+
+1. Crea la pestaña **`Pagos`** en tu Google Sheet (ver Paso 1 abajo; si no, se crea sola).
+2. En [script.google.com](https://script.google.com) → Nuevo proyecto → pega **todo** `Protect_Motos_TODO_EN_UNO.gs` → Guardar.
+3. **Implementar → Nueva implementación → Aplicación web** (Ejecutar como: Yo · Acceso: Cualquier usuario) → copia la URL `/exec`.
+4. **Abre esa URL en cualquier computador o celular: ahí está el panel**, ya conectado. No hay que descargar el HTML ni pegar la URL.
+
+> Para cambiar de computador solo abres la misma URL (guárdala en favoritos). Si editas `Codigo_cobros.gs` o el HTML, ejecuta `python3 construir_unico.py` para regenerar el archivo único y pégalo de nuevo (Implementar → Administrar implementaciones → Nueva versión).
+
+---
+# Instalación por separado (método anterior, sigue funcionando)
+
 # Instrucciones de instalación — Sistema de Cobros Protect Motos
 
 ## Paso 1 — Crear la pestaña "Pagos" en tu Google Sheet
