@@ -1,15 +1,3 @@
-# Instalación rápida (un solo archivo)
-
-1. Crea la pestaña **`Pagos`** en tu Google Sheet (ver Paso 1 abajo; si no, se crea sola).
-2. En [script.google.com](https://script.google.com) → Nuevo proyecto → pega **todo** `Protect_Motos_TODO_EN_UNO.gs` → Guardar.
-3. **Implementar → Nueva implementación → Aplicación web** (Ejecutar como: Yo · Acceso: Cualquier usuario) → copia la URL `/exec`.
-4. **Abre esa URL en cualquier computador o celular: ahí está el panel**, ya conectado. No hay que descargar el HTML ni pegar la URL.
-
-> Para cambiar de computador solo abres la misma URL (guárdala en favoritos). Si editas `Codigo_cobros.gs` o el HTML, ejecuta `python3 construir_unico.py` para regenerar el archivo único y pégalo de nuevo (Implementar → Administrar implementaciones → Nueva versión).
-
----
-# Instalación por separado (método anterior, sigue funcionando)
-
 # Instrucciones de instalación — Sistema de Cobros Protect Motos
 
 ## Paso 1 — Crear la pestaña "Pagos" en tu Google Sheet
@@ -45,6 +33,12 @@
 3. Pega la URL del conector (la que copiaste en el paso anterior) en el campo de arriba y presiona **Guardar**.
 4. El panel queda recordando esa URL (localStorage), así que la próxima vez que lo abras ya estará conectado.
 5. Verás el mensaje verde "Datos actualizados..." si todo quedó bien conectado.
+
+## Para usarlo en otro computador (sin pegar la URL)
+
+1. Abre `Protect_Motos_Cobros.html` con el Bloc de notas y busca `URL_CONECTOR_FIJA = ''`.
+2. Pega tu URL del conector entre las comillas (la que termina en `/exec`) y guarda.
+3. Copia ese HTML a cualquier computador y ábrelo: ya queda conectado solo. El conector (`Codigo_cobros.gs`) se publica una sola vez, no hay que repetirlo.
 
 ## Cómo usarlo día a día
 
