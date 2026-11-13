@@ -557,7 +557,14 @@
   <section class="vista" id="v-ayuda"><div class="pagina">
     <h1>Conexiones</h1>
     <p class="sub">Cómo está conectado el CRM con tus hojas de Google.</p>
-    <div class="caja">
+    <div class="caja" style="border:2px solid #1f9d55">
+      <h3 style="margin:0 0 6px">⭐ Conector único (recomendado)</h3>
+      <p style="margin:0 0 10px">Un solo proyecto de Apps Script (<code>conectores/unico/Codigo_UNICO.gs</code>) que reemplaza a los seis. Pegue aquí su URL y pulse <b>Usar en todo el sistema</b>: se guarda en Cobros, CRM, Conciliación, Clientes OMS, SOAT y Contratos de una sola vez. Las claves no cambian.</p>
+      <input id="unUrl" type="text" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%;padding:9px 12px;border:1px solid var(--borde);border-radius:8px;margin:4px 0 8px;font-size:.85rem">
+      <div class="f-acc" style="margin-top:0"><button id="unGuardar" type="button">Usar en todo el sistema</button><button id="unProbar" type="button" class="sec">Probar los 5 conectores</button></div>
+      <p id="unEstado" class="nota" style="margin-top:10px"></p>
+    </div>
+    <div class="caja" style="margin-top:14px">
       <h3 style="margin:0 0 6px">Conector del CRM (solo lectura)</h3>
       <p style="margin:0 0 10px">Es un proyecto de Apps Script <b>nuevo</b> (<code>conectores/crm/Codigo_crm.gs</code>). Alimenta el Inicio: gráficas, alertas y buscador. <b>Solo lee</b> tu hoja Protect y Pagos; no escribe nada y no toca los conectores de Cobros, Conciliación ni Contratos.</p>
       <label style="display:block;font-size:.8rem;color:var(--suave)">URL del conector del CRM (termina en /exec)</label>
@@ -1904,6 +1911,28 @@
     try{u.value=localStorage.getItem('pm_crm_url')||'';t.value=localStorage.getItem('pm_crm_token')||''}catch(x){}
     function estado(txt,cl){e.textContent=txt;e.style.color=cl||''}
     if(u.value)estado('URL guardada. Pulsa «Probar conexión» para comprobarla.');
+    /* ===== Conector único: una sola URL para todos los módulos ===== */
+    (function(){
+      var KEYS=['pm_crm_url','pm_cobros_url_conector','conc_url','pm_oms_url_conector','pm_soat_url_conector','pm_gsurl'];
+      var PROBAR=[['CRM','PM-CRM-2026'],['Cobros','PM-COBROS-2026'],['Clientes OMS','PM-OMS-2026'],['SOAT','PM-SOAT-2026']];
+      var ui=document.getElementById('unUrl'),ue=document.getElementById('unEstado');
+      var m=function(t,c){ue.textContent=t;ue.style.color=c||''};
+      try{var x0=localStorage.getItem('pm_unico_url');if(x0)ui.value=x0}catch(e){}
+      document.getElementById('unGuardar').addEventListener('click',function(){
+        var v=ui.value.trim();
+        if(!/^https:\/\/script\.google\.com\/.+\/exec$/.test(v)){m('La URL debe empezar con https://script.google.com/ y terminar en /exec.','#dc2626');return}
+        try{KEYS.forEach(function(k){localStorage.setItem(k,v)});localStorage.setItem('pm_unico_url',v);localStorage.removeItem('pm_crm_token')}catch(e){m('No se pudo guardar: '+e.message,'#dc2626');return}
+        m('✔ Guardada en los 6 módulos. Recargando…','#1f9d55');setTimeout(function(){location.reload()},800)});
+      function ping(url,tok){return new Promise(function(ok){var cb='pmU'+Date.now()+Math.floor(Math.random()*1e5),s=document.createElement('script'),tm=setTimeout(function(){fin();ok('sin respuesta')},25000);
+        function fin(){clearTimeout(tm);delete window[cb];s.remove()}
+        window[cb]=function(r){fin();ok(r&&r.ok?(r.version||'activo'):(r&&r.error)||'respuesta inválida')};s.onerror=function(){fin();ok('no se pudo conectar')};
+        s.src=url+(url.indexOf('?')<0?'?':'&')+'action=ping&token='+encodeURIComponent(tok)+'&callback='+cb+'&_='+Date.now();document.head.appendChild(s)})}
+      document.getElementById('unProbar').addEventListener('click',function(){
+        var v=ui.value.trim();if(!v){m('Pegue primero la URL.','#dc2626');return}
+        m('Probando…');Promise.all(PROBAR.map(function(p){return ping(v,p[1]).then(function(r){return p[0]+': '+r})})).then(function(a){
+          var bien=a.every(function(t){return /crm-|oms-|soat-|activo/.test(t)||/Cobros: .*desconocida/.test(t)});
+          m((bien?'✔ ':'⚠ ')+a.join(' · ')+' · (Cobros no tiene «ping»: que diga «Acción desconocida: ping» es normal, significa que llegó a Cobros)',bien?'#1f9d55':'#dc2626')})});
+    })();
     /* ===== Copia de conexiones: guardar y cargar (URLs y ajustes del navegador) ===== */
     (function(){
       var EXC={pm_fasedb:1};   // caché grande que se vuelve a bajar sola
