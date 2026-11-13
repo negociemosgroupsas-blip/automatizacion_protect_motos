@@ -58,8 +58,16 @@ function doGet(e) {
         salida = accionListarReportes();
       } else if (accion === 'verReporte') {
         salida = accionVerReporte(params);
+      } else if (accion === 'cotRen_moto') {
+        salida = accionCotRenMoto(params);
+      } else if (accion === 'cotRen_listar') {
+        salida = accionCotRenListar();
+      } else if (accion === 'cotRen_guardar') {
+        salida = accionCotRenGuardar(params);
+      } else if (accion === 'cotRen_estado') {
+        salida = accionCotRenEstado(params);
       } else if (accion === 'ping') {
-        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-3' };
+        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-4' };
       } else {
         salida = { ok: false, error: 'Acción no disponible: ' + accion };
       }
@@ -308,4 +316,144 @@ function accionVerReporte(p) {
   var fila = Number(p.fila), h = SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_HIST);
   if (!h || !(fila >= 2) || fila > h.getLastRow()) return { ok: false, error: 'No se encontró el informe guardado.' };
   return { ok: true, datos: String(h.getRange(fila, 9).getValue()) };
+}
+
+
+// ==================== COTIZACIONES DE RENOVACIÓN (nuevo, solo agrega) ====================
+// Pestaña «Cotizaciones Renovación» (se crea sola). Cada cotización es UNA fila con ID único;
+// un mismo cliente puede tener varias. Nunca modifica Protect, Pagos ni ninguna otra pestaña.
+var HOJA_COT = 'Cotizaciones Renovación';
+var COT_ENC = ['ID cotización','Fecha cotización','Nombre cliente','Cédula','Placa','Marca / Referencia',
+  'Valor factura anterior','Valor Fasecolda actual','Valor cotizado contado','Valor cotizado financiado','Plazo (meses)',
+  'Estado','Fecha aceptación','Aseguradora','Forma de pago','RC (Sí/No)','AP (Sí/No)','Valor final contratado','Observaciones','Contrato'];
+var COT_ESTADOS = ['Pendiente','Aceptó renovación','No aceptó renovación'];
+
+function hojaCot(ss) {
+  var h = ss.getSheetByName(HOJA_COT);
+  if (h) return h;
+  h = ss.insertSheet(HOJA_COT);
+  var n = COT_ENC.length;
+  var enc = h.getRange(1, 1, 1, n);
+  enc.setValues([COT_ENC]).setFontWeight('bold').setFontColor('#FFFFFF').setBackground('#0B1F4B')
+     .setHorizontalAlignment('center').setVerticalAlignment('middle').setWrap(true);
+  h.setRowHeight(1, 42);
+  h.setFrozenRows(1);
+  h.getRange('B2:B').setNumberFormat('dd/MM/yyyy HH:mm');
+  h.getRange('M2:M').setNumberFormat('dd/MM/yyyy HH:mm');
+  h.getRange('G2:J').setNumberFormat('"$"#,##0');
+  h.getRange('R2:R').setNumberFormat('"$"#,##0');
+  h.getRange('D2:D').setNumberFormat('@');
+  var anchos = [150,120,200,110,90,200,125,125,125,135,80,150,120,120,100,75,75,130,260,110];
+  for (var i = 0; i < anchos.length; i++) h.setColumnWidth(i + 1, anchos[i]);
+  // Listas desplegables
+  h.getRange('L2:L').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(COT_ESTADOS, true).setAllowInvalid(false).build());
+  h.getRange('N2:N').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(['Protect Motos','OMS','Sura'], true).setAllowInvalid(true).build());
+  h.getRange('O2:O').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(['Contado','Financiado'], true).setAllowInvalid(false).build());
+  h.getRange('P2:Q').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(['Sí','No'], true).setAllowInvalid(false).build());
+  // Colores por estado
+  var rg = [h.getRange('L2:L')];
+  h.setConditionalFormatRules([
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('Pendiente').setBackground('#FFF3C4').setFontColor('#7A5B00').setRanges(rg).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('Aceptó renovación').setBackground('#D7F5DF').setFontColor('#0B6B2B').setRanges(rg).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('No aceptó renovación').setBackground('#FAD4D4').setFontColor('#9B1C1C').setRanges(rg).build()
+  ]);
+  // Filtro y protección de encabezados (solo advierte: no bloquea a quien edita)
+  h.getRange(1, 1, 1, n).createFilter();
+  h.getRange(1, 1, 1, n).protect().setDescription('Encabezados de Cotizaciones Renovación').setWarningOnly(true);
+  return h;
+}
+
+function fechaCotTxt(v) {
+  return (v instanceof Date) ? Utilities.formatDate(v, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm') : String(v || '');
+}
+
+function accionCotRenMoto(p) {
+  // Datos de la moto del cliente, tomados de Protect (valor factura = columna AA, marca AB, referencia AC)
+  var contrato = String(p.contrato || '').trim();
+  if (!contrato) return { ok: false, error: 'Falta el contrato.' };
+  var hoja = hojaSeguimiento(SpreadsheetApp.openById(SHEET_ID));
+  var ult = hoja.getLastRow();
+  if (ult < FILA_INICIO_DATOS) return { ok: true, encontrado: false };
+  var datos = hoja.getRange(FILA_INICIO_DATOS, 1, ult - FILA_INICIO_DATOS + 1, 33).getValues();
+  for (var i = 0; i < datos.length; i++) {
+    var f = datos[i];
+    if (String(f[COL.CONTRATO - 1] || '').trim() === contrato) {
+      return { ok: true, encontrado: true,
+        cliente: String(f[COL.CLIENTE - 1] || ''), cedula: String(f[COL.CEDULA - 1] || ''),
+        placa: String(f[COL.PLACA - 1] || ''), celular: String(f[COL.CELULAR - 1] || ''),
+        valorMoto: Number(String(f[26] || '').replace(/[^0-9.-]/g, '')) || 0,
+        marca: String(f[27] || ''), referencia: String(f[28] || '') };
+    }
+  }
+  return { ok: true, encontrado: false };
+}
+
+function accionCotRenListar() {
+  var h = SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_COT), out = [];
+  if (!h || h.getLastRow() < 2) return { ok: true, cotizaciones: out };
+  var d = h.getRange(2, 1, h.getLastRow() - 1, COT_ENC.length).getValues();
+  for (var i = 0; i < d.length; i++) {
+    if (!d[i][0]) continue;
+    out.push({ id: String(d[i][0]), fecha: fechaCotTxt(d[i][1]), nombre: String(d[i][2]), cedula: String(d[i][3]), placa: String(d[i][4]),
+      moto: String(d[i][5]), factura: Number(d[i][6]) || 0, fasecolda: Number(d[i][7]) || 0, contado: Number(d[i][8]) || 0,
+      financiado: Number(d[i][9]) || 0, plazo: Number(d[i][10]) || 0, estado: String(d[i][11]), fechaAcep: fechaCotTxt(d[i][12]),
+      aseguradora: String(d[i][13]), forma: String(d[i][14]), rc: String(d[i][15]), ap: String(d[i][16]),
+      valorFinal: Number(d[i][17]) || 0, obs: String(d[i][18]), contrato: String(d[i][19]) });
+  }
+  return { ok: true, cotizaciones: out };
+}
+
+function accionCotRenGuardar(p) {
+  var nombre = String(p.nombre || '').trim();
+  if (!nombre) return { ok: false, error: 'Falta el nombre del cliente.' };
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var h = hojaCot(SpreadsheetApp.openById(SHEET_ID));
+    var ahora = new Date(), tz = Session.getScriptTimeZone();
+    var pref = 'COT-' + Utilities.formatDate(ahora, tz, 'yyyyMMdd') + '-';
+    var n = h.getLastRow(), seq = 1;
+    if (n >= 2) {
+      var ids = h.getRange(2, 1, n - 1, 1).getValues();
+      for (var i = 0; i < ids.length; i++) {
+        var id = String(ids[i][0]);
+        if (id.indexOf(pref) === 0) { var k = parseInt(id.slice(pref.length), 10) || 0; if (k >= seq) seq = k + 1; }
+      }
+    }
+    var id2 = pref + ('00' + seq).slice(-3);
+    var num = function (v) { return Number(String(v || '').replace(/[^0-9.-]/g, '')) || 0; };
+    var fila = n + 1;
+    h.getRange(fila, 1, 1, COT_ENC.length).setValues([[id2, ahora, nombre, "'" + String(p.cedula || ''), String(p.placa || ''),
+      String(p.moto || ''), num(p.factura), num(p.fasecolda), num(p.contado), num(p.financiado), num(p.plazo),
+      'Pendiente', '', '', '', '', '', '', '', String(p.contrato || '')]]);
+    h.getRange(fila, 4).setNumberFormat('@').setValue(String(p.cedula || ''));
+    return { ok: true, id: id2 };
+  } finally { lock.releaseLock(); }
+}
+
+function accionCotRenEstado(p) {
+  var id = String(p.id || '').trim(), estado = String(p.estado || '').trim();
+  if (COT_ESTADOS.indexOf(estado) < 0) return { ok: false, error: 'Estado no válido.' };
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var h = SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_COT);
+    if (!h || h.getLastRow() < 2) return { ok: false, error: 'No hay cotizaciones guardadas.' };
+    var ids = h.getRange(2, 1, h.getLastRow() - 1, 1).getValues(), fila = 0;
+    for (var i = 0; i < ids.length; i++) if (String(ids[i][0]) === id) { fila = i + 2; break; }
+    if (!fila) return { ok: false, error: 'No se encontró la cotización ' + id + '.' };
+    var num = function (v) { return Number(String(v || '').replace(/[^0-9.-]/g, '')) || 0; };
+    h.getRange(fila, 12).setValue(estado);
+    if (estado === 'Aceptó renovación') {
+      h.getRange(fila, 13, 1, 7).setValues([[new Date(), String(p.aseguradora || ''), String(p.forma || ''),
+        String(p.rc || ''), String(p.ap || ''), num(p.valorFinal), String(p.obs || '')]]);
+      if (num(p.plazo) > 0) h.getRange(fila, 11).setValue(num(p.plazo));
+    } else if (estado === 'No aceptó renovación') {
+      h.getRange(fila, 13).setValue(new Date());
+      h.getRange(fila, 19).setValue(String(p.obs || ''));
+    } else {
+      h.getRange(fila, 13).clearContent();
+    }
+    return { ok: true, id: id, estado: estado };
+  } finally { lock.releaseLock(); }
 }
