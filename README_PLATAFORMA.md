@@ -21,7 +21,7 @@ modulos/                      Un archivo por botón del menú
   precobros.html              OPERACIÓN · lee el precobro del proveedor y pone asesor y N.º de contrato
   conciliacion.html           OPERACIÓN · cruza Protect contra el Consolidado de pagos
   cotizador.html              OPERACIÓN · cotizaciones para CLIENTES NUEVOS (mismo cotizador de Contratos, PDF/imagen/WhatsApp, hoja «Cotizaciones Clientes Nuevos»)
-  banco.html                  OPERACIÓN · Verificación bancaria: movimientos del banco vs hoja Pagos (fecha y valor) con el cliente al frente
+  banco.html                  OPERACIÓN · Verificación bancaria: lee la hoja de Google del banco (acción banco_leer, crm-8) y la compara con la hoja Pagos por fecha y valor, con el cliente al frente
   erp.html                    OPERACIÓN · Cruce semanal ERP (clientes ERP-Protect): archivo del jefe vs hoja Protect (cédula + Total vs columna P)
   oms.html / soat.html        SEGUROS · clientes OMS y SOAT (cobros, primer pago, renovaciones, tablero)
   comisiones.html             GESTIÓN · informe de comisiones de asesores (mensual, anual, histórico)

@@ -39,9 +39,19 @@
 <main>
   <div class="panel nop" style="padding:12px 18px"><div class="fil" style="align-items:center"><button class="btn g" id="bRec" type="button">🔄 Volver a leer la hoja Pagos</button><span class="estado" id="est" style="flex:1">Cargando…</span></div></div>
 
+  <section class="panel nop" id="pHoja">
+    <h2>1. Hoja del banco en Google Sheets</h2>
+    <p class="sub">Pegue una sola vez el enlace de la hoja donde guarda los movimientos del banco. Desde ahí el sistema la lee solo, como lee la hoja Protect: no tiene que descargar ni subir nada. (La hoja debe estar en la misma cuenta de Google donde publicó el script.)</p>
+    <div class="fil"><label style="flex:1;min-width:320px">Enlace de la hoja del banco<input type="text" id="bkLink" placeholder="https://docs.google.com/spreadsheets/d/…/edit" style="border:1px solid var(--borde);border-radius:8px;padding:8px 11px;font-size:.92rem;width:100%"></label>
+      <label>Pestaña (opcional)<input type="text" id="bkTab" placeholder="la primera" style="border:1px solid var(--borde);border-radius:8px;padding:8px 11px;font-size:.92rem;width:160px"></label>
+      <label>Mirar los últimos<select id="per"><option value="7">7 días</option><option value="15" selected>15 días</option><option value="30">30 días</option><option value="90">90 días</option><option value="0">Todo el historial</option></select></label>
+      <button class="btn v" id="bLeer" type="button">Guardar y leer el banco</button></div>
+    <p class="estado" id="estBanco" style="margin:10px 0 0"></p>
+  </section>
+
   <section class="panel nop">
-    <h2>1. Suba el archivo del banco</h2>
-    <p class="sub">Excel (.xlsx o .xls) o .csv, tal como lo descarga del banco (puede ser el del día o el que guarda con todos los movimientos). Se lee aquí en su computador; no se envía ni se modifica.</p>
+    <h2>…o suba un archivo del banco (opcional)</h2>
+    <p class="sub">Solo si algún día no tiene la hoja a mano: Excel (.xlsx o .xls) o .csv tal como lo descarga del banco. Se lee aquí en su computador; no se envía ni se modifica.</p>
     <div class="drop" id="drop" tabindex="0"><b>📂 Arrastre aquí el archivo, o elíjalo con el botón</b><button class="btn d" id="bElegir" type="button" style="margin:6px 0">📎 Elegir archivo</button><br><span id="dropTxt">Reconoce solo las columnas de fecha y valor; no importa cómo se llamen ni en qué fila empiece la tabla.</span></div>
     <input type="file" id="archivo" accept=".xlsx,.xls,.csv" style="display:none">
     <div class="fil" style="margin-top:12px"><label>Tolerancia de fecha<select id="tol"><option value="0">Solo la misma fecha</option><option value="1" selected>Misma fecha, o ±1 día (lo marca)</option><option value="2">Misma fecha, o ±2 días (lo marca)</option></select></label></div>
@@ -108,16 +118,51 @@
       PAGOS=(r.pagos||[]).filter(function(p){return p.fechaPagoISO&&Number(p.valorPagado)>0}).map(function(p,i){return {i:i,fecha:p.fechaPagoISO,valor:Math.round(Number(p.valorPagado)),cliente:p.cliente||'',contrato:p.contrato||'',cuota:p.cuota||'',nota:p.nota||'',usado:false}});
       var f=PAGOS.map(function(p){return p.fecha}).sort();
       est('Conectado ✔ · '+PAGOS.length+' pagos registrados'+(f.length?' (del '+bonita(f[0])+' al '+bonita(f[f.length-1])+')':''),'ok');
-      if(ARCH)cruzar();
+      if(ARCH)cruzar();else if(LS('pm_banco_sheet'))leerHojaBanco();
     }).catch(function(e){PAGOS=null;est(e.message,'er')}).then(function(){$('bRec').disabled=false});
   }
   $('bRec').addEventListener('click',cargar);
 
+  /* ---------- hoja del banco en Google Sheets (como la hoja Protect) ---------- */
+  function idDe(link){var m=/\/d\/([A-Za-z0-9_-]{20,})/.exec(link)||/^\s*([A-Za-z0-9_-]{25,})\s*$/.exec(link);return m?m[1]:''}
+  function estB(x,c){var e=$('estBanco');e.textContent=x;e.className='estado '+(c||'')}
+  function llamarBanco(id,hoja){
+    return new Promise(function(ok,mal){
+      var url=LS('pm_crm_url'),tok=LS('pm_crm_token')||'PM-CRM-2026';
+      if(!url){mal(new Error('Falta la URL del conector (pestaña Conexiones → Conector único).'));return}
+      cnt++;var cb='pm_bkh_'+Date.now()+'_'+cnt,s=document.createElement('script'),fin=false;
+      var t=setTimeout(function(){if(fin)return;fin=true;limpiar();mal(new Error('El conector no respondió a tiempo.'))},90000);
+      function limpiar(){clearTimeout(t);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}
+      window[cb]=function(r){if(fin)return;fin=true;limpiar();ok(r)};
+      s.onerror=function(){if(fin)return;fin=true;limpiar();mal(new Error('No se pudo contactar el conector.'))};
+      s.src=url+(url.indexOf('?')<0?'?':'&')+'action=banco_leer&token='+encodeURIComponent(tok)+'&sheetId='+encodeURIComponent(id)+'&hoja='+encodeURIComponent(hoja||'')+'&callback='+cb+'&_='+Date.now();document.body.appendChild(s);
+    }).then(function(r){if(!r||r.ok===false){var m=(r&&r.error)||'Respuesta inválida.';if(/Acción no disponible/.test(m))m='El conector todavía no puede leer la hoja del banco (versión crm-8): pegue el código nuevo (Codigo_UNICO.gs) y publique «Nueva versión».';throw new Error(m)}return r});
+  }
+  function leerHojaBanco(){
+    var link=$('bkLink').value.trim(),id=idDe(link);
+    if(!id){estB('Pegue el enlace completo de la hoja del banco (el que empieza con https://docs.google.com/spreadsheets/…).','er');return Promise.resolve()}
+    try{localStorage.setItem('pm_banco_sheet',id);localStorage.setItem('pm_banco_tab',$('bkTab').value.trim());localStorage.setItem('pm_banco_dias',$('per').value)}catch(e){}
+    estB('Leyendo la hoja del banco…');$('bLeer').disabled=true;
+    return llamarBanco(id,$('bkTab').value.trim()).then(function(r){
+      ARCH=leerMatrices([[r.hoja,r.filas]],r.nombre+' · '+r.hoja);ARCH.origen='hoja';ARCH.recortado=r.recortado;filtro='';
+      estB('Conectado ✔ · «'+r.nombre+'» · pestaña «'+r.hoja+'» · '+ARCH.movs.length+' movimientos leídos'+(r.pestanas&&r.pestanas.length>1?' (otras pestañas: '+r.pestanas.filter(function(x){return x!==r.hoja}).join(', ')+')':''),'ok');
+      if(!PAGOS){est('Esperando la hoja Pagos…','er');return}cruzar();
+    }).catch(function(e){estB(e.message,'er')}).then(function(){$('bLeer').disabled=false});
+  }
+  $('bLeer').addEventListener('click',leerHojaBanco);
+  $('per').addEventListener('change',function(){try{localStorage.setItem('pm_banco_dias',$('per').value)}catch(e){}if(ARCH&&PAGOS)cruzar()});
+  (function(){var id=LS('pm_banco_sheet');if(id){$('bkLink').value='https://docs.google.com/spreadsheets/d/'+id+'/edit';$('bkTab').value=LS('pm_banco_tab');if(LS('pm_banco_dias'))$('per').value=LS('pm_banco_dias')}})();
+
   /* ---------- lectura del archivo del banco ---------- */
   function leerBanco(buf,nombre){
-    var wb=XLSX.read(buf,{type:'array',cellDates:true}),best=null;
-    wb.SheetNames.forEach(function(nm){
-      var A=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,raw:true,defval:''});
+    var wb=XLSX.read(buf,{type:'array',cellDates:true}),mats=[];
+    wb.SheetNames.forEach(function(nm){mats.push([nm,XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,raw:true,defval:''})])});
+    return leerMatrices(mats,nombre);
+  }
+  function leerMatrices(mats,nombre){
+    var best=null;
+    mats.forEach(function(mm){
+      var nm=mm[0],A=mm[1];
       for(var i=0;i<Math.min(A.length,60);i++){
         var H=A[i].map(norm),fc=-1,vc=[];
         H.forEach(function(h,j){
@@ -154,6 +199,12 @@
   /* ---------- cruce: fecha + valor ---------- */
   function cruzar(){
     if(!ARCH||!PAGOS)return;
+    if(!ARCH.todos)ARCH.todos=ARCH.movs;
+    var NP=Number($('per').value),hoyD=new Date(),desde='';
+    if(NP){var dd=new Date(hoyD.getFullYear(),hoyD.getMonth(),hoyD.getDate()-NP);desde=iso(dd)}
+    ARCH.movs=ARCH.todos.filter(function(m){return !desde||m.fecha>=desde});
+    var minTodos=ARCH.todos.map(function(m){return m.fecha}).sort()[0];
+    ARCH.desde=desde;ARCH.f0=(desde&&desde>minTodos)?desde:minTodos;
     var tol=Number($('tol').value);PAGOS.forEach(function(p){p.usado=false});
     var porClave={};PAGOS.forEach(function(p){(porClave[p.fecha+'|'+p.valor]=porClave[p.fecha+'|'+p.valor]||[]).push(p)});
     var movsIn=ARCH.movs.filter(function(m){return m.entra});
@@ -176,10 +227,10 @@
     });
     ARCH.movs.forEach(function(m){if(!m.entra){m.est='sal';m.cli='';m.obs=[]}});
     /* pagos registrados sin movimiento */
-    var fechas=ARCH.movs.map(function(m){return m.fecha}).sort(),f0=fechas[0],f1=fechas[fechas.length-1],hoy=iso(new Date());
+    var fechas=ARCH.todos.map(function(m){return m.fecha}).sort(),f0=ARCH.f0,f1=fechas[fechas.length-1],hoy=iso(new Date());
     SIN=PAGOS.filter(function(p){return !p.usado&&p.fecha>=f0}).map(function(p){
       var r={p:p,obs:[]},dias=dif(hoy,p.fecha);
-      if(p.fecha>f1){r.est='pen';r.obs.push('Es posterior al último movimiento del archivo ('+bonita(f1)+'): todavía no se puede comparar. Suba el archivo del día siguiente.')}
+      if(p.fecha>f1){r.est='pen';r.obs.push('Es posterior al último movimiento del archivo ('+bonita(f1)+'): todavía no se puede comparar: cuando el banco lo muestre, pulse «Guardar y leer el banco».')}
       else if(dias<=2){r.est='pen';r.obs.push('Registrado hace '+dias+' día'+(dias===1?'':'s')+': es normal que el banco aún no lo muestre.')}
       else{r.est='nof';r.obs.push('Ya pasaron '+dias+' días y no hay un movimiento con ese valor'+(tol?' en esa fecha o cerca':' en esa fecha')+'. Revise el comprobante o si el cliente pagó otro valor.')}
       return r});
@@ -197,9 +248,10 @@
   }
   function pintar(){
     $('resultado').style.display='block';
+    if(!ARCH.movs.length){$('meta').textContent='No hay movimientos en el período elegido ('+(ARCH.desde?'desde el '+bonita(ARCH.desde):'todo')+'). Cambie «Mirar los últimos» o revise el archivo.';$('tiles').innerHTML='';$('cuerpo').innerHTML='';$('avisos').innerHTML='';$('cuerpoSin').innerHTML='';$('subSin').textContent='';return}
     var mi=ARCH.movs.filter(function(m){return m.entra}),n=function(e){return mi.filter(function(m){return m.est===e}).length},sm=function(e){return mi.filter(function(m){return m.est===e}).reduce(function(s,m){return s+m.valor},0)};
     var fe=ARCH.movs.map(function(m){return m.fecha}).sort();
-    $('meta').innerHTML='Archivo: <b>'+esc(ARCH.nombre)+'</b> · '+ARCH.movs.length+' movimientos ('+mi.length+' de entrada) del '+bonita(fe[0])+' al '+bonita(fe[fe.length-1])+' · se comparó con '+PAGOS.length+' pagos registrados.';
+    $('meta').innerHTML=(ARCH.origen==='hoja'?'Hoja del banco: ':'Archivo: ')+'<b>'+esc(ARCH.nombre)+'</b>'+(ARCH.recortado?' (hoja muy larga: se leyeron las filas más recientes y las primeras)':'')+' · '+ARCH.movs.length+' movimientos ('+mi.length+' de entrada) del '+bonita(fe[0])+' al '+bonita(fe[fe.length-1])+' · se comparó con '+PAGOS.length+' pagos registrados.';
     var ns=SIN.filter(function(r){return r.est==='nof'}).length,pe=SIN.filter(function(r){return r.est==='pen'}).length,dc=n('dud')+n('cer'),av='';
     if(dc)av+='<div class="aviso">🔎 <b>'+dc+'</b> movimiento(s) piden que usted confirme el cliente (fecha cercana o varios pagos iguales). Use el cuadro «Por confirmar».</div>';
     if(ns)av+='<div class="aviso">⚠️ <b>'+ns+'</b> pago(s) registrado(s) hace varios días <b>no aparecen en el banco</b>. Están al final de la página.</div>';
@@ -237,7 +289,7 @@
 
   function procesar(file){
     if(!file)return;var rd=new FileReader();
-    rd.onload=function(){try{ARCH=leerBanco(new Uint8Array(rd.result),file.name);filtro='';$('dropTxt').textContent='Archivo cargado: '+file.name+' ('+ARCH.movs.length+' movimientos). Puede subir otro cuando quiera.';
+    rd.onload=function(){try{ARCH=leerBanco(new Uint8Array(rd.result),file.name);ARCH.origen='archivo';filtro='';$('dropTxt').textContent='Archivo cargado: '+file.name+' ('+ARCH.movs.length+' movimientos). Puede subir otro cuando quiera.';
       if(!PAGOS){est('Esperando la hoja Pagos… pulse «Volver a leer la hoja Pagos» si no carga.','er');return}cruzar()}catch(e){ARCH=null;$('resultado').style.display='none';$('dropTxt').textContent='⚠ '+e.message}};
     rd.readAsArrayBuffer(file);
   }

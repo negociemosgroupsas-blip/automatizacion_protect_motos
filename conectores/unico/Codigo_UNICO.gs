@@ -617,6 +617,8 @@ function doGet(e) {
         salida = accionListarReportes();
       } else if (accion === 'verReporte') {
         salida = accionVerReporte(params);
+      } else if (accion === 'banco_leer') {
+        salida = accionBancoLeer(params);
       } else if (accion === 'erp_protect') {
         salida = accionErpProtect();
       } else if (accion === 'renov_gestiones') {
@@ -630,7 +632,7 @@ function doGet(e) {
       } else if (accion === 'cotRen_estado') {
         salida = accionCotRenEstado(params);
       } else if (accion === 'ping') {
-        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-7' };
+        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-8' };
       } else {
         salida = { ok: false, error: 'Acción no disponible: ' + accion };
       }
@@ -1086,6 +1088,33 @@ function accionErpProtect() {
       contrato: ctr, valorP: numeroErp_(f[15]), estado: ancho >= 44 ? String(f[43] || '').trim().toUpperCase() : '' });
   }
   return { ok: true, filas: out, encabezadoP: encP };
+}
+
+
+// ==================== VERIFICACIÓN BANCARIA: lee la hoja de movimientos del banco (nuevo, SOLO LEE) ====================
+// Abre el Google Sheet del banco por su ID (la cuenta que publicó el script debe tener acceso) y devuelve sus filas tal cual
+// (las fechas como texto aaaa-mm-dd). El sistema detecta solo las columnas de fecha, valor y descripción. No escribe nada.
+function accionBancoLeer(p) {
+  var id = String(p.sheetId || '').trim();
+  if (!/^[A-Za-z0-9_-]{20,}$/.test(id)) return { ok: false, error: 'Falta el enlace o el ID de la hoja del banco, o no es válido.' };
+  var ss;
+  try { ss = SpreadsheetApp.openById(id); } catch (e) { return { ok: false, error: 'No pude abrir la hoja del banco. Revise el enlace y que esté en la misma cuenta de Google donde publicó el script (o compartida con ella).' }; }
+  var nombreHoja = String(p.hoja || '').trim();
+  var hoja = nombreHoja ? ss.getSheetByName(nombreHoja) : ss.getSheets()[0];
+  var pestanas = ss.getSheets().map(function (x) { return x.getName(); });
+  if (!hoja) return { ok: false, error: 'No encontré la pestaña «' + nombreHoja + '». Las pestañas de esa hoja son: ' + pestanas.join(', ') + '.' };
+  var ult = hoja.getLastRow(), anc = Math.min(Math.max(hoja.getLastColumn(), 1), 20);
+  var max = Math.min(Math.max(Number(p.max) || 8000, 100), 20000), tz = Session.getScriptTimeZone();
+  var conv = function (fila) { return fila.map(function (v) { return (v instanceof Date) ? Utilities.formatDate(v, tz, 'yyyy-MM-dd') : v; }); };
+  var filas = [], recortado = false;
+  if (ult < 1) return { ok: true, nombre: ss.getName(), hoja: hoja.getName(), pestanas: pestanas, filas: [], recortado: false, totalFilas: 0 };
+  if (ult <= max) {
+    filas = hoja.getRange(1, 1, ult, anc).getValues().map(conv);
+  } else {   // hoja muy larga: las primeras 40 filas (títulos) y las últimas
+    recortado = true;
+    filas = hoja.getRange(1, 1, 40, anc).getValues().map(conv).concat(hoja.getRange(ult - (max - 40) + 1, 1, max - 40, anc).getValues().map(conv));
+  }
+  return { ok: true, nombre: ss.getName(), hoja: hoja.getName(), pestanas: pestanas, filas: filas, recortado: recortado, totalFilas: ult };
 }
 
   return { doGet:doGet, doPost:doPost };
