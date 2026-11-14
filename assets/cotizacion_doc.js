@@ -19,13 +19,11 @@
     'Gastos médicos | $200.000 | Sin deducible | Sin deducible',
     'Asistencia jurídica en proceso penal | $10.348.632 | Sin deducible | Sin deducible',
     'Asistencia jurídica en proceso civil | $5.338.580 | Sin deducible | Sin deducible',
-    'Muerte accidente de tránsito | $5.000.000 | Sin deducible | Sin deducible',
-    'Valor total RC | {RC}'];
+    'Muerte accidente de tránsito | $5.000.000 | Sin deducible | Sin deducible'];
   var AP_PM = ['— AP · Accidentes personales —',
     'Muerte accidental | $5.000.000','Incapacidad total por accidente | $5.000.000','Auxilio por pérdida de documentos | $100.000',
     '— Carro taller: todos los servicios · 1 vez cada uno al año —',
-    'Grúa por accidente | $300.000','Paso de corriente | $50.000','Suministro de combustible | $50.000','Despinche (llanta sellomática) | $50.000',
-    'Valor total AP | {AP}'];
+    'Grúa por accidente | $300.000','Paso de corriente | $50.000','Suministro de combustible | $50.000','Despinche (llanta sellomática) | $50.000'];
   var SURA = ['Responsabilidad Civil Extracontractual (límite global): $840.000.000','Deducible pérdida total por daños: 10 %, mínimo 0 SMMLV','Deducible pérdida parcial por daños: deducible único 0,5 SMMLV','Deducible pérdida total por hurto: 10 %, mínimo 0 SMMLV','Deducible pérdida parcial por hurto: deducible único 0,5 SMMLV','Deducible ante eventos de la naturaleza (temblor, terremoto): deducible único 0,5 SMMLV','Amparo patrimonial: sí cubre','Asistencia jurídica en procesos penales y civiles: sí cubre','Asistencia en viaje: asistencia de motos'];
   var DEFECTO = {
     'Protect Motos': { op1: BASE_PM, op2: ['Todo lo de la Opción 1','Responsabilidad civil','Asistencias y Carro taller'].concat(RC_PM).concat(AP_PM) },
@@ -105,8 +103,7 @@
     return '<h4>'+esc(sc.titulo)+'</h4>'+(tabla?'<div class="f3 h"><span>Cobertura</span><span>Límite asegurado</span><span>Deducible</span></div>':'')+filasHtml(sc.filas);
   }
   function filasHtml(filas){
-    return filas.map(function(c){
-      if(/^valor total/i.test(c[0])) return '<div class="tot"><span>'+esc(c[0]).toUpperCase()+'</span><b>'+esc(c[1])+'</b></div>';
+    return filas.filter(function(c){ return !/^valor total/i.test(c[0]); }).map(function(c){
       if(c.length>=3) return '<div class="f3"><span>'+esc(c[0])+'</span><span>'+esc(c[1])+'</span><span>'+esc(ded(c))+'</span></div>';
       if(c.length===2) return '<div class="f2"><span>'+esc(c[0])+'</span><b>'+esc(c[1])+'</b></div>';
       return '<div class="f2"><span>'+esc(c[0])+'</span></div>';
