@@ -58,6 +58,7 @@ Separadas: «Historico polizas» (OMS), «Historico Soat» (SOAT), Responsabilid
 - **Cotizador** (Contratos y renovaciones): contado 7,5 % del valor de la moto; financiado 9 % (3 m), 10 % (6 m), 12 % (12 m); RC $152.857, AP $47.000.
 - **Renovación**: valor a garantizar = el menor entre (factura anterior ÷ 1,1) y (Fasecolda actual ÷ 1,1).
 - **Comisiones**: contado con RC/AP $40.000 · contado sin RC ni AP $25.000 · financiado con RC $15.000 · financiado sin RC $10.000; anulados y cancelados no pagan; SOAT no genera comisión; Kelli suma pólizas OMS.
+- **Renovaciones con precio fijo**: las ADX usan precios fijos (hurto/pérdida total contado $887.940 y 12 × $92.493; con RC y AP contado $1.087.797, primera cuota $292.351 y 11 × $92.493). Se editan en el formulario de cotización («Precios fijos de renovación por moto»).
 - **Pago**: al registrar un pago el sistema avisa si pagó bien, de menos o de más (tolerancia $1.000).
 
 ## Pruebas rápidas antes de mostrar a gerencia

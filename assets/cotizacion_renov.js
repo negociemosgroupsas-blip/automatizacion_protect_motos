@@ -93,6 +93,19 @@
   // ---------- Formulario: ENVIAR COTIZACIÓN ----------
   var cur = null;
   var ASEG = ['Protect Motos','Sura','Otra'];
+  /* Precios FIJOS de renovación por moto (12 meses). Formato por línea:
+     palabra de la moto | contado op.1 | cuota op.1 | contado op.2 | 1ª cuota op.2 | cuota restante op.2   (op.2 = con RC y AP) */
+  var FIJOS_DEF = ['ADX | 887940 | 92493 | 1087797 | 292351 | 92493'];
+  function leerFijos(){ var g = LS('pm_ren_fijos'); if(g){ try{ var a = JSON.parse(g); if(a && a.length) return a; }catch(e){} } return FIJOS_DEF.slice(); }
+  function buscarFijo(moto){
+    var m = String(moto||'').toUpperCase(), L = leerFijos();
+    for(var i=0;i<L.length;i++){
+      var c = String(L[i]).split('|').map(function(x){ return x.trim(); }); if(c.length<6) continue;
+      var kw = c[0].toUpperCase(), n = c.slice(1,6).map(num);
+      if(kw && m.indexOf(kw)>=0 && n[0]>0 && n[1]>0 && n[2]>0 && n[3]>0 && n[4]>0) return { palabra:c[0], c1:n[0], q1:n[1], c2:n[2], p2:n[3], q2:n[4] };
+    }
+    return null;
+  }
   function abrir(c){
     cur = { c:c, guardada:null };
     var f = ventana('pmcr_fcot',
@@ -114,7 +127,10 @@
       '<label>Opción 1 · valor de contado<input id="pmcr_m1c" inputmode="numeric" placeholder="$"></label><label>Opción 1 · valor de cada cuota<input id="pmcr_m1q" inputmode="numeric" placeholder="$"></label>'+
       '<label>Opción 2 · valor de contado<input id="pmcr_m2c" inputmode="numeric" placeholder="$"></label><label>Opción 2 · valor de cada cuota<input id="pmcr_m2q" inputmode="numeric" placeholder="$"></label>'+
       '</div></div>'+
+      '<div id="pmcr_fijobox" class="pmcr-cuadro" style="display:none;background:#fff6d6;border-color:#f0cf6a"><label style="display:flex;flex-direction:row;gap:8px;align-items:flex-start;font-weight:700;font-size:.85rem"><input type="checkbox" id="pmcr_fijo" checked style="margin-top:3px"><span id="pmcr_fijotxt"></span></label></div>'+
       '<div class="pmcr-cuadro" id="pmcr_res">Escribe la factura y el valor de Fasecolda para calcular.</div>'+
+      '<details style="margin:6px 0 10px"><summary style="cursor:pointer;font-weight:700;font-size:.85rem">Precios fijos de renovación por moto (ej. ADX)</summary>'+
+      '<label style="display:flex;flex-direction:column;font-size:.85rem;gap:3px;margin-top:8px">Una moto por línea: palabra | contado opción 1 | cuota opción 1 | contado opción 2 | primera cuota opción 2 | cuota restante opción 2<textarea id="pmcr_fij" rows="3" style="border:1px solid #cfd6e4;border-radius:8px;padding:8px 10px;font:inherit;font-size:.85rem"></textarea></label><p class="pmcr-sub" style="margin:4px 0 0">Si el nombre de la moto contiene esa palabra, la cotización usa estos valores (12 meses) y no hace falta escribir el Fasecolda. <a href="#" id="pmcr_fijrest">Restaurar</a></p></details>'+
       '<details style="margin:6px 0 10px"><summary style="cursor:pointer;font-weight:700;font-size:.85rem">Coberturas que salen en el PDF (puedes editarlas)</summary>'+
       '<div class="pmcr-g" style="margin-top:8px"><label>Opción 1 · una cobertura por línea<textarea id="pmcr_cb1" rows="6"></textarea></label><label>Opción 2 · una cobertura por línea<textarea id="pmcr_cb2" rows="6"></textarea></label></div>'+
       '<p class="pmcr-sub" style="margin:4px 0 0">Una línea entre guiones, como <code>— Asistencias —</code>, crea un título dentro de la lista. Se guardan para la próxima cotización con esta aseguradora. <a href="#" id="pmcr_rest">Restaurar las originales</a></p></details>'+
@@ -131,6 +147,10 @@
       '<p class="pmcr-sub" style="margin-top:8px">Para enviarla: descarga el PDF o la imagen, abre WhatsApp con el botón verde y adjunta el archivo. Nada se envía solo.</p>');
     var fac=$('pmcr_fac'), fas=$('pmcr_fas');
     ['pmcr_nom','pmcr_ced','pmcr_pla','pmcr_moto','pmcr_fac','pmcr_fas','pmcr_plz','pmcr_ase','pmcr_otra','pmcr_m1c','pmcr_m1q','pmcr_m2c','pmcr_m2q'].forEach(function(id){ $(id).addEventListener('input', recalcular); $(id).addEventListener('change', recalcular); });
+    $('pmcr_fij').value = leerFijos().join('\n');
+    $('pmcr_fij').addEventListener('change', function(){ var L=$('pmcr_fij').value.split('\n').map(function(x){return x.trim();}).filter(Boolean); LSset('pm_ren_fijos', JSON.stringify(L)); recalcular(); });
+    $('pmcr_fijrest').onclick = function(e){ e.preventDefault(); try{ localStorage.removeItem('pm_ren_fijos'); }catch(x){} $('pmcr_fij').value = FIJOS_DEF.join('\n'); recalcular(); };
+    $('pmcr_fijo').addEventListener('change', recalcular);
     $('pmcr_ase').addEventListener('change', function(){ cargarCob(); });
     $('pmcr_otra').addEventListener('change', function(){ cargarCob(); });
     ['pmcr_cb1','pmcr_cb2'].forEach(function(id){ $(id).addEventListener('change', function(){
@@ -174,24 +194,30 @@
   function leer(){
     var fac=num($('pmcr_fac').value), fas=num($('pmcr_fas').value), plz=Number($('pmcr_plz').value), ase=aseguradora(), propia=$('pmcr_ase').value==='Protect Motos';
     var gar = PMCot.valorAGarantizar(fac, fas), O = PMCot.opciones(gar, plz), op1, op2;
-    if(propia){ op1 = O?O.op1:{contado:0,cuota:0,total:0,primera:0,resto:0}; op2 = O?O.op2:{contado:0,cuota:0,total:0,primera:0,resto:0}; }
+    var fijoDef = (propia && plz===12) ? buscarFijo($('pmcr_moto').value) : null, usaFijo = !!(fijoDef && $('pmcr_fijo') && $('pmcr_fijo').checked);
+    if(usaFijo){
+      op1 = {contado:fijoDef.c1, cuota:fijoDef.q1, total:fijoDef.q1*12, primera:fijoDef.q1, resto:fijoDef.q1};
+      op2 = {contado:fijoDef.c2, cuota:fijoDef.q2, total:fijoDef.p2+11*fijoDef.q2, primera:fijoDef.p2, resto:fijoDef.q2};
+    } else if(propia){ op1 = O?O.op1:{contado:0,cuota:0,total:0,primera:0,resto:0}; op2 = O?O.op2:{contado:0,cuota:0,total:0,primera:0,resto:0}; }
     else{
       var m = function(a,b){ var c=num($(a).value), q=num($(b).value); return {contado:c, cuota:q, total:q*plz, primera:q, resto:q}; };
       op1 = m('pmcr_m1c','pmcr_m1q'); op2 = m('pmcr_m2c','pmcr_m2q');
     }
     return { nombre:$('pmcr_nom').value.trim(), cedula:$('pmcr_ced').value.trim(), placa:$('pmcr_pla').value.trim(), moto:$('pmcr_moto').value.trim(),
       factura:fac, fasecolda:fas, garantizar:gar, plazo:plz, aseguradora:ase, propia:propia, op1:op1, op2:op2, cubre:O?O.cubre:0, rc:(O?O.rc:PMCot.RC_DEFECTO), ap:(O?O.ap:PMCot.AP_DEFECTO),
-      contado:op1.contado, financiado:op1.total, cuota:op1.cuota, contrato:cur.c.contrato };
+      contado:op1.contado, financiado:op1.total, cuota:op1.cuota, contrato:cur.c.contrato, fijoDef:fijoDef, usaFijo:usaFijo, listo:(gar>0||usaFijo) };
   }
   function resumenOp(o, plz){ return 'contado <b>'+cop(o.contado)+'</b> · '+plz+' cuotas'+(o.primera!==o.resto?' (1ª de <b>'+cop(o.primera)+'</b>, luego <b>'+cop(o.resto)+'</b>)':' de <b>'+cop(o.cuota)+'</b>')+' · total <b>'+cop(o.total)+'</b>'; }
   function recalcular(){
     if(!cur) return;
     cur.guardada = null; // si cambian valores, se guardaría como una cotización nueva
-    var q = leer();
+    var q = leer(), fd = (q.propia && q.plazo===12) ? buscarFijo($('pmcr_moto').value) : null;
+    $('pmcr_fijobox').style.display = fd ? '' : 'none';
+    if(fd) $('pmcr_fijotxt').textContent = 'Esta moto tiene PRECIO FIJO de renovación ('+fd.palabra.toUpperCase()+'): se usan esos valores y no el Fasecolda. Desmarca si quieres calcularla normal.';
     $('pmcr_gar').value = q.garantizar ? cop(q.garantizar) : '';
-    if(!(q.garantizar>0)){ $('pmcr_res').innerHTML = 'Escribe la factura y el valor de Fasecolda para calcular.'; return; }
+    if(!q.listo){ $('pmcr_res').innerHTML = 'Escribe la factura y el valor de Fasecolda para calcular.'; return; }
     var a = q.factura>0 ? Math.round(q.factura/1.1) : 0, b = q.fasecolda>0 ? Math.round(q.fasecolda/1.1) : 0;
-    $('pmcr_res').innerHTML = 'Factura −10 %: <b>'+(a?cop(a):'—')+'</b> · Fasecolda −10 %: <b>'+(b?cop(b):'—')+'</b> → valor a garantizar <b>'+cop(q.garantizar)+'</b>'+(q.propia?' · cubre el 80 %: <b>'+cop(q.cubre)+'</b>':'')+'<br>'+
+    $('pmcr_res').innerHTML = (q.usaFijo ? '<b>Precio fijo de renovación ('+esc(q.fijoDef.palabra.toUpperCase())+')</b>' : 'Factura −10 %: <b>'+(a?cop(a):'—')+'</b> · Fasecolda −10 %: <b>'+(b?cop(b):'—')+'</b> → valor a garantizar <b>'+cop(q.garantizar)+'</b>'+(q.propia?' · cubre el 80 %: <b>'+cop(q.cubre)+'</b>':''))+'<br>'+
       '<b>Opción 1</b> (hurto o pérdida total): '+resumenOp(q.op1,q.plazo)+'<br><b>Opción 2</b> (+ RC + asistencias): '+resumenOp(q.op2,q.plazo)+(q.propia?'':'<br><i>Valores escritos a mano para '+esc(q.aseguradora)+'.</i>');
     if(!cur.editado) $('pmcr_txt').value = mensaje(q);
   }
@@ -202,7 +228,7 @@
   function hacerDoc(tipo){
     var q = leer();
     if(!q.nombre){ setSt('Falta el nombre.','mal'); return; }
-    if(!(q.garantizar>0)){ setSt('Escribe la factura y/o el valor de Fasecolda antes.','mal'); return; }
+    if(!q.listo){ setSt('Escribe la factura y/o el valor de Fasecolda antes.','mal'); return; }
     if(!(q.op1.contado>0) || !(q.op2.contado>0)){ setSt('Faltan los valores de contado de las dos opciones.','mal'); return; }
     var d1 = datosDoc(q);
     if(tipo==='pdf'){
@@ -219,11 +245,11 @@
   function guardar(silencioso){
     var q = leer();
     if(!q.nombre) { setSt('Falta el nombre.','mal'); return Promise.reject(); }
-    if(!(q.garantizar>0)){ setSt('Escribe la factura y/o el valor de Fasecolda antes de guardar.','mal'); return Promise.reject(); }
+    if(!q.listo){ setSt('Escribe la factura y/o el valor de Fasecolda antes de guardar.','mal'); return Promise.reject(); }
     if(!(q.op1.contado>0) || !(q.op2.contado>0)){ setSt('Faltan los valores de contado de las dos opciones.','mal'); return Promise.reject(); }
     if(cur.guardada){ setSt('Esta cotización ya quedó guardada ('+cur.guardada+').','bien'); return Promise.resolve(cur.guardada); }
     setSt('Guardando…'); $('pmcr_gua').disabled = true;
-    var obs = 'Cotizado con '+q.aseguradora+' · Op.1 hurto/pérdida total: contado '+cop(q.op1.contado)+' / '+q.plazo+' cuotas, total '+cop(q.op1.total)+' · Op.2 (+RC +asistencias): contado '+cop(q.op2.contado)+' / '+q.plazo+' cuotas, total '+cop(q.op2.total);
+    var obs = 'Cotizado con '+q.aseguradora+(q.usaFijo?' · PRECIO FIJO '+q.fijoDef.palabra.toUpperCase():'')+' · Op.1 hurto/pérdida total: contado '+cop(q.op1.contado)+' / '+q.plazo+' cuotas, total '+cop(q.op1.total)+' · Op.2 (+RC +asistencias): contado '+cop(q.op2.contado)+' / '+q.plazo+' cuotas, total '+cop(q.op2.total);
     return llamar({action:'cotRen_guardar', nombre:q.nombre, cedula:q.cedula, placa:q.placa, moto:q.moto, factura:q.factura, fasecolda:q.fasecolda,
       contado:q.contado, financiado:q.financiado, plazo:q.plazo, contrato:q.contrato, obs:obs}).then(function(r){
       cur.guardada = r.id; setSt('Cotización guardada: '+r.id+' (estado Pendiente).','bien');
@@ -240,7 +266,7 @@
   }
   function abrirWA(){
     var q = leer();
-    if(!(q.garantizar>0)){ setSt('Primero escribe la factura y el valor de Fasecolda.','mal'); return; }
+    if(!q.listo){ setSt('Primero escribe la factura y el valor de Fasecolda.','mal'); return; }
     if(!(q.op1.contado>0) || !(q.op2.contado>0)){ setSt('Faltan los valores de contado de las dos opciones.','mal'); return; }
     var cel = cur.celular || cur.c.celular;
     if(!w.confirm('¿Abrir WhatsApp con el mensaje para '+q.nombre+'?\n\nEl mensaje NO se envía solo: tú lo revisas, adjuntas el PDF o la imagen y le das enviar. Si la cotización no está guardada, se guardará ahora como Pendiente.')) return;
