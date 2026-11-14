@@ -9,7 +9,7 @@
   /* ---- Coberturas por defecto (se pueden editar en el formulario y quedan guardadas en el navegador) ---- */
   var RC_PM = ['Daños a bienes de terceros','Lesiones o muerte a 1 persona','Lesiones o muerte a 2 o más personas','Amparo patrimonial','Muerte accidental (para el conductor)','Asistencia jurídica en proceso penal','Asistencia jurídica en proceso civil','Gastos médicos (hasta 4 eventos)'];
   var AP_PM = ['Muerte accidental: $5.000.000','Incapacidad total por accidente: $5.000.000','Auxilio por pérdida de documentos: $100.000','Grúa por accidente: $300.000','Paso de corriente: $50.000','Suministro de combustible: $50.000','Despinche (llanta sellomática): $50.000'];
-  var BASE_PM = ['Pérdida total por hurto','Pérdida total por daños','Cubre el 80 % del valor de la moto'];
+  var BASE_PM = ['Pérdida total por hurto','Pérdida total por daños','Cubre el 80 % del valor de la moto: {V80}'];
   var SURA = ['Responsabilidad Civil Extracontractual (límite global): $840.000.000','Deducible pérdida total por daños: 10 %, mínimo 0 SMMLV','Deducible pérdida parcial por daños: deducible único 0,5 SMMLV','Deducible pérdida total por hurto: 10 %, mínimo 0 SMMLV','Deducible pérdida parcial por hurto: deducible único 0,5 SMMLV','Deducible ante eventos de la naturaleza (temblor, terremoto): deducible único 0,5 SMMLV','Amparo patrimonial: sí cubre','Asistencia jurídica en procesos penales y civiles: sí cubre','Asistencia en viaje: asistencia de motos'];
   var DEFECTO = {
     'Protect Motos': { op1: BASE_PM, op2: BASE_PM.concat(['— Responsabilidad civil —']).concat(RC_PM).concat(['— Asistencias —']).concat(AP_PM) },
@@ -52,6 +52,7 @@
     '.pre>div{border-radius:16px;padding:10px 14px}',
     '.pre>div:first-child{background:#ffc928;color:#0b2a6b} .pre>div:last-child{background:#e3f2fd;color:#0b2a6b}',
     '.pre span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:800;opacity:.85} .pre b{display:block;font-size:26px;line-height:1.1;margin:3px 0;font-weight:900} .pre small{display:block;font-size:12px;opacity:.9}',
+    '.vcub{margin:6px 14px 4px;background:#0b2a6b;color:#fff;border-radius:16px;padding:9px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px} .vcub span{font-size:11px;text-transform:uppercase;letter-spacing:.4px;opacity:.9} .vcub b{font-size:19px;color:#ffd54a} .vcub i{font-style:normal;font-size:20px;color:#ffc928}',
     '.cob{padding:8px 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}',
     '.cob div{display:flex;gap:9px;align-items:center;font-size:12.5px;background:#eef6ff;border-radius:999px;padding:5px 12px 5px 6px;color:#0b2a6b;min-height:30px} .cob i{flex:0 0 21px;height:21px;border-radius:50%;background:#0b63c9;color:#fff;font-style:normal;font-size:12px;text-align:center;line-height:21px}',
     '.cob div span{line-height:1.25}',
@@ -69,10 +70,11 @@
     if(o.primera !== o.resto) return '<b>'+cop(o.primera)+'</b><small>1ª cuota · luego '+(plazo-1)+' cuotas de '+cop(o.resto)+'</small><small>Total '+cop(o.total)+'</small>';
     return '<b>'+plazo+' × '+cop(o.cuota)+'</b><small>cuotas mensuales</small><small>Total '+cop(o.total)+'</small>';
   }
-  function bloqueCob(lista){
+  function conValores(t, d){ return String(t).replace(/\{V80\}/g, d.cubre?cop(d.cubre):''); }
+  function bloqueCob(lista, d){
     return '<div class="cob">'+lista.map(function(t){
       if(/^—.*—$/.test(t)) return '<div class="sec">'+esc(t.replace(/—/g,'').trim())+'</div>';
-      return '<div><i>✓</i><span>'+esc(t)+'</span></div>'; }).join('')+'</div>';
+      return '<div><i>✓</i><span>'+esc(conValores(t,d)).replace(/:\s*$/,'')+'</span></div>'; }).join('')+'</div>';
   }
 
   /* d: {fecha,id,nombre,placa,moto,aseguradora,plazo,garantizar,cubre,op1:{contado,primera,resto,cuota,total},op2:{...},cob1:[],cob2:[],nota} */
@@ -80,9 +82,10 @@
     var logo = w.PM_LOGO || '';
     var fecha = d.fecha || new Date().toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'});
     var op = function(n, titulo, sub, o, cob){
+      var banner = (d.aseguradora==='Protect Motos' && d.cubre) ? '<div class="vcub"><span>Valor garantizado de la moto</span><b>'+cop(d.garantizar)+'</b><i>→</i><span>La póliza cubre el 80 %</span><b>'+cop(d.cubre)+'</b></div>' : '';
       return '<div class="op"><h3>OPCIÓN '+n+' · '+esc(titulo)+(sub?'<small>'+esc(sub)+'</small>':'')+'</h3>'+
         '<div class="pre"><div><span>De contado</span><b>'+cop(o.contado)+'</b><small>Un solo pago</small></div>'+
-        '<div><span>Financiado a '+d.plazo+' meses</span>'+celdaFin(o, d.plazo)+'</div></div>'+bloqueCob(cob)+'</div>';
+        '<div><span>Financiado a '+d.plazo+' meses</span>'+celdaFin(o, d.plazo)+'</div></div>'+banner+bloqueCob(cob, d)+'</div>';
     };
     var pill = function(ico, etq, val){ return '<div class="pill"><i>'+ico+'</i><div><span>'+etq+'</span><b>'+esc(val||'—')+'</b></div></div>'; };
     return '<div class="doc">'+

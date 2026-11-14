@@ -82,7 +82,7 @@
       'Queremos ayudarte a renovar la garantía de tu moto '+(q.moto?(q.moto+' '):'')+'de placa '+q.placa+(q.aseguradora&&q.aseguradora!=='Protect Motos'?' con '+q.aseguradora:'')+'.\n\n'+
       '🧾 Valor de tu factura anterior: '+cop(q.factura)+'\n'+
       '📈 Valor comercial actual de tu moto: '+cop(q.fasecolda)+'\n\n'+
-      '💛 *Opción 1 · Hurto o pérdida total'+(q.aseguradora==='Protect Motos'?' (cubre el 80 %)':'')+'*\n'+
+      '💛 *Opción 1 · Hurto o pérdida total'+(q.aseguradora==='Protect Motos'?' (cubre el 80 %: '+cop(q.cubre)+')':'')+'*\n'+
       '• De contado: '+cop(q.op1.contado)+'\n'+
       '• Financiado a '+q.plazo+' meses: '+lineaFin(q.op1,q.plazo)+'\n\n'+
       '💙 *Opción 2 · Hurto / pérdida total + responsabilidad civil + asistencias*\n'+
@@ -197,7 +197,7 @@
   }
   function datosDoc(q){
     return { id:cur.guardada||'', nombre:q.nombre, placa:q.placa, moto:q.moto, aseguradora:q.aseguradora, plazo:q.plazo, garantizar:q.garantizar,
-      op1:q.op1, op2:q.op2, cob1:lineasCob('pmcr_cb1'), cob2:lineasCob('pmcr_cb2') };
+      op1:q.op1, op2:q.op2, cubre:q.cubre, cob1:lineasCob('pmcr_cb1'), cob2:lineasCob('pmcr_cb2') };
   }
   function hacerDoc(tipo){
     var q = leer();
