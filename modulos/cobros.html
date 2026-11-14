@@ -493,6 +493,7 @@
       <label>Valor pagado</label>
       <input type="number" id="pagoValor" min="1" step="1">
       <span class="sub" id="pagoValorAyuda" style="display:block;margin-top:4px;"></span>
+      <div id="pagoAviso" style="display:none;margin-top:8px;padding:9px 11px;border-radius:8px;font-size:.84rem;font-weight:600;line-height:1.4;"></div>
     </div>
     <div class="campo-form">
       <label>Fecha de pago</label>
@@ -1698,6 +1699,8 @@
     document.getElementById('pagoCuota').value = info && info.cuotaPendiente ? info.cuotaPendiente.numero : '';
     document.getElementById('pagoValor').value = c.valorCuota || '';
     document.getElementById('pagoValorAyuda').textContent = '';
+    pagoValorEscrito = false;
+    actualizarAvisoPago();
     document.getElementById('pagoFecha').value = formatoFechaInput(new Date());
     document.getElementById('pagoNota').value = '';
     notaEsAutomatica = true;
@@ -1768,6 +1771,35 @@
       : '';
   }
   document.getElementById('pagoCuota').addEventListener('input', actualizarValorSugeridoPago);
+
+  // Aviso (solo informativo) de si lo consignado coincide con lo que debía pagar: no bloquea el guardado.
+  // Esperado = valor de la cuota × número de cuotas escritas (1 si no hay).  Se toleran $1.000 por redondeos.
+  var TOLERANCIA_PAGO = 1000, pagoValorEscrito = false;
+  function actualizarAvisoPago(){
+    var caja = document.getElementById('pagoAviso');
+    if(!caja) return;
+    if(!contratoEnPago || !contratoEnPago.valorCuota){ caja.style.display='none'; return; }
+    var n = extraerNumerosCuota(document.getElementById('pagoCuota').value.trim()).length || 1;
+    var esperado = n * contratoEnPago.valorCuota;
+    var texto = document.getElementById('pagoValor').value;
+    var pagado = Number(texto);
+    var cuotaTxt = formatoDinero(esperado) + (n>1 ? ' ('+n+' cuotas)' : '');
+    var bg, color, msg;
+    if(texto==='' || !(pagado>0)){
+      bg='#eaf1fd'; color='#2563eb'; msg='ℹ️ Debe pagar '+cuotaTxt+'. Escribe el valor consignado para compararlo.';
+    } else if(!pagoValorEscrito){
+      bg='#eaf1fd'; color='#2563eb'; msg='ℹ️ Debe pagar '+cuotaTxt+' (ya está puesto como sugerencia). Si el cliente consignó otro valor, escríbelo arriba y te aviso si pagó de más o de menos.';
+    } else if(Math.abs(pagado-esperado) <= TOLERANCIA_PAGO){
+      bg='#e3f6ea'; color='#0b6b2b'; msg='✅ Pagó bien: '+formatoDinero(pagado)+' = lo que debía pagar ('+cuotaTxt+').';
+    } else if(pagado < esperado){
+      bg='#fad4d4'; color='#9b1c1c'; msg='⚠️ Pagó de menos: consignó '+formatoDinero(pagado)+' y debía pagar '+cuotaTxt+'. Le faltan '+formatoDinero(esperado-pagado)+'.';
+    } else {
+      bg='#fff3c4'; color='#7a5b00'; msg='⚠️ Pagó de más: consignó '+formatoDinero(pagado)+' y debía pagar '+cuotaTxt+'. Sobran '+formatoDinero(pagado-esperado)+'.';
+    }
+    caja.style.display='block'; caja.style.background=bg; caja.style.color=color; caja.textContent=msg;
+  }
+  document.getElementById('pagoCuota').addEventListener('input', actualizarAvisoPago);
+  document.getElementById('pagoValor').addEventListener('input', function(){ pagoValorEscrito = true; actualizarAvisoPago(); });
 
   document.getElementById('btnCancelarPago').addEventListener('click', cerrarModalPago);
 
