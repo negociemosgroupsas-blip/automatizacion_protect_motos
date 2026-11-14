@@ -587,7 +587,7 @@
     <div class="in-kpis" id="inKpis"></div>
     <section class="card gxc" id="gxWrap" data-sec="gerencia" hidden><h3>📋 Resumen gerencial</h3><p class="tot" id="gxSub"></p><div class="gx-grid" id="gxGrid"></div><h4 class="gx-h">⚠️ Atención requerida</h4><div class="gx-at" id="gxAt"></div></section>
     <section class="card fnx" id="fnWrap" data-sec="gerencia" hidden><h3>🏁 Contratos terminados: finalizados vs cancelados</h3><p class="tot" id="fnSub"></p><div class="ed-per"><label>Año en que terminó <select id="fnAnio"></select></label> <label>Tipo de venta <select id="fnForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="fnAses"></select></label></div><div class="fn-w"><div class="fn-d" id="fnDon"></div><div class="fn-y" id="fnCols"></div></div><div class="fn-l"><span><i style="background:#5b78c7"></i>Finalizados (siempre pagó)</span><span><i style="background:#d64545"></i>Cancelados (dejó de pagar)</span><span>% sobre cada columna = finalizados ÷ terminados · columnas por año en que terminó el contrato</span></div></section>
-    <section class="card bkx" id="bkWrap" data-sec="gerencia" hidden><h3>🏦 Dinero que entra al banco por consignaciones</h3><p class="tot" id="bkSub"></p><div class="ed-per"><label>Año <select id="bkAnio"></select></label></div><div class="bk-k" id="bkK"></div><div class="bk-g" id="bkG"></div><p class="tot" style="margin:8px 0 0">Suma de todo lo que entró a la hoja del banco (incluye consignaciones sin comprobante). No cuenta intereses, valores menores a $1.000 ni las descripciones que usted excluyó en «Verificación bancaria».</p></section>
+    <section class="card bkx" id="bkWrap" data-sec="gerencia" hidden><h3>🏦 Dinero que entra al banco por consignaciones</h3><p class="tot" id="bkSub"></p><div class="ed-per"><label>Año <select id="bkAnio"></select></label> <label>Mes <select id="bkMes"><option value="">Todos los meses</option><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></label></div><div class="bk-k" id="bkK"></div><div class="bk-g" id="bkG"></div><p class="tot" style="margin:8px 0 0">Suma de todo lo que entró a la hoja del banco (incluye consignaciones sin comprobante). No cuenta intereses, valores menores a $1.000 ni las descripciones que usted excluyó en «Verificación bancaria».</p></section>
     <div class="in-sec" id="sec-ventas" data-sec="ventas" style="order:4"><i></i>Ventas y contratos<em>▾</em></div>
     <div class="in-sec" id="sec-clientes" data-sec="clientes" style="order:8"><i></i>Clientes y seguros<em>▾</em></div>
     <div class="in-sec" id="sec-conc" data-sec="conc" style="order:13"><i></i>Conciliación de pagos<em>▾</em></div>
@@ -1423,16 +1423,16 @@
   window.pintarFin=pintarFin;
   [['fnAnio','a'],['fnForma','f'],['fnAses','s']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.addEventListener('change',function(){FNF[x[1]]=this.value;pintarFin()})});
   /* ===== Dinero que entra al banco (lee la hoja del banco con el conector, como Verificación bancaria) ===== */
-  var BK={filas:null,anio:'',t:0,carg:false};
+  var BK={filas:null,anio:'',mes:'',t:0,carg:false};
   function bkNorm(t){return String(t==null?'':t).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
   function bkNum(v){if(typeof v==='number')return v;var t=String(v==null?'':v).replace(/[$\s]/g,'');if(!t)return null;if(/,\d{1,2}$/.test(t))t=t.replace(/\./g,'').replace(',','.');else t=t.replace(/[.,](?=\d{3}(\D|$))/g,'');var n=parseFloat(t);return isNaN(n)?null:n}
-  function bkFecha(v){var t=String(v==null?'':v).trim(),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(t);if(m)return{y:+m[1],m:+m[2]};m=/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/.exec(t);return m?{y:+m[3],m:+m[2]}:null}
+  function bkFecha(v){var t=String(v==null?'':v).trim(),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(t);if(m)return{y:+m[1],m:+m[2],d:+m[3]};m=/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/.exec(t);return m?{y:+m[3],m:+m[2],d:+m[1]}:null}
   function bkMovs(A){
     var hi=-1,fc=-1,vc=-1,dc=-1;
     for(var i=0;i<Math.min(A.length,60)&&hi<0;i++){var H=(A[i]||[]).map(bkNorm),f=-1,v=-1;H.forEach(function(h,j){if(f<0&&/^fecha|date/.test(h))f=j;if(v<0&&/^valor|^monto|^importe|^cr[eé]dito|^abono|^ingres|^deposito/.test(h))v=j});if(f>=0&&v>=0){hi=i;fc=f;vc=v;H.forEach(function(h,j){if(dc<0&&/descrip|detalle|concepto|transacci|movimiento|observ/.test(h)&&j!==f)dc=j})}}
     if(hi<0)return null;var ex={};try{(JSON.parse(localStorage.getItem('pm_banco_excl')||'[]')).forEach(function(k){ex[k]=1})}catch(e){}
     var out=[];for(var k=hi+1;k<A.length;k++){var w=A[k]||[],f=bkFecha(w[fc]),v=bkNum(w[vc]);if(!f||v===null||v<1000)continue;
-      var d=dc>=0?String(w[dc]||''):'',kk=bkNorm(d).replace(/[0-9]+/g,' ').replace(/\s+/g,' ').trim()||'(sin descripcion)';if(/interes/.test(bkNorm(d))||ex[kk])continue;out.push({y:f.y,m:f.m,v:Math.round(v)})}
+      var d=dc>=0?String(w[dc]||''):'',kk=bkNorm(d).replace(/[0-9]+/g,' ').replace(/\s+/g,' ').trim()||'(sin descripcion)';if(/interes/.test(bkNorm(d))||ex[kk])continue;out.push({y:f.y,m:f.m,d:f.d,v:Math.round(v)})}
     return out;
   }
   function pintarBanco(){
@@ -1441,12 +1441,18 @@
     var ys={};D.forEach(function(d){ys[d.y]=1});var yl=Object.keys(ys).sort().reverse(),sa=document.getElementById('bkAnio'),hoy=new Date();
     if(!ys[BK.anio])BK.anio=ys[hoy.getFullYear()]?String(hoy.getFullYear()):yl[0];
     sa.innerHTML=yl.map(function(y){return '<option>'+y+'</option>'}).join('');sa.value=BK.anio;
-    var tot=0;D.forEach(function(d){tot+=d.v});var yv=0,mv=0;D.forEach(function(d){if(String(d.y)===BK.anio){yv+=d.v;if(d.m===hoy.getMonth()+1&&d.y===hoy.getFullYear())mv+=d.v}});
-    var MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],pm=[];for(var i=0;i<12;i++)pm.push(0);D.forEach(function(d){if(String(d.y)===BK.anio)pm[d.m-1]+=d.v});var mx=Math.max.apply(null,pm.concat([1]));
-    document.getElementById('bkSub').textContent='Total que ha entrado según la hoja del banco · '+D.length+' consignaciones en el historial.';
-    document.getElementById('bkK').innerHTML='<div><span>Total histórico</span><b>'+cop(tot)+'</b><small>todo lo que ha entrado</small></div><div><span>Año '+BK.anio+'</span><b>'+cop(yv)+'</b><small>acumulado del año</small></div><div><span>'+(String(hoy.getFullYear())===BK.anio?'Este mes':'Mes actual')+'</span><b>'+cop(String(hoy.getFullYear())===BK.anio?mv:0)+'</b><small>'+MES[hoy.getMonth()]+' '+hoy.getFullYear()+'</small></div>';
-    document.getElementById('bkG').innerHTML=pm.map(function(v,i){var h=v?Math.max(4,Math.round(v/mx*150)):0;return '<div class="bk-c'+(String(hoy.getFullYear())===BK.anio&&i===hoy.getMonth()?' act':'')+'" title="'+MES[i]+' '+BK.anio+': '+cop(v)+'"><b>'+(v?mm(v):'')+'</b><i style="height:'+h+'px"></i><span>'+MES[i]+'</span></div>'}).join('');
+    var MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],MESL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    var sm=document.getElementById('bkMes');sm.value=BK.mes;var MS=BK.mes?+BK.mes:0,esAct=String(hoy.getFullYear())===BK.anio;
+    var tot=0,yv=0,mv=0,mn=0,yn=0;D.forEach(function(d){tot+=d.v;if(String(d.y)===BK.anio){yv+=d.v;yn++;if(MS&&d.m===MS){mv+=d.v;mn++}}});
+    var pm=[],n,i;
+    if(MS){n=new Date(+BK.anio,MS,0).getDate();for(i=0;i<n;i++)pm.push(0);D.forEach(function(d){if(String(d.y)===BK.anio&&d.m===MS&&d.d>=1&&d.d<=n)pm[d.d-1]+=d.v})}
+    else{for(i=0;i<12;i++)pm.push(0);D.forEach(function(d){if(String(d.y)===BK.anio)pm[d.m-1]+=d.v})}
+    var mx=Math.max.apply(null,pm.concat([1]));
+    document.getElementById('bkSub').textContent='Total que ha entrado según la hoja del banco · '+D.length+' consignaciones en el historial'+(MS?' · viendo '+MESL[MS-1]+' de '+BK.anio+' día por día':' · viendo '+BK.anio+' mes por mes')+'.';
+    document.getElementById('bkK').innerHTML='<div><span>Total histórico</span><b>'+cop(tot)+'</b><small>todo lo que ha entrado</small></div><div><span>Año '+BK.anio+'</span><b>'+cop(yv)+'</b><small>'+yn+' consignación(es) en el año</small></div>'+(MS?'<div><span>'+MESL[MS-1].charAt(0).toUpperCase()+MESL[MS-1].slice(1)+' '+BK.anio+'</span><b>'+cop(mv)+'</b><small>'+mn+' consignación(es) en el mes</small></div>':'<div><span>'+(esAct?'Este mes':'Mes actual')+'</span><b>'+cop(esAct?D.filter(function(d){return d.y===hoy.getFullYear()&&d.m===hoy.getMonth()+1}).reduce(function(a,d){return a+d.v},0):0)+'</b><small>'+MES[hoy.getMonth()]+' '+hoy.getFullYear()+'</small></div>');
+    document.getElementById('bkG').innerHTML=pm.map(function(v,i){var h=v?Math.max(4,Math.round(v/mx*150)):0,act=esAct&&(MS?(MS===hoy.getMonth()+1&&i+1===hoy.getDate()):i===hoy.getMonth()),et=MS?String(i+1):MES[i];return '<div class="bk-c'+(act?' act':'')+'" title="'+(MS?(i+1)+' de '+MESL[MS-1]:MES[i])+' '+BK.anio+': '+cop(v)+'"><b>'+(v?mm(v):'')+'</b><i style="height:'+h+'px"></i><span>'+et+'</span></div>'}).join('');
   }
+  document.getElementById('bkMes').addEventListener('change',function(){BK.mes=this.value;pintarBanco()});
   document.getElementById('bkAnio').addEventListener('change',function(){BK.anio=this.value;pintarBanco()});
   function cargarBanco(){
     var c=rnUrl();if(!c||BK.carg||Date.now()-BK.t<50000)return;BK.carg=true;BK.t=Date.now();
