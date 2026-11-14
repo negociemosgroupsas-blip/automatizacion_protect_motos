@@ -1098,7 +1098,7 @@ function accionBancoLeer(p) {
   var id = String(p.sheetId || '').trim();
   if (!/^[A-Za-z0-9_-]{20,}$/.test(id)) return { ok: false, error: 'Falta el enlace o el ID de la hoja del banco, o no es válido.' };
   var ss;
-  try { ss = SpreadsheetApp.openById(id); } catch (e) { return { ok: false, error: 'No pude abrir la hoja del banco. Revise el enlace y que esté en la misma cuenta de Google donde publicó el script (o compartida con ella).' }; }
+  try { ss = SpreadsheetApp.openById(id); } catch (e) { return { ok: false, error: 'No pude abrir la hoja del banco. Revise el enlace y que esté en la misma cuenta de Google donde publicó el script. Si junto al nombre del archivo en Google dice «.XLSX», es un Excel y no una hoja de Google: ábralo y use Archivo → Guardar como hoja de cálculo de Google, y pegue el enlace de la copia nueva.' }; }
   var nombreHoja = String(p.hoja || '').trim();
   var hoja = nombreHoja ? ss.getSheetByName(nombreHoja) : ss.getSheets()[0];
   var pestanas = ss.getSheets().map(function (x) { return x.getName(); });

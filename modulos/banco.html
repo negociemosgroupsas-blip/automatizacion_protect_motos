@@ -41,11 +41,11 @@
 
   <section class="panel nop" id="pHoja">
     <h2>1. Hoja del banco en Google Sheets</h2>
-    <p class="sub">Pegue una sola vez el enlace de la hoja donde guarda los movimientos del banco. Desde ahí el sistema la lee solo, como lee la hoja Protect: no tiene que descargar ni subir nada. (La hoja debe estar en la misma cuenta de Google donde publicó el script.)</p>
+    <p class="sub">Pegue una sola vez el enlace de la hoja donde guarda los movimientos del banco. Desde ahí el sistema la lee solo, como lee la hoja Protect: no tiene que descargar ni subir nada. (La hoja debe estar en la misma cuenta de Google donde publicó el script. <b>Si junto al nombre del archivo en Google dice «.XLSX», es un Excel:</b> ábralo y use <i>Archivo → Guardar como hoja de cálculo de Google</i>, y pegue el enlace de la copia nueva.)</p>
     <div class="fil"><label style="flex:1;min-width:320px">Enlace de la hoja del banco<input type="text" id="bkLink" placeholder="https://docs.google.com/spreadsheets/d/…/edit" style="border:1px solid var(--borde);border-radius:8px;padding:8px 11px;font-size:.92rem;width:100%"></label>
       <label>Pestaña (opcional)<input type="text" id="bkTab" placeholder="la primera" style="border:1px solid var(--borde);border-radius:8px;padding:8px 11px;font-size:.92rem;width:160px"></label>
       <label>Mirar los últimos<select id="per"><option value="7">7 días</option><option value="15" selected>15 días</option><option value="30">30 días</option><option value="90">90 días</option><option value="0">Todo el historial</option></select></label>
-      <button class="btn v" id="bLeer" type="button">Guardar y leer el banco</button></div>
+      <label style="flex-direction:row;align-items:center;gap:6px;padding-bottom:9px"><input type="checkbox" id="ign" checked> Ignorar intereses y valores menores a $1.000</label><button class="btn v" id="bLeer" type="button">Guardar y leer el banco</button></div>
     <p class="estado" id="estBanco" style="margin:10px 0 0"></p>
   </section>
 
@@ -93,6 +93,9 @@
     if((m=/^(\d{4})(\d{2})(\d{2})$/.exec(t)))return m[1]+'-'+m[2]+'-'+m[3];
     return null;
   }
+  var STOP={de:1,del:1,la:1,las:1,los:1,y:1,e:1};
+  function toks(n){return norm(n).replace(/[^a-z0-9 ]/g,' ').split(' ').filter(function(x){return x.length>1&&!STOP[x]})}
+  function simil(a,b){var A=toks(a),B=toks(b);if(!A.length||!B.length)return 0;var c=0;A.forEach(function(x){if(B.indexOf(x)>=0)c++});return c/Math.min(A.length,B.length)}
   function dif(a,b){return Math.round((new Date(a)-new Date(b))/86400000)}
   function bonita(iso){var p=String(iso||'').split('-');return p.length===3?(+p[2])+'/'+(+p[1])+'/'+p[0]:''}
 
@@ -179,6 +182,7 @@
     if(!best)throw new Error('No encontré la tabla del banco. Busco una fila de títulos con «Fecha» y una columna de valor (Valor, Monto, Crédito, Abono…).');
     var H=best.H,A=best.A,hi=best.hi;
     var dc=-1;H.forEach(function(h,j){if(dc<0&&/descrip|detalle|concepto|transacci|movimiento|observ/.test(h)&&j!==best.fc)dc=j});
+    var ac=-1;H.forEach(function(h,j){if(ac<0&&/^nombre del cliente|^cliente|^nombre$|^titular/.test(h)&&j!==best.fc&&j!==dc)ac=j});
     var creditoCol=-1,debitoCol=-1,valorCol=-1;
     best.vc.forEach(function(j){var h=H[j];if(/cr[eé]dito|abono|ingres|deposito/.test(h)&&creditoCol<0)creditoCol=j;else if(/d[eé]bito|egres|cargo|retiro/.test(h)&&debitoCol<0)debitoCol=j;else if(valorCol<0)valorCol=j});
     var movs=[];
@@ -190,10 +194,10 @@
       var entra=v!==null&&v>0;
       var anyVal=(valorCol>=0&&num(w[valorCol])!==null)||(creditoCol>=0&&num(w[creditoCol])!==null)||(debitoCol>=0&&num(w[debitoCol])!==null);
       if(!anyVal)continue;
-      movs.push({n:k+1,fecha:f,desc:dc>=0?String(w[dc]||'').replace(/\s+/g,' ').trim():'',valor:entra?Math.round(v):null,fila:w,entra:entra});
+      var descr=dc>=0?String(w[dc]||'').replace(/\s+/g,' ').trim():'';movs.push({n:k+1,fecha:f,desc:descr,valor:entra?Math.round(v):null,fila:w,entra:entra,anot:ac>=0?String(w[ac]==null?'':w[ac]).replace(/\s+/g,' ').trim():'',ign:entra&&(v<1000||/interes/.test(norm(descr)))});
     }
     if(!movs.length)throw new Error('La tabla del banco no tiene movimientos con fecha y valor.');
-    return {nombre:nombre,hoja:best.hoja,encabezado:A[hi],hi:hi,movs:movs,fc:best.fc,dc:dc};
+    return {nombre:nombre,hoja:best.hoja,encabezado:A[hi],hi:hi,movs:movs,fc:best.fc,dc:dc,ac:ac};
   }
 
   /* ---------- cruce: fecha + valor ---------- */
@@ -207,8 +211,10 @@
     ARCH.desde=desde;ARCH.f0=(desde&&desde>minTodos)?desde:minTodos;
     var tol=Number($('tol').value);PAGOS.forEach(function(p){p.usado=false});
     var porClave={};PAGOS.forEach(function(p){(porClave[p.fecha+'|'+p.valor]=porClave[p.fecha+'|'+p.valor]||[]).push(p)});
-    var movsIn=ARCH.movs.filter(function(m){return m.entra});
-    movsIn.forEach(function(m){m.est='sin';m.cli='';m.det='';m.obs=[];m.ps=[]});
+    var usarIgn=$('ign').checked;
+    ARCH.movs.forEach(function(m){m.est='';m.cli='';m.det='';m.obs=[];m.ps=[]});
+    var movsIn=ARCH.movs.filter(function(m){return m.entra&&!(usarIgn&&m.ign)});
+    movsIn.forEach(function(m){m.est='sin'});
     /* 1) misma fecha y mismo valor */
     var grupos={};movsIn.forEach(function(m){(grupos[m.fecha+'|'+m.valor]=grupos[m.fecha+'|'+m.valor]||[]).push(m)});
     Object.keys(grupos).forEach(function(k){
@@ -225,7 +231,19 @@
       if(mejores.length===1){var p=mejores[0];p.usado=true;m.est='cer';m.ps=[p];m.cli=p.cliente;m.det=[p.contrato,p.cuota?'cuota '+p.cuota:''].filter(Boolean).join(' · ');m.obs.push('El pago está registrado el '+bonita(p.fecha)+' y el banco lo muestra el '+bonita(m.fecha)+' ('+d0+' día'+(d0>1?'s':'')+' de diferencia). Confirme que es el mismo.')}
       else{mejores.forEach(function(p){p.usado=true});m.est='dud';m.ps=mejores;m.cli=mejores.map(function(p){return p.cliente}).join(' / ');m.det=mejores.map(function(p){return p.contrato}).join(' / ');m.obs.push('Varios pagos del mismo valor con fecha cercana: confirme de quién es.')}
     });
-    ARCH.movs.forEach(function(m){if(!m.entra){m.est='sal';m.cli='';m.obs=[]}});
+    /* nombre que usted ya escribió al frente del movimiento */
+    movsIn.forEach(function(m){
+      if(!m.anot)return;
+      if(m.est==='ok'||m.est==='cer'){
+        if(simil(m.anot,m.cli)<0.5){m.est='dud';m.obs.push('Su hoja ya dice «'+m.anot+'», pero el pago registrado con esta fecha y valor es de «'+m.cli+'». Revise cuál es.')}
+        else{m.est='ya';m.cli=m.anot;m.obs=['Ya anotado y coincide con el pago registrado ('+(m.ps[0]?m.ps[0].cliente:'')+').']}
+      }else if(m.est==='dud'){
+        var hit=m.ps.filter(function(p){return simil(m.anot,p.cliente)>=0.5})[0];
+        if(hit){m.est='ya';m.cli=m.anot;m.obs=['Ya anotado; coincide con un pago registrado de '+hit.cliente+'.']}
+        else{m.obs.push('Su hoja ya dice «'+m.anot+'», que no coincide con ninguno de esos pagos.')}
+      }else{m.est='ya';m.cli=m.anot;m.obs=['Ya tiene el nombre escrito en su hoja; no hay un pago registrado con esta fecha y valor en la hoja Pagos (si es reciente, revise que esté registrado).']}
+    });
+    ARCH.movs.forEach(function(m){if(!m.entra){m.est='sal';m.cli='';m.obs=[]}else if(usarIgn&&m.ign){m.est='ign';m.cli='';m.obs=[]}});
     /* pagos registrados sin movimiento */
     var fechas=ARCH.todos.map(function(m){return m.fecha}).sort(),f0=ARCH.f0,f1=fechas[fechas.length-1],hoy=iso(new Date());
     SIN=PAGOS.filter(function(p){return !p.usado&&p.fecha>=f0}).map(function(p){
@@ -238,49 +256,51 @@
   }
 
   /* ---------- pantalla ---------- */
-  function etq(e){return {ok:'<span class="tag si">✔ Identificado</span>',cer:'<span class="tag sd">≈ Fecha cercana</span>',dud:'<span class="tag sd">? Dudoso</span>',sin:'<span class="tag sn">✖ Sin identificar</span>',sal:'<span class="tag sg">Salida / sin valor de entrada</span>',pen:'<span class="tag sp">⏳ Pendiente de banco</span>',nof:'<span class="tag sn">✖ No aparece en el banco</span>'}[e]||''}
+  function etq(e){return {ok:'<span class="tag si">✔ Identificado</span>',cer:'<span class="tag sd">≈ Fecha cercana</span>',dud:'<span class="tag sd">? Dudoso</span>',sin:'<span class="tag sn">✖ Sin identificar</span>',sal:'<span class="tag sg">Salida / sin valor de entrada</span>',ya:'<span class="tag sp">📝 Ya anotado</span>',ign:'<span class="tag sg">Ignorado</span>',pen:'<span class="tag sp">⏳ Pendiente de banco</span>',nof:'<span class="tag sn">✖ No aparece en el banco</span>'}[e]||''}
   function visible(m){
     if(filtro==='ok'&&m.est!=='ok')return false;
     if(filtro==='dud'&&m.est!=='dud'&&m.est!=='cer')return false;
     if(filtro==='sin'&&m.est!=='sin')return false;
+    if(filtro==='ya'&&m.est!=='ya')return false;
     var q=norm($('busca').value);if(!q)return true;
     return norm([bonita(m.fecha),m.desc,m.valor,m.cli,m.det,(m.obs||[]).join(' ')].join(' ')).indexOf(q)>=0;
   }
   function pintar(){
     $('resultado').style.display='block';
     if(!ARCH.movs.length){$('meta').textContent='No hay movimientos en el período elegido ('+(ARCH.desde?'desde el '+bonita(ARCH.desde):'todo')+'). Cambie «Mirar los últimos» o revise el archivo.';$('tiles').innerHTML='';$('cuerpo').innerHTML='';$('avisos').innerHTML='';$('cuerpoSin').innerHTML='';$('subSin').textContent='';return}
-    var mi=ARCH.movs.filter(function(m){return m.entra}),n=function(e){return mi.filter(function(m){return m.est===e}).length},sm=function(e){return mi.filter(function(m){return m.est===e}).reduce(function(s,m){return s+m.valor},0)};
+    var mi=ARCH.movs.filter(function(m){return m.entra&&m.est!=='ign'}),n=function(e){return mi.filter(function(m){return m.est===e}).length},sm=function(e){return mi.filter(function(m){return m.est===e}).reduce(function(s,m){return s+m.valor},0)};
     var fe=ARCH.movs.map(function(m){return m.fecha}).sort();
     $('meta').innerHTML=(ARCH.origen==='hoja'?'Hoja del banco: ':'Archivo: ')+'<b>'+esc(ARCH.nombre)+'</b>'+(ARCH.recortado?' (hoja muy larga: se leyeron las filas más recientes y las primeras)':'')+' · '+ARCH.movs.length+' movimientos ('+mi.length+' de entrada) del '+bonita(fe[0])+' al '+bonita(fe[fe.length-1])+' · se comparó con '+PAGOS.length+' pagos registrados.';
     var ns=SIN.filter(function(r){return r.est==='nof'}).length,pe=SIN.filter(function(r){return r.est==='pen'}).length,dc=n('dud')+n('cer'),av='';
     if(dc)av+='<div class="aviso">🔎 <b>'+dc+'</b> movimiento(s) piden que usted confirme el cliente (fecha cercana o varios pagos iguales). Use el cuadro «Por confirmar».</div>';
     if(ns)av+='<div class="aviso">⚠️ <b>'+ns+'</b> pago(s) registrado(s) hace varios días <b>no aparecen en el banco</b>. Están al final de la página.</div>';
+    var nig=ARCH.movs.filter(function(m){return m.est==='ign'}).length;if(nig)av+='<div class="aviso" style="background:#eef6ff;border-color:#bcd7f5;border-left-color:#38bdf8">ℹ️ Se ignoraron <b>'+nig+'</b> movimiento(s) de intereses o menores a $1.000 (puede cambiarlo arriba).</div>';
     $('avisos').innerHTML=av;
     var T=function(e,c,l,b,s){return '<div class="t'+(filtro===e&&e!==''?' on':'')+'" data-e="'+e+'" style="--c:'+c+'"><span>'+l+'</span><b>'+b+'</b><small>'+s+'</small></div>'};
     $('tiles').innerHTML=T('','#38bdf8','Movimientos de entrada',mi.length,cop(mi.reduce(function(s,m){return s+m.valor},0))+' en total')+
-      T('ok','#1f9d55','Identificados',n('ok'),cop(sm('ok')))+T('dud','#fdc33e','Por confirmar',dc,'fecha cercana o varios iguales')+T('sin','#dc2626','Sin identificar',n('sin'),cop(sm('sin'))+' sin cliente');
+      T('ok','#1f9d55','Identificados ahora',n('ok'),cop(sm('ok')))+T('dud','#fdc33e','Por confirmar',dc,'fecha cercana o varios iguales')+T('sin','#dc2626','Sin identificar',n('sin'),cop(sm('sin'))+' sin cliente')+T('ya','#5b78c7','Ya anotados',n('ya'),'ya tienen el nombre en su hoja');
     Array.prototype.forEach.call($('tiles').querySelectorAll('.t'),function(t){t.addEventListener('click',function(){filtro=(filtro===t.dataset.e?'':t.dataset.e);pintar()})});
-    var L=ARCH.movs.filter(function(m){return m.entra&&visible(m)});
+    var L=ARCH.movs.filter(function(m){return m.entra&&m.est!=='ign'&&visible(m)}).sort(function(a,b){return a.fecha<b.fecha?1:a.fecha>b.fecha?-1:b.n-a.n});
     $('cuerpo').innerHTML=L.map(function(m){return '<tr><td>'+bonita(m.fecha)+'</td><td>'+esc(m.desc)+'</td><td class="num"><b>'+cop(m.valor)+'</b></td><td class="cli">'+esc(m.cli||'—')+'</td><td>'+esc(m.det||'')+'</td><td>'+etq(m.est)+'</td><td class="obs">'+(m.obs&&m.obs.length?m.obs.map(function(o){return '<div>• '+esc(o)+'</div>'}).join(''):(m.est==='sin'?'<div>• No hay un pago registrado con esa fecha y ese valor.</div>':''))+'</td></tr>'}).join('');
     $('vacio').style.display=L.length?'none':'block';
     $('subSin').textContent=SIN.length?(pe+' pendiente(s) de banco y '+ns+' que no aparecen. Solo se miran los pagos desde '+bonita(fe[0])+'.'):'Todos los pagos registrados en el rango del archivo aparecen en el banco. 🎉';
     $('cuerpoSin').innerHTML=SIN.map(function(r){var p=r.p;return '<tr><td>'+bonita(p.fecha)+'</td><td class="cli">'+esc(p.cliente)+'</td><td>'+esc([p.contrato,p.cuota?'cuota '+p.cuota:''].filter(Boolean).join(' · '))+'</td><td class="num"><b>'+cop(p.valor)+'</b></td><td>'+etq(r.est)+'</td><td class="obs">'+r.obs.map(function(o){return '<div>• '+esc(o)+'</div>'}).join('')+'</td></tr>'}).join('');
   }
   $('busca').addEventListener('input',function(){if(ARCH&&PAGOS)pintar()});
-  $('tol').addEventListener('change',function(){if(ARCH&&PAGOS)cruzar()});
+  $('tol').addEventListener('change',function(){if(ARCH&&PAGOS)cruzar()});$('ign').addEventListener('change',function(){if(ARCH&&PAGOS)cruzar()});
 
   /* ---------- Excel nuevo: el archivo del banco + cliente al frente ---------- */
   $('bXlsx').addEventListener('click',function(){
     if(!ARCH)return;var E=ARCH.encabezado.slice(),ult=E.length;while(ult>0&&(E[ult-1]===''||E[ult-1]==null))ult--;
     var cab=E.slice(0,ult).concat(['Cliente (según Pagos)','Contrato · cuota','Estado de la verificación','Observación']);
-    var ET={ok:'Identificado',cer:'Fecha cercana',dud:'Por confirmar',sin:'Sin identificar',sal:''};
+    var ET={ok:'Identificado',cer:'Fecha cercana',dud:'Por confirmar',sin:'Sin identificar',ya:'Ya anotado',ign:'Ignorado',sal:''};
     var rows=[cab].concat(ARCH.movs.map(function(m){return m.fila.slice(0,ult).map(function(c){return c instanceof Date?bonita(iso(c)):c}).concat([m.cli||'',m.det||'',ET[m.est]||'',(m.obs||[]).join(' | ')])}));
     var wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=cab.map(function(_,i){return {wch:i>=ult?28:18}});XLSX.utils.book_append_sheet(wb,ws,'Movimientos del banco');
     var s2=[['Fecha del pago','Cliente','Contrato','Cuota','Valor','Estado','Observación']].concat(SIN.map(function(r){return [bonita(r.p.fecha),r.p.cliente,r.p.contrato,r.p.cuota,r.p.valor,r.est==='pen'?'Pendiente de banco':'No aparece en el banco',r.obs.join(' | ')]}));
     var w2=XLSX.utils.aoa_to_sheet(s2);w2['!cols']=[14,30,16,10,14,24,90].map(function(w){return {wch:w}});XLSX.utils.book_append_sheet(wb,w2,'Pagos sin movimiento');
-    var mi=ARCH.movs.filter(function(m){return m.entra}),h=iso(new Date());
+    var mi=ARCH.movs.filter(function(m){return m.entra&&m.est!=='ign'}),h=iso(new Date());
     var s3=[['VERIFICACIÓN BANCARIA'],['Archivo',ARCH.nombre],['Fecha',h],['Regla','Se compara la fecha y el valor de cada movimiento de entrada con los pagos registrados en la hoja Pagos.'],[],['Estado','Movimientos','Valor']];
-    ['ok','cer','dud','sin'].forEach(function(e){s3.push([ET[e],mi.filter(function(m){return m.est===e}).length,mi.filter(function(m){return m.est===e}).reduce(function(s,m){return s+m.valor},0)])});
+    ['ok','cer','dud','sin','ya'].forEach(function(e){s3.push([ET[e],mi.filter(function(m){return m.est===e}).length,mi.filter(function(m){return m.est===e}).reduce(function(s,m){return s+m.valor},0)])});
     s3.push(['Pagos que no aparecen en el banco',SIN.filter(function(r){return r.est==='nof'}).length,'']);s3.push(['Pagos pendientes de banco',SIN.filter(function(r){return r.est==='pen'}).length,'']);
     var w3=XLSX.utils.aoa_to_sheet(s3);w3['!cols']=[{wch:38},{wch:60},{wch:16}];XLSX.utils.book_append_sheet(wb,w3,'Resumen');
     var out=XLSX.write(wb,{type:'array',bookType:'xlsx'}),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download='Verificacion_bancaria_'+h+'.xlsx';document.body.appendChild(a);a.click();a.remove();
