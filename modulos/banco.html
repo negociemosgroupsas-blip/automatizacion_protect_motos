@@ -35,7 +35,7 @@
 </style>
 </head>
 <body>
-<header><h1>🏦 Verificación bancaria</h1><p>Sube los movimientos del banco: el sistema los compara con los pagos que registraste en la hoja Pagos (por <b>fecha</b> y <b>valor</b>) y pone al frente el nombre del cliente.</p><p class="noimp" style="font-size:.85rem;opacity:.6;margin-top:6px">Solo lee: no modifica ni el archivo del banco ni la hoja Pagos · versión de la pantalla: <b>BK-14nov-A</b></p></header>
+<header><h1>🏦 Verificación bancaria</h1><p>Sube los movimientos del banco: el sistema los compara con los pagos que registraste en la hoja Pagos (por <b>fecha</b> y <b>valor</b>) y pone al frente el nombre del cliente.</p><p class="noimp" style="font-size:.85rem;opacity:.6;margin-top:6px">Se actualiza sola cada minuto. Solo lee: no modifica ni el archivo del banco ni la hoja Pagos · versión de la pantalla: <b>BK-14nov-A</b></p></header>
 <main>
   <div class="panel nop" style="padding:12px 18px"><div class="fil" style="align-items:center"><button class="btn g" id="bRec" type="button">🔄 Volver a leer la hoja Pagos</button><span class="estado" id="est" style="flex:1">Cargando…</span></div></div>
 
@@ -251,6 +251,15 @@
     $('rsCuerpo').innerHTML=filas.map(function(f){var g=f[1];return'<tr><td><b>'+f[0]+'</b></td><td class="num"><b>'+cop(g.t)+'</b></td><td class="num">'+cop(g.r)+'</td><td class="num">'+cop(g.s)+'</td><td class="num">'+pc(g)+'</td><td class="num">'+g.n+'</td></tr>'}).join('')+'<tr><td><b>Total</b></td><td class="num"><b>'+cop(sel.t)+'</b></td><td class="num">'+cop(sel.r)+'</td><td class="num">'+cop(sel.s)+'</td><td class="num">'+pc(sel)+'</td><td class="num">'+sel.n+'</td></tr>';
   }
   $('rsAnio').addEventListener('change',function(){RS.anio=this.value;pintarResumen()});
+
+  /* actualización automática cada minuto: vuelve a leer la hoja Pagos y la hoja del banco (sin tocar sus filtros) */
+  var AUTO_BANCO=false;
+  setInterval(function(){
+    if(document.hidden||AUTO_BANCO||!PAGOS||!ARCH||ARCH.origen!=='hoja')return;
+    if($('bAnotar')&&$('bAnotar').disabled&&/Escribiendo/.test($('estAnotar').textContent))return;
+    AUTO_BANCO=true;
+    cargar().then(function(){return leerHojaBanco()}).then(function(){AUTO_BANCO=false},function(){AUTO_BANCO=false});
+  },60000);
   /* ---------- lectura del archivo del banco ---------- */
   function leerBanco(buf,nombre){
     var wb=XLSX.read(buf,{type:'array',cellDates:true}),mats=[];
