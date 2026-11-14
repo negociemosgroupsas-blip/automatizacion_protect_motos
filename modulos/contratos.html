@@ -260,6 +260,7 @@ body.print-otrosi #panel-otrosi{display:block !important;}
       <button data-rc="NO">Sin RC</button>
     </div>
     <span class="hint" id="rcHint">Incluye coberturas de responsabilidad civil y el pago a la aseguradora aliada.</span>
+    <button type="button" class="btn" id="btnNuevoContrato" title="Borra todo lo escrito para empezar un contrato nuevo, sin refrescar la página" style="margin-left:auto;background:#c0392b;color:#fff;border-color:#c0392b">🆕 Nuevo contrato (limpiar todo)</button>
   </div>
 
   <div class="grid">
@@ -1340,6 +1341,38 @@ applyForma();
 
 $("hdrLogo").src=LOGO;
 render();
+</script>
+<script>
+/* ===== Nuevo contrato: vuelve todo el formulario a como estaba al abrir, sin refrescar la página ===== */
+(function(){
+  var SNAP=null, RC0='SI';
+  function lista(){ return [].slice.call(document.querySelectorAll('input,select,textarea')).filter(function(e){
+    return e.id && e.id!=="gsUrl" && !/^ref[A-Z]/.test(e.id) && e.type!=="file" && e.type!=="button"; }); }
+  function tomar(){
+    SNAP=lista().map(function(e){ return {e:e, v:e.value, c:e.checked}; });
+    var b=document.querySelector('[data-rc].active'); if(b) RC0=b.getAttribute('data-rc');
+  }
+  window.addEventListener('load',function(){ setTimeout(tomar,1500); });
+  function nuevo(){
+    if(!SNAP) tomar();
+    if(!window.confirm("¿Empezar un contrato nuevo?\n\nSe borra todo lo que está escrito en el formulario (no se toca nada de la hoja de Google ni de lo ya guardado).")) return;
+    SNAP.forEach(function(x){ if(x.e.type==="checkbox"||x.e.type==="radio") x.e.checked=x.c; else x.e.value=x.v; });
+    var rb=document.querySelector('[data-rc="'+RC0+'"]'); if(rb && !rb.classList.contains("active")) rb.click();
+    try{ window.refTouched=false; }catch(e){}
+    /* avisa solo a los campos que tienen cálculos propios (cotizador, plazo, caja); luego un único redibujado */
+    ["estadoMoto","cotRef","valorMoto","forma","plazoSel","valorRC","asistCheck","valorAsist","valorCaja","valorDugo","referencia","marca","linea","fasecolda"].forEach(function(id){
+      var e=document.getElementById(id); if(!e) return;
+      e.dispatchEvent(new Event("input",{bubbles:true})); e.dispatchEvent(new Event("change",{bubbles:true}));
+    });
+    SNAP.forEach(function(x){ if(x.e.type!=="checkbox" && x.e.type!=="radio" && x.e.value!==x.v) x.e.value=x.v; });   // deja cada campo exactamente como al abrir
+    try{ window.refTouched=false; if(typeof render==="function") render(); }catch(e){}
+    ["saveMsg","copyMsg"].forEach(function(i){ var m=document.getElementById(i); if(m){ if(i==="saveMsg") m.textContent=""; else m.style.display="none"; } });
+    var t=document.querySelector('.tabs [data-tab="sheet"]'); if(t) t.click();
+    window.scrollTo(0,0);
+    var f=document.getElementById("valorMoto"); if(f) try{f.focus();}catch(e){}
+  }
+  document.getElementById("btnNuevoContrato").addEventListener("click",nuevo);
+})();
 </script>
 <script>/* Si el navegador reabre el contrato desde su memoria (atrás/adelante), se recarga limpio: nunca queda el contrato anterior */
 window.addEventListener("pageshow",function(e){if(e.persisted)location.reload()});</script>
