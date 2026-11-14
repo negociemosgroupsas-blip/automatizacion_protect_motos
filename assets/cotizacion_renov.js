@@ -80,9 +80,7 @@
   function mensaje(q){
     var m = '¡Hola, '+q.nombre+'! 😊\nTe escribimos de Protect Motos.\n\n'+
       'Queremos ayudarte a renovar la garantía de tu moto '+(q.moto?(q.moto+' '):'')+'de placa '+q.placa+(q.aseguradora&&q.aseguradora!=='Protect Motos'?' con '+q.aseguradora:'')+'.\n\n'+
-      '🧾 Valor de tu factura anterior: '+cop(q.factura)+'\n'+
-      '📈 Valor comercial actual de tu moto: '+cop(q.fasecolda)+'\n\n'+
-      '💛 *Opción 1 · Hurto o pérdida total'+(q.aseguradora==='Protect Motos'?' (cubre el 80 %: '+cop(q.cubre)+')':'')+'*\n'+
+      '💛 *Opción 1 · Hurto o pérdida total'+(q.aseguradora==='Protect Motos'?' (cubre el 80 %)':'')+'*\n'+
       '• De contado: '+cop(q.op1.contado)+'\n'+
       '• Financiado a '+q.plazo+' meses: '+lineaFin(q.op1,q.plazo)+'\n\n'+
       '💙 *Opción 2 · Hurto / pérdida total + responsabilidad civil + asistencias*\n'+

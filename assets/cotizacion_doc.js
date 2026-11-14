@@ -10,7 +10,7 @@
   /* Formato de cada línea: «Texto» = una cobertura simple · «Texto | valor» = cobertura con su valor ·
      «Texto | límite | deducible % | deducible SMMLV» = fila de la tabla de condiciones · «— Título —» = nuevo bloque.
      Marcas: {V80} = lo que cubre el 80 %, {RC} = valor de la RC, {AP} = valor de las asistencias. */
-  var BASE_PM = ['Pérdida total por hurto','Pérdida total por daños','Cubre el 80 % del valor de la moto: {V80}'];
+  var BASE_PM = ['Pérdida total por hurto','Pérdida total por daños','Cubre el 80 % del valor de la moto'];
   var RC_PM = ['— Responsabilidad civil · Condiciones de cobertura —',
     'Amparo patrimonial | Incluido | Sin deducible | Sin deducible',
     'Daños a bienes de terceros | $100.000.000 | 10 % | 1,0 SMMLV',
@@ -119,7 +119,7 @@
     var logo = w.PM_LOGO || '';
     var fecha = d.fecha || new Date().toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'});
     var op = function(n, titulo, sub, o, cob){
-      var banner = (d.aseguradora==='Protect Motos' && d.cubre) ? '<div class="vcub"><span>Valor garantizado de la moto</span><b>'+cop(d.garantizar)+'</b><i>→</i><span>La póliza cubre el 80 %</span><b>'+cop(d.cubre)+'</b></div>' : '';
+      var banner = '';
       return '<div class="op"><h3>OPCIÓN '+n+' · '+esc(titulo)+(sub?'<small>'+esc(sub)+'</small>':'')+'</h3>'+
         '<div class="pre"><div><span>De contado</span><b>'+cop(o.contado)+'</b><small>Un solo pago</small></div>'+
         '<div><span>Financiado a '+d.plazo+' meses</span>'+celdaFin(o, d.plazo)+'</div></div>'+banner+bloqueCob(cob, d)+'</div>';
@@ -131,8 +131,8 @@
       '<div class="marco"><p class="over">RENOVACIÓN</p>'+
       '<div class="titulo"><b>COTIZACIÓN<br>DE GARANTÍA</b><small>Protección para su moto, con las opciones que mejor le convienen</small></div>'+
       '<p class="saludo"><b>'+esc(d.nombre)+'</b>, le damos un cordial saludo. De acuerdo con nuestra conversación, le enviamos la información de la renovación de su moto'+(d.moto?' <b>'+esc(d.moto)+'</b>':'')+'. Encontrará dos opciones, cada una con su valor de contado y financiado a '+d.plazo+' meses.</p>'+
-      '<div class="pills">'+pill('👤','Cliente',d.nombre)+pill('🏍️','Placa',d.placa)+pill('🔧','Moto',d.moto)+pill('💰','Valor garantizado',d.garantizar?cop(d.garantizar):'')+'</div>'+
-      '<span class="aseg">Respaldo: '+esc(d.aseguradora)+'</span></div>'+
+      '<div class="pills">'+pill('👤','Cliente',d.nombre)+pill('🏍️','Placa',d.placa)+pill('🔧','Moto',d.moto)+pill('🛡️','Respaldo',d.aseguradora)+'</div>'+
+      '</div>'+
       op(1,'HURTO O PÉRDIDA TOTAL',(d.aseguradora==='Protect Motos'?'cubre el 80 %':''),d.op1,d.cob1)+
       op(2,'HURTO / PÉRDIDA TOTAL + RESPONSABILIDAD CIVIL + ASISTENCIAS','',d.op2,d.cob2)+
       '<div class="cta"><div class="tx"><b>¡CONTÁCTANOS HOY!</b><span>Responde este mensaje y dejamos tu garantía lista.</span></div><div class="ph">📞 312 880 68 73</div><div class="bt">RENUEVA AQUÍ</div></div>'+
