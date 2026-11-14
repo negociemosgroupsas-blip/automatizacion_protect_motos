@@ -617,6 +617,8 @@ function doGet(e) {
         salida = accionListarReportes();
       } else if (accion === 'verReporte') {
         salida = accionVerReporte(params);
+      } else if (accion === 'erp_protect') {
+        salida = accionErpProtect();
       } else if (accion === 'renov_gestiones') {
         salida = accionRenovGestiones();
       } else if (accion === 'cotRen_moto') {
@@ -628,7 +630,7 @@ function doGet(e) {
       } else if (accion === 'cotRen_estado') {
         salida = accionCotRenEstado(params);
       } else if (accion === 'ping') {
-        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-5' };
+        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-6' };
       } else {
         salida = { ok: false, error: 'Acción no disponible: ' + accion };
       }
@@ -1034,6 +1036,45 @@ function accionRenovGestiones() {
     out.push({ fechaISO: formatoISO(d[i][0]), contrato: contrato, cliente: String(d[i][3] || ''), accion: acc });
   }
   return { ok: true, gestiones: out };
+}
+
+
+// ==================== CLIENTES ERP-PROTECT: lectura de Protect para el cruce semanal (nuevo, SOLO LEE) ====================
+// Devuelve, por cada fila de la hoja Protect: fila, asesor, cédula, cliente, placa, contrato, valor de la columna P y estado.
+// No escribe nada y no modifica ninguna hoja.
+function numeroErp_(v) {
+  if (typeof v === 'number') return isNaN(v) ? null : v;
+  var t = String(v === null || v === undefined ? '' : v).replace(/[$\s]/g, '');
+  if (!t) return null;
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) t = t.replace(/\./g, '').replace(',', '.');
+  else if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) t = t.replace(/,/g, '');
+  else t = t.replace(',', '.');
+  var n = Number(t);
+  return isNaN(n) ? null : n;
+}
+
+function accionErpProtect() {
+  var hoja = hojaSeguimiento(SpreadsheetApp.openById(SHEET_ID));
+  var ult = hoja.getLastRow(), out = [];
+  var ancho = Math.min(Math.max(hoja.getLastColumn(), 16), 44);
+  var encP = '';
+  try {
+    var t = hoja.getRange(1, 16, 2, 1).getDisplayValues();
+    encP = String(t[1][0] || t[0][0] || '');
+  } catch (e) {}
+  if (ult < 2) return { ok: true, filas: out, encabezadoP: encP };
+  var datos = hoja.getRange(2, 1, ult - 1, ancho).getValues();
+  for (var i = 0; i < datos.length; i++) {
+    var f = datos[i];
+    var ced = String(f[4] === null || f[4] === undefined ? '' : f[4]).trim();
+    var cli = String(f[7] || '').trim();
+    var ctr = String(f[13] || '').trim();
+    if (!/\d/.test(ced) && !cli && !ctr) continue;
+    if (!/\d/.test(ced)) continue;          // fila de títulos o sin cédula
+    out.push({ fila: i + 2, asesor: String(f[1] || '').trim(), cedula: ced, cliente: cli, placa: String(f[12] || '').trim(),
+      contrato: ctr, valorP: numeroErp_(f[15]), estado: ancho >= 44 ? String(f[43] || '').trim().toUpperCase() : '' });
+  }
+  return { ok: true, filas: out, encabezadoP: encP };
 }
 
   return { doGet:doGet, doPost:doPost };

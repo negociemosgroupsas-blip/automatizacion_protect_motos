@@ -17,6 +17,7 @@ modulos/                      Un archivo por botón del menú
   cobros.html                 OPERACIÓN · cuotas, pagos, renovaciones, cotizaciones de renovación
   precobros.html              OPERACIÓN · lee el precobro del proveedor y pone asesor y N.º de contrato
   conciliacion.html           OPERACIÓN · cruza Protect contra el Consolidado de pagos
+  erp.html                    OPERACIÓN · cruce semanal Clientes ERP-Protect: archivo del jefe vs hoja Protect (cédula + Total vs columna P)
   oms.html / soat.html        SEGUROS · clientes OMS y SOAT (cobros, primer pago, renovaciones, tablero)
   comisiones.html             GESTIÓN · informe de comisiones de asesores (mensual, anual, histórico)
 conectores/
@@ -25,7 +26,7 @@ conectores/
 ```
 
 ## Menú (organizado por tarea)
-**Inicio** · **Operación**: Contratos, Cobros, Cobros y precobros, Conciliación · **Seguros**: Clientes OMS, SOAT ·
+**Inicio** · **Operación**: Contratos, Cobros, Cobros y precobros, Conciliación, Clientes ERP-Protect · **Seguros**: Clientes OMS, SOAT ·
 **Gestión**: Comisiones · **Sistema**: Conexiones.
 
 ## Inicio = panel gerencial

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clientes ERP-Protect</title>
+<style>
+  :root{--azul:#13223f;--azul2:#1f4e79;--dorado:#d6a417;--fondo:#f4f5f7;--tarjeta:#fff;--texto:#1f2430;--suave:#6b7280;--borde:#e3e6eb;--verde:#1f9d55;--naranja:#d97706;--rojo:#dc2626}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fondo);color:var(--texto)}
+  header{background:linear-gradient(135deg,#13223f,#1c3050);color:#fff;padding:18px 24px}
+  header h1{margin:0;font-size:1.3rem} header p{margin:4px 0 0;font-size:.9rem;opacity:.85}
+  main{max-width:1350px;margin:0 auto;padding:18px}
+  .panel{background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .panel h2{margin:0 0 4px;font-size:1.05rem;color:var(--azul)} .sub{font-size:.9rem;color:var(--suave);margin:0 0 12px}
+  .estado{font-size:.9rem;color:var(--suave)} .estado.ok{color:var(--verde)} .estado.er{color:var(--rojo)}
+  .btn{border:0;border-radius:9px;padding:9px 15px;font-size:.9rem;font-weight:600;cursor:pointer;background:var(--azul);color:#fff} .btn.d{background:var(--dorado);color:#13223f} .btn.g{background:#e9edf3;color:var(--azul)} .btn.v{background:var(--verde)} .btn:disabled{opacity:.45;cursor:not-allowed}
+  .fil{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end} label{font-size:.88rem;color:var(--suave);display:flex;flex-direction:column;gap:4px}
+  input[type=search],input[type=text]{border:1px solid var(--borde);border-radius:8px;padding:8px 11px;font-size:.92rem;background:#fff;font-family:inherit;min-width:260px}
+  .drop{border:2px dashed #b8c4d6;border-radius:14px;padding:26px 18px;text-align:center;background:#fbfdff;cursor:pointer;transition:.15s} .drop:hover,.drop.on{border-color:var(--azul2);background:#eef5ff} .drop b{display:block;font-size:1.05rem;color:var(--azul);margin-bottom:4px} .drop span{font-size:.9rem;color:var(--suave)}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 14px}
+  .t{background:#fff;border:1px solid var(--borde);border-left:6px solid var(--c,#13223f);border-radius:12px;padding:12px 14px;cursor:pointer} .t:hover{box-shadow:0 4px 14px rgba(19,34,63,.12)}
+  .t span{font-size:.85rem;text-transform:uppercase;letter-spacing:.3px;color:var(--suave);font-weight:700} .t b{display:block;font-size:1.8rem;color:var(--azul);line-height:1.15;margin:2px 0} .t small{font-size:.88rem;color:var(--suave)}
+  .scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.9rem} th,td{padding:8px 10px;border-bottom:1px solid var(--borde);text-align:left;vertical-align:top}
+  th{font-size:.85rem;text-transform:uppercase;letter-spacing:.3px;color:var(--suave);background:#fafbfc;white-space:nowrap} .num{text-align:right;white-space:nowrap}
+  .tag{display:inline-block;border-radius:999px;padding:3px 10px;font-size:.85rem;font-weight:800;white-space:nowrap}
+  .sc{background:#e7f8ee;color:#166534} .sp{background:#fff3e0;color:#b45309} .sv{background:#fdeaea;color:#b42318}
+  .rev{display:inline-block;background:#fff3cd;color:#7a5b00;border-radius:6px;padding:1px 7px;font-size:.85rem;font-weight:700;margin-left:6px}
+  .dpos{color:#b42318;font-weight:800} .dneg{color:#b45309;font-weight:800} .dok{color:#166534;font-weight:700}
+  .obs{font-size:.88rem;line-height:1.4;color:#374151;min-width:260px} .obs div{margin:1px 0}
+  details.sec{border:1px solid var(--borde);border-radius:14px;margin-bottom:16px;background:var(--tarjeta);overflow:hidden}
+  details.sec>summary{list-style:none;cursor:pointer;padding:14px 18px;font-weight:800;font-size:1.05rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-left:8px solid var(--c)}
+  details.sec>summary::-webkit-details-marker{display:none} details.sec>summary small{font-weight:500;color:var(--suave);font-size:.9rem}
+  .aviso{border:1px solid #f3d9a8;background:#fff3e0;border-left:6px solid var(--naranja);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:.92rem;line-height:1.45}
+  .okb{border:1px solid #bfe6cf;background:#e7f8ee;border-left:6px solid var(--verde);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:.92rem}
+  .vacio{padding:18px;color:var(--suave);font-size:.95rem}
+  td:nth-child(3){min-width:240px} input[type=search]{min-width:320px}
+  @media print{
+    @page{size:landscape;margin:10mm} body{background:#fff} header .noimp,.nop{display:none!important} main{padding:0;max-width:none}
+    details.sec{break-inside:auto} details.sec[open]>*{display:block} th,td{padding:4px 6px;font-size:.85rem} *{-webkit-print-color-adjust:exact;print-color-adjust:exact} thead{display:table-header-group} tr{page-break-inside:avoid}
+    .panel,.t{box-shadow:none}
+  }
+</style>
+</head>
+<body>
+<header><h1>📑 Clientes ERP-Protect</h1><p>Cruce semanal: suba el archivo del jefe y el sistema compara cada cliente con la hoja Protect (por cédula y nombre) y el <b>Total</b> contra la <b>columna P</b>.</p><p class="noimp" style="font-size:.85rem;opacity:.6;margin-top:6px">Solo lee: no modifica ni el archivo ni la hoja Protect · versión de la pantalla: <b>ERP-14nov-A</b></p></header>
+<main>
+  <div class="panel nop" style="padding:12px 18px"><div class="fil" style="align-items:center"><button class="btn g" id="bRec" type="button">🔄 Volver a leer la hoja Protect</button><span class="estado" id="est" style="flex:1">Cargando…</span></div></div>
+
+  <section class="panel nop" id="pSubir">
+    <h2>1. Suba el archivo semanal</h2>
+    <p class="sub">Excel (.xlsx o .xls) o .csv, tal como lo entrega su jefe. Se lee aquí en su computador; no se envía a ninguna parte ni se modifica.</p>
+    <div class="drop" id="drop" tabindex="0"><b>📂 Arrastre aquí el archivo, o elíjalo con el botón</b><button class="btn d" id="bElegir" type="button" style="margin:6px 0">📎 Elegir archivo</button><br><span id="dropTxt">Ejemplo: Plata_de_terceros_-_Protect_Motos_RC_y_AP_-_2026-11-13.xlsx</span></div>
+    <input type="file" id="archivo" accept=".xlsx,.xls,.csv" style="display:none">
+  </section>
+
+  <div id="resultado" style="display:none">
+    <section class="panel" id="pResumen">
+      <div class="fil nop" style="justify-content:space-between;align-items:center;margin-bottom:6px"><h2 style="margin:0">2. Resultado del cruce</h2><div class="fil"><button class="btn v" id="bXlsx" type="button">⬇ Descargar informe (Excel)</button><button class="btn g" id="bImp" type="button">🖨️ Imprimir</button></div></div>
+      <p class="estado" id="meta" style="margin:0 0 12px"></p>
+      <div id="avisos"></div>
+      <div class="tiles" id="tiles"></div>
+      <div class="fil nop"><label>Buscar en el informe<input type="search" id="busca" placeholder="cédula, nombre, placa u observación"></label><label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="soloRev"> Solo los que piden revisión manual</label></div>
+    </section>
+    <div id="secciones"></div>
+  </div>
+</main>
+<script src="../assets/xlsx.mini.min.js"></script>
+<script>
+(function(){
+  'use strict';
+  var $=function(i){return document.getElementById(i)};
+  var ST={C:'CONSOLIDADO',P:'PENDIENTE POR CONSOLIDAR',V:'VALOR POR VERIFICAR'};
+  var PROT=null,ENC_P='',ARCH=null,RES=null,filtroEstado='';
+  function LS(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
+  function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function cop(n){if(n===null||n===undefined||n==='')return '—';var v=Math.round(Number(n)),s=Math.abs(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');return (v<0?'-':'')+'$'+s}
+  function norm(s){return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim()}
+  function cedula(v){if(v===null||v===undefined||v==='')return '';var s=(typeof v==='number')?String(Math.round(v)):String(v);s=s.replace(/\.0+$/,'').replace(/[^0-9A-Za-z]/g,'').toUpperCase();s=s.replace(/^(CC|CE|TI|NIT|NI|PA|PP|PEP|DNI)(?=\d)/,'');return s.replace(/^0+(?=\d)/,'')}
+  function num(v){if(typeof v==='number')return isNaN(v)?null:v;var t=String(v==null?'':v).replace(/[$\s]/g,'');if(!t)return null;if(/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(t))t=t.replace(/\./g,'').replace(',','.');else if(/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(t))t=t.replace(/,/g,'');else t=t.replace(',','.');var n=Number(t);return isNaN(n)?null:n}
+  function placa(v){return String(v==null?'':v).replace(/[^0-9A-Za-z]/g,'').toUpperCase()}
+  var STOP={de:1,del:1,la:1,las:1,los:1,y:1,e:1};
+  function tokens(n){return norm(n).replace(/[^a-z0-9 ]/g,' ').split(' ').filter(function(t){return t.length>1&&!STOP[t]})}
+  function similitud(a,b){var A=tokens(a),B=tokens(b);if(!A.length||!B.length)return {s:0,c:0};var c=0;A.forEach(function(t){if(B.indexOf(t)>=0)c++});return {s:c/Math.min(A.length,B.length),c:c}}
+
+  /* ---------- conexión con Protect (conector del CRM, solo lectura) ---------- */
+  var cnt=0;
+  function llamar(ac){
+    return new Promise(function(ok,mal){
+      var url=LS('pm_crm_url'),tok=LS('pm_crm_token')||'PM-CRM-2026';
+      if(!url){mal(new Error('Falta la URL del conector (pestaña Conexiones → Conector único).'));return}
+      cnt++;var cb='pm_erp_'+Date.now()+'_'+cnt,s=document.createElement('script'),fin=false;
+      var t=setTimeout(function(){if(fin)return;fin=true;limpiar();mal(new Error('El conector no respondió a tiempo.'))},90000);
+      function limpiar(){clearTimeout(t);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}
+      window[cb]=function(r){if(fin)return;fin=true;limpiar();ok(r)};
+      s.onerror=function(){if(fin)return;fin=true;limpiar();mal(new Error('No se pudo contactar el conector.'))};
+      s.src=url+(url.indexOf('?')<0?'?':'&')+'action='+ac+'&token='+encodeURIComponent(tok)+'&callback='+cb+'&_='+Date.now();
+      document.body.appendChild(s);
+    }).then(function(r){
+      if(!r||r.ok===false){var m=(r&&r.error)||'Respuesta inválida.';if(/Acción no disponible/.test(m))m='El conector todavía no tiene la lectura para este cruce (versión crm-6): pegue el código nuevo (Codigo_UNICO.gs) y publique «Nueva versión».';throw new Error(m)}
+      return r});
+  }
+  function est(t,c){var e=$('est');e.textContent=t;e.className='estado '+(c||'')}
+  function cargar(){
+    est('Leyendo la hoja Protect…');$('bRec').disabled=true;
+    return llamar('erp_protect').then(function(r){
+      PROT=(r.filas||[]).map(function(x){x.ced=cedula(x.cedula);x.pl=placa(x.placa);return x});ENC_P=r.encabezadoP||'';
+      est('Conectado ✔ · '+PROT.length+' filas de Protect leídas · la columna P de Protect dice: «'+(ENC_P||'sin título')+'»','ok');
+      if(ARCH)cruzar();
+    }).catch(function(e){PROT=null;est(e.message,'er')}).then(function(){$('bRec').disabled=false});
+  }
+  $('bRec').addEventListener('click',cargar);
+
+  /* ---------- lectura del archivo del jefe ---------- */
+  function leerArchivo(buf,nombre){
+    var wb=XLSX.read(buf,{type:'array',cellDates:true}),res=null;
+    wb.SheetNames.forEach(function(nm){if(res)return;var A=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,raw:true,defval:''}),hi=-1;
+      for(var i=0;i<A.length&&hi<0;i++){var H=A[i].map(norm),ti=H.some(function(h){return /^total$/.test(h)}),ci=H.some(function(h){return /identificacion|cedula/.test(h)&&!/tipo/.test(h)});if(ti&&ci)hi=i}
+      if(hi>=0)res={A:A,hi:hi,hoja:nm}});
+    if(!res)throw new Error('No encontré la tabla. Busco una fila de títulos con «No. de identificación» (o cédula) y «Total».');
+    var A=res.A,H=A[res.hi].map(norm),col=function(re,ex){for(var i=0;i<H.length;i++)if(re.test(H[i])&&!(ex&&ex.test(H[i])))return i;return -1};
+    var C={ced:col(/identificacion|cedula/,/tipo/),nom:col(/^cliente$|^nombre/),tot:col(/^total$/),neg:col(/^negocio$/),pla:col(/^placa$/),ase:col(/^asesor$/),moto:col(/^moto$/),ya:col(/^ya pago$/),fal:col(/^falta$/),com:col(/^como va$/),fec:col(/^fecha$/)};
+    if(C.ced<0||C.tot<0)throw new Error('Faltan las columnas «No. de identificación» o «Total».');
+    var titulo=String(A[0]&&A[0][0]||'').trim(),sub=String(A[1]&&A[1][0]||'').trim(),filas=[];
+    for(var k=res.hi+1;k<A.length;k++){var w=A[k],cedTxt=String(w[C.ced]==null?'':w[C.ced]).trim();
+      if(!cedTxt&&!(C.nom>=0&&String(w[C.nom]||'').trim()))continue;     // fila vacía o de totales
+      if(!cedula(w[C.ced])&&!(C.nom>=0&&String(w[C.nom]||'').trim()))continue;
+      var f=function(i){return i>=0&&w[i]!=null?String(w[i]).trim():''};
+      filas.push({n:k+1,negocio:f(C.neg),ced:cedula(w[C.ced]),cedTxt:cedTxt,nombre:f(C.nom).replace(/\s+/g,' '),placa:f(C.pla),asesor:f(C.ase),moto:f(C.moto),total:num(w[C.tot]),ya:C.ya>=0?num(w[C.ya]):null,falta:C.fal>=0?num(w[C.fal]):null,comoVa:f(C.com)})}
+    if(!filas.length)throw new Error('La tabla no tiene clientes.');
+    return {nombre:nombre,hoja:res.hoja,titulo:titulo,sub:sub,filas:filas};
+  }
+
+  /* ---------- cruce ---------- */
+  function esAnulado(p){return /^\s*anulad[oa]\s*$/i.test(p.cliente||'')||p.estado==='ANULADO'||p.estado==='CANCELADO'}
+  function cruzar(){
+    if(!ARCH||!PROT)return;
+    var porCed={},porPla={};PROT.forEach(function(p){(porCed[p.ced]=porCed[p.ced]||[]).push(p);if(p.pl)(porPla[p.pl]=porPla[p.pl]||[]).push(p)});
+    var vistos={},out=[];
+    ARCH.filas.forEach(function(f){
+      var r={n:f.n,negocio:f.negocio,ced:f.ced,cedTxt:f.cedTxt,nombre:f.nombre,placa:f.placa,asesor:f.asesor,total:f.total,comoVa:f.comoVa,ya:f.ya,falta:f.falta,obs:[],revisar:false,dup:false,p:null,pVal:null,dif:null};
+      var key=f.negocio?('N:'+f.negocio):('C:'+f.ced+'|'+placa(f.placa)+'|'+f.total);
+      if(vistos[key]){r.dup=true;r.obs.push('Duplicado: ya aparece en la fila '+vistos[key]+' del archivo. No se cuenta dos veces.');r.estado=null;out.push(r);return}
+      vistos[key]=f.n;
+      if(!f.ced)r.obs.push('El archivo no trae número de identificación; se intentó por nombre.');
+      if(f.total===null){r.obs.push('El Total del archivo está vacío o no es un número.');r.revisar=true}
+      var c=f.ced?(porCed[f.ced]||[]):[],pl=placa(f.placa);
+      if(!c.length){
+        /* no está por cédula: ¿hay un nombre o una placa parecidos? (posible error de digitación) */
+        var mejor=null;PROT.forEach(function(p){var s=similitud(f.nombre,p.cliente);if(s.c>=2&&s.s>=0.75&&(!mejor||s.s>mejor.s))mejor={p:p,s:s.s}});
+        var porP=pl&&porPla[pl]?porPla[pl][0]:null;
+        r.estado=ST.P;
+        if(mejor){r.revisar=true;r.obs.push('No está por cédula, pero hay un cliente con nombre muy parecido: '+mejor.p.cliente+' (cédula '+mejor.p.cedula+', fila '+mejor.p.fila+' de Protect). Revise si la cédula está mal escrita en alguno de los dos.')}
+        else if(porP){r.revisar=true;r.obs.push('No está por cédula, pero la placa '+f.placa+' aparece en Protect con '+porP.cliente+' (cédula '+porP.cedula+', fila '+porP.fila+').')}
+        else r.obs.push('No aparece en la hoja Protect (ni por cédula, ni por nombre, ni por placa).');
+      }else{
+        var ig=c.filter(function(p){return p.valorP!==null&&f.total!==null&&Math.round(p.valorP)===Math.round(f.total)}),elegido=null;
+        if(ig.length){elegido=ig.filter(function(p){return pl&&p.pl===pl})[0]||ig[0]}
+        else if(pl&&c.filter(function(p){return p.pl===pl}).length){elegido=c.filter(function(p){return p.pl===pl})[0]}
+        else if(c.length===1){elegido=c[0]}
+        else{var d0=Infinity;c.forEach(function(p){var d=(p.valorP===null||f.total===null)?Infinity-1:Math.abs(p.valorP-f.total);if(d<d0){d0=d;elegido=p}});r.revisar=true;r.obs.push('Esta cédula tiene '+c.length+' filas en Protect y ninguna coincide en placa ni en valor: se comparó con la fila '+elegido.fila+' (la de valor más cercano). Confirme cuál corresponde.')}
+        if(c.length>1&&ig.length>1)r.obs.push('Hay '+ig.length+' filas de Protect con la misma cédula y el mismo valor (filas '+ig.map(function(p){return p.fila}).join(', ')+'): posible registro repetido en Protect.');
+        else if(c.length>1&&ig.length===1)r.obs.push('Esta cédula tiene '+c.length+' filas en Protect; se tomó la que coincide en valor (fila '+elegido.fila+').');
+        r.p=elegido;r.pVal=elegido.valorP;
+        var sm=similitud(f.nombre,elegido.cliente);
+        if(f.nombre&&elegido.cliente&&sm.s<0.5){r.revisar=true;r.obs.push('El nombre no coincide: archivo «'+f.nombre+'» y Protect «'+elegido.cliente+'». Revise que sea la misma persona.')}
+        if(f.placa&&elegido.pl&&pl!==elegido.pl&&!c.some(function(p){return p.pl===pl})){r.obs.push('La placa es distinta: archivo '+f.placa+' y Protect '+elegido.placa+'.');r.revisar=true}
+        if(esAnulado(elegido)){r.revisar=true;r.obs.push('En Protect este cliente figura como '+(elegido.estado||'ANULADO')+'.')}
+        if(elegido.valorP===null){r.estado=ST.V;r.revisar=true;r.obs.push('La columna P de Protect está vacía para este cliente (fila '+elegido.fila+').')}
+        else if(f.total===null){r.estado=ST.V}
+        else{r.dif=Math.round(f.total)-Math.round(elegido.valorP);
+          if(r.dif===0)r.estado=ST.C;
+          else{r.estado=ST.V;r.obs.push('El archivo reporta '+cop(f.total)+' y Protect (columna P) '+cop(elegido.valorP)+': diferencia de '+cop(Math.abs(r.dif))+' ('+(r.dif>0?'el archivo reporta más':'el archivo reporta menos')+').')}}
+        r.prow=elegido.fila;
+      }
+      if(f.comoVa&&!/^pagado$/i.test(f.comoVa))r.obs.push('Según el archivo: «'+f.comoVa+'»'+(f.ya!=null?' (ya pagó '+cop(f.ya)+', falta '+cop(f.falta)+')':'')+'.');
+      out.push(r);
+    });
+    RES=out;pintar();
+  }
+
+  /* ---------- pantalla ---------- */
+  function etiqueta(e){return e===ST.C?'<span class="tag sc">✔ CONSOLIDADO</span>':e===ST.P?'<span class="tag sp">⏳ PENDIENTE POR CONSOLIDAR</span>':'<span class="tag sv">⚠ VALOR POR VERIFICAR</span>'}
+  function celdaDif(r){if(r.dif===null||r.dif===undefined)return '—';if(r.dif===0)return '<span class="dok">$0</span>';return '<span class="'+(r.dif>0?'dpos':'dneg')+'">'+(r.dif>0?'+':'')+cop(r.dif)+'</span>'}
+  function fila(r){return '<tr><td class="num">'+r.n+'</td><td>'+esc(r.cedTxt||r.ced||'—')+'</td><td><b>'+esc(r.nombre)+'</b>'+(r.revisar?'<span class="rev">🔎 revisar</span>':'')+'<div style="font-size:.85rem;color:#6b7280">'+esc([r.negocio,r.placa,r.asesor].filter(Boolean).join(' · '))+'</div></td><td class="num">'+cop(r.total)+'</td><td class="num">'+(r.p?cop(r.pVal):'—')+'</td><td class="num">'+celdaDif(r)+'</td><td class="num">'+(r.prow?r.prow:'—')+'</td><td>'+etiqueta(r.estado)+'</td><td class="obs">'+(r.obs.length?r.obs.map(function(o){return '<div>• '+esc(o)+'</div>'}).join(''):'<span style="color:#9ca3af">—</span>')+'</td></tr>'}
+  function visible(r){
+    if(r.dup)return false;
+    if($('soloRev').checked&&!r.revisar)return false;
+    var q=norm($('busca').value);if(!q)return true;
+    return norm([r.ced,r.cedTxt,r.nombre,r.placa,r.negocio,r.asesor,r.obs.join(' ')].join(' ')).indexOf(q)>=0;
+  }
+  var SEC=[[ST.C,'1. CONSOLIDADOS','Clientes encontrados en Protect cuyo Total coincide exactamente con la columna P','#1f9d55'],[ST.P,'2. PENDIENTES POR CONSOLIDAR','Aparecen en el archivo, pero no se encuentran en la hoja Protect','#d97706'],[ST.V,'3. VALORES POR VERIFICAR','Encontrados en las dos fuentes, pero con valores diferentes','#dc2626']];
+  function pintar(){
+    $('resultado').style.display='block';
+    var base=RES.filter(function(r){return !r.dup}),dups=RES.filter(function(r){return r.dup}),n=function(e){return base.filter(function(r){return r.estado===e}).length},sum=function(e,k){return base.filter(function(r){return r.estado===e&&r[k]!==null&&r[k]!==undefined}).reduce(function(s_,r){return s_+r[k]},0)};
+    $('meta').innerHTML='Archivo: <b>'+esc(ARCH.nombre)+'</b>'+(ARCH.titulo?' · '+esc(ARCH.titulo):'')+(ARCH.sub?'<br>'+esc(ARCH.sub):'')+'<br>Protect: '+PROT.length+' filas leídas · Total del archivo comparado con la columna P de Protect («'+esc(ENC_P||'sin título')+'»)';
+    var rev=base.filter(function(r){return r.revisar}).length,av='';
+    if(dups.length)av+='<div class="aviso">🔁 Se encontraron <b>'+dups.length+'</b> fila(s) repetida(s) en el archivo; se dejaron fuera del conteo: '+dups.map(function(r){return esc(r.nombre)+' (fila '+r.n+')'}).join(', ')+'.</div>';
+    if(rev)av+='<div class="aviso">🔎 <b>'+rev+'</b> cliente(s) piden <b>revisión manual</b> (nombre distinto, varias filas en Protect, posible error de cédula, etc.). El estado se calcula igual, pero conviene mirarlos: filtre con «Solo los que piden revisión manual».</div>';
+    $('avisos').innerHTML=av;
+    var T=function(e,c,l){return '<div class="t" data-e="'+(e||'')+'" style="--c:'+c+'"><span>'+l[0]+'</span><b>'+l[1]+'</b><small>'+l[2]+'</small></div>'};
+    $('tiles').innerHTML=T('','#13223f',['Clientes del archivo',base.length,'sin contar repetidos'])+
+      T(ST.C,'#1f9d55',['Consolidados',n(ST.C),cop(sum(ST.C,'total'))+' en total'])+
+      T(ST.P,'#d97706',['Pendientes por consolidar',n(ST.P),cop(sum(ST.P,'total'))+' sin encontrar en Protect'])+
+      T(ST.V,'#dc2626',['Valores por verificar',n(ST.V),'diferencia neta '+cop(sum(ST.V,'dif'))])+
+      T('REV','#7a5b00',['Piden revisión manual',rev,'señalados con 🔎']);
+    Array.prototype.forEach.call($('tiles').querySelectorAll('.t'),function(t){t.addEventListener('click',function(){var e=t.dataset.e;if(e==='REV'){$('soloRev').checked=!$('soloRev').checked;pintar();return}filtroEstado=(filtroEstado===e?'':e);pintar()})});
+    var h='';
+    SEC.forEach(function(S){
+      if(filtroEstado&&filtroEstado!==S[0])return;
+      var L=base.filter(function(r){return r.estado===S[0]&&visible(r)}),tot=n(S[0]);
+      h+='<details class="sec" open style="--c:'+S[3]+'"><summary>'+S[1]+' <span class="tag" style="background:'+S[3]+';color:#fff">'+tot+'</span><small>'+S[2]+(L.length!==tot?' · mostrando '+L.length:'')+'</small></summary>'+
+        (L.length?'<div class="scroll"><table><thead><tr><th>#</th><th>Identificación</th><th>Cliente</th><th class="num">Total archivo</th><th class="num">Valor P (Protect)</th><th class="num">Diferencia</th><th class="num">Fila Protect</th><th>Estado</th><th>Observaciones</th></tr></thead><tbody>'+L.map(fila).join('')+'</tbody></table></div>':'<div class="vacio">'+(tot?'Ningún cliente coincide con el filtro.':'Ningún cliente en este estado.')+'</div>')+'</details>';
+    });
+    $('secciones').innerHTML=h;
+  }
+  ['busca','soloRev'].forEach(function(i){$(i).addEventListener('input',function(){if(RES)pintar()});$(i).addEventListener('change',function(){if(RES)pintar()})});
+
+  /* ---------- informe en Excel (archivo nuevo e independiente) ---------- */
+  function filasXlsx(L){return [['Fila archivo','Negocio','Identificación','Cliente','Placa','Asesor','Total archivo','Valor columna P (Protect)','Diferencia (archivo − Protect)','Fila en Protect','Estado','Revisión manual','Observaciones']].concat(L.map(function(r){return [r.n,r.negocio,r.cedTxt||r.ced,r.nombre,r.placa,r.asesor,r.total,r.p?r.pVal:'',r.dif===null||r.dif===undefined?'':r.dif,r.prow||'',r.estado,r.revisar?'SÍ':'',r.obs.join(' | ')]}))}
+  function hoja(A){var ws=XLSX.utils.aoa_to_sheet(A);ws['!cols']=[8,12,16,34,10,22,15,18,18,10,26,10,90].map(function(w){return {wch:w}});return ws}
+  $('bXlsx').addEventListener('click',function(){
+    if(!RES)return;var base=RES.filter(function(r){return !r.dup}),wb=XLSX.utils.book_new(),n=function(e){return base.filter(function(r){return r.estado===e})};
+    var hoy=new Date(),f=hoy.getFullYear()+'-'+('0'+(hoy.getMonth()+1)).slice(-2)+'-'+('0'+hoy.getDate()).slice(-2);
+    var R=[['CRUCE CLIENTES ERP-PROTECT'],['Archivo revisado',ARCH.nombre],['Fecha del cruce',f],['Regla','Se compara la columna Total del archivo con la columna P de Protect; deben coincidir exactamente.'],[],['Estado','Clientes','Total archivo']];
+    [ST.C,ST.P,ST.V].forEach(function(e){R.push([e,n(e).length,n(e).reduce(function(s_,r){return s_+(r.total||0)},0)])});
+    R.push(['Piden revisión manual',base.filter(function(r){return r.revisar}).length,'']);R.push(['Repetidos en el archivo (no contados)',RES.length-base.length,'']);
+    var wr=XLSX.utils.aoa_to_sheet(R);wr['!cols']=[{wch:38},{wch:70},{wch:16}];XLSX.utils.book_append_sheet(wb,wr,'Resumen');
+    XLSX.utils.book_append_sheet(wb,hoja(filasXlsx(n(ST.C))),'Consolidados');
+    XLSX.utils.book_append_sheet(wb,hoja(filasXlsx(n(ST.P))),'Pendientes por consolidar');
+    XLSX.utils.book_append_sheet(wb,hoja(filasXlsx(n(ST.V))),'Valores por verificar');
+    XLSX.utils.book_append_sheet(wb,hoja(filasXlsx(base.filter(function(r){return r.revisar}))),'Revision manual');
+    var out=XLSX.write(wb,{type:'array',bookType:'xlsx'}),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download='Cruce_ERP_Protect_'+f+'.xlsx';document.body.appendChild(a);a.click();a.remove();
+  });
+  $('bImp').addEventListener('click',function(){window.print()});
+
+  /* ---------- subir archivo ---------- */
+  function procesar(file){
+    if(!file)return;var rd=new FileReader();
+    rd.onload=function(){try{ARCH=leerArchivo(new Uint8Array(rd.result),file.name);$('dropTxt').textContent='Archivo cargado: '+file.name+' ('+ARCH.filas.length+' filas). Puede subir otro cuando quiera.';filtroEstado='';
+        if(!PROT){est('Esperando la hoja Protect… pulse «Volver a leer la hoja Protect» si no carga.','er');return}cruzar()}catch(e){ARCH=null;RES=null;$('resultado').style.display='none';$('dropTxt').textContent='⚠ '+e.message}};
+    rd.readAsArrayBuffer(file);
+  }
+  $('bElegir').addEventListener('click',function(e){e.stopPropagation();$('archivo').click()});
+  $('drop').addEventListener('click',function(){$('archivo').click()});
+  $('archivo').addEventListener('change',function(){procesar(this.files[0]);this.value=''});
+  ['dragenter','dragover'].forEach(function(ev){$('drop').addEventListener(ev,function(e){e.preventDefault();$('drop').classList.add('on')})});
+  ['dragleave','drop'].forEach(function(ev){$('drop').addEventListener(ev,function(e){e.preventDefault();$('drop').classList.remove('on')})});
+  $('drop').addEventListener('drop',function(e){procesar(e.dataTransfer.files[0])});
+  window.ERP={leerArchivo:leerArchivo,_cruzar:function(a,p){ARCH=a;PROT=p;cruzar();return RES}};
+  cargar();
+})();
+</script>
+<script src="../assets/tema_modulo.js"></script>
+</body>
+</html>
