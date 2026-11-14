@@ -1398,7 +1398,7 @@
     var cM=cnt(Y,M),cP=cnt(PY,PM),cA=cnt(Y-1,M),yN=ytd(Y),yP=ytd(Y-1);
     var vM=val(Y,M),vP=val(PY,PM),dMes=new Date(Y,M,0).getDate(),proy=Math.round(cM/Math.max(1,hoyD.getDate())*dMes);
     var pf=function(a){return a.length?Math.round(a.filter(function(o){return o.f==='FINANCIADO'}).length*100/a.length):0},pfN=pf(yN),pfP=pf(yP);
-    var tot=base.length,canc=base.filter(function(o){return o.e==='CANCELADO'}).length,tc=tot?Math.round(canc*100/tot*10)/10:0;
+    var fin=base.filter(function(o){return o.e==='FINALIZADO'}).length,tot=base.length,canc=base.filter(function(o){return o.e==='CANCELADO'}).length,tc=tot?Math.round(canc*100/tot*10)/10:0;
     var rc=cmRecs(),cmM=0,cmP=0;if(rc)rc.forEach(function(r){if(r.y===Y&&r.m===M)cmM+=r.pay;else if(r.y===PY&&r.m===PM)cmP+=r.pay});
     var M_=function(l,b,s1,s2){return '<div class="gx-m"><span>'+l+'</span><b>'+b+'</b><small>'+s1+'</small>'+(s2?'<small>'+s2+'</small>':'')+'</div>'};
     var cop=function(n){return '$'+Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')};
@@ -1408,6 +1408,7 @@
       M_('Acumulado del año',yN.length,gxDelta(yN.length,yP.length)+' vs mismo período de '+(Y-1),'Ene–'+MESN[M-1].slice(0,3)+' '+(Y-1)+': '+yP.length)+
       M_('Valor contratado del mes',cop(vM),gxDelta(vM,vP)+' vs '+MESN[PM-1]+' completo','Suma del valor Protect firmado · el mes en curso aún no cierra')+
       M_('Mezcla financiada (año)',pfN+' %','financiados sobre el total · '+(pfN-pfP>=0?'+':'')+(pfN-pfP)+' pts vs '+(Y-1),'Más financiado = más cartera por cobrar')+
+      M_('Finalizados satisfactoriamente',(fin+canc?Math.round(fin*100/(fin+canc)*10)/10:0)+' %',fin+' de '+(fin+canc)+' contratos que ya terminaron','Finalizado = siempre pagó · Cancelado = dejó de pagar')+
       M_('Cancelaciones',tc+' %',canc+' de '+tot+' contratos cancelados','Indicador de calidad de la venta',null)+
       (rc?M_('Comisiones del mes',cop(cmM),gxDelta(cmM,cmP,true).replace(/ (up|dn)"/,'"')+' vs '+MESN[PM-1]+' completo',vM?('Equivale al '+(Math.round(cmM/vM*1000)/10)+' % del valor contratado'):''):'');
     /* atención */
