@@ -45,9 +45,9 @@
       '.pmcr-fondo{position:fixed;inset:0;background:rgba(10,20,40,.55);z-index:9999;display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 12px}'+
       '.pmcr-fondo.on{display:flex}'+
       '.pmcr-caja{background:#fff;border-radius:14px;max-width:640px;width:100%;padding:20px 22px;box-shadow:0 12px 40px rgba(0,0,0,.3);font-family:inherit;color:#13223f}'+
-      '.pmcr-caja h3{margin:0 0 4px;font-size:1.1rem}.pmcr-sub{color:#667;font-size:.82rem;margin:0 0 12px}'+
+      '.pmcr-caja h3{margin:0 0 4px;font-size:1.1rem}.pmcr-sub{color:#667;font-size:.85rem;margin:0 0 12px}'+
       '.pmcr-g{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}@media(max-width:560px){.pmcr-g{grid-template-columns:1fr}}'+
-      '.pmcr-g label{display:flex;flex-direction:column;font-size:.76rem;font-weight:700;gap:3px}.pmcr-g .ancho{grid-column:1/-1}'+
+      '.pmcr-g label{display:flex;flex-direction:column;font-size:.85rem;font-weight:700;gap:3px}.pmcr-g .ancho{grid-column:1/-1}'+
       '.pmcr-g input,.pmcr-g select,.pmcr-g textarea{border:1px solid #cfd6e4;border-radius:8px;padding:8px 10px;font:inherit;font-weight:400;font-size:.9rem}'+
       '.pmcr-g input[readonly]{background:#f1f4f9}'+
       '.pmcr-cuadro{background:#f4f7fc;border:1px solid #dbe3f1;border-radius:10px;padding:10px 12px;margin:12px 0;font-size:.86rem;line-height:1.5}'+
@@ -55,11 +55,11 @@
       '.pmcr-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}'+
       '.pmcr-b{border:0;border-radius:8px;padding:9px 14px;font-weight:700;font-size:.85rem;cursor:pointer;background:#13223f;color:#fff}'+
       '.pmcr-b.v{background:#1f9d55}.pmcr-b.g{background:#e3e8f2;color:#13223f}.pmcr-b.r{background:#c0392b}.pmcr-b.o{background:#e0a800;color:#13223f}.pmcr-b:disabled{opacity:.5;cursor:default}'+
-      '.pmcr-st{font-size:.82rem;margin-top:8px;min-height:1.2em}.pmcr-st.mal{color:#b3261e}.pmcr-st.bien{color:#0b6b2b}'+
+      '.pmcr-st{font-size:.85rem;margin-top:8px;min-height:1.2em}.pmcr-st.mal{color:#b3261e}.pmcr-st.bien{color:#0b6b2b}'+
       '.pmcr-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:12px}'+
-      '.pmcr-t{background:#f4f7fc;border:1px solid #dbe3f1;border-radius:10px;padding:10px}.pmcr-t b{display:block;font-size:1.3rem}.pmcr-t span{font-size:.72rem;color:#556}'+
-      '.pmcr-tw{overflow:auto}.pmcr-tw table{border-collapse:collapse;width:100%;font-size:.82rem}.pmcr-tw th,.pmcr-tw td{border-bottom:1px solid #e4e9f2;padding:6px 8px;text-align:left;white-space:nowrap}.pmcr-tw th{background:#13223f;color:#fff}'+
-      '.pmcr-e{display:inline-block;border-radius:999px;padding:2px 9px;font-size:.74rem;font-weight:700}.pmcr-e.p{background:#fff3c4;color:#7a5b00}.pmcr-e.a{background:#d7f5df;color:#0b6b2b}.pmcr-e.n{background:#fad4d4;color:#9b1c1c}';
+      '.pmcr-t{background:#f4f7fc;border:1px solid #dbe3f1;border-radius:10px;padding:10px}.pmcr-t b{display:block;font-size:1.3rem}.pmcr-t span{font-size:.85rem;color:#556}'+
+      '.pmcr-tw{overflow:auto}.pmcr-tw table{border-collapse:collapse;width:100%;font-size:.85rem}.pmcr-tw th,.pmcr-tw td{border-bottom:1px solid #e4e9f2;padding:6px 8px;text-align:left;white-space:nowrap}.pmcr-tw th{background:#13223f;color:#fff}'+
+      '.pmcr-e{display:inline-block;border-radius:999px;padding:2px 9px;font-size:.85rem;font-weight:700}.pmcr-e.p{background:#fff3c4;color:#7a5b00}.pmcr-e.a{background:#d7f5df;color:#0b6b2b}.pmcr-e.n{background:#fad4d4;color:#9b1c1c}';
     d.head.appendChild(s);
   }
   function ventana(id, html){
@@ -103,7 +103,7 @@
       '<label>Plazo financiado<select id="pmcr_plz"><option value="3">3 meses</option><option value="6">6 meses</option><option value="12" selected>12 meses</option></select></label>'+
       '</div>'+
       '<div class="pmcr-cuadro" id="pmcr_res">Escribe la factura y el valor de Fasecolda para calcular.</div>'+
-      '<label style="font-size:.76rem;font-weight:700">Mensaje de WhatsApp (puedes editarlo)</label>'+
+      '<label style="font-size:.85rem;font-weight:700">Mensaje de WhatsApp (puedes editarlo)</label>'+
       '<textarea class="pmcr-msg" id="pmcr_txt"></textarea>'+
       '<div class="pmcr-st" id="pmcr_st"></div>'+
       '<div class="pmcr-bar">'+
