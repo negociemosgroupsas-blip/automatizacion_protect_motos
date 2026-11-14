@@ -267,75 +267,75 @@ body.print-otrosi #panel-otrosi{display:block !important;}
     <div class="no-print">
 
       <div class="card"><h2>1 · Cotización <span>(llena esto y los valores se calculan solos)</span></h2><div class="body">
-        <div class="f"><label>Estado de la moto</label><select id="estadoMoto"><option>NUEVA</option><option>USADA</option></select></div>
-        <div class="f full"><label>Referencia especial (motos con precio fijo)</label><select id="cotRef"><option value="">— Ninguna / moto normal —</option><option value="ADX 175">ADX 175 (SYM)</option><option value="ADX">ADX (SYM)</option><option value="XPULSE 200 4V">XPULSE 200 4V (HERO)</option><option value="XPULSE PRO 4V">XPULSE PRO 4V (HERO)</option><option value="XPULSE RALLY">XPULSE RALLY (HERO)</option><option value="XPULSE 200 PROV 2.0">XPULSE 200 PROV 2.0 (HERO)</option><option value="NHR-190">NHR-190 (SYM)</option></select><span class="hint">Al elegir una se llenan marca, línea, cilindraje y Fasecolda, y aplica el precio especial (solo si la moto es NUEVA).</span></div>
-        <div class="f"><label>Valor de la moto</label><input id="valorMoto" inputmode="numeric" placeholder="11499000"></div>
-        <div class="f"><label>Forma de pago</label><select id="forma"><option>CONTADO</option><option>FINANCIADO</option></select></div>
-        <div class="f" id="plazoSelWrap" style="display:none"><label>Plazo</label><select id="plazoSel"><option value="">— elige —</option><option value="3">3 meses</option><option value="6">6 meses</option><option value="12">12 meses</option></select></div>
-        <div class="f" id="rcValueWrap"><label>Valor RC (aseguradora aliada)</label><input id="valorRC" inputmode="numeric" value="152857"></div>
-        <div class="f"><label>Asistencias (AP)</label><label class="chk" style="padding-top:6px"><input type="checkbox" id="asistCheck"> El cliente lleva asistencias</label></div>
-        <div class="f"><label>Valor asistencia</label><input id="valorAsist" inputmode="numeric" placeholder="47000" readonly></div>
+        <div class="f"><label>Estado de la moto</label><select autocomplete="off" id="estadoMoto"><option>NUEVA</option><option>USADA</option></select></div>
+        <div class="f full"><label>Referencia especial (motos con precio fijo)</label><select autocomplete="off" id="cotRef"><option value="">— Ninguna / moto normal —</option><option value="ADX 175">ADX 175 (SYM)</option><option value="ADX">ADX (SYM)</option><option value="XPULSE 200 4V">XPULSE 200 4V (HERO)</option><option value="XPULSE PRO 4V">XPULSE PRO 4V (HERO)</option><option value="XPULSE RALLY">XPULSE RALLY (HERO)</option><option value="XPULSE 200 PROV 2.0">XPULSE 200 PROV 2.0 (HERO)</option><option value="NHR-190">NHR-190 (SYM)</option></select><span class="hint">Al elegir una se llenan marca, línea, cilindraje y Fasecolda, y aplica el precio especial (solo si la moto es NUEVA).</span></div>
+        <div class="f"><label>Valor de la moto</label><input autocomplete="off" id="valorMoto" inputmode="numeric" placeholder="11499000"></div>
+        <div class="f"><label>Forma de pago</label><select autocomplete="off" id="forma"><option>CONTADO</option><option>FINANCIADO</option></select></div>
+        <div class="f" id="plazoSelWrap" style="display:none"><label>Plazo</label><select autocomplete="off" id="plazoSel"><option value="">— elige —</option><option value="3">3 meses</option><option value="6">6 meses</option><option value="12">12 meses</option></select></div>
+        <div class="f" id="rcValueWrap"><label>Valor RC (aseguradora aliada)</label><input autocomplete="off" id="valorRC" inputmode="numeric" value="152857"></div>
+        <div class="f"><label>Asistencias (AP)</label><label class="chk" style="padding-top:6px"><input autocomplete="off" type="checkbox" id="asistCheck"> El cliente lleva asistencias</label></div>
+        <div class="f"><label>Valor asistencia</label><input autocomplete="off" id="valorAsist" inputmode="numeric" placeholder="47000" readonly></div>
       </div></div>
 
       <div class="card"><h2>2 · Valores <span>(se calculan solos; puedes ajustar)</span></h2><div class="body">
-        <div class="f"><label>Valor a pagar Protect Motos</label><input id="valorProtect" inputmode="numeric" placeholder="862425"></div>
-        <div class="f"><label>Valor cuota mensual</label><input id="valorCuota" inputmode="numeric" placeholder="0"></div>
-        <div class="f"><label>Valor a pagar en caja</label><input id="valorCaja" inputmode="numeric" placeholder="(toma el de Dugo Motos)"></div>
-        <div class="f"><label>Valor pagado a Dugo Motos</label><input id="valorDugo" inputmode="numeric" placeholder="862425"></div>
-        <div class="f"><label>Plazo (meses)</label><input id="plazo" inputmode="numeric" placeholder="12 / 0"></div>
-        <div class="f"><label>Valor comisión</label><input id="comision" inputmode="numeric" placeholder="40000"></div>
-        <div class="f"><label>Fecha de pago cuota</label><input id="fechaPago" placeholder="Contado / 04 de cada mes"></div>
+        <div class="f"><label>Valor a pagar Protect Motos</label><input autocomplete="off" id="valorProtect" inputmode="numeric" placeholder="862425"></div>
+        <div class="f"><label>Valor cuota mensual</label><input autocomplete="off" id="valorCuota" inputmode="numeric" placeholder="0"></div>
+        <div class="f"><label>Valor a pagar en caja</label><input autocomplete="off" id="valorCaja" inputmode="numeric" placeholder="(toma el de Dugo Motos)"></div>
+        <div class="f"><label>Valor pagado a Dugo Motos</label><input autocomplete="off" id="valorDugo" inputmode="numeric" placeholder="862425"></div>
+        <div class="f"><label>Plazo (meses)</label><input autocomplete="off" id="plazo" inputmode="numeric" placeholder="12 / 0"></div>
+        <div class="f"><label>Valor comisión</label><input autocomplete="off" id="comision" inputmode="numeric" placeholder="40000"></div>
+        <div class="f"><label>Fecha de pago cuota</label><input autocomplete="off" id="fechaPago" placeholder="Contado / 04 de cada mes"></div>
         <div class="f full"><span class="hint" id="calcHint"></span></div>
-        <div class="f full"><label>Cuenta bancaria para consignar la cuota</label><input id="cuentaBanco" value="Cuenta de ahorros Bancolombia N° 331-000072-98 · Negociemos Group S.A.S. (NIT 901.715.327-0)"></div>
+        <div class="f full"><label>Cuenta bancaria para consignar la cuota</label><input autocomplete="off" id="cuentaBanco" value="Cuenta de ahorros Bancolombia N° 331-000072-98 · Negociemos Group S.A.S. (NIT 901.715.327-0)"></div>
       </div></div>
 
       <div class="card"><h2>3 · Datos del titular</h2><div class="body">
-        <div class="f full"><label>Nombre completo</label><input id="titular" placeholder="JUAN RAFAEL MEJIA GIRALDO"></div>
-        <div class="f"><label>Tipo doc.</label><select id="tipoDoc"><option value="CC">CC — Cédula de Ciudadanía</option><option value="TI">TI — Tarjeta de Identidad</option><option value="RC">RC — Registro Civil de Nacimiento</option><option value="CE">CE — Cédula de Extranjería</option><option value="PPT">PPT — Permiso por Protección Temporal</option><option value="PEP">PEP — Permiso Especial de Permanencia</option><option value="DNI">DNI — Documento Nacional de Identidad</option><option value="PAS">PAS — Pasaporte</option><option value="NIT">NIT — Número de Identificación Tributaria</option><option value="NUIP">NUIP — Número Único de Identificación Personal</option></select></div>
-        <div class="f"><label>Cédula / N° documento</label><input id="cedula" placeholder="71393332"></div>
-        <div class="f"><label>Fecha de nacimiento</label><input id="fechaNac" type="date"></div>
-        <div class="f"><label>Edad (automática)</label><input id="edad" class="calc" readonly></div>
-        <div class="f"><label>Celular</label><input id="celular" placeholder="3208491329"></div>
-        <div class="f"><label>Teléfono</label><input id="telefono" placeholder="opcional"></div>
-        <div class="f full"><label>Correo</label><input id="correo" placeholder="cliente@gmail.com"></div>
-        <div class="f full"><label>Dirección</label><input id="direccion" placeholder="Cra 49 #13b s19"></div>
-        <div class="f"><label>Ciudad</label><input id="ciudad" value="Medellín"></div>
-        <div class="f"><label>Sexo</label><select id="sexo"><option value="">—</option><option>F</option><option>M</option></select></div>
+        <div class="f full"><label>Nombre completo</label><input autocomplete="off" id="titular" placeholder="JUAN RAFAEL MEJIA GIRALDO"></div>
+        <div class="f"><label>Tipo doc.</label><select autocomplete="off" id="tipoDoc"><option value="CC">CC — Cédula de Ciudadanía</option><option value="TI">TI — Tarjeta de Identidad</option><option value="RC">RC — Registro Civil de Nacimiento</option><option value="CE">CE — Cédula de Extranjería</option><option value="PPT">PPT — Permiso por Protección Temporal</option><option value="PEP">PEP — Permiso Especial de Permanencia</option><option value="DNI">DNI — Documento Nacional de Identidad</option><option value="PAS">PAS — Pasaporte</option><option value="NIT">NIT — Número de Identificación Tributaria</option><option value="NUIP">NUIP — Número Único de Identificación Personal</option></select></div>
+        <div class="f"><label>Cédula / N° documento</label><input autocomplete="off" id="cedula" placeholder="71393332"></div>
+        <div class="f"><label>Fecha de nacimiento</label><input autocomplete="off" id="fechaNac" type="date"></div>
+        <div class="f"><label>Edad (automática)</label><input autocomplete="off" id="edad" class="calc" readonly></div>
+        <div class="f"><label>Celular</label><input autocomplete="off" id="celular" placeholder="3208491329"></div>
+        <div class="f"><label>Teléfono</label><input autocomplete="off" id="telefono" placeholder="opcional"></div>
+        <div class="f full"><label>Correo</label><input autocomplete="off" id="correo" placeholder="cliente@gmail.com"></div>
+        <div class="f full"><label>Dirección</label><input autocomplete="off" id="direccion" placeholder="Cra 49 #13b s19"></div>
+        <div class="f"><label>Ciudad</label><input autocomplete="off" id="ciudad" value="Medellín"></div>
+        <div class="f"><label>Sexo</label><select autocomplete="off" id="sexo"><option value="">—</option><option>F</option><option>M</option></select></div>
       </div></div>
 
       <div class="card"><h2>4 · Beneficiario</h2><div class="body">
-        <div class="f full"><label class="chk"><input type="checkbox" id="benHas" checked> El cliente tiene beneficiario</label></div>
-        <div class="f full"><label>Nombre del beneficiario</label><input id="benNombre" placeholder="Nombre del beneficiario"></div>
-        <div class="f"><label>Tipo doc.</label><select id="benTipo"><option>Cc</option><option>Ce</option></select></div>
-        <div class="f"><label>Identificación</label><input id="benId" placeholder="43717596"></div>
+        <div class="f full"><label class="chk"><input autocomplete="off" type="checkbox" id="benHas" checked> El cliente tiene beneficiario</label></div>
+        <div class="f full"><label>Nombre del beneficiario</label><input autocomplete="off" id="benNombre" placeholder="Nombre del beneficiario"></div>
+        <div class="f"><label>Tipo doc.</label><select autocomplete="off" id="benTipo"><option>Cc</option><option>Ce</option></select></div>
+        <div class="f"><label>Identificación</label><input autocomplete="off" id="benId" placeholder="43717596"></div>
       </div></div>
 
       <div class="card"><h2>5 · Datos de la moto</h2><div class="body">
-        <div class="f"><label>Placa</label><input id="placa" placeholder="OFD63I"></div>
-        <div class="f"><label>Color</label><input id="color" placeholder="NEGRO"></div>
-        <div class="f"><label>Marca</label><input id="marca" placeholder="TVS"></div>
-        <div class="f"><label>Línea</label><input id="linea" placeholder="APACHE 160 FI ABS NG"></div>
+        <div class="f"><label>Placa</label><input autocomplete="off" id="placa" placeholder="OFD63I"></div>
+        <div class="f"><label>Color</label><input autocomplete="off" id="color" placeholder="NEGRO"></div>
+        <div class="f"><label>Marca</label><input autocomplete="off" id="marca" placeholder="TVS"></div>
+        <div class="f"><label>Línea</label><input autocomplete="off" id="linea" placeholder="APACHE 160 FI ABS NG"></div>
         <div class="f"><label>Fasecolda</label><input id="fasecolda" placeholder="Se llena solo con marca + línea" autocomplete="off"><span class="hint">Escribe marca y línea y, si ya está en la base, trae el Fasecolda solo.</span></div>
         <div class="f full"><div class="toolbar"><button class="btn" type="button" onclick="pmFaseGuardar()">Guardar Fasecolda en la base</button><span class="hint" id="faseMsg"></span></div></div>
-        <div class="f"><label>Cilindraje</label><input id="cilindraje" placeholder="159"></div>
-        <div class="f"><label>Modelo (año)</label><input id="modelo" placeholder="2027"></div>
-        <div class="f full"><label>Referencia (Tipo-Marca-Línea-Cilindraje)</label><input id="referencia" placeholder="Moto-TVS-APACHE 160 FI ABS NG-159"><span class="hint">Se arma sola con marca / línea / cilindraje. Puedes editarla.</span></div>
-        <div class="f"><label>Motor</label><input id="motor" placeholder="HE5AV20A5475"></div>
-        <div class="f"><label>Chasis</label><input id="chasis" placeholder="9FL37GE56VKH22737"></div>
-        <div class="f"><label>Serie VIN</label><input id="vin" placeholder="igual al chasis si se deja vacío"></div>
+        <div class="f"><label>Cilindraje</label><input autocomplete="off" id="cilindraje" placeholder="159"></div>
+        <div class="f"><label>Modelo (año)</label><input autocomplete="off" id="modelo" placeholder="2027"></div>
+        <div class="f full"><label>Referencia (Tipo-Marca-Línea-Cilindraje)</label><input autocomplete="off" id="referencia" placeholder="Moto-TVS-APACHE 160 FI ABS NG-159"><span class="hint">Se arma sola con marca / línea / cilindraje. Puedes editarla.</span></div>
+        <div class="f"><label>Motor</label><input autocomplete="off" id="motor" placeholder="HE5AV20A5475"></div>
+        <div class="f"><label>Chasis</label><input autocomplete="off" id="chasis" placeholder="9FL37GE56VKH22737"></div>
+        <div class="f"><label>Serie VIN</label><input autocomplete="off" id="vin" placeholder="igual al chasis si se deja vacío"></div>
       </div></div>
 
       <div class="card"><h2>6 · Contrato y vigencia</h2><div class="body">
-        <div class="f"><label>Asesor</label><input id="asesor" placeholder="Natalia"></div>
-        <div class="f"><label>N° de garantía / contrato</label><input id="contrato" placeholder="1526"></div>
-        <div class="f"><label>Aseguradora</label><select id="aseguradora"><option>Protect Motos</option><option>OMS</option><option>Progreser</option></select></div>
-        <div class="f"><label>Fecha de inicio</label><input id="fechaInicio" type="date"></div>
-        <div class="f"><label>Fecha fin (auto +1 año)</label><input id="fechaFin" class="calc" readonly></div>
+        <div class="f"><label>Asesor</label><input autocomplete="off" id="asesor" placeholder="Natalia"></div>
+        <div class="f"><label>N° de garantía / contrato</label><input autocomplete="off" id="contrato" placeholder="1526"></div>
+        <div class="f"><label>Aseguradora</label><select autocomplete="off" id="aseguradora"><option>Protect Motos</option><option>OMS</option><option>Progreser</option></select></div>
+        <div class="f"><label>Fecha de inicio</label><input autocomplete="off" id="fechaInicio" type="date"></div>
+        <div class="f"><label>Fecha fin (auto +1 año)</label><input autocomplete="off" id="fechaFin" class="calc" readonly></div>
       </div></div>
 
       <div class="card"><h2>7 · Coberturas</h2><div class="body">
-        <div class="f"><label>Plan de asistencia</label><input id="planAsist" placeholder="Completo" readonly></div>
-        <div class="f full"><label>Nombre aseguradora aliada (convenio)</label><input id="aliada" value="Seguros Mundial S.A."></div>
+        <div class="f"><label>Plan de asistencia</label><input autocomplete="off" id="planAsist" placeholder="Completo" readonly></div>
+        <div class="f full"><label>Nombre aseguradora aliada (convenio)</label><input autocomplete="off" id="aliada" value="Seguros Mundial S.A."></div>
       </div></div>
 
     </div>
@@ -361,12 +361,12 @@ body.print-otrosi #panel-otrosi{display:block !important;}
 
       <div class="panel active" id="panel-sheet">
         <div class="card no-print"><h2>Conexión con tu Google Sheet <span>(automático)</span></h2><div class="body one">
-          <div class="f"><label>URL del conector (te la da Google, se pega una sola vez)</label><input id="gsUrl" value="https://script.google.com/macros/s/AKfycbzTtIFxDqYxVj7b9umSt4o0PB4fSokj-9__ei0Nn248QjGndnmxUBgqpGASEg-OrfuL/exec" placeholder="https://script.google.com/macros/s/..../exec"></div>
+          <div class="f"><label>URL del conector (te la da Google, se pega una sola vez)</label><input autocomplete="off" id="gsUrl" value="https://script.google.com/macros/s/AKfycbzTtIFxDqYxVj7b9umSt4o0PB4fSokj-9__ei0Nn248QjGndnmxUBgqpGASEg-OrfuL/exec" placeholder="https://script.google.com/macros/s/..../exec"></div>
           <div class="toolbar"><button class="btn gold big" id="saveSheetBtn">Guardar cliente en la hoja</button><span id="saveMsg" class="hint"></span></div>
           <div class="hint">Queda guardada en este equipo. Si aún no la tienes, sigue los pasos de configuración una sola vez.</div>
         </div></div>
         <div class="card no-print"><h2>Respaldo · Copiar y pegar</h2><div class="body one copybox">
-          <textarea id="sheetRow" readonly></textarea>
+          <textarea autocomplete="off" id="sheetRow" readonly></textarea>
           <div class="toolbar"><button class="btn" id="copyBtn">Copiar fila</button><span class="ok-msg" id="copyMsg" style="display:none">¡Copiada! Pega con Ctrl+V.</span></div>
           <ol class="steps">
             <li>En tu Sheet, clic en la celda de la <b>columna A</b> de la fila del cliente nuevo.</li>
@@ -395,8 +395,8 @@ body.print-otrosi #panel-otrosi{display:block !important;}
         <div class="toolbar no-print" style="flex-wrap:wrap;gap:10px">
           <button class="btn navy" onclick="printDoc('otrosi')">Descargar PDF</button>
           <span class="hint">¿Qué se adiciona en este Otro Sí?</span>
-          <label class="osichip"><input type="checkbox" id="osiRC"> RC</label>
-          <label class="osichip"><input type="checkbox" id="osiAP"> AP</label>
+          <label class="osichip"><input autocomplete="off" type="checkbox" id="osiRC"> RC</label>
+          <label class="osichip"><input autocomplete="off" type="checkbox" id="osiAP"> AP</label>
         </div>
         <div class="doc-scroll"><div class="sheet wm" id="otrosi"></div></div>
       </div>
@@ -421,16 +421,16 @@ body.print-otrosi #panel-otrosi{display:block !important;}
           </div>
         </div></div>
         <div class="card no-print"><h2>Agregar / actualizar referencia</h2><div class="body">
-          <div class="f"><label>Nombre de la referencia</label><input id="refNombre" placeholder="ADX 175"></div>
-          <div class="f"><label>Fasecolda (opcional)</label><input id="refFase" placeholder="34217031"></div>
-          <div class="f"><label>Marca</label><input id="refMarca" placeholder="SYM"></div>
-          <div class="f"><label>L&iacute;nea</label><input id="refLinea" placeholder="TEA50"></div>
-          <div class="f"><label>Cilindraje</label><input id="refCil" placeholder="175"></div>
-          <div class="f"><label>A&ntilde;o (modelo)</label><input id="refAnio" placeholder="2027"></div>
-          <div class="f"><label>Precio contado</label><input id="refC" inputmode="numeric" placeholder="890000"></div>
-          <div class="f"><label>Precio 3 meses (total)</label><input id="refM3" inputmode="numeric" placeholder="964167"></div>
-          <div class="f"><label>Precio 6 meses (total)</label><input id="refM6" inputmode="numeric" placeholder="1038333"></div>
-          <div class="f"><label>Precio 12 meses (total)</label><input id="refM12" inputmode="numeric" placeholder="1112500"></div>
+          <div class="f"><label>Nombre de la referencia</label><input autocomplete="off" id="refNombre" placeholder="ADX 175"></div>
+          <div class="f"><label>Fasecolda (opcional)</label><input autocomplete="off" id="refFase" placeholder="34217031"></div>
+          <div class="f"><label>Marca</label><input autocomplete="off" id="refMarca" placeholder="SYM"></div>
+          <div class="f"><label>L&iacute;nea</label><input autocomplete="off" id="refLinea" placeholder="TEA50"></div>
+          <div class="f"><label>Cilindraje</label><input autocomplete="off" id="refCil" placeholder="175"></div>
+          <div class="f"><label>A&ntilde;o (modelo)</label><input autocomplete="off" id="refAnio" placeholder="2027"></div>
+          <div class="f"><label>Precio contado</label><input autocomplete="off" id="refC" inputmode="numeric" placeholder="890000"></div>
+          <div class="f"><label>Precio 3 meses (total)</label><input autocomplete="off" id="refM3" inputmode="numeric" placeholder="964167"></div>
+          <div class="f"><label>Precio 6 meses (total)</label><input autocomplete="off" id="refM6" inputmode="numeric" placeholder="1038333"></div>
+          <div class="f"><label>Precio 12 meses (total)</label><input autocomplete="off" id="refM12" inputmode="numeric" placeholder="1112500"></div>
           <div class="f full"><div class="toolbar"><button class="btn gold big" onclick="pmAddRef()">Guardar referencia</button><button class="btn" onclick="pmResetRefs()">Restaurar lista original</button><span class="hint" id="refMsg"></span></div>
             <span class="hint">Para <b>agregar</b>: llena los campos y Guardar. Para <b>actualizar</b> una existente: usa el mismo nombre. Para <b>eliminar</b>: bot&oacute;n Eliminar en la tabla. El precio de 3/6/12 es el <b>total</b> del plazo (la cuota = total &divide; meses).</span>
           </div>
@@ -1341,5 +1341,7 @@ applyForma();
 $("hdrLogo").src=LOGO;
 render();
 </script>
+<script>/* Si el navegador reabre el contrato desde su memoria (atrás/adelante), se recarga limpio: nunca queda el contrato anterior */
+window.addEventListener("pageshow",function(e){if(e.persisted)location.reload()});</script>
 </body>
 </html>
