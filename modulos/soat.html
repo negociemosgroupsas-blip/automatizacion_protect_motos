@@ -310,7 +310,7 @@
   .dona-leg{display:grid;gap:7px;min-width:150px;flex:1;font-size:.85rem}
   .dona-leg div{display:grid;grid-template-columns:12px 1fr auto auto;gap:8px;align-items:center}
   .dona-leg i{width:12px;height:12px;border-radius:4px} .dona-leg b{font-size:.95rem;color:var(--azul)} .dona-leg span.p{color:var(--texto-suave);font-size:.85rem;min-width:34px;text-align:right}
-  .svg-d text{font-family:inherit} .svg-d .t-s{fill:#6b7280;font-size:13px} .svg-d .t-v{fill:#13223f;font-size:13px;font-weight:700} .svg-d .t-w{fill:#fff;font-size:13px;font-weight:700}
+  .svg-d text{font-family:inherit} .svg-d .t-s{fill:#6b7280;font-size:13px} .svg-d .t-v{fill:#13223f;font-size:13px;font-weight:700} .svg-d .t-w{fill:#0b2a6b;font-size:13px;font-weight:700}
   .svg-d .t-g{fill:#1f9d55;font-size:13px;font-weight:800;paint-order:stroke;stroke:#fff;stroke-width:3px} .svg-d .t-ge{fill:#1f9d55;font-size:13px;font-weight:700}
   .svg-d .grid{stroke:#e6e9f0;stroke-dasharray:3 4} .svg-d .hit{fill:transparent;cursor:pointer}
   .gauge-n{font-size:1.9rem;font-weight:800;fill:#13223f} .gauge-s{font-size:.85rem;fill:#6b7280}
@@ -375,7 +375,7 @@
   <div class="dash-top"><h2>Tablero de SOAT</h2><label>Año <select id="dashAnio"></select></label></div>
   <div class="dash">
     <div class="dcard c8"><h3>Vendidos y ganancia mes a mes</h3><p class="d-sub" id="dSub1"></p>
-      <div class="d-leg"><span><i style="background:#13223f"></i>Columnas: SOAT vendidos</span><span><i style="background:#1f9d55"></i>Línea: ganancia</span></div><div id="dCombo"></div></div>
+      <div class="d-leg"><span><i style="background:#38bdf8"></i>Columnas: SOAT vendidos</span><span><i style="background:#1f9d55"></i>Línea: ganancia</span></div><div id="dCombo"></div></div>
     <div class="dcard c4"><h3>¿Cómo pagan?</h3><p class="d-sub" id="dSub2"></p>
       <div id="dDona"></div></div>
     <div class="dcard c8"><h3>Ganancia acumulada del año</h3><p class="d-sub" id="dSub3"></p>
@@ -669,7 +669,7 @@
       var k = dashPor==='forma' ? (String(s.forma||'').trim() || 'Sin dato') : (/carro|camioneta|auto/i.test(s.tipo||'') ? 'Carro' : (/moto/i.test(s.tipo||'') ? 'Moto' : (s.tipo||'Otro')));
       if(dashPor==='forma') k = k.charAt(0).toUpperCase()+k.slice(1).toLowerCase();
       cuenta[k] = (cuenta[k]||0)+1; nTot++; });
-    var pal = ['#13223f','#d6a417','#1f9d55','#5b78c7','#b8c0d4','#e08a00'];
+    var pal = ['#38bdf8','#fdc33e','#5b78c7','#1f9d55','#9fb8e8','#e08a00'];
     var items = Object.keys(cuenta).sort(function(a,b){ return cuenta[b]-cuenta[a]; }).map(function(k,ix){ return {l:k,n:cuenta[k],c:pal[ix%pal.length]}; });
     document.getElementById('dSub2').textContent = nTot ? nTot+' SOAT vendidos' : 'Sin ventas en el período';
     dibujarDona(document.getElementById('dDona'), items, nTot);
@@ -689,7 +689,7 @@
     document.getElementById('dSub4').textContent = base ? 'De '+base+' SOAT que ya vencieron' : 'Aún no hay SOAT vencidos';
     dibujarMedidor(document.getElementById('dGauge'), ren, nor, pen);
     // ---- 5) Motos contra carros ----
-    var tp = {Moto:{n:0,g:0,c:'#13223f',e:'🏍️'},Carro:{n:0,g:0,c:'#d6a417',e:'🚗'}}, otros = 0, tt = 0;
+    var tp = {Moto:{n:0,g:0,c:'#38bdf8',e:'🏍️'},Carro:{n:0,g:0,c:'#fdc33e',e:'🚗'}}, otros = 0, tt = 0;
     estado.soat.forEach(function(s){ var d = parsearISO(s.fechaISO); if(!d) return; if(dashY!=='todos' && d.getFullYear()!==+dashY) return;
       var k = /carro|camioneta|auto/i.test(s.tipo||'') ? 'Carro' : (/moto/i.test(s.tipo||'') ? 'Moto' : null);
       if(!k){ otros++; return; } tp[k].n++; tp[k].g += Number(s.ganancia)||0; tt++; });
@@ -707,7 +707,7 @@
     [0,.5,1].forEach(function(f){ var y = pt+ih-f*ih; v.appendChild(E('line',{x1:pl,x2:W-pr,y1:y,y2:y,'class':'grid'})); v.appendChild(E('text',{x:W-pr+6,y:y+4,'class':'t-ge'},money(maxG*f))); });
     var pts = [];
     datos.forEach(function(d,j){ if(!d) return; var hh = d.n/maxN*ih;
-      v.appendChild(E('rect',{x:xs(j)-bw/2,y:pt+ih-hh,width:bw,height:Math.max(hh,d.n?2:0),rx:5,fill:d.cur?'#f0c94a':'#13223f',stroke:d.cur?'#13223f':'none','stroke-width':d.cur?1.5:0}));
+      v.appendChild(E('rect',{x:xs(j)-bw/2,y:pt+ih-hh,width:bw,height:Math.max(hh,d.n?2:0),rx:5,fill:d.cur?'#fdc33e':'#38bdf8',stroke:d.cur?'#e08a00':'none','stroke-width':d.cur?1.5:0}));
       if(d.n){ if(hh>=20) v.appendChild(E('text',{x:xs(j),y:pt+ih-hh+15,'text-anchor':'middle','class':d.cur?'t-v':'t-w'},d.n)); else v.appendChild(E('text',{x:xs(j),y:pt+ih-hh-6,'text-anchor':'middle','class':'t-v'},d.n)); }
       pts.push({x:xs(j),y:yG(d.g),g:d.g}); });
     for(var j=0;j<n;j++) v.appendChild(E('text',{x:xs(j),y:H-8,'text-anchor':'middle','class':'t-s'},String(etq[j]).charAt(0).toUpperCase()+String(etq[j]).slice(1)));
@@ -752,9 +752,9 @@
     function arco(a0,a1,col){ var p = function(a){ return [cx+R*Math.cos(Math.PI*(1-a)), cy-R*Math.sin(Math.PI*(1-a))]; }, s = p(a0), e = p(a1);
       return E('path',{d:'M'+s[0]+' '+s[1]+' A'+R+' '+R+' 0 0 1 '+e[0]+' '+e[1],fill:'none',stroke:col,'stroke-width':18,'stroke-linecap':'round'}); }
     v.appendChild(arco(0,1,'#eef0f5'));
-    if(tot){ var a = 0; [[ren,'#1f9d55'],[pen,'#d6a417'],[nor,'#d64545']].forEach(function(x){ if(!x[0]) return; var f = x[0]/tot; v.appendChild(arco(a+0.005, Math.min(a+f,1)-0.005, x[1])); a += f; }); }
+    if(tot){ var a = 0; [[ren,'#1f9d55'],[pen,'#fdc33e'],[nor,'#dc2626']].forEach(function(x){ if(!x[0]) return; var f = x[0]/tot; v.appendChild(arco(a+0.005, Math.min(a+f,1)-0.005, x[1])); a += f; }); }
     v.appendChild(E('text',{x:cx,y:cy-18,'text-anchor':'middle','class':'gauge-n'},pct+' %')); v.appendChild(E('text',{x:cx,y:cy,'text-anchor':'middle','class':'gauge-s'},'renovaron'));
-    box.innerHTML = '<div style="text-align:center"></div><div class="g-parts"><div style="border-color:#1f9d55"><b>'+ren+'</b><span>Renovaron</span></div><div style="border-color:#d6a417"><b>'+pen+'</b><span>Sin respuesta</span></div><div style="border-color:#d64545"><b>'+nor+'</b><span>No renovaron</span></div></div>';
+    box.innerHTML = '<div style="text-align:center"></div><div class="g-parts"><div style="border-color:#1f9d55"><b>'+ren+'</b><span>Renovaron</span></div><div style="border-color:#fdc33e"><b>'+pen+'</b><span>Sin respuesta</span></div><div style="border-color:#d64545"><b>'+nor+'</b><span>No renovaron</span></div></div>';
     box.firstChild.appendChild(v);
   }
   document.getElementById('dashAnio').addEventListener('change', function(){ dashY = this.value; pintarTablero(); });

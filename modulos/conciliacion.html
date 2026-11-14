@@ -894,7 +894,7 @@
 
   /* ===== ¿Cuánto se ha consolidado cada mes? (columnas Mes y Año de la hoja Consolidado) ===== */
   var MES_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'], MES_C = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  var MM_COL = ['#5b78c7','#fdc33e','#38bdf8','#e08a00','#1f9d55','#8b5cf6'];
+  var MM_COL = ['#9fb8e8','#fdc33e','#38bdf8','#5b78c7','#e08a00','#d5dcf0'];
   function cop(n) { return '$' + Math.round(n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' COP'; }
   function copC(v) { v = Math.round(v || 0); if (v >= 1e6) return '$' + (v / 1e6).toFixed(1).replace('.', ',').replace(',0', '') + ' M'; if (v >= 1e3) return '$' + Math.round(v / 1e3) + ' mil'; return '$' + v; }
   function valorMes(o) { var m = $('mmValor').value; return m === 'c' ? o.c : m === 'd' ? o.d : o.auto; }

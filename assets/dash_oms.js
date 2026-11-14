@@ -62,8 +62,8 @@
     var maxN = Math.max.apply(null, datos.map(function (d) { return d ? d.n : 0; }).concat(1)) * 1.2;
     var v = svgBase(W, H), xs = function (j) { return pl + slot * (j + .5); };
     var df = E('defs'), g1 = E('linearGradient', { id: 'odg1', x1: 0, x2: 0, y1: 0, y2: 1 }), g2 = E('linearGradient', { id: 'odg2', x1: 0, x2: 0, y1: 0, y2: 1 });
-    g1.appendChild(E('stop', { offset: '0%', 'stop-color': '#3b5fb5' })); g1.appendChild(E('stop', { offset: '100%', 'stop-color': '#13223f' }));
-    g2.appendChild(E('stop', { offset: '0%', 'stop-color': '#ffd966' })); g2.appendChild(E('stop', { offset: '100%', 'stop-color': '#d6a417' }));
+    g1.appendChild(E('stop', { offset: '0%', 'stop-color': '#6fd3fb' })); g1.appendChild(E('stop', { offset: '100%', 'stop-color': '#38bdf8' }));
+    g2.appendChild(E('stop', { offset: '0%', 'stop-color': '#ffd45e' })); g2.appendChild(E('stop', { offset: '100%', 'stop-color': '#fdc33e' }));
     df.appendChild(g1); df.appendChild(g2); v.appendChild(df);
     [0, .5, 1].forEach(function (f) { var y = pt + ih - f * ih; v.appendChild(E('line', { x1: pl, x2: W - pr, y1: y, y2: y, 'class': f === 0 ? 'od-base' : 'od-grid' })); });
     datos.forEach(function (d, j) {
@@ -116,9 +116,9 @@
     function arco(a0, a1, col) { var p = function (a) { return [cx + R * Math.cos(Math.PI * (1 - a)), cy - R * Math.sin(Math.PI * (1 - a))]; }, s = p(a0), e = p(a1);
       return E('path', { d: 'M' + s[0] + ' ' + s[1] + ' A' + R + ' ' + R + ' 0 0 1 ' + e[0] + ' ' + e[1], fill: 'none', stroke: col, 'stroke-width': 18, 'stroke-linecap': 'round' }); }
     v.appendChild(arco(0, 1, '#eef0f5'));
-    if (tot) { var a = 0; [[ren, '#1f9d55'], [pen, '#d6a417'], [nor, '#d64545']].forEach(function (x) { if (!x[0]) return; var f = x[0] / tot; v.appendChild(arco(a + 0.005, Math.min(a + f, 1) - 0.005, x[1])); a += f; }); }
+    if (tot) { var a = 0; [[ren, '#1f9d55'], [pen, '#fdc33e'], [nor, '#dc2626']].forEach(function (x) { if (!x[0]) return; var f = x[0] / tot; v.appendChild(arco(a + 0.005, Math.min(a + f, 1) - 0.005, x[1])); a += f; }); }
     v.appendChild(E('text', { x: cx, y: cy - 18, 'text-anchor': 'middle', 'class': 'od-gn' }, pct + ' %')); v.appendChild(E('text', { x: cx, y: cy, 'text-anchor': 'middle', 'class': 'od-gs' }, 'renovaron'));
-    box.innerHTML = '<div style="text-align:center"></div><div class="od-parts"><div style="border-color:#1f9d55"><b>' + ren + '</b><span>Renovaron</span></div><div style="border-color:#d6a417"><b>' + pen + '</b><span>Sin respuesta</span></div><div style="border-color:#d64545"><b>' + nor + '</b><span>No renovaron</span></div></div>';
+    box.innerHTML = '<div style="text-align:center"></div><div class="od-parts"><div style="border-color:#1f9d55"><b>' + ren + '</b><span>Renovaron</span></div><div style="border-color:#fdc33e"><b>' + pen + '</b><span>Sin respuesta</span></div><div style="border-color:#d64545"><b>' + nor + '</b><span>No renovaron</span></div></div>';
     box.firstChild.appendChild(v);
   }
 
@@ -141,7 +141,7 @@
     var max = Math.max.apply(null, items.map(function (it) { return orden === 'n' ? it.n : it.v; }).concat(1));
     box.innerHTML = '<div class="od-rank od-mk">' + items.map(function (it, i) {
       var base = orden === 'n' ? it.n : it.v;
-      return '<div class="od-r" title="' + esc(it.l) + '"><span class="od-rk">' + (i + 1) + '</span><span class="od-rn">' + esc(it.l) + '</span><div class="od-rp"><div class="od-rb" style="width:' + Math.round(base / max * 100) + '%;background:' + (i === 0 ? '#d6a417' : '#13223f') + '"></div></div><b>' + cop(it.v) + '</b><span class="od-rq2">' + Math.round(it.n / (total || 1) * 100) + ' % · ' + it.n + ' póliza' + (it.n === 1 ? '' : 's') + ' · prom. ' + cop(it.n ? it.v / it.n : 0) + '</span></div>';
+      return '<div class="od-r" title="' + esc(it.l) + '"><span class="od-rk">' + (i + 1) + '</span><span class="od-rn">' + esc(it.l) + '</span><div class="od-rp"><div class="od-rb" style="width:' + Math.round(base / max * 100) + '%;background:' + (i === 0 ? '#fdc33e' : '#38bdf8') + '"></div></div><b>' + cop(it.v) + '</b><span class="od-rq2">' + Math.round(it.n / (total || 1) * 100) + ' % · ' + it.n + ' póliza' + (it.n === 1 ? '' : 's') + ' · prom. ' + cop(it.n ? it.v / it.n : 0) + '</span></div>';
     }).join('') + '</div>';
   }
 
@@ -151,7 +151,7 @@
     box.innerHTML = '<div class="od-cl-w"><div class="od-rank od-cl">' + items.map(function (it, i) {
       var det = it.f === 'FINANCIADO' ? 'Financiado: ' + cop(it.cu) + ' × ' + (it.pl || '?') + ' cuotas' : it.f === 'CONTADO' ? 'De contado' : 'Forma de pago sin dato';
       var fe = it.d ? it.d.getDate() + ' ' + mes[it.d.getMonth()] + ' ' + it.d.getFullYear() : '';
-      return '<div class="od-r" title="' + esc(it.c) + '"><span class="od-rk">' + (i + 1) + '</span><span class="od-rn">' + esc(it.c) + '</span><span class="od-rn od-mt">' + esc(it.m) + '</span><div class="od-rp"><div class="od-rb" style="width:' + Math.round(it.v / max * 100) + '%;background:' + (i === 0 && orden !== 'a' ? '#d6a417' : '#13223f') + '"></div></div><b>' + cop(it.v) + '</b><span class="od-rq2">' + det + (fe ? ' · ' + fe : '') + '</span></div>';
+      return '<div class="od-r" title="' + esc(it.c) + '"><span class="od-rk">' + (i + 1) + '</span><span class="od-rn">' + esc(it.c) + '</span><span class="od-rn od-mt">' + esc(it.m) + '</span><div class="od-rp"><div class="od-rb" style="width:' + Math.round(it.v / max * 100) + '%;background:' + (i === 0 && orden !== 'a' ? '#fdc33e' : '#38bdf8') + '"></div></div><b>' + cop(it.v) + '</b><span class="od-rq2">' + det + (fe ? ' · ' + fe : '') + '</span></div>';
     }).join('') + '</div></div>';
   }
 
@@ -159,15 +159,15 @@
     if (!items.length) { box.innerHTML = '<div class="od-mute" style="padding:30px 0;text-align:center">Sin datos</div>'; return; }
     var max = items[0].n;
     box.innerHTML = '<div class="od-rank">' + items.map(function (it, i) {
-      return '<div class="od-r" title="' + esc(it.l) + ': ' + it.n + '"><span class="od-rk">' + (i + 1) + '</span><span class="od-rn">' + esc(it.l) + '</span><div class="od-rp"><div class="od-rb" style="width:' + Math.round(it.n / max * 100) + '%;background:' + (i === 0 ? '#d6a417' : '#13223f') + '"></div></div><b>' + it.n + '</b><span class="od-rq">' + Math.round(it.n / total * 100) + ' %</span></div>';
+      return '<div class="od-r" title="' + esc(it.l) + ': ' + it.n + '"><span class="od-rk">' + (i + 1) + '</span><span class="od-rn">' + esc(it.l) + '</span><div class="od-rp"><div class="od-rb" style="width:' + Math.round(it.n / max * 100) + '%;background:' + (i === 0 ? '#fdc33e' : '#38bdf8') + '"></div></div><b>' + it.n + '</b><span class="od-rq">' + Math.round(it.n / total * 100) + ' %</span></div>';
     }).join('') + '</div>';
   }
 
   function estados(box, a) {
     var c = { ACTIVO: 0, CANCELADO: 0, FINALIZADO: 0, otros: 0 };
     a.forEach(function (x) { var e = x.c.estado; if (c[e] !== undefined) c[e]++; else c.otros++; });
-    var tot = a.length || 1, it = [['Activos', c.ACTIVO, '#1f9d55'], ['Cancelados', c.CANCELADO, '#d64545'], ['Finalizados', c.FINALIZADO, '#5b78c7'], ['Otros', c.otros, '#c9d0e0']].filter(function (x) { return x[1]; });
-    box.innerHTML = '<div class="od-tiles">' + [['Activos', c.ACTIVO, '#1f9d55'], ['Cancelados', c.CANCELADO, '#d64545'], ['Finalizados', c.FINALIZADO, '#5b78c7']].map(function (x) { return '<div style="border-color:' + x[2] + '"><b>' + x[1] + '</b><span>' + x[0] + ' · ' + Math.round(x[1] / tot * 100) + ' %</span></div>'; }).join('') + '</div>' +
+    var tot = a.length || 1, it = [['Activos', c.ACTIVO, '#1f9d55'], ['Cancelados', c.CANCELADO, '#dc2626'], ['Finalizados', c.FINALIZADO, '#5b78c7'], ['Otros', c.otros, '#c9d0e0']].filter(function (x) { return x[1]; });
+    box.innerHTML = '<div class="od-tiles">' + [['Activos', c.ACTIVO, '#1f9d55'], ['Cancelados', c.CANCELADO, '#dc2626'], ['Finalizados', c.FINALIZADO, '#5b78c7']].map(function (x) { return '<div style="border-color:' + x[2] + '"><b>' + x[1] + '</b><span>' + x[0] + ' · ' + Math.round(x[1] / tot * 100) + ' %</span></div>'; }).join('') + '</div>' +
       '<div class="od-band">' + it.map(function (x) { return '<i style="width:' + (x[1] / tot * 100) + '%;background:' + x[2] + '" title="' + x[0] + ': ' + x[1] + '">' + (x[1] / tot > .08 ? x[1] : '') + '</i>'; }).join('') + '</div>';
   }
 
@@ -180,10 +180,10 @@
       '.od-top h2{margin:0;font-size:1.05rem;color:#13223f} .od-top label{font-size:.85rem;color:#6b7280;display:flex;align-items:center;gap:6px} .od-top select{border:1px solid #e3e6eb;border-radius:8px;padding:5px 8px;font-size:.85rem;background:#fff}',
       '.od-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}',
       '.od-k{position:relative;overflow:hidden;border:0!important;border-radius:16px!important;padding:14px 16px!important;color:#fff;box-shadow:0 8px 20px rgba(19,34,63,.16)} .od-k b{color:#fff!important;font-size:2rem!important} .od-k span{color:rgba(255,255,255,.88)!important;font-size:.85rem!important;font-weight:600;letter-spacing:.5px;display:block;margin-top:3px} .od-k em{position:absolute;right:12px;top:10px;font-style:normal;font-size:1.5rem;opacity:.9} .od-k::after{content:"";position:absolute;right:-26px;bottom:-34px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.12)}',
-      '.od-k.k1{background:linear-gradient(135deg,#13223f,#3b5fb5)} .od-k.k2{background:linear-gradient(135deg,#d6a417,#f3c94b)} .od-k.k2 b,.od-k.k2 span{color:#2a1f00!important} .od-k.k3{background:linear-gradient(135deg,#0f8a4a,#34c27a)} .od-k.k4{background:linear-gradient(135deg,#c0392b,#ef6b5b)} .od-k.k5{background:linear-gradient(135deg,#0e7490,#22b8d4)} .od-k.k6{background:linear-gradient(135deg,#6d28d9,#a78bfa)} .od-k.k7{background:linear-gradient(135deg,#334155,#64748b)}',
+      '.od-k.k1{background:linear-gradient(135deg,#1d4ed8,#60a5fa)} .od-k.k2{background:linear-gradient(135deg,#fdc33e,#e08a00)} .od-k.k2 b,.od-k.k2 span{color:#2a1f00!important} .od-k.k3{background:linear-gradient(135deg,#0f8a4a,#34c27a)} .od-k.k4{background:linear-gradient(135deg,#be123c,#fb7185)} .od-k.k5{background:linear-gradient(135deg,#0e7490,#22d3ee)} .od-k.k6{background:linear-gradient(135deg,#6d28d9,#a78bfa)} .od-k.k7{background:linear-gradient(135deg,#334155,#64748b)}',
       '.od-k{background:#fff;border:1px solid #e3e6eb;border-radius:14px;padding:12px 14px;border-top:3px solid #d6a417} .od-k b{display:block;font-size:1.7rem;color:#13223f;line-height:1.1} .od-k span{font-size:.85rem;color:#6b7280;text-transform:uppercase;letter-spacing:.3px} .od-k.al{border-top-color:#d64545} .od-k.al b{color:#d64545} .od-k.vd{border-top-color:#1f9d55}',
       '.od-grid12{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}',
-      '.od-card{background:#fff;border:1px solid #e3e6eb;border-radius:16px;padding:16px 18px;min-width:0;box-shadow:0 2px 12px rgba(19,34,63,.07)} .od-card h3{margin:0 0 2px;font-size:.98rem;color:#13223f;border-left:4px solid #f0c94a;padding-left:9px;line-height:1.2;font-family:inherit}',
+      '.od-card{background:#fff;border:1px solid #e3e6eb;border-radius:16px;padding:16px 18px;min-width:0;box-shadow:0 2px 12px rgba(19,34,63,.07)} .od-card h3{margin:0 0 2px;font-size:.98rem;color:#13223f;border-left:4px solid #fdc33e;padding-left:9px;line-height:1.2;font-family:inherit}',
       '.od-card .od-sub{font-size:.85rem;color:#6b7280;margin:2px 0 8px;min-height:1.1em} .od-c8{grid-column:span 8} .od-c4{grid-column:span 4} .od-c6{grid-column:span 6} .od-c12{grid-column:1/-1}',
       '.od-fil{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 8px} .od-fil label{display:flex;align-items:center;gap:6px;font-size:.85rem;color:#6b7280} .od-fil select{border:1px solid #e3e6eb;background:#fff;border-radius:8px;padding:4px 8px;font-size:.85rem;color:#1f2430;cursor:pointer}',
       '.od-ayuda{margin:0 0 6px;font-size:.85rem;color:#6b7a99;line-height:1.35;padding-right:34px}',
@@ -302,7 +302,7 @@
         '<div class="od-k k7"><em>🔁</em><b>' + (tasaTodos === null ? '—' : tasaTodos + ' %') + '</b><span>' + (tasaTodos === null ? 'Tasa de renovación (aún sin datos)' : 'Tasa de renovación') + '</span></div>' +
       '</div>' +
       '<div class="od-grid12">' +
-        '<div class="od-card od-c8 ay-c"><h3>OMS: pólizas vendidas</h3>' + ayBoton('OMS: pólizas vendidas','Sale de la hoja de clientes OMS: cada cliente es una póliza y cuenta en el mes de su fecha de inicio. Con «Mes» ves un mes y con «Año» comparas años.') + '<p class="od-ayuda">Cuántas pólizas se han vendido cada mes.</p><p class="od-sub" data-s="1"></p>' + filtro('combo', lista, true) + '<div class="od-leg2"><span><i style="background:#13223f"></i>Cada columna = pólizas vendidas en ese mes</span></div><div data-g="combo"></div></div>' +
+        '<div class="od-card od-c8 ay-c"><h3>OMS: pólizas vendidas</h3>' + ayBoton('OMS: pólizas vendidas','Sale de la hoja de clientes OMS: cada cliente es una póliza y cuenta en el mes de su fecha de inicio. Con «Mes» ves un mes y con «Año» comparas años.') + '<p class="od-ayuda">Cuántas pólizas se han vendido cada mes.</p><p class="od-sub" data-s="1"></p>' + filtro('combo', lista, true) + '<div class="od-leg2"><span><i style="background:#38bdf8"></i>Cada columna = pólizas vendidas en ese mes</span></div><div data-g="combo"></div></div>' +
         '<div class="od-card od-c4 ay-c"><h3>OMS: renovaciones</h3>' + ayBoton('OMS: renovaciones','Cuenta los clientes cuya fecha fin ya pasó. Renovó = hay un registro nuevo del mismo cliente y vehículo, o lo marcaste «Renovó». Sin respuesta = aún no se sabe.') + '<p class="od-ayuda">Qué parte de los clientes que cumplieron su año renovó.</p><p class="od-sub" data-s="4"></p>' + filtro('med', lista, false) + '<div data-g="med"></div></div>' +
         '<div class="od-card od-c4 ay-c"><h3>OMS: ¿contado o financiado?</h3>' + ayBoton('OMS: ¿contado o financiado?','Sale de la columna Compra de la hoja OMS. Usa el año y el mes de la fecha de inicio.') + '<p class="od-ayuda">Cómo pagaron los clientes OMS del período.</p><p class="od-sub" data-s="2"></p>' + filtro('forma', lista, true) + '<div data-g="forma"></div></div>' +
         '<div class="od-card od-c8 ay-c"><h3>OMS: vehículos más vendidos</h3>' + ayBoton('OMS: vehículos más vendidos','Cuenta la columna Vehículo de la hoja OMS. Muestra los 6 primeros.') + '<p class="od-ayuda">Los modelos que más se venden en el período.</p><p class="od-sub" data-s="6"></p>' + filtro('veh', lista, true) + '<div data-g="veh"></div></div>' +
@@ -338,7 +338,7 @@
 
     // 2) contado o financiado
     var cf = {}, nF = 0; a.forEach(function (x) { if (!pasa(x, S.forma)) return; var k = x.forma === 'FINANCIADO' ? 'Financiado' : x.forma === 'CONTADO' ? 'Contado' : 'Sin dato'; cf[k] = (cf[k] || 0) + 1; nF++; });
-    var pal = { Financiado: '#13223f', Contado: '#d6a417', 'Sin dato': '#b8c0d4' };
+    var pal = { Financiado: '#5b78c7', Contado: '#fdc33e', 'Sin dato': '#9fb8e8' };
     q('[data-s="2"]').textContent = nF ? nF + ' clientes' : 'Sin ventas en el período';
     dona(q('[data-g="forma"]'), Object.keys(cf).sort(function (p, r) { return cf[r] - cf[p]; }).map(function (k) { return { l: k, n: cf[k], c: pal[k] }; }), nF);
 

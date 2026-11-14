@@ -1048,9 +1048,9 @@
     var n = F.length, ac = cnt(F,'Aceptó'), no = cnt(F,'No aceptó'), ve = cnt(F,'Venció sin responder'), es = cnt(F,'Esperando respuesta');
     var pct = function(a,b){ return b ? Math.round(a/b*100) : 0; };
     document.getElementById('segTiles').innerHTML =
-      '<div class="seg-t" style="--c:#13223f"><span>Mensajes enviados</span><b>'+n+'</b><small>clientes distintos</small></div>'+
+      '<div class="seg-t" style="--c:#38bdf8"><span>Mensajes enviados</span><b>'+n+'</b><small>clientes distintos</small></div>'+
       '<div class="seg-t" style="--c:#1f9d55"><span>Aceptaron</span><b>'+ac+'</b><small>'+pct(ac,n)+' % de los enviados</small></div>'+
-      '<div class="seg-t" style="--c:#d97706"><span>No aceptaron</span><b>'+no+'</b><small>'+pct(no,n)+' % de los enviados</small></div>'+
+      '<div class="seg-t" style="--c:#e08a00"><span>No aceptaron</span><b>'+no+'</b><small>'+pct(no,n)+' % de los enviados</small></div>'+
       '<div class="seg-t" style="--c:#5b78c7"><span>Esperando respuesta</span><b>'+es+'</b><small>'+pct(es,n)+' % de los enviados</small></div>'+
       '<div class="seg-t" style="--c:#dc2626"><span>Vencieron sin responder</span><b>'+ve+'</b><small>'+pct(ve,n)+' % de los enviados</small></div>';
     // tabla por mes del envío
@@ -1122,11 +1122,11 @@
     var pct = function(a,b){ return b ? Math.round(a/b*100) : 0; };
     var totMsgs = L.reduce(function(t,o){return t+o.msgs;},0), totSeg = totMsgs-n;
     document.getElementById('scTiles').innerHTML =
-      '<div class="seg-t" style="--c:#13223f"><span>Clientes en seguimiento</span><b>'+n+'</b><small>'+totMsgs+' mensajes en total ('+totSeg+' de seguimiento)</small></div>'+
+      '<div class="seg-t" style="--c:#38bdf8"><span>Clientes en seguimiento</span><b>'+n+'</b><small>'+totMsgs+' mensajes en total ('+totSeg+' de seguimiento)</small></div>'+
       '<div class="seg-t" style="--c:#5b78c7"><span>Pendientes de respuesta</span><b>'+pe+'</b><small>'+pct(pe,n)+' %</small></div>'+
       '<div class="seg-t" style="--c:#1f9d55"><span>Aceptaron</span><b>'+ac.length+'</b><small>'+pct(ac.length,n)+' % de los contactados</small></div>'+
-      '<div class="seg-t" style="--c:#d97706"><span>No aceptaron</span><b>'+no.length+'</b><small>'+pct(no.length,n)+' %</small></div>'+
-      '<div class="seg-t" style="--c:#7c3aed"><span>Mensajes por cliente que aceptó</span><b>'+(ac.length ? (ac.reduce(function(t,o){return t+o.msgs;},0)/ac.length).toFixed(1) : '0')+'</b><small>promedio</small></div>';
+      '<div class="seg-t" style="--c:#e08a00"><span>No aceptaron</span><b>'+no.length+'</b><small>'+pct(no.length,n)+' %</small></div>'+
+      '<div class="seg-t" style="--c:#6d28d9"><span>Mensajes por cliente que aceptó</span><b>'+(ac.length ? (ac.reduce(function(t,o){return t+o.msgs;},0)/ac.length).toFixed(1) : '0')+'</b><small>promedio</small></div>';
     var rot = ['Mensaje inicial de renovación','Después del seguimiento 1','Después del seguimiento 2','Después del seguimiento 3'];
     document.getElementById('cuerpoSCef').innerHTML = rot.map(function(t,i){ var k = ac.filter(function(o){return o.conCual===i;}).length;
       return '<tr><td data-etiqueta="Mensaje">'+t+'</td><td data-etiqueta="Aceptaron"><strong>'+k+'</strong></td><td data-etiqueta="%">'+pct(k,ac.length)+' %</td></tr>'; }).join('');

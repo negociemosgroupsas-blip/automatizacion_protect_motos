@@ -41,6 +41,9 @@ conectores/
 4. Secciones plegables: Ventas y contratos · Clientes y seguros · Conciliación · SOAT · Clientes OMS · Comisiones · Renovaciones
    (tres gráficas: Protect/Cobros, pólizas OMS y SOAT — mensajes enviados vs renovaron).
 
+## Paleta de gráficas (igual en todo el sistema)
+Cian `#38bdf8` (series y barras) · Oro `#fdc33e` (destacado, mes actual, contado) · Azul `#5b78c7` (financiado) · Azul claro `#9fb8e8` · Naranja `#e08a00` · Verde `#1f9d55` (activo, positivo) · Rojo `#dc2626` (cancelado, alerta). Es la misma del Inicio y se aplica en Clientes OMS, SOAT, Conciliación, Comisiones y Cobros.
+
 ## Conexión con Google (un solo conector)
 1. Nuevo proyecto en script.google.com → pegar `conectores/unico/Codigo_UNICO.gs` → ejecutar **AUTORIZAR_TODO** una vez.
 2. Implementar → Aplicación web (Ejecutar como: Yo · Acceso: Cualquier usuario) → copiar la URL `/exec`.

@@ -540,7 +540,7 @@
     var f=detG().filter(function(r,i){return i===0||r[0]===a});bajar('comisiones_'+mk()+'_'+a.toLowerCase().replace(/\W+/g,'_')+'_detalle.csv',csv(f))});
 
   // ---------- RESUMEN (tarjetas + gráfica, igual a la del Inicio) ----------
-  var rV='mes',rY=String(new Date().getFullYear()),rM='0',rA='',RCOL=['#5b78c7','#fdc33e','#38bdf8','#e08a00','#1f9d55','#8b5cf6'];
+  var rV='mes',rY=String(new Date().getFullYear()),rM='0',rA='',RCOL=['#9fb8e8','#fdc33e','#38bdf8','#5b78c7','#e08a00','#d5dcf0'];
   function dr0(cl,k){var d=decision(k);return !!(d&&d.d!=='regla')}
   function pesosC(n){return pesos(n)+' COP'}
   function kC(n){return pesos(n)+'<em style="font-size:.5em;font-style:normal;opacity:.85"> COP</em>'}
@@ -565,7 +565,7 @@
     $('rTipo').innerHTML=lt.map(function(x,i){return '<div class="rfa'+(i===0?' top':'')+'" style="grid-template-columns:20px minmax(110px,160px) 1fr 130px"><span class="n">'+(i+1)+'</span><span>'+NOMT[x[0]]+'</span><div class="p"><div class="br" style="width:'+Math.round(x[1].v/mx*100)+'%"></div></div><b title="'+x[1].n+' póliza(s)">'+pesosC(x[1].v)+'</b></div>'}).join('');
     var C=0,Fi=0,nC=0,nF=0;Fs.forEach(function(r){if(r.t==='CRC'||r.t==='C'||r.t==='OMSC'){C+=r.pay;nC++}else if(r.t==='FRC'||r.t==='F'||r.t==='OMSF'){Fi+=r.pay;nF++}});var tt=C+Fi||1;
     $('rCFS').textContent=(C+Fi)?'De cada $100 pagados en comisiones, cuánto viene de ventas de contado y cuánto de financiadas.':'Sin datos en el período.';
-    $('rCF').innerHTML=(C+Fi)?'<div class="rsb"><div style="width:'+(C/tt*100)+'%;background:#e08a00">'+Math.round(C/tt*100)+' %</div><div style="width:'+(Fi/tt*100)+'%;background:#5b78c7">'+Math.round(Fi/tt*100)+' %</div></div><div class="rley"><span><i style="background:#e08a00"></i><b>De contado</b> · '+pesosC(C)+' · '+nC+' póliza(s)</span><span><i style="background:#5b78c7"></i><b>Financiadas</b> · '+pesosC(Fi)+' · '+nF+' póliza(s)</span></div>':'';
+    $('rCF').innerHTML=(C+Fi)?'<div class="rsb"><div style="width:'+(C/tt*100)+'%;background:#fdc33e;color:#13223f">'+Math.round(C/tt*100)+' %</div><div style="width:'+(Fi/tt*100)+'%;background:#5b78c7">'+Math.round(Fi/tt*100)+' %</div></div><div class="rley"><span><i style="background:#e08a00"></i><b>De contado</b> · '+pesosC(C)+' · '+nC+' póliza(s)</span><span><i style="background:#5b78c7"></i><b>Financiadas</b> · '+pesosC(Fi)+' · '+nF+' póliza(s)</span></div>':'';
     // ---- columnas de tiempo: mes a mes (todos los años = línea de tiempo continua) ----
     var MM=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],cols=[],keyOf;
     if(rM!=='0'&&rY==='todos'){var yy={};Fs.forEach(function(r){yy[r.y]=1});cols=Object.keys(yy).map(Number).sort().map(function(y){return {k:y,lab:String(y)}});keyOf=function(r){return r.y}}
@@ -573,7 +573,7 @@
     else if(rM!=='0'){cols=[{k:+rM,lab:MESES[+rM-1]}];keyOf=function(r){return r.m}}
     else{for(var q=1;q<=12;q++)cols.push({k:q,lab:MM[q-1]});keyOf=function(r){return r.m}}
     var cortoC=function(v){v=Math.round(v||0);if(v>=1e6)return '$'+(v/1e6).toFixed(1).replace('.',',').replace(',0','')+' M';if(v>=1e3)return '$'+Math.round(v/1e3)+' mil';return '$'+v};
-    var tas={};Fs.forEach(function(r){tas[r.as]=(tas[r.as]||0)+r.pay});var ord=Object.keys(tas).sort(function(a,b){return tas[b]-tas[a]}),top=ord.slice(0,8),hasO=ord.length>8,PAL=['#5b78c7','#fdc33e','#38bdf8','#e08a00','#1f9d55','#8b5cf6','#ef4444','#14b8a6','#9aa4b8'],seg=top.concat(hasO?['OTROS']:[]);
+    var tas={};Fs.forEach(function(r){tas[r.as]=(tas[r.as]||0)+r.pay});var ord=Object.keys(tas).sort(function(a,b){return tas[b]-tas[a]}),top=ord.slice(0,8),hasO=ord.length>8,PAL=['#38bdf8','#fdc33e','#5b78c7','#9fb8e8','#e08a00','#d5dcf0','#1f9d55','#8b5cf6'],seg=top.concat(hasO?['OTROS']:[]);
     var G=cols.map(function(c){var o={};Fs.forEach(function(r){if(keyOf(r)!==c.k)return;var k=top.indexOf(r.as)>=0?r.as:'OTROS';o[k]=(o[k]||0)+r.pay});return o});
     var totC=G.map(function(o){return Object.keys(o).reduce(function(a,k){return a+o[k]},0)});
     var W=920,H=330,pl=70,pr=16,pt=34,pb=cols.some(function(c){return c.sub})?52:36,iw=W-pl-pr,ih=H-pt-pb,n=Math.max(cols.length,1),slot=iw/n;
