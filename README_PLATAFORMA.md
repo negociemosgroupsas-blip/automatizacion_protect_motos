@@ -14,6 +14,7 @@ assets/
   logo_data.js                Logo incrustado para el PDF
   dash_oms.js                 Tablero de Clientes OMS
   tema_modulo.js              Modo oscuro / día de los módulos
+  tipografia.css + fonts/     Tipografía única (Lato, incluida: funciona sin internet) y jerarquía de pesos: negrilla solo en títulos y cifras
   xlsx.mini.min.js, pptxgen.bundle.js, zip_simple.js, logo*.png
 modulos/                      Un archivo por botón del menú
   contratos.html              OPERACIÓN · cotiza, genera e imprime el contrato y lo guarda en la hoja
