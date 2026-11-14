@@ -580,7 +580,7 @@
     </div>
     <div class="in-kpis" id="inKpis"></div>
     <section class="card gxc" id="gxWrap" data-sec="gerencia" hidden><h3>📋 Resumen gerencial</h3><p class="tot" id="gxSub"></p><div class="gx-grid" id="gxGrid"></div><h4 class="gx-h">⚠️ Atención requerida</h4><div class="gx-at" id="gxAt"></div></section>
-    <section class="card fnx" id="fnWrap" data-sec="gerencia" hidden><h3>🏁 Contratos terminados: finalizados vs cancelados</h3><p class="tot" id="fnSub"></p><div class="fn-w"><div class="fn-d" id="fnDon"></div><div class="fn-y" id="fnCols"></div></div><div class="fn-l"><span><i style="background:#1f9d55"></i>Finalizados (siempre pagó)</span><span><i style="background:#dc2626"></i>Cancelados (dejó de pagar)</span><span>% sobre cada columna = finalizados ÷ terminados · columnas por año en que terminó el contrato</span></div></section>
+    <section class="card fnx" id="fnWrap" data-sec="gerencia" hidden><h3>🏁 Contratos terminados: finalizados vs cancelados</h3><p class="tot" id="fnSub"></p><div class="ed-per"><label>Año en que terminó <select id="fnAnio"></select></label> <label>Tipo de venta <select id="fnForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="fnAses"></select></label></div><div class="fn-w"><div class="fn-d" id="fnDon"></div><div class="fn-y" id="fnCols"></div></div><div class="fn-l"><span><i style="background:#1f9d55"></i>Finalizados (siempre pagó)</span><span><i style="background:#dc2626"></i>Cancelados (dejó de pagar)</span><span>% sobre cada columna = finalizados ÷ terminados · columnas por año en que terminó el contrato</span></div></section>
     <div class="in-sec" id="sec-ventas" data-sec="ventas" style="order:4"><i></i>Ventas y contratos<em>▾</em></div>
     <div class="in-sec" id="sec-clientes" data-sec="clientes" style="order:8"><i></i>Clientes y seguros<em>▾</em></div>
     <div class="in-sec" id="sec-conc" data-sec="conc" style="order:13"><i></i>Conciliación de pagos<em>▾</em></div>
@@ -1391,6 +1391,30 @@
     var p=Math.round((a-b)/b*100),cl=p===0?'':((p>0)!==!!inv?'up':'dn');
     return '<span class="gx-d '+cl+'">'+(p>0?'▲ +':p<0?'▼ ':'= ')+p+' %</span>';
   }
+  var FNF={a:'',f:'',s:''};
+  function fnAnioDe(o){var mm=/(\d{4})/.exec(o.x.finISO||'')||/(\d{4})\s*$/.exec(String(o.x.fin||''));return mm?+mm[1]:(o.y||0)}
+  function pintarFin(){
+    var base=window.PM_FN_BASE||[],FW=document.getElementById('fnWrap');if(!FW)return;
+    var T0=base.filter(function(o){return o.e==='FINALIZADO'||o.e==='CANCELADO'});
+    if(!T0.length){FW.hidden=true;return}FW.hidden=false;
+    var sa=document.getElementById('fnAnio'),ss=document.getElementById('fnAses'),sf=document.getElementById('fnForma');
+    var ys={},as={};T0.forEach(function(o){ys[fnAnioDe(o)]=1;var a=String(o.x.asesor||'').trim().toUpperCase();if(a)as[a]=1});
+    var yl=Object.keys(ys).filter(Boolean).sort().reverse(),al=Object.keys(as).sort();
+    sa.innerHTML='<option value="">Todos los años</option>'+yl.map(function(y){return '<option>'+y+'</option>'}).join('');sa.value=ys[FNF.a]?FNF.a:'';FNF.a=sa.value;
+    ss.innerHTML='<option value="">Todos</option>'+al.map(function(y){return '<option>'+y+'</option>'}).join('');ss.value=as[FNF.s]?FNF.s:'';FNF.s=ss.value;sf.value=FNF.f;
+    var T=T0.filter(function(o){return (!FNF.a||String(fnAnioDe(o))===FNF.a)&&(!FNF.f||o.f===FNF.f)&&(!FNF.s||String(o.x.asesor||'').trim().toUpperCase()===FNF.s)});
+    var cols=document.getElementById('fnCols'),don=document.getElementById('fnDon'),sub=document.getElementById('fnSub');
+    if(!T.length){sub.textContent='No hay contratos terminados con ese filtro.';don.innerHTML='';cols.innerHTML='';return}
+    var F=T.filter(function(o){return o.e==='FINALIZADO'}).length,C=T.length-F,pc=Math.round(F*100/T.length*10)/10,circ=2*Math.PI*80,df=circ*F/T.length;
+    sub.textContent='De '+T.length+' contratos que ya terminaron, '+F+' finalizaron satisfactoriamente y '+C+' se cancelaron.';
+    don.innerHTML='<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="80" fill="none" stroke="#dc2626" stroke-width="26"/><circle cx="100" cy="100" r="80" fill="none" stroke="#1f9d55" stroke-width="26" stroke-dasharray="'+df+' '+circ+'"/></svg><div class="fn-c"><b style="color:#1f9d55">'+pc+' %</b><small>finalizaron satisfactoriamente</small></div>';
+    var yy={};T.forEach(function(o){var y=fnAnioDe(o);if(!y)return;yy[y]=yy[y]||{f:0,c:0};if(o.e==='FINALIZADO')yy[y].f++;else yy[y].c++});
+    var ks=Object.keys(yy).sort().slice(-6),mx=1;ks.forEach(function(k){mx=Math.max(mx,yy[k].f+yy[k].c)});
+    cols.innerHTML=ks.map(function(k){var v=yy[k],t=v.f+v.c,h=Math.max(6,Math.round(t/mx*130));
+      return '<div class="fn-col" title="'+k+': '+v.f+' finalizados · '+v.c+' cancelados"><div class="fn-p">'+Math.round(v.f*100/t)+' %</div><div class="fn-s" style="height:'+h+'px"><i style="background:#dc2626;flex:'+v.c+'"></i><i style="background:#1f9d55;flex:'+v.f+'"></i></div><span class="fn-a">'+k+' · '+t+'</span></div>'}).join('');
+  }
+  window.pintarFin=pintarFin;
+  [['fnAnio','a'],['fnForma','f'],['fnAses','s']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.addEventListener('change',function(){FNF[x[1]]=this.value;pintarFin()})});
   function pintarGerencia(){
     var PK=window.PMK||{};
     var W=document.getElementById('gxWrap'),R=window.PM_COBROS;if(!W)return;
@@ -1423,18 +1447,7 @@
       M_('Cancelaciones',tc+' %',canc+' de '+tot+' contratos cancelados','Indicador de calidad de la venta',null)+
       (rc?M_('Comisiones del mes',cop(cmM),gxDelta(cmM,cmP,true).replace(/ (up|dn)"/,'"')+' vs '+MESN[PM-1]+' completo',vM?('Equivale al '+(Math.round(cmM/vM*1000)/10)+' % del valor contratado'):''):'');
     /* gráfica de contratos terminados */
-    (function(){
-      var FW=document.getElementById('fnWrap');if(!FW)return;
-      var T=base.filter(function(o){return o.e==='FINALIZADO'||o.e==='CANCELADO'}),F=T.filter(function(o){return o.e==='FINALIZADO'}).length,C=T.length-F;
-      if(!T.length){FW.hidden=true;return}FW.hidden=false;
-      var pc=Math.round(F*100/T.length*10)/10,circ=2*Math.PI*80,df=circ*F/T.length;
-      document.getElementById('fnSub').textContent='De '+T.length+' contratos que ya terminaron, '+F+' finalizaron satisfactoriamente y '+C+' se cancelaron.';
-      document.getElementById('fnDon').innerHTML='<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="80" fill="none" stroke="#dc2626" stroke-width="26"/><circle cx="100" cy="100" r="80" fill="none" stroke="#1f9d55" stroke-width="26" stroke-dasharray="'+df+' '+circ+'"/></svg><div class="fn-c"><b style="color:#1f9d55">'+pc+' %</b><small>finalizaron satisfactoriamente</small></div>';
-      var ys={};T.forEach(function(o){var mm=/(\d{4})/.exec(o.x.finISO||'')||/(\d{4})\s*$/.exec(String(o.x.fin||'')),yy=mm?+mm[1]:(o.y||0);if(!yy)return;ys[yy]=ys[yy]||{f:0,c:0};if(o.e==='FINALIZADO')ys[yy].f++;else ys[yy].c++});
-      var ks=Object.keys(ys).sort().slice(-6),mx=1;ks.forEach(function(k){mx=Math.max(mx,ys[k].f+ys[k].c)});
-      document.getElementById('fnCols').innerHTML=ks.map(function(k){var v=ys[k],t=v.f+v.c,h=Math.max(6,Math.round(t/mx*130));
-        return '<div class="fn-col" title="'+k+': '+v.f+' finalizados · '+v.c+' cancelados"><div class="fn-p">'+Math.round(v.f*100/t)+' %</div><div class="fn-s" style="height:'+h+'px"><i style="background:#dc2626;flex:'+v.c+'"></i><i style="background:#1f9d55;flex:'+v.f+'"></i></div><span class="fn-a">'+k+'</span></div>'}).join('');
-    })();
+    window.PM_FN_BASE=base;pintarFin();
     /* atención */
     var h8=0,hD=new Date(Y,hoyD.getMonth(),hoyD.getDate());
     base.forEach(function(o){if(o.e!=='ACTIVO'||!o.x.finISO)return;var p=o.x.finISO.split('-'),f=new Date(+p[0],+p[1]-1,+p[2]),d=Math.round((f-hD)/86400000);if(d>=0&&d<=8)h8++});
