@@ -62,6 +62,10 @@
       <p class="sub" style="margin:0 0 10px">Suma de TODO lo que entró al banco según la hoja (incluye consignaciones sin comprobante). «Con pago registrado» = aparece en la hoja Pagos con esa fecha y valor; «Sin comprobante» = entró plata y no hay un pago registrado.</p>
       <div class="fil nop"><label>Año <select id="rsAnio"></select></label></div>
       <div class="tiles" id="rsTiles" style="margin-top:10px"></div>
+      <details id="rsDet" style="margin:6px 0 12px"><summary style="cursor:pointer;font-weight:700">🧹 ¿Qué cuenta como consignación de cliente? <span id="rsExN" style="font-weight:400;color:var(--suave)"></span></summary>
+        <p class="sub" style="margin:8px 0">Estas son todas las descripciones distintas que traen las entradas del banco. <b>Marque las que NO son consignaciones de clientes</b> (traslados suyos, préstamos, reintegros…) y quedan fuera de los totales. Se guarda para la próxima vez. Los números dentro de la descripción se ignoran para agrupar.</p>
+        <div class="fil nop"><label>Buscar descripción<input type="search" id="rsBus" placeholder="ej. traslado"></label><button class="btn d" id="rsLimpia" type="button">Quitar todas las marcas</button></div>
+        <div class="scroll" style="max-height:340px;overflow:auto"><table><thead><tr><th>No es de cliente</th><th>Descripción (ejemplo)</th><th class="num">Veces</th><th class="num">Total</th></tr></thead><tbody id="rsDesc"></tbody></table></div></details>
       <div class="scroll"><table><thead><tr><th id="rsTh">Período</th><th class="num">Total que entró</th><th class="num">Con pago registrado</th><th class="num">Sin comprobante</th><th class="num">% sin comprobante</th><th class="num">Consignaciones</th></tr></thead><tbody id="rsCuerpo"></tbody></table></div>
     </section>
     <section class="panel">
@@ -203,13 +207,28 @@
     try{
       $('per').value='0';cruzar();
       var usarIgn=$('ign').checked;
-      RS.datos=ARCH.todos.filter(function(m){return m.entra&&!(usarIgn&&m.ign)}).map(function(m){return{f:m.fecha,v:m.valor,r:!!((m.ps&&m.ps.length)||m.est==='ok'||m.est==='cer'||m.est==='dud')}});
+      RS.datos=ARCH.todos.filter(function(m){return m.entra&&!(usarIgn&&m.ign)}).map(function(m){return{f:m.fecha,v:m.valor,d:m.desc||'',k:claveDesc(m.desc),r:!!((m.ps&&m.ps.length)||m.est==='ok'||m.est==='cer'||m.est==='dud')}});
     }finally{$('per').value=per;cruzar();RS.busy=false}
     RS.key=key;return RS.datos;
   }
   var MESES_R=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  function claveDesc(t){return norm(String(t||'')).replace(/[0-9]+/g,' ').replace(/\s+/g,' ').trim()||'(sin descripcion)'}
+  function exclGet(){try{return JSON.parse(localStorage.getItem('pm_banco_excl')||'[]')}catch(e){return[]}}
+  function exclSet(){var o={};exclGet().forEach(function(k){o[k]=1});return o}
+  function exclGuardar(L){try{localStorage.setItem('pm_banco_excl',JSON.stringify(L))}catch(e){}}
+  function pintarDescripciones(D0,EX){
+    var g={};D0.forEach(function(d){var o=g[d.k]=g[d.k]||{k:d.k,ej:d.d,n:0,t:0};o.n++;o.t+=d.v});
+    var q=norm($('rsBus').value||''),L=Object.keys(g).map(function(k){return g[k]}).sort(function(a,b){return b.t-a.t}).filter(function(o){return !q||norm(o.ej).indexOf(q)>=0||o.k.indexOf(q)>=0});
+    $('rsDesc').innerHTML=L.map(function(o){return'<tr><td style="text-align:center"><input type="checkbox" data-k="'+esc(o.k)+'"'+(EX[o.k]?' checked':'')+'></td><td>'+esc(o.ej||'(sin descripción)')+'</td><td class="num">'+o.n+'</td><td class="num">'+cop(o.t)+'</td></tr>'}).join('')||'<tr><td colspan="4">No hay descripciones con ese texto.</td></tr>';
+  }
+  $('rsDesc').addEventListener('change',function(ev){var k=ev.target.getAttribute('data-k');if(k===null)return;var L=exclGet().filter(function(x){return x!==k});if(ev.target.checked)L.push(k);exclGuardar(L);pintarResumen()});
+  $('rsBus').addEventListener('input',function(){pintarResumen()});
+  $('rsLimpia').addEventListener('click',function(){exclGuardar([]);pintarResumen()});
   function pintarResumen(){
-    if(RS.busy)return;var D=datosHistoricos();if(!D)return;
+    if(RS.busy)return;var D0=datosHistoricos();if(!D0)return;
+    var EX=exclSet(),D=D0.filter(function(d){return !EX[d.k]}),exV=0,exN=0;D0.forEach(function(d){if(EX[d.k]){exV+=d.v;exN++}});
+    $('rsExN').textContent=exN?'· '+exN+' movimiento(s) por '+cop(exV)+' excluidos de los totales':'· ninguna excluida todavía';
+    pintarDescripciones(D0,EX);
     var anios={};D.forEach(function(d){anios[d.f.slice(0,4)]=1});var ys=Object.keys(anios).sort().reverse();
     var sa=$('rsAnio');sa.innerHTML='<option value="">Todos los años</option>'+ys.map(function(y){return'<option>'+y+'</option>'}).join('');
     if(!anios[RS.anio])RS.anio='';sa.value=RS.anio;
