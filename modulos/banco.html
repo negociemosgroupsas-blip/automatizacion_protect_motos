@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verificación bancaria</title>
+<style>
+  :root{--azul:#13223f;--azul2:#1f4e79;--dorado:#d6a417;--fondo:#f4f5f7;--tarjeta:#fff;--texto:#1f2430;--suave:#6b7280;--borde:#e3e6eb;--verde:#1f9d55;--naranja:#d97706;--rojo:#dc2626}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fondo);color:var(--texto)}
+  header{background:linear-gradient(135deg,#13223f,#1c3050);color:#fff;padding:18px 24px}
+  header h1{margin:0;font-size:1.3rem} header p{margin:4px 0 0;font-size:.9rem;opacity:.85}
+  main{max-width:1350px;margin:0 auto;padding:18px}
+  .panel{background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .panel h2{margin:0 0 4px;font-size:1.05rem;color:var(--azul)} .sub{font-size:.9rem;color:var(--suave);margin:0 0 12px}
+  .estado{font-size:.9rem;color:var(--suave)} .estado.ok{color:var(--verde)} .estado.er{color:var(--rojo)}
+  .btn{border:0;border-radius:9px;padding:9px 15px;font-size:.9rem;font-weight:600;cursor:pointer;background:var(--azul);color:#fff} .btn.d{background:var(--dorado);color:#13223f} .btn.g{background:#e9edf3;color:var(--azul)} .btn.v{background:var(--verde)} .btn:disabled{opacity:.45;cursor:not-allowed}
+  .fil{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end} label{font-size:.88rem;color:var(--suave);display:flex;flex-direction:column;gap:4px}
+  input[type=search],select{border:1px solid var(--borde);border-radius:8px;padding:8px 11px;font-size:.92rem;background:#fff;font-family:inherit}
+  input[type=search]{min-width:300px}
+  .drop{border:2px dashed #b8c4d6;border-radius:14px;padding:26px 18px;text-align:center;background:#fbfdff;cursor:pointer;transition:.15s} .drop:hover,.drop.on{border-color:var(--azul2);background:#eef5ff} .drop b{display:block;font-size:1.05rem;color:var(--azul);margin-bottom:4px} .drop span{font-size:.9rem;color:var(--suave)}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 14px}
+  .t{background:#fff;border:1px solid var(--borde);border-left:6px solid var(--c,#13223f);border-radius:12px;padding:12px 14px;cursor:pointer} .t:hover{box-shadow:0 4px 14px rgba(19,34,63,.12)} .t.on{box-shadow:0 0 0 2px var(--c) inset}
+  .t span{font-size:.85rem;text-transform:uppercase;letter-spacing:.3px;color:var(--suave);font-weight:700} .t b{display:block;font-size:1.8rem;color:var(--azul);line-height:1.15;margin:2px 0} .t small{font-size:.88rem;color:var(--suave)}
+  .scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.9rem} th,td{padding:8px 10px;border-bottom:1px solid var(--borde);text-align:left;vertical-align:top}
+  th{font-size:.85rem;text-transform:uppercase;letter-spacing:.3px;color:var(--suave);background:#fafbfc;white-space:nowrap} .num{text-align:right;white-space:nowrap}
+  .tag{display:inline-block;border-radius:999px;padding:3px 10px;font-size:.85rem;font-weight:800;white-space:nowrap}
+  .si{background:#e7f8ee;color:#166534} .sd{background:#fff3cd;color:#7a5b00} .sn{background:#fdeaea;color:#b42318} .sp{background:#e3f2fd;color:#1d4ed8} .sg{background:#eef1f6;color:#4b5563}
+  .cli{font-weight:700;color:var(--azul)} .obs{font-size:.88rem;color:var(--suave);min-width:220px}
+  .aviso{border:1px solid #f3d9a8;background:#fff3e0;border-left:6px solid var(--naranja);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:.92rem;line-height:1.45}
+  .vacio{padding:18px;color:var(--suave);font-size:.95rem}
+  h3.sec{margin:6px 0 8px;font-size:1rem;color:var(--azul)}
+  @media print{ header .noimp,.nop{display:none!important} main{padding:0;max-width:none} *{-webkit-print-color-adjust:exact;print-color-adjust:exact} }
+</style>
+</head>
+<body>
+<header><h1>🏦 Verificación bancaria</h1><p>Sube los movimientos del banco: el sistema los compara con los pagos que registraste en la hoja Pagos (por <b>fecha</b> y <b>valor</b>) y pone al frente el nombre del cliente.</p><p class="noimp" style="font-size:.85rem;opacity:.6;margin-top:6px">Solo lee: no modifica ni el archivo del banco ni la hoja Pagos · versión de la pantalla: <b>BK-14nov-A</b></p></header>
+<main>
+  <div class="panel nop" style="padding:12px 18px"><div class="fil" style="align-items:center"><button class="btn g" id="bRec" type="button">🔄 Volver a leer la hoja Pagos</button><span class="estado" id="est" style="flex:1">Cargando…</span></div></div>
+
+  <section class="panel nop">
+    <h2>1. Suba el archivo del banco</h2>
+    <p class="sub">Excel (.xlsx o .xls) o .csv, tal como lo descarga del banco (puede ser el del día o el que guarda con todos los movimientos). Se lee aquí en su computador; no se envía ni se modifica.</p>
+    <div class="drop" id="drop" tabindex="0"><b>📂 Arrastre aquí el archivo, o elíjalo con el botón</b><button class="btn d" id="bElegir" type="button" style="margin:6px 0">📎 Elegir archivo</button><br><span id="dropTxt">Reconoce solo las columnas de fecha y valor; no importa cómo se llamen ni en qué fila empiece la tabla.</span></div>
+    <input type="file" id="archivo" accept=".xlsx,.xls,.csv" style="display:none">
+    <div class="fil" style="margin-top:12px"><label>Tolerancia de fecha<select id="tol"><option value="0">Solo la misma fecha</option><option value="1" selected>Misma fecha, o ±1 día (lo marca)</option><option value="2">Misma fecha, o ±2 días (lo marca)</option></select></label></div>
+  </section>
+
+  <div id="resultado" style="display:none">
+    <section class="panel">
+      <div class="fil nop" style="justify-content:space-between;align-items:center;margin-bottom:6px"><h2 style="margin:0">2. Movimientos del banco con el cliente al frente</h2><div class="fil"><button class="btn v" id="bXlsx" type="button">⬇ Descargar Excel</button><button class="btn g" id="bImp" type="button">🖨️ Imprimir</button></div></div>
+      <p class="estado" id="meta" style="margin:0 0 12px"></p>
+      <div id="avisos"></div>
+      <div class="tiles" id="tiles"></div>
+      <div class="fil nop"><label>Buscar<input type="search" id="busca" placeholder="cliente, valor, fecha o descripción"></label></div>
+    </section>
+    <section class="panel"><div class="scroll"><table><thead><tr><th>Fecha</th><th>Descripción del banco</th><th class="num">Valor</th><th>Cliente (según Pagos)</th><th>Contrato · cuota</th><th>Estado</th><th>Observación</th></tr></thead><tbody id="cuerpo"></tbody></table></div><div class="vacio" id="vacio" style="display:none">Ningún movimiento en esta vista.</div></section>
+    <section class="panel" id="pSin"><h3 class="sec">Pagos registrados que no aparecen en el banco</h3><p class="sub" id="subSin"></p><div class="scroll"><table><thead><tr><th>Fecha del pago</th><th>Cliente</th><th>Contrato · cuota</th><th class="num">Valor</th><th>Estado</th><th>Observación</th></tr></thead><tbody id="cuerpoSin"></tbody></table></div></section>
+  </div>
+</main>
+<script src="../assets/xlsx.mini.min.js"></script>
+<script>
+(function(){
+  'use strict';
+  var $=function(i){return document.getElementById(i)};
+  var PAGOS=null,MOV=null,SIN=null,ARCH=null,filtro='';
+  function LS(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
+  function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function cop(n){if(n===null||n===undefined||n==='')return '—';var v=Math.round(Number(n));return (v<0?'-':'')+'$'+Math.abs(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
+  function norm(s){return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim()}
+  function num(v){if(typeof v==='number')return isNaN(v)?null:v;var t=String(v==null?'':v).replace(/[$\s]/g,'');if(!t)return null;var neg=/^\(.*\)$/.test(t)||/-$/.test(t);t=t.replace(/[()]/g,'').replace(/-$/,'');
+    if(/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(t))t=t.replace(/\./g,'').replace(',','.');else if(/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(t))t=t.replace(/,/g,'');else t=t.replace(',','.');
+    var n=Number(t);if(isNaN(n))return null;return neg?-Math.abs(n):n}
+  function iso(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+  function fecha(v){
+    if(v===null||v===undefined||v==='')return null;
+    if(v instanceof Date&&!isNaN(v))return iso(v);
+    if(typeof v==='number'&&v>20000&&v<80000){var d=new Date(Math.round((v-25569)*86400000));return iso(new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()))}
+    var t=String(v).trim(),m;
+    if((m=/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/.exec(t)))return m[1]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[3]).slice(-2);
+    if((m=/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/.exec(t))){var y=+m[3];if(y<100)y+=2000;return y+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2)}
+    if((m=/^(\d{4})(\d{2})(\d{2})$/.exec(t)))return m[1]+'-'+m[2]+'-'+m[3];
+    return null;
+  }
+  function dif(a,b){return Math.round((new Date(a)-new Date(b))/86400000)}
+  function bonita(iso){var p=String(iso||'').split('-');return p.length===3?(+p[2])+'/'+(+p[1])+'/'+p[0]:''}
+
+  /* ---------- pagos registrados (hoja Pagos) ---------- */
+  var cnt=0;
+  function llamar(){
+    return new Promise(function(ok,mal){
+      var url=LS('pm_cobros_url_conector'),tok='PM-COBROS-2026';
+      if(!url){url=LS('pm_crm_url');tok=LS('pm_crm_token')||'PM-CRM-2026'}
+      if(!url){mal(new Error('Falta la URL del conector (pestaña Conexiones → Conector único).'));return}
+      cnt++;var cb='pm_bk_'+Date.now()+'_'+cnt,s=document.createElement('script'),fin=false;
+      var t=setTimeout(function(){if(fin)return;fin=true;limpiar();mal(new Error('El conector no respondió a tiempo.'))},90000);
+      function limpiar(){clearTimeout(t);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}
+      window[cb]=function(r){if(fin)return;fin=true;limpiar();ok(r)};
+      s.onerror=function(){if(fin)return;fin=true;limpiar();mal(new Error('No se pudo contactar el conector.'))};
+      s.src=url+(url.indexOf('?')<0?'?':'&')+'action=datos&token='+encodeURIComponent(tok)+'&callback='+cb+'&_='+Date.now();document.body.appendChild(s);
+    }).then(function(r){if(!r||r.ok===false)throw new Error((r&&r.error)||'Respuesta inválida.');return r});
+  }
+  function est(t,c){var e=$('est');e.textContent=t;e.className='estado '+(c||'')}
+  function cargar(){
+    est('Leyendo la hoja Pagos…');$('bRec').disabled=true;
+    return llamar().then(function(r){
+      PAGOS=(r.pagos||[]).filter(function(p){return p.fechaPagoISO&&Number(p.valorPagado)>0}).map(function(p,i){return {i:i,fecha:p.fechaPagoISO,valor:Math.round(Number(p.valorPagado)),cliente:p.cliente||'',contrato:p.contrato||'',cuota:p.cuota||'',nota:p.nota||'',usado:false}});
+      var f=PAGOS.map(function(p){return p.fecha}).sort();
+      est('Conectado ✔ · '+PAGOS.length+' pagos registrados'+(f.length?' (del '+bonita(f[0])+' al '+bonita(f[f.length-1])+')':''),'ok');
+      if(ARCH)cruzar();
+    }).catch(function(e){PAGOS=null;est(e.message,'er')}).then(function(){$('bRec').disabled=false});
+  }
+  $('bRec').addEventListener('click',cargar);
+
+  /* ---------- lectura del archivo del banco ---------- */
+  function leerBanco(buf,nombre){
+    var wb=XLSX.read(buf,{type:'array',cellDates:true}),best=null;
+    wb.SheetNames.forEach(function(nm){
+      var A=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,raw:true,defval:''});
+      for(var i=0;i<Math.min(A.length,60);i++){
+        var H=A[i].map(norm),fc=-1,vc=[];
+        H.forEach(function(h,j){
+          if(fc<0&&/^fecha|^f\.? ?(mov|trans|oper)|date/.test(h))fc=j;
+          if(/^valor|^monto|^importe|^cr[eé]dito|^abono|^d[eé]bito|^ingres|^egres|^cargo|^deposito|^retiro/.test(h))vc.push(j);
+        });
+        if(fc>=0&&vc.length){
+          var filas=0;for(var k=i+1;k<Math.min(A.length,i+15);k++){if(fecha(A[k][fc]))filas++}
+          if(filas>=1&&(!best||filas>best.filas))best={A:A,hi:i,hoja:nm,fc:fc,vc:vc,H:H,filas:filas};
+          break;
+        }
+      }
+    });
+    if(!best)throw new Error('No encontré la tabla del banco. Busco una fila de títulos con «Fecha» y una columna de valor (Valor, Monto, Crédito, Abono…).');
+    var H=best.H,A=best.A,hi=best.hi;
+    var dc=-1;H.forEach(function(h,j){if(dc<0&&/descrip|detalle|concepto|transacci|movimiento|observ/.test(h)&&j!==best.fc)dc=j});
+    var creditoCol=-1,debitoCol=-1,valorCol=-1;
+    best.vc.forEach(function(j){var h=H[j];if(/cr[eé]dito|abono|ingres|deposito/.test(h)&&creditoCol<0)creditoCol=j;else if(/d[eé]bito|egres|cargo|retiro/.test(h)&&debitoCol<0)debitoCol=j;else if(valorCol<0)valorCol=j});
+    var movs=[];
+    for(var k=hi+1;k<A.length;k++){
+      var w=A[k],f=fecha(w[best.fc]);if(!f)continue;
+      var v=null;
+      if(creditoCol>=0){v=num(w[creditoCol]);if(v!==null&&v<=0)v=null}
+      if(v===null&&valorCol>=0){var x=num(w[valorCol]);if(x!==null&&x>0)v=x}
+      var entra=v!==null&&v>0;
+      var anyVal=(valorCol>=0&&num(w[valorCol])!==null)||(creditoCol>=0&&num(w[creditoCol])!==null)||(debitoCol>=0&&num(w[debitoCol])!==null);
+      if(!anyVal)continue;
+      movs.push({n:k+1,fecha:f,desc:dc>=0?String(w[dc]||'').replace(/\s+/g,' ').trim():'',valor:entra?Math.round(v):null,fila:w,entra:entra});
+    }
+    if(!movs.length)throw new Error('La tabla del banco no tiene movimientos con fecha y valor.');
+    return {nombre:nombre,hoja:best.hoja,encabezado:A[hi],hi:hi,movs:movs,fc:best.fc,dc:dc};
+  }
+
+  /* ---------- cruce: fecha + valor ---------- */
+  function cruzar(){
+    if(!ARCH||!PAGOS)return;
+    var tol=Number($('tol').value);PAGOS.forEach(function(p){p.usado=false});
+    var porClave={};PAGOS.forEach(function(p){(porClave[p.fecha+'|'+p.valor]=porClave[p.fecha+'|'+p.valor]||[]).push(p)});
+    var movsIn=ARCH.movs.filter(function(m){return m.entra});
+    movsIn.forEach(function(m){m.est='sin';m.cli='';m.det='';m.obs=[];m.ps=[]});
+    /* 1) misma fecha y mismo valor */
+    var grupos={};movsIn.forEach(function(m){(grupos[m.fecha+'|'+m.valor]=grupos[m.fecha+'|'+m.valor]||[]).push(m)});
+    Object.keys(grupos).forEach(function(k){
+      var M=grupos[k],P=(porClave[k]||[]).filter(function(p){return !p.usado});if(!P.length)return;
+      if(M.length===1&&P.length===1){var m=M[0],p=P[0];p.usado=true;m.est='ok';m.cli=p.cliente;m.det=[p.contrato,p.cuota?'cuota '+p.cuota:''].filter(Boolean).join(' · ');m.ps=[p]}
+      else{P.forEach(function(p){p.usado=true});M.forEach(function(m){m.est='dud';m.ps=P;m.cli=P.map(function(p){return p.cliente}).join(' / ');m.det=P.map(function(p){return p.contrato}).join(' / ');
+        m.obs.push(M.length>1&&P.length>1?M.length+' movimientos y '+P.length+' pagos con la misma fecha y el mismo valor: no se sabe cuál es cuál. Asígnelos usted.':P.length>1?'Hay '+P.length+' pagos registrados con esta fecha y este valor: confirme de quién es.':M.length+' movimientos del banco para un solo pago registrado: puede ser un pago repetido o dos clientes.')})}
+    });
+    /* 2) fecha cercana (solo si se permite) */
+    if(tol>0)movsIn.filter(function(m){return m.est==='sin'}).forEach(function(m){
+      var C=PAGOS.filter(function(p){return !p.usado&&p.valor===m.valor&&Math.abs(dif(p.fecha,m.fecha))<=tol});
+      if(!C.length)return;C.sort(function(a,b){return Math.abs(dif(a.fecha,m.fecha))-Math.abs(dif(b.fecha,m.fecha))});
+      var d0=Math.abs(dif(C[0].fecha,m.fecha)),mejores=C.filter(function(p){return Math.abs(dif(p.fecha,m.fecha))===d0});
+      if(mejores.length===1){var p=mejores[0];p.usado=true;m.est='cer';m.ps=[p];m.cli=p.cliente;m.det=[p.contrato,p.cuota?'cuota '+p.cuota:''].filter(Boolean).join(' · ');m.obs.push('El pago está registrado el '+bonita(p.fecha)+' y el banco lo muestra el '+bonita(m.fecha)+' ('+d0+' día'+(d0>1?'s':'')+' de diferencia). Confirme que es el mismo.')}
+      else{mejores.forEach(function(p){p.usado=true});m.est='dud';m.ps=mejores;m.cli=mejores.map(function(p){return p.cliente}).join(' / ');m.det=mejores.map(function(p){return p.contrato}).join(' / ');m.obs.push('Varios pagos del mismo valor con fecha cercana: confirme de quién es.')}
+    });
+    ARCH.movs.forEach(function(m){if(!m.entra){m.est='sal';m.cli='';m.obs=[]}});
+    /* pagos registrados sin movimiento */
+    var fechas=ARCH.movs.map(function(m){return m.fecha}).sort(),f0=fechas[0],f1=fechas[fechas.length-1],hoy=iso(new Date());
+    SIN=PAGOS.filter(function(p){return !p.usado&&p.fecha>=f0}).map(function(p){
+      var r={p:p,obs:[]},dias=dif(hoy,p.fecha);
+      if(p.fecha>f1){r.est='pen';r.obs.push('Es posterior al último movimiento del archivo ('+bonita(f1)+'): todavía no se puede comparar. Suba el archivo del día siguiente.')}
+      else if(dias<=2){r.est='pen';r.obs.push('Registrado hace '+dias+' día'+(dias===1?'':'s')+': es normal que el banco aún no lo muestre.')}
+      else{r.est='nof';r.obs.push('Ya pasaron '+dias+' días y no hay un movimiento con ese valor'+(tol?' en esa fecha o cerca':' en esa fecha')+'. Revise el comprobante o si el cliente pagó otro valor.')}
+      return r});
+    pintar();
+  }
+
+  /* ---------- pantalla ---------- */
+  function etq(e){return {ok:'<span class="tag si">✔ Identificado</span>',cer:'<span class="tag sd">≈ Fecha cercana</span>',dud:'<span class="tag sd">? Dudoso</span>',sin:'<span class="tag sn">✖ Sin identificar</span>',sal:'<span class="tag sg">Salida / sin valor de entrada</span>',pen:'<span class="tag sp">⏳ Pendiente de banco</span>',nof:'<span class="tag sn">✖ No aparece en el banco</span>'}[e]||''}
+  function visible(m){
+    if(filtro==='ok'&&m.est!=='ok')return false;
+    if(filtro==='dud'&&m.est!=='dud'&&m.est!=='cer')return false;
+    if(filtro==='sin'&&m.est!=='sin')return false;
+    var q=norm($('busca').value);if(!q)return true;
+    return norm([bonita(m.fecha),m.desc,m.valor,m.cli,m.det,(m.obs||[]).join(' ')].join(' ')).indexOf(q)>=0;
+  }
+  function pintar(){
+    $('resultado').style.display='block';
+    var mi=ARCH.movs.filter(function(m){return m.entra}),n=function(e){return mi.filter(function(m){return m.est===e}).length},sm=function(e){return mi.filter(function(m){return m.est===e}).reduce(function(s,m){return s+m.valor},0)};
+    var fe=ARCH.movs.map(function(m){return m.fecha}).sort();
+    $('meta').innerHTML='Archivo: <b>'+esc(ARCH.nombre)+'</b> · '+ARCH.movs.length+' movimientos ('+mi.length+' de entrada) del '+bonita(fe[0])+' al '+bonita(fe[fe.length-1])+' · se comparó con '+PAGOS.length+' pagos registrados.';
+    var ns=SIN.filter(function(r){return r.est==='nof'}).length,pe=SIN.filter(function(r){return r.est==='pen'}).length,dc=n('dud')+n('cer'),av='';
+    if(dc)av+='<div class="aviso">🔎 <b>'+dc+'</b> movimiento(s) piden que usted confirme el cliente (fecha cercana o varios pagos iguales). Use el cuadro «Por confirmar».</div>';
+    if(ns)av+='<div class="aviso">⚠️ <b>'+ns+'</b> pago(s) registrado(s) hace varios días <b>no aparecen en el banco</b>. Están al final de la página.</div>';
+    $('avisos').innerHTML=av;
+    var T=function(e,c,l,b,s){return '<div class="t'+(filtro===e&&e!==''?' on':'')+'" data-e="'+e+'" style="--c:'+c+'"><span>'+l+'</span><b>'+b+'</b><small>'+s+'</small></div>'};
+    $('tiles').innerHTML=T('','#38bdf8','Movimientos de entrada',mi.length,cop(mi.reduce(function(s,m){return s+m.valor},0))+' en total')+
+      T('ok','#1f9d55','Identificados',n('ok'),cop(sm('ok')))+T('dud','#fdc33e','Por confirmar',dc,'fecha cercana o varios iguales')+T('sin','#dc2626','Sin identificar',n('sin'),cop(sm('sin'))+' sin cliente');
+    Array.prototype.forEach.call($('tiles').querySelectorAll('.t'),function(t){t.addEventListener('click',function(){filtro=(filtro===t.dataset.e?'':t.dataset.e);pintar()})});
+    var L=ARCH.movs.filter(function(m){return m.entra&&visible(m)});
+    $('cuerpo').innerHTML=L.map(function(m){return '<tr><td>'+bonita(m.fecha)+'</td><td>'+esc(m.desc)+'</td><td class="num"><b>'+cop(m.valor)+'</b></td><td class="cli">'+esc(m.cli||'—')+'</td><td>'+esc(m.det||'')+'</td><td>'+etq(m.est)+'</td><td class="obs">'+(m.obs&&m.obs.length?m.obs.map(function(o){return '<div>• '+esc(o)+'</div>'}).join(''):(m.est==='sin'?'<div>• No hay un pago registrado con esa fecha y ese valor.</div>':''))+'</td></tr>'}).join('');
+    $('vacio').style.display=L.length?'none':'block';
+    $('subSin').textContent=SIN.length?(pe+' pendiente(s) de banco y '+ns+' que no aparecen. Solo se miran los pagos desde '+bonita(fe[0])+'.'):'Todos los pagos registrados en el rango del archivo aparecen en el banco. 🎉';
+    $('cuerpoSin').innerHTML=SIN.map(function(r){var p=r.p;return '<tr><td>'+bonita(p.fecha)+'</td><td class="cli">'+esc(p.cliente)+'</td><td>'+esc([p.contrato,p.cuota?'cuota '+p.cuota:''].filter(Boolean).join(' · '))+'</td><td class="num"><b>'+cop(p.valor)+'</b></td><td>'+etq(r.est)+'</td><td class="obs">'+r.obs.map(function(o){return '<div>• '+esc(o)+'</div>'}).join('')+'</td></tr>'}).join('');
+  }
+  $('busca').addEventListener('input',function(){if(ARCH&&PAGOS)pintar()});
+  $('tol').addEventListener('change',function(){if(ARCH&&PAGOS)cruzar()});
+
+  /* ---------- Excel nuevo: el archivo del banco + cliente al frente ---------- */
+  $('bXlsx').addEventListener('click',function(){
+    if(!ARCH)return;var E=ARCH.encabezado.slice(),ult=E.length;while(ult>0&&(E[ult-1]===''||E[ult-1]==null))ult--;
+    var cab=E.slice(0,ult).concat(['Cliente (según Pagos)','Contrato · cuota','Estado de la verificación','Observación']);
+    var ET={ok:'Identificado',cer:'Fecha cercana',dud:'Por confirmar',sin:'Sin identificar',sal:''};
+    var rows=[cab].concat(ARCH.movs.map(function(m){return m.fila.slice(0,ult).map(function(c){return c instanceof Date?bonita(iso(c)):c}).concat([m.cli||'',m.det||'',ET[m.est]||'',(m.obs||[]).join(' | ')])}));
+    var wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=cab.map(function(_,i){return {wch:i>=ult?28:18}});XLSX.utils.book_append_sheet(wb,ws,'Movimientos del banco');
+    var s2=[['Fecha del pago','Cliente','Contrato','Cuota','Valor','Estado','Observación']].concat(SIN.map(function(r){return [bonita(r.p.fecha),r.p.cliente,r.p.contrato,r.p.cuota,r.p.valor,r.est==='pen'?'Pendiente de banco':'No aparece en el banco',r.obs.join(' | ')]}));
+    var w2=XLSX.utils.aoa_to_sheet(s2);w2['!cols']=[14,30,16,10,14,24,90].map(function(w){return {wch:w}});XLSX.utils.book_append_sheet(wb,w2,'Pagos sin movimiento');
+    var mi=ARCH.movs.filter(function(m){return m.entra}),h=iso(new Date());
+    var s3=[['VERIFICACIÓN BANCARIA'],['Archivo',ARCH.nombre],['Fecha',h],['Regla','Se compara la fecha y el valor de cada movimiento de entrada con los pagos registrados en la hoja Pagos.'],[],['Estado','Movimientos','Valor']];
+    ['ok','cer','dud','sin'].forEach(function(e){s3.push([ET[e],mi.filter(function(m){return m.est===e}).length,mi.filter(function(m){return m.est===e}).reduce(function(s,m){return s+m.valor},0)])});
+    s3.push(['Pagos que no aparecen en el banco',SIN.filter(function(r){return r.est==='nof'}).length,'']);s3.push(['Pagos pendientes de banco',SIN.filter(function(r){return r.est==='pen'}).length,'']);
+    var w3=XLSX.utils.aoa_to_sheet(s3);w3['!cols']=[{wch:38},{wch:60},{wch:16}];XLSX.utils.book_append_sheet(wb,w3,'Resumen');
+    var out=XLSX.write(wb,{type:'array',bookType:'xlsx'}),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download='Verificacion_bancaria_'+h+'.xlsx';document.body.appendChild(a);a.click();a.remove();
+  });
+  $('bImp').addEventListener('click',function(){window.print()});
+
+  function procesar(file){
+    if(!file)return;var rd=new FileReader();
+    rd.onload=function(){try{ARCH=leerBanco(new Uint8Array(rd.result),file.name);filtro='';$('dropTxt').textContent='Archivo cargado: '+file.name+' ('+ARCH.movs.length+' movimientos). Puede subir otro cuando quiera.';
+      if(!PAGOS){est('Esperando la hoja Pagos… pulse «Volver a leer la hoja Pagos» si no carga.','er');return}cruzar()}catch(e){ARCH=null;$('resultado').style.display='none';$('dropTxt').textContent='⚠ '+e.message}};
+    rd.readAsArrayBuffer(file);
+  }
+  $('bElegir').addEventListener('click',function(e){e.stopPropagation();$('archivo').click()});
+  $('drop').addEventListener('click',function(){$('archivo').click()});
+  $('archivo').addEventListener('change',function(){procesar(this.files[0]);this.value=''});
+  ['dragenter','dragover'].forEach(function(ev){$('drop').addEventListener(ev,function(e){e.preventDefault();$('drop').classList.add('on')})});
+  ['dragleave','drop'].forEach(function(ev){$('drop').addEventListener(ev,function(e){e.preventDefault();$('drop').classList.remove('on')})});
+  $('drop').addEventListener('drop',function(e){procesar(e.dataTransfer.files[0])});
+  window.BK={leerBanco:leerBanco};
+  cargar();
+})();
+</script>
+<script src="../assets/tema_modulo.js"></script>
+</body>
+</html>
