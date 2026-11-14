@@ -17,7 +17,7 @@
   nav{overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#2f4690 transparent} nav::-webkit-scrollbar{width:6px} nav::-webkit-scrollbar-thumb{background:#2f4690;border-radius:6px}
   nav ul{list-style:none;margin:12px 0 8px;padding:0 12px;flex:1 0 auto}
   nav li.grp{display:flex;align-items:center;gap:10px;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:#f2f5fc;margin:18px 6px 6px;padding:0} nav li.grp::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.22)} @media(max-width:760px){nav li.grp{display:none}}
-  nav li a{display:flex;align-items:center;gap:12px;padding:7px 10px;margin-bottom:3px;border-radius:11px;color:#c6d1e8;text-decoration:none;font-size:.93rem;font-weight:500;white-space:nowrap;transition:background .15s,color .15s}
+  nav li a{display:flex;align-items:center;gap:12px;padding:7px 10px;margin-bottom:3px;border-radius:11px;color:#c6d1e8;text-decoration:none;font-size:.93rem;font-weight:500;white-space:normal;line-height:1.2;transition:background .15s,color .15s}
   nav li a:hover{background:rgba(255,255,255,.07);color:#fff}
   nav li a.activo{background:linear-gradient(90deg,rgba(214,164,23,.24),rgba(214,164,23,.07));color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--dorado)}
   nav li a .ico{flex:0 0 30px;height:30px;display:grid;place-items:center;font-size:1.05rem;border-radius:9px;background:rgba(255,255,255,.07);transition:background .15s}
@@ -580,7 +580,7 @@
     </div>
     <div class="in-nav" id="inNav">
       <div class="in-chips" id="inChips">
-        <a href="#" data-to="inKpis">Resumen</a><a href="#" data-to="sec-ventas">Ventas y contratos</a><a href="#" data-to="sec-clientes">Clientes y seguros</a><a href="#" data-to="sec-conc">Conciliación</a><a href="#" data-to="sec-soat">SOAT</a><a href="#" data-to="sec-oms">Clientes OMS</a><a href="#" data-to="sec-com">Comisiones</a>
+        <a href="#" data-to="inKpis">Resumen</a><a href="#" data-to="sec-ventas">Ventas y contratos</a><a href="#" data-to="sec-clientes">Clientes y seguros</a><a href="#" data-to="sec-conc">Valor cobrado a Dugo Motos</a><a href="#" data-to="sec-soat">SOAT</a><a href="#" data-to="sec-oms">Clientes OMS</a><a href="#" data-to="sec-com">Comisiones</a>
       </div>
       <input type="search" id="inBusca" placeholder="Buscar gráfica… (ej. asesor, RC, SOAT)" aria-label="Buscar gráfica">
     </div>
@@ -590,14 +590,14 @@
     <section class="card bkx" id="bkWrap" data-sec="gerencia" hidden><h3>🏦 Dinero que entra al banco por consignaciones</h3><p class="tot" id="bkSub"></p><div class="ed-per"><label>Año <select id="bkAnio"></select></label> <label>Mes <select id="bkMes"><option value="">Todos los meses</option><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></label></div><div class="bk-k" id="bkK"></div><div class="bk-g" id="bkG"></div><p class="tot" style="margin:8px 0 0">Suma de todo lo que entró a la hoja del banco (incluye consignaciones sin comprobante). No cuenta intereses, valores menores a $1.000 ni las descripciones que usted excluyó en «Verificación bancaria».</p></section>
     <div class="in-sec" id="sec-ventas" data-sec="ventas" style="order:4"><i></i>Ventas y contratos<em>▾</em></div>
     <div class="in-sec" id="sec-clientes" data-sec="clientes" style="order:8"><i></i>Clientes y seguros<em>▾</em></div>
-    <div class="in-sec" id="sec-conc" data-sec="conc" style="order:13"><i></i>Conciliación de pagos<em>▾</em></div>
+    <div class="in-sec" id="sec-conc" data-sec="conc" style="order:13"><i></i>Valor cobrado a Dugo Motos<em>▾</em></div>
     <div class="in-sec" id="sec-soat" data-sec="soat" style="order:15"><i></i>SOAT<em>▾</em></div>
     <div class="in-sec" id="sec-oms" data-sec="oms" style="order:17"><i></i>Clientes OMS<em>▾</em></div>
     <div class="in-sec" id="sec-com" data-sec="com" style="order:19"><i></i>Comisiones<em>▾</em></div>
     <div class="in-sec" id="sec-ren" data-sec="ren" style="order:21"><i></i>Renovaciones y cotizaciones<em>▾</em></div>
     <h1 style="display:none">Inicio</h1><p class="sub" id="subInicio">Resumen del mes · usa el buscador de arriba para consultar un cliente</p>
-    <h2 class="sec-t">Alertas de conciliación</h2>
-    <div class="alertas" id="alertas"><div class="nota">Abre Conciliación y guarda su URL para ver aquí las alertas.</div></div>
+    <h2 class="sec-t">Alertas de Valor cobrado a Dugo Motos</h2>
+    <div class="alertas" id="alertas"><div class="nota">Abre «Valor cobrado a Dugo Motos» y guarda su URL para ver aquí las alertas.</div></div>
     <div class="grid" id="tarjetas"></div>
     <div class="oms-wrap" id="omsDash" hidden></div>
     <div class="kpis" id="kpis" hidden style="display:none"></div>
@@ -664,7 +664,7 @@
     {id:'cotizador',nombre:'Cotizador',ico:'💬', src:'modulos/cotizador.html',        disponible:true,  desc:'Cotizaciones para clientes nuevos (no renovaciones) con el cotizador de Contratos: PDF, imagen y WhatsApp.'},
     {id:'cobros',   nombre:'Cobros',        ico:'💰', src:'modulos/cobros.html',        disponible:true,  desc:'Cuotas pendientes, registro de pagos, renovaciones, historial y WhatsApp.'},
     {id:'precobros',nombre:'Cobros y precobros',ico:'🧾', src:'modulos/precobros.html',    disponible:true,  desc:'Sube el precobro del proveedor y ve el asesor y el contrato de cada cliente, listo para imprimir.'},
-    {id:'conciliacion',nombre:'Conciliación',ico:'✅', src:'modulos/conciliacion.html',  disponible:true,  desc:'Cruza los contratos de Protect con la lista de pagos de contabilidad (Consolidado).'},
+    {id:'conciliacion',nombre:'Valor cobrado a Dugo Motos',ico:'✅', src:'modulos/conciliacion.html',  disponible:true,  desc:'Cruza los contratos de Protect con la lista de pagos de contabilidad (Consolidado).'},
     {id:'erp',nombre:'Cruce semanal ERP',ico:'📑', src:'modulos/erp.html',          disponible:true,  desc:'Cruce semanal: compara el archivo del jefe con la hoja Protect (cédula y nombre) y el Total contra la columna P.'},
     {id:'banco',nombre:'Verificación bancaria',ico:'🏦', src:'modulos/banco.html',        disponible:true,  desc:'Compara los movimientos del banco con los pagos registrados (fecha y valor) y pone el cliente al frente.'},
     {id:'oms',grupo:'Seguros',     nombre:'Clientes OMS',  ico:'🏍️', src:'modulos/oms.html',           disponible:true,  desc:'Clientes de la hoja OMS: cobros, pagos, renovaciones y WhatsApp.'},
@@ -1039,14 +1039,14 @@
   tarjetas.appendChild(cmc);
   /* ===== Dinero consolidado por mes y por año (hoja Consolidado: columnas J = Mes y K = Año) ===== */
   var cnc=document.createElement('div');cnc.className='card cnc';
-  cnc.innerHTML='<h3>Valor cobrado a Dugo Motos</h3><p class="tot" id="cnTot">Se muestra al conectar Conciliación.</p><div class="ed-per"><label>Ver <select id="cnVista"><option value="mes">Mes a mes</option><option value="anio">Año a año</option></select></label><label id="cnLAnio">Año <select id="cnAnio"></select></label><label>Valor a sumar <select id="cnValor"><option value="auto">El que corresponda a cada pago (recomendado)</option><option value="c">Siempre la columna C</option><option value="d">Siempre la columna D</option></select></label></div><div class="cm-k" id="cnKpis"></div><div class="cf-ley" id="cnLey"></div><div id="cnCuerpo"></div>';
+  cnc.innerHTML='<h3>Valor cobrado a Dugo Motos</h3><p class="tot" id="cnTot">Se muestra al conectar «Valor cobrado a Dugo Motos».</p><div class="ed-per"><label>Ver <select id="cnVista"><option value="mes">Mes a mes</option><option value="anio">Año a año</option></select></label><label id="cnLAnio">Año <select id="cnAnio"></select></label><label>Valor a sumar <select id="cnValor"><option value="auto">El que corresponda a cada pago (recomendado)</option><option value="c">Siempre la columna C</option><option value="d">Siempre la columna D</option></select></label></div><div class="cm-k" id="cnKpis"></div><div class="cf-ley" id="cnLey"></div><div id="cnCuerpo"></div>';
   tarjetas.appendChild(cnc);
   var cnV='mes',cnY='todos',cnVal='auto';
   function cnPesos(n){return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+' COP'}
   function cnK(n){return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+'<em style="font-size:.5em;font-style:normal;opacity:.85"> COP</em>'}
   window.pintarCons=function(){
     var tot=document.getElementById('cnTot'),k=document.getElementById('cnKpis'),b=document.getElementById('cnCuerpo'),ley=document.getElementById('cnLey'),C=window.PM_CONS;if(!tot)return;
-    if(!C||!C.meses){tot.textContent=C===undefined?'Se muestra al conectar Conciliación (URL en «Conexiones»).':'⚠️ El conector de Conciliación todavía no envía el mes y el año: pegue el código nuevo y publique «Nueva versión» (debe responder v12).';k.innerHTML='';b.innerHTML='';ley.innerHTML='';return}
+    if(!C||!C.meses){tot.textContent=C===undefined?'Se muestra al conectar «Valor cobrado a Dugo Motos» (URL en «Conexiones»).':'⚠️ El conector de Conciliación todavía no envía el mes y el año: pegue el código nuevo y publique «Nueva versión» (debe responder v12).';k.innerHTML='';b.innerHTML='';ley.innerHTML='';return}
     var L=C.meses.map(function(o){return {y:o.anio,m:o.mes,n:o.n,nC:o.nC||0,nD:o.nD||0,v:(cnVal==='c'?(o.c||0):cnVal==='d'?(o.d||0):(o.auto!=null?o.auto:(o.c||o.d||0)))}});
     var yA=new Date().getFullYear(),ys={};ys[yA]=1;L.forEach(function(r){ys[r.y]=1});var lst=Object.keys(ys).map(Number).sort(function(a,c){return a-c});
     var sa=document.getElementById('cnAnio');sa.innerHTML='<option value="todos">Todos los años</option>'+lst.slice().reverse().map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');
@@ -1618,14 +1618,14 @@
   function cargarConc(){
     if(cargandoConc)return;
     var u=url('conc_url'),al=$('alertas');
-    if(!/^https:\/\/script\.google\.com\//.test(u)){al.innerHTML='<div class="nota">Abre Conciliación y guarda su URL para ver aquí las alertas.</div>';return}
+    if(!/^https:\/\/script\.google\.com\//.test(u)){al.innerHTML='<div class="nota">Abre «Valor cobrado a Dugo Motos» y guarda su URL para ver aquí las alertas.</div>';return}
     cargandoConc=true;
     var cb='pmConc'+Date.now(),s=document.createElement('script'),t=setTimeout(fin,120000);
     function fin(){clearTimeout(t);cargandoConc=false;delete window[cb];s.remove()}
     window[cb]=function(r){fin();
       if(!r||!r.ok){al.innerHTML='<div class="nota">No se pudo leer la conciliación: '+esc(r&&r.error||'sin respuesta')+'</div>';return}
       CON=(r.data&&r.data.filas)||[];window.PM_CONS=(r.data&&r.data.consMeses)?{meses:r.data.consMeses.meses||[],sinFecha:r.data.consMeses.sinFecha||null,col:r.data.colMesAnio||null}:null;if(window.pintarCons)window.pintarCons();pintarAlertas()};
-    s.onerror=function(){fin();al.innerHTML='<div class="nota">No se pudo conectar con Conciliación.</div>'};
+    s.onerror=function(){fin();al.innerHTML='<div class="nota">No se pudo conectar con «Valor cobrado a Dugo Motos».</div>'};
     s.src=u+(u.indexOf('?')<0?'?':'&')+'action=conciliar&token='+encodeURIComponent(TOKEN_CONC)+'&tolerancia=&rapido=1&callback='+cb+'&_='+Date.now();
     document.head.appendChild(s);
   }
@@ -1698,11 +1698,11 @@
     if(!om){h+='<h4>Pagos registrados ('+pagos.length+')</h4>';
     h+=pagos.length?'<div class="f-scroll"><table class="f-tabla"><tr><th>Fecha</th><th>Cuota</th><th>Valor</th><th>Nota</th></tr>'+pagos.map(function(p){return '<tr><td>'+esc(p.fechaPago)+'</td><td>'+esc(p.cuota)+'</td><td>'+pesos(p.valorPagado)+'</td><td>'+esc(p.nota)+'</td></tr>'}).join('')+'</table></div>':'<div class="nota">'+(fin?'Sin pagos en la hoja Pagos (la cuota 1 se da por pagada al firmar).':'Contrato de contado: no tiene cuotas.')+'</div>';}
     if(!om){h+='<h4>Consolidación</h4>';
-    if(CON===null)h+='<div class="nota">Abre Conciliación y guarda su URL para ver este dato.</div>';
+    if(CON===null)h+='<div class="nota">Abre «Valor cobrado a Dugo Motos» y guarda su URL para ver este dato.</div>';
     else if(!f)h+='<div class="nota">Este contrato no aparece en la conciliación.</div>';
     else h+='<div class="f-dat">'+d('Estado',f.estado+(f.revisado?' · revisado':''))+d('Valor Dugo Motos (Protect)',f.pagado!=null&&f.pagado!==''?pesos(f.pagado):'')+d('Valor en Consolidado',f.c!=null&&f.c!==''?pesos(f.c):'')+d('Diferencia',f.dif!=null&&f.dif!==''?pesos(f.dif):'')+'</div>';}
     var wa=String(c.celular||'').replace(/\D/g,'');if(wa&&wa.length===10)wa='57'+wa;
-    h+='<div class="f-acc">'+(om?'<a href="#oms">Ir a Clientes OMS</a>':'<a href="#cobros">Ir a Cobros</a><a href="#conciliacion">Ir a Conciliación</a>')+''+(wa?'<a class="sec" target="_blank" rel="noopener" href="https://wa.me/'+wa+'">WhatsApp</a>':'')+'</div></div>';
+    h+='<div class="f-acc">'+(om?'<a href="#oms">Ir a Clientes OMS</a>':'<a href="#cobros">Ir a Cobros</a><a href="#conciliacion">Ir a Valor cobrado a Dugo Motos</a>')+''+(wa?'<a class="sec" target="_blank" rel="noopener" href="https://wa.me/'+wa+'">WhatsApp</a>':'')+'</div></div>';
     var box=$('ficha');box.innerHTML=h;box.className='abierto';
     $('fx').onclick=cerrar;box.onclick=function(e){if(e.target===box)cerrar()};
     box.querySelectorAll('.f-acc a[href^="#"]').forEach(function(a){a.addEventListener('click',cerrar)})}
@@ -1855,7 +1855,7 @@
       ['k-cian','🛡️','Con RC este mes',rcp==null?'—':rcp+' %',tot?PMK.rc+' de '+tot+' contratos':'Sin datos del mes',rcp==null?0:rcp],
       ['k-vio','📈','SOAT vendidos del mes',PMK.soatMes==null?'—':PMK.soatMes,PMK.soatMes==null?'Conecta SOAT':'Ganancia '+(window.PMG?dineroK(PMK.soatGan):''),null],
       ['k-azu','👥','Clientes activos',PMK.activos==null?'—':PMK.activos,PMK.activos==null?'':(PMK.finalizados||0)+' finalizados · '+(PMK.cancelados||0)+' cancelados',null],
-      ['k-nar','🧾','Faltan por consolidar',PMK.faltaConc==null?'—':PMK.faltaConc,PMK.faltaConc==null?'Abre Conciliación':(PMK.menos?PMK.menos+' pagaron de menos':'Todo al día'),null]
+      ['k-nar','🧾','Faltan por consolidar',PMK.faltaConc==null?'—':PMK.faltaConc,PMK.faltaConc==null?'Abre «Valor cobrado a Dugo Motos»':(PMK.menos?PMK.menos+' pagaron de menos':'Todo al día'),null]
     ];
     box.innerHTML=K.map(function(x){return '<a class="in-k '+x[0]+'" href="'+(x[0]==='k-nar'?'#conciliacion':x[0]==='k-vio'?'#soat':x[0]==='k-azu'?'#cobros':'#inicio')+'"><div class="in-ki">'+x[1]+'</div><div class="in-kt"><span>'+x[2]+'</span><b>'+x[3]+'</b><small>'+x[4]+'</small></div>'+(x[5]!==null?'<div class="in-kp"><i style="width:'+x[5]+'%"></i></div>':'')+'</a>'}).join('');
     var u=$('gUlt');if(u)u.textContent='Actualizado '+new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
@@ -2069,7 +2069,7 @@
     // 5) clientes
     if(R.ecs&&R.ecs.length){var ec={};R.ecs.forEach(function(r){if(!HIST&&r.y!==yA)return;ec[r.e]=(ec[r.e]||0)+1});var v=(ec.ACTIVO||0)+(ec.FINALIZADO||0)+(ec.CANCELADO||0);
       B.push(['Estado de los clientes',(HIST?'Hay ':'De los contratos firmados en '+yA+' hay ')+nf(v)+' contratos vendidos: '+nf(ec.ACTIVO||0)+' activos ('+pc(ec.ACTIVO||0,v)+' %), '+nf(ec.FINALIZADO||0)+' finalizados ('+pc(ec.FINALIZADO||0,v)+' %) y '+nf(ec.CANCELADO||0)+' cancelados ('+pc(ec.CANCELADO||0,v)+' %).'+(ec.ANULADO?' Además hay '+nf(ec.ANULADO)+' contratos anulados, que no se cuentan como vendidos.':'')])}
-    if(esAct&&K.faltaConc!=null)B.push(['Conciliación de pagos','Faltan por consolidar '+K.faltaConc+' contratos'+(K.menos?' y '+K.menos+' pagaron de menos':'')+'. El detalle está en el botón Conciliación.']);
+    if(esAct&&K.faltaConc!=null)B.push(['Valor cobrado a Dugo Motos','Faltan por consolidar '+K.faltaConc+' contratos'+(K.menos?' y '+K.menos+' pagaron de menos':'')+'. El detalle está en el botón Valor cobrado a Dugo Motos.']);
     // 6) SOAT
     if(soatRecs&&soatRecs.length){var an=0,ag=0,sn=0,sg=0,pn=0,pg=0,pm2=mC===1?12:mC-1,py2=mC===1?yC-1:yC;
       soatRecs.forEach(function(r){if(yok(r.y)){an++;ag+=r.g}if(r.y===yC&&r.m===mC){sn++;sg+=r.g}if(r.y===py2&&r.m===pm2){pn++;pg+=r.g}});
