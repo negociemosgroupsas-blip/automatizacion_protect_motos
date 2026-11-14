@@ -41,26 +41,32 @@
 
   <section class="panel nop" id="pHoja">
     <h2>1. Hoja del banco (Google Sheets)</h2>
-    <p class="sub">El sistema lee solo la hoja de los movimientos del banco, igual que lee la hoja Protect: la dirección está guardada en el código, así que <b>no tiene que pegar nada ni subir archivos</b>. Solo escriba un enlace aquí si quiere usar <i>otra</i> hoja. (Debe ser una hoja de Google de verdad —no un «.XLSX»— y estar en la misma cuenta donde publicó el script.)</p>
-    <div class="fil"><label style="flex:1;min-width:320px">Otra hoja (opcional)<input type="text" id="bkLink" placeholder="Déjelo vacío para usar la hoja del código" style="border:1px solid var(--borde);border-radius:8px;padding:8px 11px;font-size:.92rem;width:100%"></label>
-      <label>Pestaña (opcional)<input type="text" id="bkTab" placeholder="la primera" style="border:1px solid var(--borde);border-radius:8px;padding:8px 11px;font-size:.92rem;width:160px"></label>
+    <p class="sub">El sistema <b>lee solo la hoja de Google del banco</b>, igual que lee la hoja Protect. No hay que subir nada: la lectura se hace sola al abrir esta pantalla. Si no carga, use «Leer el banco».</p>
+    <details style="margin-bottom:8px"><summary style="cursor:pointer;font-size:.86rem;color:var(--suave)">Usar otra hoja o pestaña (opcional)</summary><div class="fil"><label style="flex:1;min-width:320px">Otra hoja (opcional)<input type="text" id="bkLink" placeholder="Déjelo vacío para usar la hoja del código" style="border:1px solid var(--borde);border-radius:8px;padding:8px 11px;font-size:.92rem;width:100%"></label>
+      <label>Pestaña (opcional)<input type="text" id="bkTab" placeholder="la primera" style="border:1px solid var(--borde);border-radius:8px;padding:8px 11px;font-size:.92rem;width:160px"></label></div></details><div class="fil">
       <label>Mirar los últimos<select id="per"><option value="7">7 días</option><option value="15" selected>15 días</option><option value="30">30 días</option><option value="90">90 días</option><option value="0">Todo el historial</option></select></label>
       <label style="flex-direction:row;align-items:center;gap:6px;padding-bottom:9px"><input type="checkbox" id="ign" checked> Ignorar intereses y valores menores a $1.000</label><button class="btn v" id="bLeer" type="button">Leer el banco</button></div>
     <p class="estado" id="estBanco" style="margin:10px 0 0"></p>
   </section>
 
   <section class="panel nop">
-    <h2>…o suba un archivo del banco (opcional)</h2>
-    <p class="sub">Solo si algún día no tiene la hoja a mano: Excel (.xlsx o .xls) o .csv tal como lo descarga del banco. Se lee aquí en su computador; no se envía ni se modifica.</p>
-    <div class="drop" id="drop" tabindex="0"><b>📂 Arrastre aquí el archivo, o elíjalo con el botón</b><button class="btn d" id="bElegir" type="button" style="margin:6px 0">📎 Elegir archivo</button><br><span id="dropTxt">Reconoce solo las columnas de fecha y valor; no importa cómo se llamen ni en qué fila empiece la tabla.</span></div>
-    <input type="file" id="archivo" accept=".xlsx,.xls,.csv" style="display:none">
+    <h2>Opciones de la comparación</h2>
+    <div style="display:none"><div class="drop" id="drop" tabindex="0"><b>📂 Arrastre aquí el archivo, o elíjalo con el botón</b><button class="btn d" id="bElegir" type="button" style="margin:6px 0">📎 Elegir archivo</button><br><span id="dropTxt">Reconoce solo las columnas de fecha y valor; no importa cómo se llamen ni en qué fila empiece la tabla.</span></div>
+    <input type="file" id="archivo" accept=".xlsx,.xls,.csv" style="display:none"></div>
     <div class="fil" style="margin-top:12px"><label>Tolerancia de fecha<select id="tol"><option value="0">Solo la misma fecha</option><option value="1" selected>Misma fecha, o ±1 día (lo marca)</option><option value="2">Misma fecha, o ±2 días (lo marca)</option></select></label></div>
   </section>
 
   <div id="resultado" style="display:none">
+    <section class="panel" id="pRes">
+      <h2 style="margin:0 0 4px">💰 Dinero que entra a la cuenta por consignaciones</h2>
+      <p class="sub" style="margin:0 0 10px">Suma de TODO lo que entró al banco según la hoja (incluye consignaciones sin comprobante). «Con pago registrado» = aparece en la hoja Pagos con esa fecha y valor; «Sin comprobante» = entró plata y no hay un pago registrado.</p>
+      <div class="fil nop"><label>Año <select id="rsAnio"></select></label></div>
+      <div class="tiles" id="rsTiles" style="margin-top:10px"></div>
+      <div class="scroll"><table><thead><tr><th id="rsTh">Período</th><th class="num">Total que entró</th><th class="num">Con pago registrado</th><th class="num">Sin comprobante</th><th class="num">% sin comprobante</th><th class="num">Consignaciones</th></tr></thead><tbody id="rsCuerpo"></tbody></table></div>
+    </section>
     <section class="panel">
       <div class="fil nop" style="justify-content:space-between;align-items:center;margin-bottom:6px"><h2 style="margin:0">2. Movimientos del banco con el cliente al frente</h2><div class="fil"><button class="btn v" id="bXlsx" type="button">⬇ Descargar Excel</button><button class="btn g" id="bImp" type="button">🖨️ Imprimir</button></div></div>
-      <p class="estado" id="meta" style="margin:0 0 12px"></p>
+      <div class="fil nop" id="boxAnotar" style="display:none;margin-bottom:10px;align-items:center"><button class="btn v" id="bAnotar" type="button">✍️ Anotar los nombres en la hoja del banco</button><span class="estado" id="estAnotar" style="margin:0"></span></div><p class="estado" id="meta" style="margin:0 0 12px"></p>
       <div id="avisos"></div>
       <div class="tiles" id="tiles"></div>
       <div class="fil nop"><label>Buscar<input type="search" id="busca" placeholder="cliente, valor, fecha o descripción"></label></div>
@@ -134,8 +140,10 @@
       var url=LS('pm_crm_url'),tok=LS('pm_crm_token')||'PM-CRM-2026';
       if(!url){mal(new Error('Falta la URL del conector (pestaña Conexiones → Conector único).'));return}
       cnt++;var cb='pm_bkh_'+Date.now()+'_'+cnt,s=document.createElement('script'),fin=false;
-      var t=setTimeout(function(){if(fin)return;fin=true;limpiar();mal(new Error('El conector no respondió a tiempo.'))},90000);
-      function limpiar(){clearTimeout(t);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}
+      var t=setTimeout(function(){if(fin)return;fin=true;limpiar();mal(new Error('El conector no respondió a tiempo (más de 60 segundos). Revise que publicó «Nueva versión» con el código crm-9 y que ejecutó AUTORIZAR_TODO.'))},60000);
+      function eh(ev){if(fin)return;if(ev&&ev.filename&&String(ev.filename).indexOf('script.google')<0&&String(ev.filename).indexOf('googleusercontent')<0)return;fin=true;limpiar();mal(new Error('El conector devolvió una página de error en vez de datos. Casi siempre es porque falta autorizar: en Apps Script ejecute AUTORIZAR_TODO, acepte los permisos y publique «Nueva versión».'))}
+      function limpiar(){clearTimeout(t);window.removeEventListener('error',eh,true);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}
+      window.addEventListener('error',eh,true);
       window[cb]=function(r){if(fin)return;fin=true;limpiar();ok(r)};
       s.onerror=function(){if(fin)return;fin=true;limpiar();mal(new Error('No se pudo contactar el conector.'))};
       s.src=url+(url.indexOf('?')<0?'?':'&')+'action=banco_leer&token='+encodeURIComponent(tok)+'&sheetId='+encodeURIComponent(id)+'&hoja='+encodeURIComponent(hoja||'')+'&callback='+cb+'&_='+Date.now();document.body.appendChild(s);
@@ -147,15 +155,75 @@
     try{if(id)localStorage.setItem('pm_banco_sheet',id);else localStorage.removeItem('pm_banco_sheet');localStorage.setItem('pm_banco_tab',$('bkTab').value.trim());localStorage.setItem('pm_banco_dias',$('per').value)}catch(e){}
     estB('Leyendo la hoja del banco…');$('bLeer').disabled=true;
     return llamarBanco(id,$('bkTab').value.trim()).then(function(r){
-      ARCH=leerMatrices([[r.hoja,r.filas]],r.nombre+' · '+r.hoja);ARCH.origen='hoja';ARCH.recortado=r.recortado;filtro='';
+      ARCH=leerMatrices([[r.hoja,r.filas]],r.nombre+' · '+r.hoja);ARCH.origen='hoja';ARCH.recortado=r.recortado;ARCH.desdeCola=r.desdeCola||0;ARCH.hojaNom=r.hoja;filtro='';
       estB('Conectado ✔ · «'+r.nombre+'» · pestaña «'+r.hoja+'» · '+ARCH.movs.length+' movimientos leídos'+(r.pestanas&&r.pestanas.length>1?' (otras pestañas: '+r.pestanas.filter(function(x){return x!==r.hoja}).join(', ')+')':''),'ok');
       if(!PAGOS){est('Esperando la hoja Pagos…','er');return}cruzar();
     }).catch(function(e){estB(e.message,'er')}).then(function(){$('bLeer').disabled=false});
   }
   $('bLeer').addEventListener('click',leerHojaBanco);
+  /* ---------- escribir el nombre del cliente al frente de cada consignación (hoja de Google) ---------- */
+  function filaReal(m){var i=m.n-1;return(ARCH.recortado&&i>=40)?ARCH.desdeCola+(i-40):i+1}
+  function porAnotar(){return(ARCH&&ARCH.origen==='hoja'?ARCH.movs:[]).filter(function(m){return(m.est==='ok'||m.est==='cer')&&m.cli&&!m.anot})}
+  function pintarAnotar(){var b=$('boxAnotar');if(!b)return;var n=porAnotar().length;b.style.display=(ARCH&&ARCH.origen==='hoja')?'flex':'none';$('bAnotar').disabled=!n;$('bAnotar').textContent='✍️ Anotar los nombres en la hoja del banco ('+n+')';if(!n&&ARCH&&ARCH.origen==='hoja'&&!$('estAnotar').textContent)$('estAnotar').textContent='No hay nombres nuevos por escribir.'}
+  $('bAnotar').addEventListener('click',function(){
+    var L=porAnotar();if(!L.length)return;
+    var col=7,letra='G';
+    if(!confirm('Voy a escribir '+L.length+' nombre(s) de cliente en la columna '+letra+' de la hoja del banco, al frente de cada consignación.\n\nSolo se escribe donde la celda está vacía; no se toca nada de lo que usted ya anotó.\n¿Continuar?'))return;
+    $('bAnotar').disabled=true;$('estAnotar').textContent='Escribiendo en la hoja…';
+    var items=L.map(function(m){return{fila:filaReal(m),cliente:m.cli}});
+    var url=LS('pm_crm_url'),tok=LS('pm_crm_token')||'PM-CRM-2026',id=LS('pm_banco_sheet')||'';
+    new Promise(function(ok,mal){
+      cnt++;var cb='pm_bka_'+Date.now()+'_'+cnt,sc=document.createElement('script'),fin=false;
+      var t=setTimeout(function(){if(fin)return;fin=true;lim();mal(new Error('El conector no respondió a tiempo.'))},60000);
+      function lim(){clearTimeout(t);try{delete window[cb]}catch(e){window[cb]=undefined}if(sc.parentNode)sc.parentNode.removeChild(sc)}
+      window[cb]=function(r){if(fin)return;fin=true;lim();ok(r)};
+      sc.onerror=function(){if(fin)return;fin=true;lim();mal(new Error('No se pudo contactar el conector.'))};
+      var hf=(ARCH.hi!=null?ARCH.hi+1:0);
+      sc.src=url+(url.indexOf('?')<0?'?':'&')+'action=banco_anotar&token='+encodeURIComponent(tok)+'&sheetId='+encodeURIComponent(id)+'&hoja='+encodeURIComponent(LS('pm_banco_tab')||'')+'&col='+col+'&hdr='+encodeURIComponent('Cliente')+'&hdrFila='+((ARCH.hi!=null&&ARCH.hi<40)?hf:0)+'&items='+encodeURIComponent(JSON.stringify(items))+'&callback='+cb+'&_='+Date.now();
+      document.body.appendChild(sc);
+    }).then(function(r){
+      if(!r||r.ok===false){var m=(r&&r.error)||'Respuesta inválida.';if(/Acción no disponible/.test(m))m='El conector todavía no puede escribir en la hoja (versión crm-10): pegue el código nuevo (Codigo_UNICO.gs) y publique «Nueva versión».';throw new Error(m)}
+      L.forEach(function(m){m.anot=m.cli;m.est='ya';m.obs=['Nombre escrito en la hoja del banco.']});
+      $('estAnotar').textContent='Listo ✔ · '+r.escritas+' nombre(s) escritos en la hoja'+(r.omitidas?' · '+r.omitidas+' omitidos (ya tenían algo escrito)':'')+'. Ábrala en Google Sheets para verlos.';
+      cruzar();
+    }).catch(function(e){$('estAnotar').textContent=e.message;$('bAnotar').disabled=false});
+  });
+
   $('per').addEventListener('change',function(){try{localStorage.setItem('pm_banco_dias',$('per').value)}catch(e){}if(ARCH&&PAGOS)cruzar()});
   (function(){var id=LS('pm_banco_sheet');if(id)$('bkLink').value='https://docs.google.com/spreadsheets/d/'+id+'/edit';$('bkTab').value=LS('pm_banco_tab');if(LS('pm_banco_dias'))$('per').value=LS('pm_banco_dias')})();
 
+
+  /* ---------- resumen: cuánto dinero entra por consignaciones (año, mes y general) ---------- */
+  var RS={busy:false,key:'',datos:null,anio:''};
+  function datosHistoricos(){
+    if(!ARCH||!PAGOS||!ARCH.todos)return null;
+    var key=[$('ign').checked,$('tol').value,ARCH.todos.length,PAGOS.length].join('|');
+    if(RS.datos&&RS.key===key)return RS.datos;
+    RS.busy=true;var per=$('per').value;
+    try{
+      $('per').value='0';cruzar();
+      var usarIgn=$('ign').checked;
+      RS.datos=ARCH.todos.filter(function(m){return m.entra&&!(usarIgn&&m.ign)}).map(function(m){return{f:m.fecha,v:m.valor,r:!!((m.ps&&m.ps.length)||m.est==='ok'||m.est==='cer'||m.est==='dud')}});
+    }finally{$('per').value=per;cruzar();RS.busy=false}
+    RS.key=key;return RS.datos;
+  }
+  var MESES_R=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  function pintarResumen(){
+    if(RS.busy)return;var D=datosHistoricos();if(!D)return;
+    var anios={};D.forEach(function(d){anios[d.f.slice(0,4)]=1});var ys=Object.keys(anios).sort().reverse();
+    var sa=$('rsAnio');sa.innerHTML='<option value="">Todos los años</option>'+ys.map(function(y){return'<option>'+y+'</option>'}).join('');
+    if(!anios[RS.anio])RS.anio='';sa.value=RS.anio;
+    var G=function(L){var t=0,r=0;L.forEach(function(d){t+=d.v;if(d.r)r+=d.v});return{t:t,r:r,s:t-r,n:L.length}};
+    var all=G(D),filas,th;
+    if(RS.anio){th='Mes de '+RS.anio;filas=MESES_R.map(function(nm,i){var mm=('0'+(i+1)).slice(-2);return[nm,G(D.filter(function(d){return d.f.slice(0,7)===RS.anio+'-'+mm}))]})}
+    else{th='Año';filas=ys.slice().reverse().map(function(y){return[y,G(D.filter(function(d){return d.f.slice(0,4)===y}))]})}
+    var sel=RS.anio?G(D.filter(function(d){return d.f.slice(0,4)===RS.anio})):all;
+    var pc=function(g){return g.t?Math.round(g.s*100/g.t*10)/10+' %':'—'};
+    $('rsTiles').innerHTML=[['Total que entró'+(RS.anio?' en '+RS.anio:' (todo el historial)'),sel.t,sel.n+' consignaciones','#38bdf8'],['Con pago registrado',sel.r,'Aparecen en la hoja Pagos','#5b78c7'],['Sin comprobante',sel.s,pc(sel)+' del total','#fdc33e']].map(function(x){return'<div class="t" style="--c:'+x[3]+'"><span>'+x[0]+'</span><b>'+cop(x[1])+'</b><small>'+x[2]+'</small></div>'}).join('');
+    $('rsTh').textContent=th;
+    $('rsCuerpo').innerHTML=filas.map(function(f){var g=f[1];return'<tr><td><b>'+f[0]+'</b></td><td class="num"><b>'+cop(g.t)+'</b></td><td class="num">'+cop(g.r)+'</td><td class="num">'+cop(g.s)+'</td><td class="num">'+pc(g)+'</td><td class="num">'+g.n+'</td></tr>'}).join('')+'<tr><td><b>Total</b></td><td class="num"><b>'+cop(sel.t)+'</b></td><td class="num">'+cop(sel.r)+'</td><td class="num">'+cop(sel.s)+'</td><td class="num">'+pc(sel)+'</td><td class="num">'+sel.n+'</td></tr>';
+  }
+  $('rsAnio').addEventListener('change',function(){RS.anio=this.value;pintarResumen()});
   /* ---------- lectura del archivo del banco ---------- */
   function leerBanco(buf,nombre){
     var wb=XLSX.read(buf,{type:'array',cellDates:true}),mats=[];
@@ -267,6 +335,7 @@
   }
   function pintar(){
     $('resultado').style.display='block';
+    try{pintarResumen()}catch(e){}try{pintarAnotar()}catch(e){}
     if(!ARCH.movs.length){$('meta').textContent='No hay movimientos en el período elegido ('+(ARCH.desde?'desde el '+bonita(ARCH.desde):'todo')+'). Cambie «Mirar los últimos» o revise el archivo.';$('tiles').innerHTML='';$('cuerpo').innerHTML='';$('avisos').innerHTML='';$('cuerpoSin').innerHTML='';$('subSin').textContent='';return}
     var mi=ARCH.movs.filter(function(m){return m.entra&&m.est!=='ign'}),n=function(e){return mi.filter(function(m){return m.est===e}).length},sm=function(e){return mi.filter(function(m){return m.est===e}).reduce(function(s,m){return s+m.valor},0)};
     var fe=ARCH.movs.map(function(m){return m.fecha}).sort();

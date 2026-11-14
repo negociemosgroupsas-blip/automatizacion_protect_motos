@@ -60,6 +60,8 @@ function doGet(e) {
         salida = accionVerReporte(params);
       } else if (accion === 'banco_leer') {
         salida = accionBancoLeer(params);
+      } else if (accion === 'banco_anotar') {
+        salida = accionBancoAnotar(params);
       } else if (accion === 'erp_protect') {
         salida = accionErpProtect();
       } else if (accion === 'renov_gestiones') {
@@ -73,7 +75,7 @@ function doGet(e) {
       } else if (accion === 'cotRen_estado') {
         salida = accionCotRenEstado(params);
       } else if (accion === 'ping') {
-        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-9' };
+        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-10' };
       } else {
         salida = { ok: false, error: 'Acción no disponible: ' + accion };
       }
@@ -560,5 +562,34 @@ function accionBancoLeer(p) {
     recortado = true;
     filas = hoja.getRange(1, 1, 40, anc).getValues().map(conv).concat(hoja.getRange(ult - (max - 40) + 1, 1, max - 40, anc).getValues().map(conv));
   }
-  return { ok: true, nombre: ss.getName(), hoja: hoja.getName(), pestanas: pestanas, filas: filas, recortado: recortado, totalFilas: ult };
+  return { ok: true, nombre: ss.getName(), hoja: hoja.getName(), pestanas: pestanas, filas: filas, recortado: recortado, totalFilas: ult, desdeCola: recortado ? (ult - (max - 40) + 1) : 0 };
+}
+
+/* Escribe el nombre del cliente al frente de cada consignación en la hoja del banco.
+   Solo escribe en celdas VACÍAS (nunca pisa lo que usted ya anotó) y solo en la columna indicada. */
+function accionBancoAnotar(p) {
+  var id = String(p.sheetId || BANCO_SHEET_ID || '').trim();
+  if (!/^[A-Za-z0-9_-]{20,}$/.test(id)) return { ok: false, error: 'Falta el ID de la hoja del banco.' };
+  var items;
+  try { items = JSON.parse(p.items || '[]'); } catch (e) { return { ok: false, error: 'Lista de nombres inválida.' }; }
+  if (!items.length) return { ok: true, escritas: 0, omitidas: 0 };
+  if (items.length > 600) return { ok: false, error: 'Demasiados movimientos de una vez (máximo 600).' };
+  var col = Math.max(1, Math.min(Number(p.col) || 7, 40));
+  var ss;
+  try { ss = SpreadsheetApp.openById(id); } catch (e) { return { ok: false, error: 'No pude abrir la hoja del banco.' }; }
+  var nombreHoja = String(p.hoja || BANCO_HOJA || '').trim();
+  var hoja = nombreHoja ? ss.getSheetByName(nombreHoja) : ss.getSheets()[0];
+  if (!hoja) return { ok: false, error: 'No encontré la pestaña del banco.' };
+  var esc = 0, omit = 0;
+  var hdrFila = Number(p.hdrFila) || 0;
+  if (hdrFila > 0 && p.hdr && String(hoja.getRange(hdrFila, col).getValue() || '').trim() === '') hoja.getRange(hdrFila, col).setValue(String(p.hdr));
+  items.forEach(function (it) {
+    var f = Number(it.fila), nom = String(it.cliente || '').trim();
+    if (!(f > 0) || !nom) { omit++; return; }
+    var cel = hoja.getRange(f, col);
+    if (String(cel.getValue() || '').trim() !== '') { omit++; return; }
+    cel.setValue(nom); esc++;
+  });
+  SpreadsheetApp.flush();
+  return { ok: true, escritas: esc, omitidas: omit };
 }
