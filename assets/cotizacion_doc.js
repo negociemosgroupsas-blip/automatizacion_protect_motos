@@ -26,31 +26,44 @@
   function guardarCoberturas(aseg, op, lista){ var g = leerGuardadas(); g[aseg+'|'+op] = lista; try{ localStorage.setItem(CLAVE, JSON.stringify(g)); }catch(e){} }
   function restaurarCoberturas(aseg){ var g = leerGuardadas(); delete g[aseg+'|op1']; delete g[aseg+'|op2']; try{ localStorage.setItem(CLAVE, JSON.stringify(g)); }catch(e){} }
 
-  /* ---- Estilos del documento ---- */
+  /* ---- Estilos del documento (estilo afiche: fondo azul, tarjetas redondeadas, títulos en cápsula) ---- */
   var CSS = [
-    '@page{size:letter;margin:12mm}',
-    '*{box-sizing:border-box} body{margin:0;background:#fff;color:#1f2430;font-family:Arial,Helvetica,sans-serif}',
-    '.doc{width:794px;margin:0 auto;padding:30px 38px;background:#fff;font-size:13px;line-height:1.45}',
-    '.cab{display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:4px solid #d6a417;padding-bottom:12px}',
-    '.cab img{height:78px;width:auto;display:block}',
-    '.cab .tit{text-align:right} .cab .tit b{display:block;font-size:24px;letter-spacing:.5px;color:#13223f} .cab .tit span{display:block;color:#5f6882;font-size:12px;margin-top:2px}',
-    'p{margin:10px 0}',
-    'table{border-collapse:collapse;width:100%}',
-    '.cli th{background:#13223f;color:#fff;font-size:11px;letter-spacing:.4px;text-transform:uppercase;padding:8px 10px;border:1px solid #fff;text-align:center}',
-    '.cli td{background:#eef1f6;border:1px solid #fff;padding:9px 10px;text-align:center;font-weight:700;color:#13223f;font-size:14px}',
-    '.aseg{margin:10px 0 0;display:inline-block;background:#fff3cf;border:1px solid #ecd48a;border-radius:999px;padding:4px 14px;font-weight:700;color:#7a5b00;font-size:12px}',
-    '.op{margin-top:16px;border:1px solid #cfd8e8;border-radius:10px;overflow:hidden;page-break-inside:avoid}',
-    '.op h3{margin:0;background:#13223f;color:#fff;padding:9px 14px;font-size:14px;letter-spacing:.3px}',
-    '.op h3 small{font-weight:400;opacity:.85;margin-left:6px;font-size:12px}',
-    '.pre{display:flex;border-bottom:1px solid #e3e8f2} .pre>div{flex:1;padding:10px 14px} .pre>div+div{border-left:1px solid #e3e8f2}',
-    '.pre span{display:block;color:#5f6882;font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:700} .pre b{display:block;font-size:22px;color:#13223f;margin:2px 0} .pre small{display:block;color:#4b5563;font-size:12px}',
-    '.cob{padding:10px 14px 12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}',
-    '.cob div{display:flex;gap:8px;align-items:flex-start;font-size:12.5px} .cob i{flex:0 0 17px;height:17px;border-radius:50%;background:#1f9d55;color:#fff;font-style:normal;font-size:11px;text-align:center;line-height:17px;margin-top:1px}',
-    '.cob .sec{grid-column:1/-1;font-weight:800;color:#1f4e79;font-size:12px;letter-spacing:.4px;text-transform:uppercase;border-bottom:1px solid #dbe3f1;margin-top:4px;padding-bottom:2px;display:block}',
-    '.nota{margin-top:14px;font-size:11.5px;color:#4b5563}',
-    '.pie{margin-top:16px;border-top:2px solid #13223f;padding-top:10px;display:flex;justify-content:space-between;gap:12px;font-size:12px;color:#374151}',
-    '.pie b{color:#13223f}'
-  ].join('\n');
+    '@page{size:letter;margin:8mm}',
+    '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    'body{margin:0;background:#fff;color:#13223f;font-family:Arial,Helvetica,sans-serif}',
+    '.doc{font-family:Arial,Helvetica,sans-serif;width:794px;margin:0 auto;padding:26px 28px 24px;font-size:13px;line-height:1.45;color:#fff;border-radius:26px;position:relative;overflow:hidden;',
+      'background:radial-gradient(circle at 90% 4%,rgba(255,255,255,.28),rgba(255,255,255,0) 34%),radial-gradient(circle at 4% 62%,rgba(255,255,255,.16),rgba(255,255,255,0) 30%),linear-gradient(165deg,#0b63c9 0%,#1596e0 52%,#0a4fae 100%)}',
+    '.sup{display:flex;justify-content:space-between;align-items:center;gap:14px}',
+    '.logo{background:#fff;border-radius:999px;padding:7px 18px;display:flex;align-items:center;box-shadow:0 4px 14px rgba(0,0,0,.18)} .logo img{height:58px;width:auto;display:block}',
+    '.fecha{font-size:12px;text-align:right;opacity:.95;line-height:1.5} .fecha b{display:block;font-size:13px}',
+    '.marco{margin-top:14px;border:2px solid rgba(255,255,255,.7);border-radius:26px;padding:16px 16px 14px}',
+    '.over{text-align:center;letter-spacing:.38em;font-weight:700;font-size:13px;margin:0 0 8px;padding-left:.38em}',
+    '.titulo{background:#0b2a6b;border-radius:20px 20px 20px 4px;padding:14px 22px;text-align:left;box-shadow:0 6px 16px rgba(0,0,0,.22)}',
+    '.titulo b{display:block;font-size:36px;line-height:1.05;letter-spacing:.5px;font-weight:900} .titulo small{display:block;margin-top:4px;font-size:13px;opacity:.9}',
+    '.saludo{margin:12px 4px 10px;font-size:13.5px} .saludo b{color:#ffd54a}',
+    '.pills{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}',
+    '.pill{background:#fff;color:#0b2a6b;border-radius:999px;padding:7px 14px;display:flex;align-items:center;gap:9px;font-size:13px;box-shadow:0 3px 8px rgba(0,0,0,.12)}',
+    '.pill i{flex:0 0 26px;height:26px;border-radius:50%;background:#0b63c9;color:#fff;font-style:normal;text-align:center;line-height:26px;font-size:14px} .pill span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:#5f6882;line-height:1.1} .pill b{display:block;font-size:14px;line-height:1.2}',
+    '.aseg{margin:12px 0 0;display:inline-block;background:#ffc928;color:#0b2a6b;border-radius:999px;padding:5px 18px;font-weight:800;font-size:13px;box-shadow:0 3px 8px rgba(0,0,0,.18)}',
+    '.op{margin-top:14px;background:#fff;color:#13223f;border-radius:22px;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.2);page-break-inside:avoid}',
+    '.op h3{margin:0;background:#0b2a6b;color:#fff;padding:11px 18px;font-size:15px;letter-spacing:.3px;border-radius:0 0 18px 0;display:inline-block;max-width:92%}',
+    '.op h3 small{font-weight:400;opacity:.9;margin-left:8px;font-size:12.5px;color:#ffd54a}',
+    '.pre{display:grid;grid-template-columns:1fr 1.15fr;gap:10px;padding:12px 14px 6px}',
+    '.pre>div{border-radius:16px;padding:10px 14px}',
+    '.pre>div:first-child{background:#ffc928;color:#0b2a6b} .pre>div:last-child{background:#e3f2fd;color:#0b2a6b}',
+    '.pre span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:800;opacity:.85} .pre b{display:block;font-size:26px;line-height:1.1;margin:3px 0;font-weight:900} .pre small{display:block;font-size:12px;opacity:.9}',
+    '.cob{padding:8px 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}',
+    '.cob div{display:flex;gap:9px;align-items:center;font-size:12.5px;background:#eef6ff;border-radius:999px;padding:5px 12px 5px 6px;color:#0b2a6b;min-height:30px} .cob i{flex:0 0 21px;height:21px;border-radius:50%;background:#0b63c9;color:#fff;font-style:normal;font-size:12px;text-align:center;line-height:21px}',
+    '.cob div span{line-height:1.25}',
+    '.cob .sec{grid-column:1/-1;background:#0b63c9;color:#fff;border-radius:999px;font-weight:800;font-size:12px;letter-spacing:.5px;text-transform:uppercase;padding:5px 14px;margin-top:4px;min-height:0;display:block}',
+    '.cta{margin-top:16px;display:flex;align-items:center;gap:14px;background:#0b2a6b;border-radius:22px;padding:12px 16px;box-shadow:0 6px 16px rgba(0,0,0,.22)}',
+    '.cta .tx{flex:1} .cta .tx b{display:block;font-size:18px;letter-spacing:.3px} .cta .tx span{font-size:12.5px;opacity:.92}',
+    '.cta .ph{background:#fff;color:#0b2a6b;border-radius:999px;padding:8px 18px;font-weight:900;font-size:17px;white-space:nowrap}',
+    '.cta .bt{background:#ffc928;color:#0b2a6b;border-radius:14px;padding:10px 20px;font-weight:900;font-size:15px;font-style:italic;white-space:nowrap}',
+    '.nota{margin:12px 6px 0;font-size:11.5px;opacity:.95}',
+    '.pie{margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;color:#13223f;border-radius:999px;padding:8px 22px;font-size:12px}',
+    '.pie img{height:42px;width:auto;display:block} .pie b{color:#0b2a6b}'
+  ].join('');
 
   function celdaFin(o, plazo){
     if(o.primera !== o.resto) return '<b>'+cop(o.primera)+'</b><small>1ª cuota · luego '+(plazo-1)+' cuotas de '+cop(o.resto)+'</small><small>Total '+cop(o.total)+'</small>';
@@ -67,21 +80,24 @@
     var logo = w.PM_LOGO || '';
     var fecha = d.fecha || new Date().toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'});
     var op = function(n, titulo, sub, o, cob){
-      return '<div class="op"><h3>OPCIÓN '+n+' · '+esc(titulo)+'<small>'+esc(sub)+'</small></h3>'+
+      return '<div class="op"><h3>OPCIÓN '+n+' · '+esc(titulo)+(sub?'<small>'+esc(sub)+'</small>':'')+'</h3>'+
         '<div class="pre"><div><span>De contado</span><b>'+cop(o.contado)+'</b><small>Un solo pago</small></div>'+
         '<div><span>Financiado a '+d.plazo+' meses</span>'+celdaFin(o, d.plazo)+'</div></div>'+bloqueCob(cob)+'</div>';
     };
+    var pill = function(ico, etq, val){ return '<div class="pill"><i>'+ico+'</i><div><span>'+etq+'</span><b>'+esc(val||'—')+'</b></div></div>'; };
     return '<div class="doc">'+
-      '<div class="cab">'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'<b style="font-size:22px">PROTECT MOTOS</b>')+
-      '<div class="tit"><b>COTIZACIÓN</b><span>Renovación de garantía · '+esc(fecha)+(d.id?' · N.º '+esc(d.id):'')+'</span></div></div>'+
-      '<p><b>'+esc(d.nombre)+'</b>, le damos un cordial saludo.</p>'+
-      '<p>De acuerdo con nuestra conversación, le enviamos la información de la renovación para su moto'+(d.moto?' <b>'+esc(d.moto)+'</b>':'')+'. A continuación encontrará dos opciones de cobertura, cada una con su valor de contado y financiado a '+d.plazo+' meses.</p>'+
-      '<table class="cli"><thead><tr><th>Nombre del cliente</th><th>Placa</th><th>Moto</th><th>Valor garantizado</th></tr></thead><tbody><tr><td>'+esc(d.nombre)+'</td><td>'+esc(d.placa||'—')+'</td><td>'+esc(d.moto||'—')+'</td><td>'+(d.garantizar?cop(d.garantizar):'—')+'</td></tr></tbody></table>'+
-      '<span class="aseg">Respaldo: '+esc(d.aseguradora)+'</span>'+
+      '<div class="sup"><div class="logo">'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'<b style="color:#0b2a6b;font-size:20px">PROTECT MOTOS</b>')+'</div>'+
+      '<div class="fecha"><b>'+esc(fecha)+'</b>'+(d.id?'Cotización N.º '+esc(d.id):'Renovación de garantía')+'</div></div>'+
+      '<div class="marco"><p class="over">RENOVACIÓN</p>'+
+      '<div class="titulo"><b>COTIZACIÓN<br>DE GARANTÍA</b><small>Protección para su moto, con las opciones que mejor le convienen</small></div>'+
+      '<p class="saludo"><b>'+esc(d.nombre)+'</b>, le damos un cordial saludo. De acuerdo con nuestra conversación, le enviamos la información de la renovación de su moto'+(d.moto?' <b>'+esc(d.moto)+'</b>':'')+'. Encontrará dos opciones, cada una con su valor de contado y financiado a '+d.plazo+' meses.</p>'+
+      '<div class="pills">'+pill('👤','Cliente',d.nombre)+pill('🏍️','Placa',d.placa)+pill('🔧','Moto',d.moto)+pill('💰','Valor garantizado',d.garantizar?cop(d.garantizar):'')+'</div>'+
+      '<span class="aseg">Respaldo: '+esc(d.aseguradora)+'</span></div>'+
       op(1,'HURTO O PÉRDIDA TOTAL',(d.aseguradora==='Protect Motos'?'cubre el 80 %':''),d.op1,d.cob1)+
       op(2,'HURTO / PÉRDIDA TOTAL + RESPONSABILIDAD CIVIL + ASISTENCIAS','',d.op2,d.cob2)+
-      '<p class="nota">'+esc(d.nota||'Valores en pesos colombianos (COP). Si desea renovar, respóndanos este mensaje y dejamos su garantía lista hoy mismo.')+'</p>'+
-      '<div class="pie"><div><b>PROTECT MOTOS</b><br>Negociemos Group S.A.S. · NIT 901.715.327-0</div><div style="text-align:right">protectmotos@gmail.com<br>312 880 68 73</div></div>'+
+      '<div class="cta"><div class="tx"><b>¡CONTÁCTANOS HOY!</b><span>Responde este mensaje y dejamos tu garantía lista.</span></div><div class="ph">📞 312 880 68 73</div><div class="bt">RENUEVA AQUÍ</div></div>'+
+      '<p class="nota">'+esc(d.nota||'Valores en pesos colombianos (COP). La cotización corresponde a la moto y los datos indicados.')+'</p>'+
+      '<div class="pie">'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'<b>PROTECT MOTOS</b>')+'<div style="text-align:center"><b>Negociemos Group S.A.S.</b> · NIT 901.715.327-0</div><div style="text-align:right">protectmotos@gmail.com</div></div>'+
       '</div>';
   }
   function pagina(d){
