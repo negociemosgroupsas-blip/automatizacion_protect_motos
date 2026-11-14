@@ -479,9 +479,6 @@
   .gx-a{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;border-radius:12px;padding:10px 12px;border:1px solid rgba(120,140,190,.28);background:rgba(120,140,190,.10)}
   .gx-a b{font-size:1.4rem;min-width:34px;text-align:center} .gx-a small{font-size:.78rem;line-height:1.3}
   .gx-a.mal{border-color:#f87171;background:rgba(248,113,113,.14)} .gx-a.med{border-color:#fbbf24;background:rgba(251,191,36,.12)} .gx-a.bien{border-color:#34d399;background:rgba(52,211,153,.10)}
-  .gx-q{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;font-size:.82rem}
-  .gx-q div{display:flex;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:10px;background:rgba(120,140,190,.10)} .gx-q div.mal b{color:#f87171} .gx-q div.bien b{color:#34d399}
-  .gx-b{border:1px solid rgba(120,140,190,.5);background:transparent;color:inherit;border-radius:8px;padding:3px 10px;font-size:.74rem;cursor:pointer;font-weight:700} .gx-b:hover{background:#fdc33e;color:#1a1200;border-color:#fdc33e}
   #v-inicio .rnc{grid-column:1/-1!important;order:22!important;--acc:#f472b6} .rnc{cursor:default;max-width:none} .rnc:hover{box-shadow:none;transform:none}
   .rnc .tot{font-size:.8rem;color:var(--suave);margin:0 0 12px}
   #v-inicio .rnx{grid-column:span 6!important;order:23!important} @media(max-width:1000px){#v-inicio .rnx{grid-column:1/-1!important}} .rnx .cm-k{grid-template-columns:repeat(3,1fr)} .rnx .rn-g{height:200px}
@@ -562,7 +559,7 @@
       <input type="search" id="inBusca" placeholder="Buscar gráfica… (ej. asesor, RC, SOAT)" aria-label="Buscar gráfica">
     </div>
     <div class="in-kpis" id="inKpis"></div>
-    <section class="card gxc" id="gxWrap" data-sec="gerencia" hidden><h3>📋 Resumen gerencial</h3><p class="tot" id="gxSub"></p><div class="gx-grid" id="gxGrid"></div><h4 class="gx-h">⚠️ Atención requerida</h4><div class="gx-at" id="gxAt"></div><h4 class="gx-h">🔎 Calidad de los datos <button type="button" class="gx-b" id="gxCsv">⬇ Descargar detalle (CSV)</button></h4><div class="gx-q" id="gxQ"></div></section>
+    <section class="card gxc" id="gxWrap" data-sec="gerencia" hidden><h3>📋 Resumen gerencial</h3><p class="tot" id="gxSub"></p><div class="gx-grid" id="gxGrid"></div><h4 class="gx-h">⚠️ Atención requerida</h4><div class="gx-at" id="gxAt"></div></section>
     <div class="in-sec" id="sec-ventas" data-sec="ventas" style="order:4"><i></i>Ventas y contratos<em>▾</em></div>
     <div class="in-sec" id="sec-clientes" data-sec="clientes" style="order:8"><i></i>Clientes y seguros<em>▾</em></div>
     <div class="in-sec" id="sec-conc" data-sec="conc" style="order:13"><i></i>Conciliación de pagos<em>▾</em></div>
@@ -1318,8 +1315,7 @@
   }
   window.pintarCM=pintarCM;
   /* ===== Resumen gerencial: variaciones, atención requerida y calidad de los datos ===== */
-  var gxProblemas=[];
-  function gxDelta(a,b,inv){
+    function gxDelta(a,b,inv){
     if(b===null||b===undefined)return '';
     if(!b)return a?'<span class="gx-d up">nuevo</span>':'<span class="gx-d">sin cambio</span>';
     var p=Math.round((a-b)/b*100),cl=p===0?'':((p>0)!==!!inv?'up':'dn');
@@ -1331,11 +1327,11 @@
     if(!R||!R.contratos||!R.contratos.length){W.hidden=true;return}
     W.hidden=false;
     var hoyD=new Date(),Y=hoyD.getFullYear(),M=hoyD.getMonth()+1,PM=M===1?12:M-1,PY=M===1?Y-1:Y,MESN=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-    var base=[],dupC={},probs=[];
+    var base=[];
     R.contratos.forEach(function(x){
       var cli=String(x.cliente||'').trim();if(!cli||estadoFila(x)==='ANULADO')return;
       var r=mesAnio(x),e=estadoFila(x),v=Number(x.valorProtect)||0,o={x:x,y:r.a||0,m:r.m||0,e:e,v:v,f:x.forma};
-      base.push(o);var k=String(x.contrato||'').trim();if(k)dupC[k]=(dupC[k]||0)+1;
+      base.push(o);
     });
     var cnt=function(y,m){return base.filter(function(o){return o.y===y&&o.m===m}).length};
     var val=function(y,m){return base.filter(function(o){return o.y===y&&o.m===m}).reduce(function(s_,o){return s_+o.v},0)};
@@ -1349,7 +1345,7 @@
     var cop=function(n){return '$'+Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')};
     document.getElementById('gxSub').textContent='Corte a hoy · '+MESN[M-1]+' '+Y+' · cada indicador se compara con el período anterior';
     document.getElementById('gxGrid').innerHTML=
-      M_('Contratos del mes',cM,gxDelta(cM,cP)+' vs '+MESN[PM-1]+' completo','Día '+hoyD.getDate()+' de '+dMes+' · proyección al cierre: ~'+proy+' contratos','Mismo mes del año pasado (completo): '+cA+' '+gxDelta(proy,cA))+
+      M_('Contratos del mes',cM,gxDelta(cM,cP)+' vs '+MESN[PM-1]+' completo','Día '+hoyD.getDate()+' de '+dMes+' · proyección al cierre: ~'+proy+' contratos · mismo mes del año pasado: '+cA+' '+gxDelta(proy,cA))+
       M_('Acumulado del año',yN.length,gxDelta(yN.length,yP.length)+' vs mismo período de '+(Y-1),'Ene–'+MESN[M-1].slice(0,3)+' '+(Y-1)+': '+yP.length)+
       M_('Valor contratado del mes',cop(vM),gxDelta(vM,vP)+' vs '+MESN[PM-1]+' completo','Suma del valor Protect firmado · el mes en curso aún no cierra')+
       M_('Mezcla financiada (año)',pfN+' %','financiados sobre el total · '+(pfN-pfP>=0?'+':'')+(pfN-pfP)+' pts vs '+(Y-1),'Más financiado = más cartera por cobrar')+
@@ -1365,32 +1361,9 @@
       (PK.omsRen!=null?A(PK.omsRen,'Pólizas OMS por renovar','Vencen en 8 días o menos','#oms',true):'')+
       (PK.faltaConc!=null?A(PK.faltaConc,'Faltan por consolidar','Pagos pendientes de conciliar'+(PK.menos?' · '+PK.menos+' pagaron de menos':''),'#conciliacion'):'')+
       (rc?A(cmPend,'Comisiones sin decidir','Casos especiales que esperan su decisión','#comisiones'):'');
-    /* calidad de datos */
-    gxProblemas=[];var Q={sinCed:0,sinCel:0,sinFin:0,sinForma:0,sinAse:0,sinVal:0,sinFecha:0,dup:0,finAntes:0,finSinPlazo:0};
-    var add=function(o,t,k){Q[k]++;gxProblemas.push([o.x.contrato||'',o.x.cliente||'',o.x.asesor||'',t])};
-    base.forEach(function(o){var x=o.x;
-      if(!String(x.cedula||'').trim())add(o,'Sin cédula','sinCed');
-      if(String(x.celular||'').replace(/\D/g,'').length<10&&o.e==='ACTIVO')add(o,'Celular faltante o incompleto','sinCel');
-      if(!x.finISO)add(o,'Sin fecha de vencimiento','sinFin');
-      if(x.forma!=='CONTADO'&&x.forma!=='FINANCIADO')add(o,'Forma de pago sin dato (contado/financiado)','sinForma');
-      if(!String(x.asesor||'').trim())add(o,'Sin asesor','sinAse');
-      if(!(o.v>0))add(o,'Valor Protect en cero o vacío','sinVal');
-      if(!o.y||!o.m)add(o,'Mes/año de venta no reconocido','sinFecha');
-      if(x.contrato&&dupC[String(x.contrato).trim()]>1)add(o,'N.º de contrato repetido','dup');
-      if(x.finISO&&x.fechaFirmaISO&&x.finISO<x.fechaFirmaISO)add(o,'Vencimiento anterior a la firma','finAntes');
-      if(x.forma==='FINANCIADO'&&!(Number(x.plazo)>0))add(o,'Financiado sin plazo','finSinPlazo');
-    });
-    var T=[['sinCed','Sin cédula'],['sinCel','Activos sin celular válido'],['sinFin','Sin fecha de vencimiento'],['sinForma','Forma de pago sin dato'],['sinAse','Sin asesor'],['sinVal','Valor Protect en cero'],['sinFecha','Mes/año no reconocido'],['dup','N.º de contrato repetido'],['finAntes','Vence antes de la firma'],['finSinPlazo','Financiado sin plazo']];
-    var malos=T.filter(function(t){return Q[t[0]]>0});
-    document.getElementById('gxQ').innerHTML=(malos.length?T.map(function(t){return '<div class="'+(Q[t[0]]?'mal':'bien')+'"><span>'+t[1]+'</span><b>'+Q[t[0]]+'</b></div>'}).join(''):'<div class="bien"><span>✅ Sin problemas detectados en '+tot+' contratos</span><b>OK</b></div>');
-    document.getElementById('gxCsv').style.display=gxProblemas.length?'':'none';
   }
   window.pintarGerencia=pintarGerencia;
   document.addEventListener('pm-cobros',function(){try{pintarGerencia()}catch(e){}});
-  document.getElementById('gxCsv').addEventListener('click',function(){
-    var f=[['Contrato','Cliente','Asesor','Problema']].concat(gxProblemas),csv='﻿'+f.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"'}).join(';')}).join('\r\n');
-    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='Calidad_de_datos_Protect_Motos.csv';document.body.appendChild(a);a.click();a.remove();
-  });
   function mesAnio(x){
     var m=numMes(x.mes),a=numAnio(x.anio),r=false,tx=String(x.mes||''),q;
     if(!m){q=tx.match(/^\s*(\d{1,2})\s*[\/\-]\s*(\d{2,4})\s*$/);if(q&&+q[1]>=1&&+q[1]<=12){m=+q[1];if(!a)a=numAnio(q[2])}else{q=tx.match(/^\s*(\d{4})\s*[\/\-]\s*(\d{1,2})\s*$/);if(q&&+q[2]>=1&&+q[2]<=12){m=+q[2];if(!a)a=+q[1]}}}

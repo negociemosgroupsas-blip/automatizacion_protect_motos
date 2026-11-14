@@ -33,8 +33,7 @@ conectores/
 2. **Resumen gerencial**: contratos del mes (con proyección al cierre), acumulado del año vs año anterior, valor contratado,
    mezcla financiada, cancelaciones y comisiones del mes — cada uno comparado con el período anterior.
 3. **Atención requerida**: contratos por vencer, SOAT y OMS por renovar, pendientes de consolidar, comisiones sin decidir.
-4. **Calidad de los datos**: cédulas, celulares, fechas, formas de pago, asesores, valores y contratos repetidos que revisar (con descarga en CSV).
-5. Secciones plegables: Ventas y contratos · Clientes y seguros · Conciliación · SOAT · Clientes OMS · Comisiones · Renovaciones
+4. Secciones plegables: Ventas y contratos · Clientes y seguros · Conciliación · SOAT · Clientes OMS · Comisiones · Renovaciones
    (tres gráficas: Protect/Cobros, pólizas OMS y SOAT — mensajes enviados vs renovaron).
 
 ## Conexión con Google (un solo conector)
@@ -60,7 +59,7 @@ Separadas: «Historico polizas» (OMS), «Historico Soat» (SOAT), Responsabilid
 
 ## Pruebas rápidas antes de mostrar a gerencia
 1. Conexiones → «Probar los 5 conectores» (todos deben responder).
-2. Inicio → «Resumen gerencial» y «Calidad de los datos» con números reales.
+2. Inicio → «Resumen gerencial» y «Atención requerida» con números reales.
 3. Cobros → Registrar pago (aviso de valor) · ENVIAR COTIZACIÓN · panel «Cotizaciones de renovación».
 4. Clientes OMS y SOAT → botón de modo oscuro/día.
 
