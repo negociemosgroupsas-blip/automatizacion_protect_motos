@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizador</title>
+<style>
+  :root{--azul:#13223f;--azul2:#1f4e79;--dorado:#d6a417;--fondo:#f4f5f7;--tarjeta:#fff;--texto:#1f2430;--suave:#6b7280;--borde:#e3e6eb;--verde:#1f9d55;--naranja:#d97706;--rojo:#dc2626}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fondo);color:var(--texto)}
+  header{background:linear-gradient(135deg,#13223f,#1c3050);color:#fff;padding:18px 24px}
+  header h1{margin:0;font-size:1.3rem} header p{margin:4px 0 0;font-size:.9rem;opacity:.85}
+  main{max-width:1100px;margin:0 auto;padding:18px}
+  .panel{background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .panel h2{margin:0 0 4px;font-size:1.05rem;color:var(--azul)} .sub{font-size:.9rem;color:var(--suave);margin:0 0 12px}
+  .cn-g{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px} @media(max-width:700px){.cn-g{grid-template-columns:1fr}}
+  .cn-g label,.cn-lbl{display:flex;flex-direction:column;font-size:.88rem;font-weight:700;gap:3px;color:var(--azul)} .cn-lbl{margin-top:8px}
+  .cn-g input,.cn-g select,.cn-g textarea,.cn-msg{border:1px solid #cfd6e4;border-radius:8px;padding:9px 11px;font:inherit;font-weight:400;font-size:.92rem;background:#fff;color:var(--texto)}
+  .cn-msg{width:100%;min-height:230px;margin-top:4px;line-height:1.4}
+  .cn-nota{font-size:.88rem;color:var(--suave);margin:8px 0}
+  .cn-cuadro{background:#f4f7fc;border:1px solid #dbe3f1;border-radius:10px;padding:11px 14px;margin:12px 0;font-size:.92rem;line-height:1.6}
+  .cn-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .cn-b{border:0;border-radius:9px;padding:10px 16px;font-weight:700;font-size:.9rem;cursor:pointer;background:var(--azul);color:#fff}
+  .cn-b.v{background:var(--verde)} .cn-b.g{background:#e3e8f2;color:var(--azul)} .cn-b.o{background:#e0a800;color:#13223f} .cn-b:disabled{opacity:.5}
+  .cn-st{font-size:.9rem;margin-top:8px;min-height:1.2em} .cn-st.mal{color:#b3261e} .cn-st.bien{color:#0b6b2b}
+  #pCotizaciones .pmcr-g{margin-bottom:8px}
+</style>
+</head>
+<body>
+<header><h1>💬 Cotizador</h1><p>Cotizaciones para clientes nuevos (no renovaciones), con el mismo cotizador de Contratos y el mismo PDF. Nada se envía solo.</p><p style="font-size:.85rem;opacity:.6;margin-top:6px">Versión de la pantalla: <b>CZ-14nov-A</b></p></header>
+<main>
+  <section class="panel">
+    <h2>1. Nueva cotización</h2>
+    <p class="sub">Escribe los datos del cliente y de la moto. Si la moto tiene precio especial (por ejemplo ADX), elige la referencia y no hace falta el valor.</p>
+    <div id="cnForm"></div>
+  </section>
+  <section class="panel" id="pCotizaciones">
+    <h2>2. Cotizaciones enviadas</h2>
+    <p class="sub">Aquí queda el seguimiento: pendientes, quién aceptó y quién no (hoja «Cotizaciones Clientes Nuevos»).</p>
+    <div id="cnPanel"></div>
+  </section>
+</main>
+<script src="../assets/cotizador_core.js"></script>
+<script src="../assets/logo_data.js"></script>
+<script src="../assets/cotizacion_doc.js"></script>
+<script src="../assets/cotizacion_renov.js"></script>
+<script src="../assets/cotizacion_nueva.js"></script>
+<script>
+  PMCotRen.setTipo('nueva');
+  PMCotNueva.iniciar(document.getElementById('cnForm'));
+  PMCotRen.iniciarPanel(document.getElementById('cnPanel'));
+</script>
+<script src="../assets/tema_modulo.js"></script>
+</body>
+</html>

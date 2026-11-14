@@ -12,8 +12,9 @@
   function $(id){ return d.getElementById(id); }
 
   // ---------- Conector (CRM) ----------
-  var cnt = 0;
+  var cnt = 0, TIPO = '';   // '' = renovaciones (Cobros) · 'nueva' = cotizaciones de clientes nuevos (módulo Cotizador)
   function llamar(params){
+    if(TIPO) params.tipo = TIPO;
     return new Promise(function(ok, mal){
       var url = LS('pm_crm_url'), tok = LS('pm_crm_token')||'PM-CRM-2026';
       if(!url){ mal(new Error('Falta la URL del conector del CRM (pestaña Conexiones).')); return; }
@@ -303,7 +304,7 @@
     lista.forEach(function(x){
       var cl = x.estado==='Pendiente'?'p':x.estado==='Aceptó renovación'?'a':'n';
       h += '<tr><td>'+esc(x.id)+'</td><td>'+esc(x.fecha)+'</td><td>'+esc(x.nombre)+'</td><td>'+esc(x.placa)+'</td><td>'+esc(x.moto)+'</td><td>'+cop(x.contado)+'</td><td>'+cop(x.financiado)+'</td><td>'+(x.plazo||'')+'</td>'+
-        '<td><span class="pmcr-e '+cl+'">'+esc(x.estado)+'</span></td><td>'+esc(x.aseguradora)+'</td><td>'+(x.valorFinal?cop(x.valorFinal):'')+'</td><td>'+
+        '<td><span class="pmcr-e '+cl+'">'+esc(TIPO?x.estado.replace(' renovación',''):x.estado)+'</span></td><td>'+esc(x.aseguradora)+'</td><td>'+(x.valorFinal?cop(x.valorFinal):'')+'</td><td>'+
         (x.estado==='Pendiente' ? '<button class="pmcr-b v" data-a="ace" data-id="'+esc(x.id)+'">Aceptó</button> <button class="pmcr-b r" data-a="no" data-id="'+esc(x.id)+'">No aceptó</button>' : '')+'</td></tr>';
     });
     h += '</tbody></table></div>'; if(!lista.length) h += '<p class="pmcr-sub">No hay cotizaciones en esta vista.</p>';
@@ -325,7 +326,7 @@
   // ---------- Aceptó / No aceptó ----------
   function formAcepto(x){
     ventana('pmcr_facep',
-      '<h3>Aceptó la renovación</h3><p class="pmcr-sub">'+esc(x.nombre)+' · '+esc(x.placa)+' · '+esc(x.id)+'</p>'+
+      '<h3>'+(TIPO?'Aceptó la cotización':'Aceptó la renovación')+'</h3><p class="pmcr-sub">'+esc(x.nombre)+' · '+esc(x.placa)+' · '+esc(x.id)+'</p>'+
       '<div class="pmcr-g">'+
       '<label>Aseguradora<select id="pa_ase"><option>Protect Motos</option><option>OMS</option><option>Sura</option><option value="__o">Otra…</option></select></label>'+
       '<label id="pa_otl" style="display:none">¿Cuál?<input id="pa_ot"></label>'+
@@ -354,7 +355,7 @@
   }
   function formNoAcepto(x){
     ventana('pmcr_fno',
-      '<h3>No aceptó la renovación</h3><p class="pmcr-sub">'+esc(x.nombre)+' · '+esc(x.placa)+' · '+esc(x.id)+'</p>'+
+      '<h3>'+(TIPO?'No aceptó la cotización':'No aceptó la renovación')+'</h3><p class="pmcr-sub">'+esc(x.nombre)+' · '+esc(x.placa)+' · '+esc(x.id)+'</p>'+
       '<div class="pmcr-g"><label class="ancho">Motivo (opcional)<textarea id="pn_obs" rows="2" placeholder="Ej.: precio, ya renovó en otra parte, vendió la moto…"></textarea></label></div>'+
       '<div class="pmcr-st" id="pn_st"></div><div class="pmcr-bar"><button class="pmcr-b r" id="pn_ok">Guardar</button><button class="pmcr-b g" id="pn_x">Cancelar</button></div>');
     $('pn_x').onclick = function(){ cerrar('pmcr_fno'); };
@@ -367,5 +368,5 @@
     };
   }
 
-  w.PMCotRen = { abrir:abrir, iniciarPanel:iniciarPanel, panelRefrescar:panelRefrescar, _mensaje:mensaje };
+  w.PMCotRen = { setTipo:function(t){ TIPO = t||''; }, abrir:abrir, iniciarPanel:iniciarPanel, panelRefrescar:panelRefrescar, _mensaje:mensaje };
 })(window);

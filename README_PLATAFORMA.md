@@ -9,6 +9,7 @@ index.html                    Plataforma: menú lateral + Inicio (panel ejecutiv
 assets/
   cotizador_core.js           Reglas del cotizador de renovación (mismas de Contratos)
   cotizacion_renov.js         Botón ENVIAR COTIZACIÓN + panel de cotizaciones
+  cotizacion_nueva.js         Formulario del Cotizador (clientes nuevos)
   cotizacion_doc.js           Cotización en PDF / imagen (2 opciones, contado y financiado, coberturas por aseguradora)
   logo_data.js                Logo incrustado para el PDF
   dash_oms.js                 Tablero de Clientes OMS
@@ -19,6 +20,7 @@ modulos/                      Un archivo por botón del menú
   cobros.html                 OPERACIÓN · cuotas, pagos, renovaciones, cotizaciones de renovación
   precobros.html              OPERACIÓN · lee el precobro del proveedor y pone asesor y N.º de contrato
   conciliacion.html           OPERACIÓN · cruza Protect contra el Consolidado de pagos
+  cotizador.html              OPERACIÓN · cotizaciones para CLIENTES NUEVOS (mismo cotizador de Contratos, PDF/imagen/WhatsApp, hoja «Cotizaciones Clientes Nuevos»)
   erp.html                    OPERACIÓN · Cruce semanal ERP (clientes ERP-Protect): archivo del jefe vs hoja Protect (cédula + Total vs columna P)
   oms.html / soat.html        SEGUROS · clientes OMS y SOAT (cobros, primer pago, renovaciones, tablero)
   comisiones.html             GESTIÓN · informe de comisiones de asesores (mensual, anual, histórico)
@@ -28,7 +30,7 @@ conectores/
 ```
 
 ## Menú (organizado por tarea)
-**Inicio** · **Operación**: Contratos, Cobros, Cobros y precobros, Conciliación, Cruce semanal ERP · **Seguros**: Clientes OMS, SOAT ·
+**Inicio** · **Operación**: Contratos, Cotizador, Cobros, Cobros y precobros, Conciliación, Cruce semanal ERP · **Seguros**: Clientes OMS, SOAT ·
 **Gestión**: Comisiones · **Sistema**: Conexiones.
 
 ## Inicio = panel gerencial

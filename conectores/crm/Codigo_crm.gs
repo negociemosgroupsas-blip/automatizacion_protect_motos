@@ -65,13 +65,13 @@ function doGet(e) {
       } else if (accion === 'cotRen_moto') {
         salida = accionCotRenMoto(params);
       } else if (accion === 'cotRen_listar') {
-        salida = accionCotRenListar();
+        salida = accionCotRenListar(params);
       } else if (accion === 'cotRen_guardar') {
         salida = accionCotRenGuardar(params);
       } else if (accion === 'cotRen_estado') {
         salida = accionCotRenEstado(params);
       } else if (accion === 'ping') {
-        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-6' };
+        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-7' };
       } else {
         salida = { ok: false, error: 'Acción no disponible: ' + accion };
       }
@@ -332,19 +332,30 @@ var COT_ENC = ['ID cotización','Fecha cotización','Nombre cliente','Cédula','
   'Estado','Fecha aceptación','Aseguradora','Forma de pago','RC (Sí/No)','AP (Sí/No)','Valor final contratado','Observaciones','Contrato'];
 var COT_ESTADOS = ['Pendiente','Aceptó renovación','No aceptó renovación'];
 
-function hojaCot(ss) {
-  var h = ss.getSheetByName(HOJA_COT);
+// Hoja de cotizaciones para CLIENTES NUEVOS (no renovaciones): misma estructura, otro nombre y otros títulos en G, H y T.
+var HOJA_COT_NUEVA = 'Cotizaciones Clientes Nuevos';
+function nombreHojaCot(p) { return (p && String(p.tipo || '') === 'nueva') ? HOJA_COT_NUEVA : HOJA_COT; }
+function encabezadosCot(p) {
+  var e = COT_ENC.slice();
+  if (p && String(p.tipo || '') === 'nueva') { e[6] = 'Valor de la moto'; e[7] = 'Estado de la moto'; e[19] = 'Celular'; }
+  return e;
+}
+
+function hojaCot(ss, p) {
+  var h = ss.getSheetByName(nombreHojaCot(p));
   if (h) return h;
-  h = ss.insertSheet(HOJA_COT);
-  var n = COT_ENC.length;
+  h = ss.insertSheet(nombreHojaCot(p));
+  var ENC = encabezadosCot(p), nueva = !!(p && String(p.tipo || '') === 'nueva');
+  var n = ENC.length;
   var enc = h.getRange(1, 1, 1, n);
-  enc.setValues([COT_ENC]).setFontWeight('bold').setFontColor('#FFFFFF').setBackground('#0B1F4B')
+  enc.setValues([ENC]).setFontWeight('bold').setFontColor('#FFFFFF').setBackground('#0B1F4B')
      .setHorizontalAlignment('center').setVerticalAlignment('middle').setWrap(true);
   h.setRowHeight(1, 42);
   h.setFrozenRows(1);
   h.getRange('B2:B').setNumberFormat('dd/MM/yyyy HH:mm');
   h.getRange('M2:M').setNumberFormat('dd/MM/yyyy HH:mm');
   h.getRange('G2:J').setNumberFormat('"$"#,##0');
+  if (nueva) h.getRange('H2:H').setNumberFormat('@');
   h.getRange('R2:R').setNumberFormat('"$"#,##0');
   h.getRange('D2:D').setNumberFormat('@');
   var anchos = [150,120,200,110,90,200,125,125,125,135,80,150,120,120,100,75,75,130,260,110];
@@ -363,7 +374,7 @@ function hojaCot(ss) {
   ]);
   // Filtro y protección de encabezados (solo advierte: no bloquea a quien edita)
   h.getRange(1, 1, 1, n).createFilter();
-  h.getRange(1, 1, 1, n).protect().setDescription('Encabezados de Cotizaciones Renovación').setWarningOnly(true);
+  h.getRange(1, 1, 1, n).protect().setDescription('Encabezados de ' + nombreHojaCot(p)).setWarningOnly(true);
   return h;
 }
 
@@ -392,8 +403,8 @@ function accionCotRenMoto(p) {
   return { ok: true, encontrado: false };
 }
 
-function accionCotRenListar() {
-  var h = SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_COT), out = [];
+function accionCotRenListar(p) {
+  var h = SpreadsheetApp.openById(SHEET_ID).getSheetByName(nombreHojaCot(p)), out = [];
   if (!h || h.getLastRow() < 2) return { ok: true, cotizaciones: out };
   var d = h.getRange(2, 1, h.getLastRow() - 1, COT_ENC.length).getValues();
   for (var i = 0; i < d.length; i++) {
@@ -413,9 +424,9 @@ function accionCotRenGuardar(p) {
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    var h = hojaCot(SpreadsheetApp.openById(SHEET_ID));
+    var h = hojaCot(SpreadsheetApp.openById(SHEET_ID), p), nueva = String(p.tipo || '') === 'nueva';
     var ahora = new Date(), tz = Session.getScriptTimeZone();
-    var pref = 'COT-' + Utilities.formatDate(ahora, tz, 'yyyyMMdd') + '-';
+    var pref = (nueva ? 'CTZ-' : 'COT-') + Utilities.formatDate(ahora, tz, 'yyyyMMdd') + '-';
     var n = h.getLastRow(), seq = 1;
     if (n >= 2) {
       var ids = h.getRange(2, 1, n - 1, 1).getValues();
@@ -428,7 +439,7 @@ function accionCotRenGuardar(p) {
     var num = function (v) { return Number(String(v || '').replace(/[^0-9.-]/g, '')) || 0; };
     var fila = n + 1;
     h.getRange(fila, 1, 1, COT_ENC.length).setValues([[id2, ahora, nombre, "'" + String(p.cedula || ''), String(p.placa || ''),
-      String(p.moto || ''), num(p.factura), num(p.fasecolda), num(p.contado), num(p.financiado), num(p.plazo),
+      String(p.moto || ''), num(p.factura), (nueva ? String(p.estadoMoto || '') : num(p.fasecolda)), num(p.contado), num(p.financiado), num(p.plazo),
       'Pendiente', '', '', '', '', '', '', String(p.obs || '').slice(0, 900), String(p.contrato || '')]]);
     h.getRange(fila, 4).setNumberFormat('@').setValue(String(p.cedula || ''));
     return { ok: true, id: id2 };
@@ -441,7 +452,7 @@ function accionCotRenEstado(p) {
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    var h = SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_COT);
+    var h = SpreadsheetApp.openById(SHEET_ID).getSheetByName(nombreHojaCot(p));
     if (!h || h.getLastRow() < 2) return { ok: false, error: 'No hay cotizaciones guardadas.' };
     var ids = h.getRange(2, 1, h.getLastRow() - 1, 1).getValues(), fila = 0;
     for (var i = 0; i < ids.length; i++) if (String(ids[i][0]) === id) { fila = i + 2; break; }

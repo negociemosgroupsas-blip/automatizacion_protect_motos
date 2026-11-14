@@ -130,8 +130,8 @@
     return '<div class="doc">'+
       '<div class="sup"><div class="logo">'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'<b style="color:#0b2a6b;font-size:20px">PROTECT MOTOS</b>')+'</div>'+
       '<div class="fecha"><b>'+esc(fecha)+'</b>'+(d.id?'N.º '+esc(d.id):'')+'</div></div>'+
-      '<div class="titulo"><small>RENOVACIÓN</small><b>COTIZACIÓN</b><div class="cl">'+esc(d.nombre)+'</div><div class="mt">'+esc([d.moto,d.placa].filter(Boolean).join(' · '))+' · Respaldo: '+esc(d.aseguradora)+'</div></div>'+
-      '<p class="hola">Hola, '+esc(primer)+'. Estas son tus opciones para renovar:</p>'+
+      '<div class="titulo"><small>'+(d.tipo==='nueva'?'GARANTÍA':'RENOVACIÓN')+'</small><b>COTIZACIÓN</b><div class="cl">'+esc(d.nombre)+'</div><div class="mt">'+esc([d.moto,d.placa].filter(Boolean).join(' · '))+' · Respaldo: '+esc(d.aseguradora)+'</div></div>'+
+      '<p class="hola">Hola, '+esc(primer)+'. Estas son tus opciones'+(d.tipo==='nueva'?' de protección:':' para renovar:')+'</p>'+
       op(1,'Hurto o pérdida total',(d.aseguradora==='Protect Motos'?'cubre el 80 %':''),d.op1,p1)+
       op(2,'Hurto o pérdida total + RC + Asistencias','',d.op2,p2)+
       '<div class="cta"><b>¡CONTÁCTANOS HOY!</b><div class="ph">📞 312 880 68 73</div></div>'+
@@ -140,7 +140,7 @@
       '</div>';
   }
   function pagina(d){
-    return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Cotización renovación - '+esc(d.nombre)+(d.placa?' - '+esc(d.placa):'')+'</title><style>'+CSS+'</style></head><body>'+html(d)+'</body></html>';
+    return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Cotización - '+esc(d.nombre)+(d.placa?' - '+esc(d.placa):'')+'</title><style>'+CSS+'</style></head><body>'+html(d)+'</body></html>';
   }
 
   /* PDF: se abre la hoja y se lanza «Imprimir» (elija «Guardar como PDF») */

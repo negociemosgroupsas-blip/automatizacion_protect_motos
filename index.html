@@ -545,7 +545,7 @@
 <nav>
   <div class="marca"><img src="assets/logo.png" alt="Protect Motos"><div class="crm">SISTEMA DE GESTIÓN</div></div>
   <ul id="menu"></ul>
-  <div class="pie"><a id="solo" href="#" target="_blank" style="color:var(--dorado2);display:none;margin-bottom:8px">↗ Abrir este módulo en pestaña propia</a><br>Negociemos Group S.A.S.<br><span style="opacity:.7">Sistema v2026.11.14 · conector crm-6</span><br>Todos los módulos usan el mismo Google Sheet.</div>
+  <div class="pie"><a id="solo" href="#" target="_blank" style="color:var(--dorado2);display:none;margin-bottom:8px">↗ Abrir este módulo en pestaña propia</a><br>Negociemos Group S.A.S.<br><span style="opacity:.7">Sistema v2026.11.14 · conector crm-7</span><br>Todos los módulos usan el mismo Google Sheet.</div>
 </nav>
 <main>
   <div id="top"><input id="q" type="search" placeholder="Buscar cliente: cédula, placa, nombre o contrato" autocomplete="off" aria-label="Buscar cliente"><button id="btnRec" type="button" title="Volver a leer los datos de Cobros y Conciliación">↻ Actualizar</button><span id="ultAct" style="font-size:.85rem;color:var(--suave);white-space:nowrap" title="Se actualiza solo cada minuto">Se actualiza cada minuto</span><div id="res"></div></div>
@@ -592,6 +592,7 @@
   <section class="vista" id="v-contratos"></section>
   <section class="vista" id="v-precobros"></section>
   <section class="vista" id="v-erp"></section>
+  <section class="vista" id="v-cotizador"></section>
   <section class="vista" id="v-comisiones"></section>
   <section class="vista" id="v-ayuda"><div class="pagina">
     <h1>Conexiones</h1>
@@ -641,6 +642,7 @@
   var MODULOS=[
     {id:'inicio',   nombre:'Inicio',        ico:'🏠'},
     {id:'contratos',grupo:'Operación',nombre:'Contratos',     ico:'📄', src:'modulos/contratos.html',     disponible:true , desc:'Automatizador: cotiza, genera e imprime el contrato y lo guarda en el Sheet.'},
+    {id:'cotizador',nombre:'Cotizador',ico:'💬', src:'modulos/cotizador.html',        disponible:true,  desc:'Cotizaciones para clientes nuevos (no renovaciones) con el cotizador de Contratos: PDF, imagen y WhatsApp.'},
     {id:'cobros',   nombre:'Cobros',        ico:'💰', src:'modulos/cobros.html',        disponible:true,  desc:'Cuotas pendientes, registro de pagos, renovaciones, historial y WhatsApp.'},
     {id:'precobros',nombre:'Cobros y precobros',ico:'🧾', src:'modulos/precobros.html',    disponible:true,  desc:'Sube el precobro del proveedor y ve el asesor y el contrato de cada cliente, listo para imprimir.'},
     {id:'conciliacion',nombre:'Conciliación',ico:'✅', src:'modulos/conciliacion.html',  disponible:true,  desc:'Cruza los contratos de Protect con la lista de pagos de contabilidad (Consolidado).'},

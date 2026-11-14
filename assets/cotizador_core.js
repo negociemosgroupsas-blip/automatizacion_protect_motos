@@ -46,5 +46,30 @@
       op2: { contado: cz.contado.conRCyAP, cuota: f.cuota, total: f.total + RC + AP, primera: f.cuota + RC + AP, resto: f.cuota }
     };
   }
-  w.PMCot = { opciones:opciones, cotizar:cotizar, valorAGarantizar:valorAGarantizar, pct:pct, RC_DEFECTO:RC_DEFECTO, AP_DEFECTO:AP_DEFECTO };
+  /* Referencias con PRECIO ESPECIAL (las mismas de Contratos; si allí se editan, quedan en el navegador como «pm_refs» y se usan esas) */
+  var REFS_DEFECTO = [
+    {nombre:"ADX 175",            fase:"34217031", marca:"SYM",  linea:"TEA50",              cil:"175", anio:"2027", c:890000, m3:964167, m6:1038333, m12:1112500},
+    {nombre:"ADX",                fase:"34217027", marca:"SYM",  linea:"TEB40",              cil:"149", anio:"2027", c:887940, m3:961935, m6:1035930, m12:1109925},
+    {nombre:"XPULSE 200 4V",      fase:"39517028", marca:"HERO", linea:"XPULSE 200 4V",      cil:"199", anio:"2027", c:743400, m3:805350, m6:867300,  m12:929250},
+    {nombre:"XPULSE PRO 4V",      fase:"39517032", marca:"HERO", linea:"XPULSE 200 4V PRO",  cil:"199", anio:"2027", c:809400, m3:876850, m6:944300,  m12:1011750},
+    {nombre:"XPULSE RALLY",       fase:"",         marca:"HERO", linea:"XPULSE RALLY",       cil:"199", anio:"2027", c:815400, m3:883350, m6:951300,  m12:1019250},
+    {nombre:"XPULSE 200 PROV 2.0",fase:"",         marca:"HERO", linea:"XPULSE 200 PROV 2.0",cil:"199", anio:"2027", c:809400, m3:876850, m6:944300,  m12:1011750},
+    {nombre:"NHR-190",            fase:"34217029", marca:"SYM",  linea:"NHR",                cil:"183", anio:"2027", c:745860, m3:808015, m6:870170,  m12:932325}
+  ];
+  function refs(){ try{ var a = JSON.parse(localStorage.getItem('pm_refs')||'null'); if(a && a.length) return a; }catch(e){} return JSON.parse(JSON.stringify(REFS_DEFECTO)); }
+  /* Cotización de un cliente NUEVO — exactamente la regla del cotizador de Contratos (recalc):
+       contado = precio especial de la referencia, o valor de la moto × 7,5 %
+       financiado = total especial (3/6/12 meses), o valor × 9 / 10 / 12 %, dividido en cuotas
+       las motos USADAS no tienen precio especial.
+     Opción 1 = hurto o pérdida total · Opción 2 = + RC + AP (en contado una vez; en financiado, en la primera cuota). */
+  function opcionesNueva(valor, plazo, o){
+    o = o||{}; plazo = Number(plazo)||12; var m = Number(valor)||0;
+    var RC = Number(o.valorRC)||RC_DEFECTO, AP = Number(o.valorAP)||AP_DEFECTO, esp = (o.esp && !o.usada) ? o.esp : null, r = Math.round;
+    var base = esp ? Number(esp.c) : (m>0 ? m*0.075 : null); if(base==null || !(base>0)) return null;
+    var total = esp ? Number(plazo===3?esp.m3:plazo===6?esp.m6:esp.m12) : m*pct(plazo), cuota = total/plazo;
+    return { plazo:plazo, rc:RC, ap:AP, garantizar:m, cubre:r(m*0.8), especial:!!esp,
+      op1:{ contado:r(base), cuota:r(cuota), total:r(total), primera:r(cuota), resto:r(cuota) },
+      op2:{ contado:r(base+RC+AP), cuota:r(cuota), total:r(total+RC+AP), primera:r(cuota+RC+AP), resto:r(cuota) } };
+  }
+  w.PMCot = { opcionesNueva:opcionesNueva, refs:refs, REFS_DEFECTO:REFS_DEFECTO, opciones:opciones, cotizar:cotizar, valorAGarantizar:valorAGarantizar, pct:pct, RC_DEFECTO:RC_DEFECTO, AP_DEFECTO:AP_DEFECTO };
 })(window);
