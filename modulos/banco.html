@@ -222,7 +222,7 @@
     $('rsDesc').innerHTML=L.map(function(o){return'<tr><td style="text-align:center"><input type="checkbox" data-k="'+esc(o.k)+'"'+(EX[o.k]?' checked':'')+'></td><td>'+esc(o.ej||'(sin descripción)')+'</td><td class="num">'+o.n+'</td><td class="num">'+cop(o.t)+'</td></tr>'}).join('')||'<tr><td colspan="4">No hay descripciones con ese texto.</td></tr>';
   }
   $('rsDesc').addEventListener('change',function(ev){var k=ev.target.getAttribute('data-k');if(k===null)return;var L=exclGet().filter(function(x){return x!==k});if(ev.target.checked)L.push(k);exclGuardar(L);pintarResumen()});
-  var PALABRAS_NO=/\b(traslado|entre cuentas|propia|prestamo|desembolso|reintegro|devoluc|reversi|anulaci|ajuste|rendimiento|interes|aporte|capital|cierre de caja|apertura|gmf|4x1000|comision|cuota de manejo|cuota manejo|compra)|\biva\b/;
+  var PALABRAS_NO=/\b(traslado|entre cuentas|propia|prestamo|desembolso|reintegro|devoluc|reversi|anulaci|ajuste|rendimiento|interes|aporte|capital|cierre de caja|apertura|gmf|4x1000|comision|cuota de manejo|cuota manejo|compra|proveedor)|\biva\b/;
   $('rsSug').addEventListener('click',function(){
     var D0=datosHistoricos();if(!D0)return;var ks={};D0.forEach(function(d){if(PALABRAS_NO.test(d.k))ks[d.k]=1});
     var L=exclGet(),nuevos=0;Object.keys(ks).forEach(function(k){if(L.indexOf(k)<0){L.push(k);nuevos++}});exclGuardar(L);
