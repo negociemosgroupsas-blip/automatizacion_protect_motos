@@ -32,5 +32,19 @@
     });
     return out;
   }
-  w.PMCot = { cotizar:cotizar, valorAGarantizar:valorAGarantizar, pct:pct, RC_DEFECTO:RC_DEFECTO, AP_DEFECTO:AP_DEFECTO };
+  /* Las dos opciones de la cotización de renovación (mismas reglas de Contratos):
+       Opción 1 = hurto o pérdida total (cubre el 80 %): contado 7,5 % · financiado 9/10/12 % dividido en cuotas.
+       Opción 2 = opción 1 + responsabilidad civil (RC) + asistencias (AP): RC y AP se suman a lo que se paga en caja
+                  (contado: una sola vez · financiado: en la primera cuota, como en el cotizador de Contratos). */
+  function opciones(valorMoto, plazo, o){
+    o = o||{}; plazo = Number(plazo)||12;
+    var cz = cotizar(valorMoto, o); if(!cz.contado) return null;
+    var f = cz.financiado[plazo] || cz.financiado[12], RC = cz.rcValor, AP = cz.apValor;
+    return {
+      plazo: f.plazo, rc: RC, ap: AP, cubre: Math.round(cz.valorMoto*0.8), garantizar: cz.valorMoto,
+      op1: { contado: cz.contado.protect, cuota: f.cuota, total: f.total, primera: f.cuota, resto: f.cuota },
+      op2: { contado: cz.contado.conRCyAP, cuota: f.cuota, total: f.total + RC + AP, primera: f.cuota + RC + AP, resto: f.cuota }
+    };
+  }
+  w.PMCot = { opciones:opciones, cotizar:cotizar, valorAGarantizar:valorAGarantizar, pct:pct, RC_DEFECTO:RC_DEFECTO, AP_DEFECTO:AP_DEFECTO };
 })(window);

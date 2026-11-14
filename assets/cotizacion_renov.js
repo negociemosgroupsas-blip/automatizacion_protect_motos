@@ -74,24 +74,31 @@
   function numWA(c){ var x=String(c||'').replace(/\D/g,''); return (x.indexOf('57')===0 && x.length>10) ? x : '57'+x; }
 
   // ---------- Mensaje ----------
+  function lineaFin(o, plazo){
+    return o.primera!==o.resto ? ('1ª cuota '+cop(o.primera)+' y '+(plazo-1)+' cuotas de '+cop(o.resto)+' (total '+cop(o.total)+')') : (plazo+' cuotas de '+cop(o.cuota)+' (total '+cop(o.total)+')');
+  }
   function mensaje(q){
     var m = '¡Hola, '+q.nombre+'! 😊\nTe escribimos de Protect Motos.\n\n'+
-      'Queremos ayudarte a renovar la garantía de tu moto '+(q.moto?(q.moto+' '):'')+'de placa '+q.placa+'.\n\n'+
+      'Queremos ayudarte a renovar la garantía de tu moto '+(q.moto?(q.moto+' '):'')+'de placa '+q.placa+(q.aseguradora&&q.aseguradora!=='Protect Motos'?' con '+q.aseguradora:'')+'.\n\n'+
       '🧾 Valor de tu factura anterior: '+cop(q.factura)+'\n'+
       '📈 Valor comercial actual de tu moto: '+cop(q.fasecolda)+'\n\n'+
-      '💛 Precio de renovación:\n'+
-      '• De contado: '+cop(q.contado)+'\n'+
-      '• Financiado a '+q.plazo+' meses: '+q.plazo+' cuotas de '+cop(q.cuota)+' (total '+cop(q.financiado)+')\n\n'+
-      '¿Quieres que renovemos tu garantía? Respóndenos y lo dejamos listo hoy mismo 💙';
+      '💛 *Opción 1 · Hurto o pérdida total'+(q.aseguradora==='Protect Motos'?' (cubre el 80 %)':'')+'*\n'+
+      '• De contado: '+cop(q.op1.contado)+'\n'+
+      '• Financiado a '+q.plazo+' meses: '+lineaFin(q.op1,q.plazo)+'\n\n'+
+      '💙 *Opción 2 · Hurto / pérdida total + responsabilidad civil + asistencias*\n'+
+      '• De contado: '+cop(q.op2.contado)+'\n'+
+      '• Financiado a '+q.plazo+' meses: '+lineaFin(q.op2,q.plazo)+'\n\n'+
+      'Te adjuntamos la cotización con todas las coberturas. ¿Quieres que renovemos tu garantía? Respóndenos y lo dejamos listo hoy mismo 💙';
     return m;
   }
 
   // ---------- Formulario: ENVIAR COTIZACIÓN ----------
   var cur = null;
+  var ASEG = ['Protect Motos','Sura','Otra'];
   function abrir(c){
     cur = { c:c, guardada:null };
     var f = ventana('pmcr_fcot',
-      '<h3>Enviar cotización de renovación</h3><p class="pmcr-sub">Datos del cliente tomados del sistema. Revisa, escribe el valor actual de Fasecolda y confirma.</p>'+
+      '<h3>Enviar cotización de renovación</h3><p class="pmcr-sub">Datos del cliente tomados del sistema. Revisa, escribe el valor actual de Fasecolda, elige la aseguradora y confirma.</p>'+
       '<div class="pmcr-g">'+
       '<label>Nombre<input id="pmcr_nom" value="'+esc(c.cliente)+'"></label>'+
       '<label>Cédula<input id="pmcr_ced" value="'+esc(c.cedula||'')+'"></label>'+
@@ -101,23 +108,45 @@
       '<label>Valor Fasecolda actual<input id="pmcr_fas" inputmode="numeric" placeholder="$ (escríbelo)"></label>'+
       '<label>Valor a garantizar (−10 %, el menor)<input id="pmcr_gar" readonly></label>'+
       '<label>Plazo financiado<select id="pmcr_plz"><option value="3">3 meses</option><option value="6">6 meses</option><option value="12" selected>12 meses</option></select></label>'+
+      '<label>¿Con qué aseguradora va?<select id="pmcr_ase">'+ASEG.map(function(a){return '<option>'+a+'</option>';}).join('')+'</select></label>'+
+      '<label id="pmcr_otral" style="display:none">Nombre de la aseguradora<input id="pmcr_otra" placeholder="Ej.: Mundial"></label>'+
       '</div>'+
+      '<div id="pmcr_man" style="display:none"><p class="pmcr-sub" style="margin:10px 0 4px"><b>Valores de la aseguradora</b> (no se calculan solos: escríbelos como te los dio la aseguradora)</p>'+
+      '<div class="pmcr-g">'+
+      '<label>Opción 1 · valor de contado<input id="pmcr_m1c" inputmode="numeric" placeholder="$"></label><label>Opción 1 · valor de cada cuota<input id="pmcr_m1q" inputmode="numeric" placeholder="$"></label>'+
+      '<label>Opción 2 · valor de contado<input id="pmcr_m2c" inputmode="numeric" placeholder="$"></label><label>Opción 2 · valor de cada cuota<input id="pmcr_m2q" inputmode="numeric" placeholder="$"></label>'+
+      '</div></div>'+
       '<div class="pmcr-cuadro" id="pmcr_res">Escribe la factura y el valor de Fasecolda para calcular.</div>'+
+      '<details style="margin:6px 0 10px"><summary style="cursor:pointer;font-weight:700;font-size:.85rem">Coberturas que salen en el PDF (puedes editarlas)</summary>'+
+      '<div class="pmcr-g" style="margin-top:8px"><label>Opción 1 · una cobertura por línea<textarea id="pmcr_cb1" rows="6"></textarea></label><label>Opción 2 · una cobertura por línea<textarea id="pmcr_cb2" rows="6"></textarea></label></div>'+
+      '<p class="pmcr-sub" style="margin:4px 0 0">Una línea entre guiones, como <code>— Asistencias —</code>, crea un título dentro de la lista. Se guardan para la próxima cotización con esta aseguradora. <a href="#" id="pmcr_rest">Restaurar las originales</a></p></details>'+
       '<label style="font-size:.85rem;font-weight:700">Mensaje de WhatsApp (puedes editarlo)</label>'+
       '<textarea class="pmcr-msg" id="pmcr_txt"></textarea>'+
       '<div class="pmcr-st" id="pmcr_st"></div>'+
       '<div class="pmcr-bar">'+
+      '<button class="pmcr-b o" id="pmcr_pdf">📄 Cotización en PDF</button>'+
+      '<button class="pmcr-b o" id="pmcr_img">🖼️ Cotización en imagen</button>'+
       '<button class="pmcr-b" id="pmcr_gua">Guardar cotización</button>'+
       '<button class="pmcr-b g" id="pmcr_cop">Copiar mensaje</button>'+
       '<button class="pmcr-b v" id="pmcr_wa">Abrir WhatsApp</button>'+
-      '<button class="pmcr-b g" id="pmcr_cer">Cerrar</button></div>');
+      '<button class="pmcr-b g" id="pmcr_cer">Cerrar</button></div>'+
+      '<p class="pmcr-sub" style="margin-top:8px">Para enviarla: descarga el PDF o la imagen, abre WhatsApp con el botón verde y adjunta el archivo. Nada se envía solo.</p>');
     var fac=$('pmcr_fac'), fas=$('pmcr_fas');
-    ['pmcr_nom','pmcr_ced','pmcr_pla','pmcr_moto','pmcr_fac','pmcr_fas','pmcr_plz'].forEach(function(id){ $(id).addEventListener('input', recalcular); $(id).addEventListener('change', recalcular); });
+    ['pmcr_nom','pmcr_ced','pmcr_pla','pmcr_moto','pmcr_fac','pmcr_fas','pmcr_plz','pmcr_ase','pmcr_otra','pmcr_m1c','pmcr_m1q','pmcr_m2c','pmcr_m2q'].forEach(function(id){ $(id).addEventListener('input', recalcular); $(id).addEventListener('change', recalcular); });
+    $('pmcr_ase').addEventListener('change', function(){ cargarCob(); });
+    $('pmcr_otra').addEventListener('change', function(){ cargarCob(); });
+    ['pmcr_cb1','pmcr_cb2'].forEach(function(id){ $(id).addEventListener('change', function(){
+      var a=aseguradora(); if(a==='Otra'&&!$('pmcr_otra').value.trim()) return;
+      PMCotDoc.guardarCoberturas(a, id==='pmcr_cb1'?'op1':'op2', lineasCob(id)); }); });
+    $('pmcr_rest').onclick = function(e){ e.preventDefault(); PMCotDoc.restaurarCoberturas(aseguradora()); cargarCob(); };
     $('pmcr_txt').addEventListener('input', function(){ cur.editado = true; });
     $('pmcr_cer').onclick = function(){ cerrar('pmcr_fcot'); };
     $('pmcr_gua').onclick = function(){ guardar(false); };
     $('pmcr_cop').onclick = copiar;
     $('pmcr_wa').onclick = abrirWA;
+    $('pmcr_pdf').onclick = function(){ hacerDoc('pdf'); };
+    $('pmcr_img').onclick = function(){ hacerDoc('img'); };
+    cargarCob();
     llamar({action:'cotRen_moto', contrato:c.contrato}).then(function(r){
       if(r.encontrado){
         if(!$('pmcr_ced').value) $('pmcr_ced').value = r.cedula||'';
@@ -131,13 +160,30 @@
     }).catch(function(e){ $('pmcr_moto').placeholder='escríbela'; setSt(e.message,'mal'); recalcular(); });
     recalcular();
   }
+  function aseguradora(){ var a=$('pmcr_ase').value; return a==='Otra' ? ($('pmcr_otra').value.trim()||'Otra') : a; }
+  function lineasCob(id){ return $(id).value.split('\n').map(function(t){return t.trim();}).filter(Boolean); }
+  function cargarCob(){
+    $('pmcr_otral').style.display = $('pmcr_ase').value==='Otra' ? '' : 'none';
+    $('pmcr_man').style.display = $('pmcr_ase').value==='Protect Motos' ? 'none' : '';
+    var a = aseguradora();
+    $('pmcr_cb1').value = PMCotDoc.coberturas(a,'op1').join('\n');
+    $('pmcr_cb2').value = PMCotDoc.coberturas(a,'op2').join('\n');
+    recalcular();
+  }
   function setSt(t,k){ var e=$('pmcr_st'); if(e){ e.textContent=t; e.className='pmcr-st '+(k||''); } }
   function leer(){
-    var fac=num($('pmcr_fac').value), fas=num($('pmcr_fas').value), plz=Number($('pmcr_plz').value);
-    var gar = PMCot.valorAGarantizar(fac, fas), cz = PMCot.cotizar(gar), fi = cz.financiado[plz]||{};
+    var fac=num($('pmcr_fac').value), fas=num($('pmcr_fas').value), plz=Number($('pmcr_plz').value), ase=aseguradora(), propia=$('pmcr_ase').value==='Protect Motos';
+    var gar = PMCot.valorAGarantizar(fac, fas), O = PMCot.opciones(gar, plz), op1, op2;
+    if(propia){ op1 = O?O.op1:{contado:0,cuota:0,total:0,primera:0,resto:0}; op2 = O?O.op2:{contado:0,cuota:0,total:0,primera:0,resto:0}; }
+    else{
+      var m = function(a,b){ var c=num($(a).value), q=num($(b).value); return {contado:c, cuota:q, total:q*plz, primera:q, resto:q}; };
+      op1 = m('pmcr_m1c','pmcr_m1q'); op2 = m('pmcr_m2c','pmcr_m2q');
+    }
     return { nombre:$('pmcr_nom').value.trim(), cedula:$('pmcr_ced').value.trim(), placa:$('pmcr_pla').value.trim(), moto:$('pmcr_moto').value.trim(),
-      factura:fac, fasecolda:fas, garantizar:gar, plazo:plz, contado:cz.contado?cz.contado.protect:0, financiado:fi.total||0, cuota:fi.cuota||0, contrato:cur.c.contrato };
+      factura:fac, fasecolda:fas, garantizar:gar, plazo:plz, aseguradora:ase, propia:propia, op1:op1, op2:op2, cubre:O?O.cubre:0,
+      contado:op1.contado, financiado:op1.total, cuota:op1.cuota, contrato:cur.c.contrato };
   }
+  function resumenOp(o, plz){ return 'contado <b>'+cop(o.contado)+'</b> · '+plz+' cuotas'+(o.primera!==o.resto?' (1ª de <b>'+cop(o.primera)+'</b>, luego <b>'+cop(o.resto)+'</b>)':' de <b>'+cop(o.cuota)+'</b>')+' · total <b>'+cop(o.total)+'</b>'; }
   function recalcular(){
     if(!cur) return;
     cur.guardada = null; // si cambian valores, se guardaría como una cotización nueva
@@ -145,18 +191,41 @@
     $('pmcr_gar').value = q.garantizar ? cop(q.garantizar) : '';
     if(!(q.garantizar>0)){ $('pmcr_res').innerHTML = 'Escribe la factura y el valor de Fasecolda para calcular.'; return; }
     var a = q.factura>0 ? Math.round(q.factura/1.1) : 0, b = q.fasecolda>0 ? Math.round(q.fasecolda/1.1) : 0;
-    $('pmcr_res').innerHTML = 'Factura −10 %: <b>'+(a?cop(a):'—')+'</b> · Fasecolda −10 %: <b>'+(b?cop(b):'—')+'</b> → valor a garantizar <b>'+cop(q.garantizar)+'</b><br>'+
-      'Contado: <b>'+cop(q.contado)+'</b> · Financiado '+q.plazo+' meses: <b>'+cop(q.financiado)+'</b> ('+q.plazo+' cuotas de <b>'+cop(q.cuota)+'</b>)';
+    $('pmcr_res').innerHTML = 'Factura −10 %: <b>'+(a?cop(a):'—')+'</b> · Fasecolda −10 %: <b>'+(b?cop(b):'—')+'</b> → valor a garantizar <b>'+cop(q.garantizar)+'</b>'+(q.propia?' · cubre el 80 %: <b>'+cop(q.cubre)+'</b>':'')+'<br>'+
+      '<b>Opción 1</b> (hurto o pérdida total): '+resumenOp(q.op1,q.plazo)+'<br><b>Opción 2</b> (+ RC + asistencias): '+resumenOp(q.op2,q.plazo)+(q.propia?'':'<br><i>Valores escritos a mano para '+esc(q.aseguradora)+'.</i>');
     if(!cur.editado) $('pmcr_txt').value = mensaje(q);
+  }
+  function datosDoc(q){
+    return { id:cur.guardada||'', nombre:q.nombre, placa:q.placa, moto:q.moto, aseguradora:q.aseguradora, plazo:q.plazo, garantizar:q.garantizar,
+      op1:q.op1, op2:q.op2, cob1:lineasCob('pmcr_cb1'), cob2:lineasCob('pmcr_cb2') };
+  }
+  function hacerDoc(tipo){
+    var q = leer();
+    if(!q.nombre){ setSt('Falta el nombre.','mal'); return; }
+    if(!(q.garantizar>0)){ setSt('Escribe la factura y/o el valor de Fasecolda antes.','mal'); return; }
+    if(!(q.op1.contado>0) || !(q.op2.contado>0)){ setSt('Faltan los valores de contado de las dos opciones.','mal'); return; }
+    var d1 = datosDoc(q);
+    if(tipo==='pdf'){
+      if(!PMCotDoc.imprimir(d1)) setSt('El navegador bloqueó la ventana. Permite las ventanas emergentes de este sistema y vuelve a pulsar.','mal');
+      else setSt('Se abrió la cotización: elige «Guardar como PDF» como impresora y guarda el archivo.','bien');
+      return;
+    }
+    setSt('Creando la imagen…');
+    PMCotDoc.png(d1).then(function(blob){
+      var a = d.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Cotizacion_'+(q.placa||'moto')+'_'+q.nombre.split(' ')[0]+'.png'; d.body.appendChild(a); a.click(); a.remove();
+      setSt('Imagen descargada. Adjúntala en el chat de WhatsApp.','bien');
+    }).catch(function(e){ setSt('No se pudo crear la imagen ('+e.message+'). Usa el PDF.','mal'); });
   }
   function guardar(silencioso){
     var q = leer();
     if(!q.nombre) { setSt('Falta el nombre.','mal'); return Promise.reject(); }
     if(!(q.garantizar>0)){ setSt('Escribe la factura y/o el valor de Fasecolda antes de guardar.','mal'); return Promise.reject(); }
+    if(!(q.op1.contado>0) || !(q.op2.contado>0)){ setSt('Faltan los valores de contado de las dos opciones.','mal'); return Promise.reject(); }
     if(cur.guardada){ setSt('Esta cotización ya quedó guardada ('+cur.guardada+').','bien'); return Promise.resolve(cur.guardada); }
     setSt('Guardando…'); $('pmcr_gua').disabled = true;
+    var obs = 'Cotizado con '+q.aseguradora+' · Op.1 hurto/pérdida total: contado '+cop(q.op1.contado)+' / '+q.plazo+' cuotas, total '+cop(q.op1.total)+' · Op.2 (+RC +asistencias): contado '+cop(q.op2.contado)+' / '+q.plazo+' cuotas, total '+cop(q.op2.total);
     return llamar({action:'cotRen_guardar', nombre:q.nombre, cedula:q.cedula, placa:q.placa, moto:q.moto, factura:q.factura, fasecolda:q.fasecolda,
-      contado:q.contado, financiado:q.financiado, plazo:q.plazo, contrato:q.contrato}).then(function(r){
+      contado:q.contado, financiado:q.financiado, plazo:q.plazo, contrato:q.contrato, obs:obs}).then(function(r){
       cur.guardada = r.id; setSt('Cotización guardada: '+r.id+' (estado Pendiente).','bien');
       try{ var k=(q.moto.split(' ').slice(1).join(' ')||q.moto).toUpperCase(); var db=JSON.parse(LS('pm_cotren_fase')||'{}'); db[k]=q.fasecolda; LSset('pm_cotren_fase',JSON.stringify(db)); }catch(e){}
       $('pmcr_gua').disabled = false; if(w.PMCotRen && w.PMCotRen.panelRefrescar) w.PMCotRen.panelRefrescar();
@@ -172,8 +241,9 @@
   function abrirWA(){
     var q = leer();
     if(!(q.garantizar>0)){ setSt('Primero escribe la factura y el valor de Fasecolda.','mal'); return; }
+    if(!(q.op1.contado>0) || !(q.op2.contado>0)){ setSt('Faltan los valores de contado de las dos opciones.','mal'); return; }
     var cel = cur.celular || cur.c.celular;
-    if(!w.confirm('¿Abrir WhatsApp con el mensaje para '+q.nombre+'?\n\nEl mensaje NO se envía solo: tú lo revisas y le das enviar. Si la cotización no está guardada, se guardará ahora como Pendiente.')) return;
+    if(!w.confirm('¿Abrir WhatsApp con el mensaje para '+q.nombre+'?\n\nEl mensaje NO se envía solo: tú lo revisas, adjuntas el PDF o la imagen y le das enviar. Si la cotización no está guardada, se guardará ahora como Pendiente.')) return;
     var abrir2 = function(){ w.open('https://wa.me/'+numWA(cel)+'?text='+encodeURIComponent($('pmcr_txt').value), '_blank'); };
     if(cur.guardada){ abrir2(); return; }
     guardar().then(abrir2, function(){ /* el error ya se mostró; no se abre WhatsApp */ });

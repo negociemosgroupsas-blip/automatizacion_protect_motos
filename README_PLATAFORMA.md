@@ -9,6 +9,8 @@ index.html                    Plataforma: menú lateral + Inicio (panel ejecutiv
 assets/
   cotizador_core.js           Reglas del cotizador de renovación (mismas de Contratos)
   cotizacion_renov.js         Botón ENVIAR COTIZACIÓN + panel de cotizaciones
+  cotizacion_doc.js           Cotización en PDF / imagen (2 opciones, contado y financiado, coberturas por aseguradora)
+  logo_data.js                Logo incrustado para el PDF
   dash_oms.js                 Tablero de Clientes OMS
   tema_modulo.js              Modo oscuro / día de los módulos
   xlsx.mini.min.js, pptxgen.bundle.js, zip_simple.js, logo*.png

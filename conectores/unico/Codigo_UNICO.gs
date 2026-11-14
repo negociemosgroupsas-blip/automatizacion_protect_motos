@@ -988,7 +988,7 @@ function accionCotRenGuardar(p) {
     var fila = n + 1;
     h.getRange(fila, 1, 1, COT_ENC.length).setValues([[id2, ahora, nombre, "'" + String(p.cedula || ''), String(p.placa || ''),
       String(p.moto || ''), num(p.factura), num(p.fasecolda), num(p.contado), num(p.financiado), num(p.plazo),
-      'Pendiente', '', '', '', '', '', '', '', String(p.contrato || '')]]);
+      'Pendiente', '', '', '', '', '', '', String(p.obs || '').slice(0, 900), String(p.contrato || '')]]);
     h.getRange(fila, 4).setNumberFormat('@').setValue(String(p.cedula || ''));
     return { ok: true, id: id2 };
   } finally { lock.releaseLock(); }
