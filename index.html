@@ -15,6 +15,9 @@
   .marca .crm{color:var(--azul);font-weight:800;font-size:.85rem;letter-spacing:.14em;padding-left:.14em;margin-top:2px;line-height:1}
   .marca small{color:#5f6882;font-size:.85rem;letter-spacing:.4px}
   nav ul{list-style:none;margin:10px 0;padding:0 10px;flex:1}
+  nav{overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#3b4f8f transparent} nav::-webkit-scrollbar{width:6px} nav::-webkit-scrollbar-thumb{background:#3b4f8f;border-radius:6px}
+  nav ul{flex:1 0 auto!important}
+
   nav li.grp{font-size:.85rem;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:#8fa2cf;margin:14px 8px 4px;padding-top:10px;border-top:1px solid rgba(143,162,207,.22)} @media(max-width:760px){nav li.grp{display:none}}
   nav li a{display:flex;align-items:center;gap:10px;padding:11px 12px;margin-bottom:4px;border-radius:10px;color:#dbe3f2;text-decoration:none;font-size:.93rem;border-left:3px solid transparent}
   nav li a:hover{background:var(--azul2);color:#fff}
@@ -22,6 +25,10 @@
   nav li a .ico{font-size:1.1rem;width:22px;text-align:center}
   nav li a .tag{margin-left:auto;font-size:.85rem;background:var(--dorado);color:var(--azul);border-radius:8px;padding:2px 6px;font-weight:700}
   .pie{padding:12px 16px;font-size:.85rem;color:#9fb0cf;border-top:1px solid #ffffff1f}
+  /* pantallas bajas (o con zoom alto): el menú se compacta para que quepa completo; si aun así no cabe, se desplaza */
+  @media(max-height:900px){.marca{padding:10px 14px 8px;gap:4px} .marca img{width:104px} nav ul{margin:6px 0} nav li a{padding:7px 12px;margin-bottom:2px} nav li.grp{margin:8px 8px 2px;padding-top:6px} .pie{padding:8px 14px}}
+  @media(max-height:740px){.marca img{width:78px} .marca small{display:none} nav li a{padding:5px 12px;font-size:.88rem} nav li.grp{margin:5px 8px 1px;padding-top:4px} .pie{font-size:.78rem}}
+
   main{flex:1;min-width:0;height:100vh;position:relative}
   .vista{display:none;position:absolute;inset:0}
   .vista.activa{display:block}
