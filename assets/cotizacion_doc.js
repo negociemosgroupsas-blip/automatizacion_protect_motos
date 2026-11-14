@@ -7,15 +7,31 @@
   function cop(n){ return '$'+Math.round(Number(n)||0).toLocaleString('es-CO'); }
 
   /* ---- Coberturas por defecto (se pueden editar en el formulario y quedan guardadas en el navegador) ---- */
-  var RC_PM = ['Daños a bienes de terceros','Lesiones o muerte a 1 persona','Lesiones o muerte a 2 o más personas','Amparo patrimonial','Muerte accidental (para el conductor)','Asistencia jurídica en proceso penal','Asistencia jurídica en proceso civil','Gastos médicos (hasta 4 eventos)'];
-  var AP_PM = ['Muerte accidental: $5.000.000','Incapacidad total por accidente: $5.000.000','Auxilio por pérdida de documentos: $100.000','Grúa por accidente: $300.000','Paso de corriente: $50.000','Suministro de combustible: $50.000','Despinche (llanta sellomática): $50.000'];
+  /* Formato de cada línea: «Texto» = una cobertura simple · «Texto | valor» = cobertura con su valor ·
+     «Texto | límite | deducible % | deducible SMMLV» = fila de la tabla de condiciones · «— Título —» = nuevo bloque.
+     Marcas: {V80} = lo que cubre el 80 %, {RC} = valor de la RC, {AP} = valor de las asistencias. */
   var BASE_PM = ['Pérdida total por hurto','Pérdida total por daños','Cubre el 80 % del valor de la moto: {V80}'];
+  var RC_PM = ['— Responsabilidad civil · Condiciones de cobertura —',
+    'Amparo patrimonial | Incluido | Sin deducible | Sin deducible',
+    'Daños a bienes de terceros | $100.000.000 | 10 % | 1,0 SMMLV',
+    'Lesiones o muerte a una persona | $100.000.000 | 10 % | 1,0 SMMLV',
+    'Lesiones o muerte a dos o más personas | $200.000.000 | 10 % | 1,0 SMMLV',
+    'Gastos médicos | $200.000 | Sin deducible | Sin deducible',
+    'Asistencia jurídica en proceso penal | $10.348.632 | Sin deducible | Sin deducible',
+    'Asistencia jurídica en proceso civil | $5.338.580 | Sin deducible | Sin deducible',
+    'Muerte accidente de tránsito | $5.000.000 | Sin deducible | Sin deducible',
+    'Valor total RC | {RC}'];
+  var AP_PM = ['— AP · Accidentes personales —',
+    'Muerte accidental | $5.000.000','Incapacidad total por accidente | $5.000.000','Auxilio por pérdida de documentos | $100.000',
+    '— Carro taller: todos los servicios · 1 vez cada uno al año —',
+    'Grúa por accidente | $300.000','Paso de corriente | $50.000','Suministro de combustible | $50.000','Despinche (llanta sellomática) | $50.000',
+    'Valor total AP | {AP}'];
   var SURA = ['Responsabilidad Civil Extracontractual (límite global): $840.000.000','Deducible pérdida total por daños: 10 %, mínimo 0 SMMLV','Deducible pérdida parcial por daños: deducible único 0,5 SMMLV','Deducible pérdida total por hurto: 10 %, mínimo 0 SMMLV','Deducible pérdida parcial por hurto: deducible único 0,5 SMMLV','Deducible ante eventos de la naturaleza (temblor, terremoto): deducible único 0,5 SMMLV','Amparo patrimonial: sí cubre','Asistencia jurídica en procesos penales y civiles: sí cubre','Asistencia en viaje: asistencia de motos'];
   var DEFECTO = {
-    'Protect Motos': { op1: BASE_PM, op2: BASE_PM.concat(['— Responsabilidad civil —']).concat(RC_PM).concat(['— Asistencias —']).concat(AP_PM) },
+    'Protect Motos': { op1: BASE_PM, op2: BASE_PM.concat(RC_PM).concat(AP_PM) },
     'Sura': { op1: SURA.slice(1,5).concat([SURA[7]]), op2: SURA }
   };
-  var CLAVE = 'pm_cot_cobert';
+  var CLAVE = 'pm_cot_cobert2';
   function leerGuardadas(){ try{ return JSON.parse(localStorage.getItem(CLAVE)||'{}')||{}; }catch(e){ return {}; } }
   function coberturas(aseg, op){
     var g = leerGuardadas(), k = aseg+'|'+op;
@@ -57,6 +73,12 @@
     '.cob div{display:flex;gap:9px;align-items:center;font-size:12.5px;background:#eef6ff;border-radius:999px;padding:5px 12px 5px 6px;color:#0b2a6b;min-height:30px} .cob i{flex:0 0 21px;height:21px;border-radius:50%;background:#0b63c9;color:#fff;font-style:normal;font-size:12px;text-align:center;line-height:21px}',
     '.cob div span{line-height:1.25}',
     '.cob .sec{grid-column:1/-1;background:#0b63c9;color:#fff;border-radius:999px;font-weight:800;font-size:12px;letter-spacing:.5px;text-transform:uppercase;padding:5px 14px;margin-top:4px;min-height:0;display:block}',
+    '.cobh{margin:8px 14px 2px;background:#0b63c9;color:#fff;border-radius:999px;font-weight:800;font-size:12px;letter-spacing:.5px;text-transform:uppercase;padding:6px 16px}',
+    '.cobt{margin:4px 14px 8px;display:grid;gap:4px;color:#0b2a6b} .cobt .tr{display:grid;grid-template-columns:2.3fr 1.35fr 1fr 1.25fr;gap:4px;font-size:12px} .cobt .tr span{background:#eef6ff;border-radius:999px;padding:5px 11px;line-height:1.25;display:flex;align-items:center} .cobt .tr span+span{justify-content:center;text-align:center;font-weight:700}',
+    '.cobt .th span{background:none;font-weight:800;color:#0b63c9;text-align:center;justify-content:center;font-size:11.5px;line-height:1.15} .cobt .th span:first-child{justify-content:flex-start}',
+    '.cobv{margin:4px 14px 8px;display:grid;gap:3px;color:#0b2a6b} .cobv .vr{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#eef6ff;border-radius:999px;padding:6px 16px;font-size:12.5px} .cobv .vr b{font-size:13.5px}',
+    '.vtot{display:flex;justify-content:space-between;align-items:center;background:#0b2a6b;color:#fff;border-radius:999px;padding:8px 18px;margin-top:3px} .vtot span{font-weight:800;letter-spacing:.4px;font-size:12.5px} .vtot b{font-size:18px;color:#ffd54a}',
+    '.taller{margin:8px 14px 2px;background:#fff6d6;border:1.5px solid #f0cf6a;color:#7a4b00;border-radius:16px;padding:8px 14px;display:flex;align-items:center;gap:12px} .taller i{font-style:normal;font-size:26px} .taller b{display:block;font-size:14px;color:#b45309} .taller span{font-size:12px}',
     '.cta{margin-top:16px;display:flex;align-items:center;gap:14px;background:#0b2a6b;border-radius:22px;padding:12px 16px;box-shadow:0 6px 16px rgba(0,0,0,.22)}',
     '.cta .tx{flex:1} .cta .tx b{display:block;font-size:18px;letter-spacing:.3px} .cta .tx span{font-size:12.5px;opacity:.92}',
     '.cta .ph{background:#fff;color:#0b2a6b;border-radius:999px;padding:8px 18px;font-weight:900;font-size:17px;white-space:nowrap}',
@@ -70,11 +92,26 @@
     if(o.primera !== o.resto) return '<b>'+cop(o.primera)+'</b><small>1ª cuota · luego '+(plazo-1)+' cuotas de '+cop(o.resto)+'</small><small>Total '+cop(o.total)+'</small>';
     return '<b>'+plazo+' × '+cop(o.cuota)+'</b><small>cuotas mensuales</small><small>Total '+cop(o.total)+'</small>';
   }
-  function conValores(t, d){ return String(t).replace(/\{V80\}/g, d.cubre?cop(d.cubre):''); }
+  function conValores(t, d){ return String(t).replace(/\{V80\}/g, d.cubre?cop(d.cubre):'').replace(/\{RC\}/g, cop(d.rc||152857)).replace(/\{AP\}/g, cop(d.ap||47000)); }
   function bloqueCob(lista, d){
-    return '<div class="cob">'+lista.map(function(t){
-      if(/^—.*—$/.test(t)) return '<div class="sec">'+esc(t.replace(/—/g,'').trim())+'</div>';
-      return '<div><i>✓</i><span>'+esc(conValores(t,d)).replace(/:\s*$/,'')+'</span></div>'; }).join('')+'</div>';
+    var out = '', modo = '', buf = [];
+    function cerrar(){
+      if(!buf.length) return;
+      if(modo==='pill') out += '<div class="cob">'+buf.map(function(t){ return '<div><i>✓</i><span>'+esc(t).replace(/:\s*$/,'')+'</span></div>'; }).join('')+'</div>';
+      else if(modo==='tabla') out += '<div class="cobt"><div class="tr th"><span>Cobertura</span><span>Límite asegurado<br>(pesos colombianos)</span><span>Deducible %</span><span>Deducible SMMLV / pesos</span></div>'+
+        buf.map(function(c){ return /^valor total/i.test(c[0]) ? '<div class="vtot"><span>'+esc(c[0]).toUpperCase()+'</span><b>'+esc(c[1])+'</b></div>' : '<div class="tr"><span>'+esc(c[0])+'</span><span>'+esc(c[1])+'</span><span>'+esc(c[2]||'')+'</span><span>'+esc(c[3]||'')+'</span></div>'; }).join('')+'</div>';
+      else if(modo==='valores') out += '<div class="cobv">'+buf.map(function(c){ return /^valor total/i.test(c[0]) ? '<div class="vtot"><span>'+esc(c[0]).toUpperCase()+'</span><b>'+esc(c[1])+'</b></div>' : '<div class="vr"><span>'+esc(c[0])+'</span><b>'+esc(c[1])+'</b></div>'; }).join('')+'</div>';
+      buf = []; modo = '';
+    }
+    lista.forEach(function(t0){
+      var t = conValores(t0, d).trim();
+      if(/^—.*—$/.test(t)){ cerrar(); var h = t.replace(/—/g,'').trim(); out += /^carro taller/i.test(h) ? '<div class="taller"><i>🛵</i><div><b>Carro taller</b><span>'+esc(h.replace(/^carro taller:?\s*/i,''))+'</span></div></div>' : '<div class="cobh">'+esc(h)+'</div>'; return; }
+      var c = t.split('|').map(function(x){ return x.trim(); }), m = c.length>=3 ? 'tabla' : c.length===2 ? 'valores' : 'pill';
+      if(m!==modo){ if(modo==='tabla' && m==='valores' && /^valor total/i.test(c[0])){ buf.push(c); return; } cerrar(); modo = m; }
+      buf.push(m==='pill' ? t : c);
+    });
+    cerrar();
+    return out;
   }
 
   /* d: {fecha,id,nombre,placa,moto,aseguradora,plazo,garantizar,cubre,op1:{contado,primera,resto,cuota,total},op2:{...},cob1:[],cob2:[],nota} */

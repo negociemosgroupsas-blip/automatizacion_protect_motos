@@ -149,6 +149,8 @@
     cargarCob();
     llamar({action:'cotRen_moto', contrato:c.contrato}).then(function(r){
       if(r.encontrado){
+        if(r.cliente) $('pmcr_nom').value = r.cliente;      // nombre completo tal como está en la hoja Protect
+        if(r.placa) $('pmcr_pla').value = r.placa;          // placa de la hoja Protect (si la hay)
         if(!$('pmcr_ced').value) $('pmcr_ced').value = r.cedula||'';
         $('pmcr_moto').value = [r.marca, r.referencia].filter(Boolean).join(' ');
         if(r.valorMoto>0) fac.value = r.valorMoto.toLocaleString('es-CO');
@@ -180,7 +182,7 @@
       op1 = m('pmcr_m1c','pmcr_m1q'); op2 = m('pmcr_m2c','pmcr_m2q');
     }
     return { nombre:$('pmcr_nom').value.trim(), cedula:$('pmcr_ced').value.trim(), placa:$('pmcr_pla').value.trim(), moto:$('pmcr_moto').value.trim(),
-      factura:fac, fasecolda:fas, garantizar:gar, plazo:plz, aseguradora:ase, propia:propia, op1:op1, op2:op2, cubre:O?O.cubre:0,
+      factura:fac, fasecolda:fas, garantizar:gar, plazo:plz, aseguradora:ase, propia:propia, op1:op1, op2:op2, cubre:O?O.cubre:0, rc:(O?O.rc:PMCot.RC_DEFECTO), ap:(O?O.ap:PMCot.AP_DEFECTO),
       contado:op1.contado, financiado:op1.total, cuota:op1.cuota, contrato:cur.c.contrato };
   }
   function resumenOp(o, plz){ return 'contado <b>'+cop(o.contado)+'</b> · '+plz+' cuotas'+(o.primera!==o.resto?' (1ª de <b>'+cop(o.primera)+'</b>, luego <b>'+cop(o.resto)+'</b>)':' de <b>'+cop(o.cuota)+'</b>')+' · total <b>'+cop(o.total)+'</b>'; }
@@ -197,7 +199,7 @@
   }
   function datosDoc(q){
     return { id:cur.guardada||'', nombre:q.nombre, placa:q.placa, moto:q.moto, aseguradora:q.aseguradora, plazo:q.plazo, garantizar:q.garantizar,
-      op1:q.op1, op2:q.op2, cubre:q.cubre, cob1:lineasCob('pmcr_cb1'), cob2:lineasCob('pmcr_cb2') };
+      op1:q.op1, op2:q.op2, cubre:q.cubre, rc:q.rc, ap:q.ap, cob1:lineasCob('pmcr_cb1'), cob2:lineasCob('pmcr_cb2') };
   }
   function hacerDoc(tipo){
     var q = leer();
