@@ -1008,24 +1008,25 @@
   tarjetas.appendChild(cmc);
   /* ===== Dinero consolidado por mes y por año (hoja Consolidado: columnas J = Mes y K = Año) ===== */
   var cnc=document.createElement('div');cnc.className='card cnc';
-  cnc.innerHTML='<h3>¿Cuánto dinero se ha consolidado?</h3><p class="tot" id="cnTot">Se muestra al conectar Conciliación.</p><div class="ed-per"><label>Ver <select id="cnVista"><option value="mes">Mes a mes</option><option value="anio">Año a año</option></select></label><label id="cnLAnio">Año <select id="cnAnio"></select></label></div><div class="cm-k" id="cnKpis"></div><div class="cf-ley" id="cnLey"></div><div id="cnCuerpo"></div>';
+  cnc.innerHTML='<h3>¿Cuánto dinero se ha consolidado?</h3><p class="tot" id="cnTot">Se muestra al conectar Conciliación.</p><div class="ed-per"><label>Ver <select id="cnVista"><option value="mes">Mes a mes</option><option value="anio">Año a año</option></select></label><label id="cnLAnio">Año <select id="cnAnio"></select></label><label>Valor a sumar <select id="cnValor"><option value="auto">El que corresponda a cada pago (recomendado)</option><option value="c">Siempre la columna C</option><option value="d">Siempre la columna D</option></select></label></div><div class="cm-k" id="cnKpis"></div><div class="cf-ley" id="cnLey"></div><div id="cnCuerpo"></div>';
   tarjetas.appendChild(cnc);
-  var cnV='mes',cnY='todos';
+  var cnV='mes',cnY='todos',cnVal='auto';
   function cnPesos(n){return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+' COP'}
   function cnK(n){return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+'<em style="font-size:.5em;font-style:normal;opacity:.85"> COP</em>'}
   window.pintarCons=function(){
     var tot=document.getElementById('cnTot'),k=document.getElementById('cnKpis'),b=document.getElementById('cnCuerpo'),ley=document.getElementById('cnLey'),C=window.PM_CONS;if(!tot)return;
     if(!C||!C.meses){tot.textContent=C===undefined?'Se muestra al conectar Conciliación (URL en «Conexiones»).':'⚠️ El conector de Conciliación todavía no envía el mes y el año: pegue el código nuevo y publique «Nueva versión» (debe responder v12).';k.innerHTML='';b.innerHTML='';ley.innerHTML='';return}
-    var L=C.meses.map(function(o){return {y:o.anio,m:o.mes,n:o.n,v:(o.auto!=null?o.auto:(o.c||o.d||0))}});
+    var L=C.meses.map(function(o){return {y:o.anio,m:o.mes,n:o.n,nC:o.nC||0,nD:o.nD||0,v:(cnVal==='c'?(o.c||0):cnVal==='d'?(o.d||0):(o.auto!=null?o.auto:(o.c||o.d||0)))}});
     var yA=new Date().getFullYear(),ys={};ys[yA]=1;L.forEach(function(r){ys[r.y]=1});var lst=Object.keys(ys).map(Number).sort(function(a,c){return a-c});
     var sa=document.getElementById('cnAnio');sa.innerHTML='<option value="todos">Todos los años</option>'+lst.slice().reverse().map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');
-    if(cnY!=='todos'&&!ys[cnY])cnY='todos';sa.value=cnY;document.getElementById('cnVista').value=cnV;document.getElementById('cnLAnio').style.display=cnV==='anio'?'none':'';
+    if(cnY!=='todos'&&!ys[cnY])cnY='todos';sa.value=cnY;document.getElementById('cnVista').value=cnV;document.getElementById('cnValor').value=cnVal;document.getElementById('cnLAnio').style.display=cnV==='anio'?'none':'';
     var F=L.filter(function(r){return cnV==='anio'||cnY==='todos'||r.y===+cnY});
     var T=F.reduce(function(s_,r){return s_+r.v},0),N=F.reduce(function(s_,r){return s_+r.n},0),con=F.filter(function(r){return r.v>0}),mejor=con.slice().sort(function(p,q){return q.v-p.v})[0];
+    var nCt=F.reduce(function(s_,r){return s_+r.nC},0),nDt=F.reduce(function(s_,r){return s_+r.nD},0),crit=(cnVal==='auto'&&(nCt||nDt))?' · criterio: '+nCt+' pago(s) con la columna C y '+nDt+' con la D':'';
     var sf=C.sinFecha&&C.sinFecha.n?C.sinFecha:null,nota='';
     if(C.col&&(C.col.mes<0||C.col.anio<0))nota=' · ⚠️ no encuentro la columna «'+(C.col.mes<0?'Mes':'Año')+'» en la hoja Consolidado';
     else if(sf)nota=' · ⚠️ '+sf.n+' pago(s) sin mes o año no están en la gráfica ('+cnPesos(sf.c||sf.d)+')';
-    tot.innerHTML=(T?'Dinero consolidado · '+(cnV==='anio'||cnY==='todos'?'todos los años':'año '+cnY):'Todavía no hay dinero consolidado en el período elegido.')+(nota?'<em style="color:#fca5a5;font-style:normal">'+nota+'</em>':'');
+    tot.innerHTML=(T?'Dinero consolidado · '+(cnV==='anio'||cnY==='todos'?'todos los años':'año '+cnY)+crit:'Todavía no hay dinero consolidado en el período elegido.')+(nota?'<em style="color:#fca5a5;font-style:normal">'+nota+'</em>':'');
     var K=function(c,i,l,v,sm){return '<div class="in-k '+c+'"><div class="in-ki">'+i+'</div><div class="in-kt"><span>'+l+'</span><b>'+v+'</b><small>'+sm+'</small></div></div>'};
     k.innerHTML=T?K('k-oro','💰','Total consolidado (COP)',cnK(T),N+' pago(s)')+K('k-cian','📆','Promedio por mes (COP)',cnK(T/con.length),'en '+con.length+' mes(es) con pagos')+K('k-vio','🏆','Mejor mes (COP)',mejor?cnK(mejor.v):'—',mejor?MES_LARGO[mejor.m-1]+' '+mejor.y:''):'';
     var M=function(x){return Math.round(x/1e5)/10},COL=['#9fb8e8','#fdc33e','#38bdf8','#5b78c7','#e08a00','#d5dcf0'],TXT=['vd-o','vd-o','vd-o','vd-b','vd-o','vd-o'],dm,etq,cols,txt,aria,tip,mx2=0,n;
@@ -1046,6 +1047,7 @@
   };
   document.getElementById('cnVista').addEventListener('change',function(){cnV=this.value;window.pintarCons()});
   document.getElementById('cnAnio').addEventListener('change',function(){cnY=this.value;window.pintarCons()});
+  document.getElementById('cnValor').addEventListener('change',function(){cnVal=this.value;window.pintarCons()});
   window.pintarCons();
   /* ===== Renovaciones y cotizaciones (cotizaciones enviadas + seguimiento de renovación de Cobros) ===== */
   var rnc=document.createElement('div');rnc.className='card rnc';
@@ -1809,7 +1811,7 @@
     ['.rnc:not(.rnx)','Renovaciones Protect (Cobros): enviados vs aceptaron','🔁','A cuántos clientes les enviamos el mensaje de renovación y cuántos aceptaron, mes a mes.','Los mensajes y las respuestas salen de la hoja Gestiones (botones «Ya envié mensaje», «Acepto renovación» y «No acepto renovación» de Cobros). Cada cliente cuenta una vez, en el mes de su primer mensaje; el % de cada mes = aceptaron ÷ enviados. Las cotizaciones salen de la hoja «Cotizaciones Renovación» (botón ENVIAR COTIZACIÓN en Cobros). Los mensajes de renovación salen de la hoja Gestiones. «Aceptó» y «No aceptó» se marcan en el panel «Cotizaciones de renovación» de Cobros. % de conversión = aceptadas ÷ cotizaciones enviadas.','ren'],
     ['.rno','Renovaciones OMS: enviados vs renovaron','🔁','A cuántos clientes OMS les enviamos el mensaje de renovación y cuántos renovaron, mes a mes.','Sale de la hoja de Clientes OMS y de sus gestiones (botones «Ya envié mensaje», «Renovó» y «No renovará»). Renovó también cuenta si el cliente ya tiene una póliza nueva del mismo vehículo. Cada cliente cuenta una vez, en el mes de su primer mensaje.','ren'],
     ['.rns','Renovaciones SOAT: enviados vs renovaron','🔁','A cuántos clientes de SOAT les enviamos el mensaje de renovación y cuántos renovaron, mes a mes.','Sale de la hoja Soat y de sus gestiones (botones «Ya envié mensaje», «Renovó» y «No renovará»). Renovó también cuenta si ya hay un SOAT nuevo de la misma placa. Cada cliente cuenta una vez, en el mes de su primer mensaje.','ren'],
-    ['.cnc','¿Cuánto dinero se ha consolidado?','💰','Dinero que ya aparece en la hoja Consolidado, mes a mes o año a año.','Suma el valor de cada pago de la hoja Consolidado (columna C, o D si C está vacía) y lo ubica según las columnas Mes (J) y Año (K) que usted escribe allí. Los pagos sin mes o sin año no entran a la gráfica y se avisan. Valores en pesos colombianos (COP).','conc'],
+    ['.cnc','¿Cuánto dinero se ha consolidado?','💰','Dinero que ya aparece en la hoja Consolidado, mes a mes o año a año.','Suma el valor de cada pago de la hoja Consolidado: si solo viene la columna C o la D, esa; si vienen las dos, la que coincide con lo que Protect dice que se pagó; si ninguna coincide, la mayor. Lo ubica según las columnas Mes (J) y Año (K) que usted escribe allí. Los pagos sin mes o sin año no entran a la gráfica y se avisan. Valores en pesos colombianos (COP).','conc'],
     ['.svc','SOAT: cuántos vendemos y cuánto ganamos','🛡️','SOAT vendidos por mes (columnas) y su ganancia (línea verde).','Sale de la hoja Soat: cada SOAT cuenta en el mes de su fecha de venta. La escala verde de la derecha es la ganancia.','soat',1]
   ];
   function aclarar(){

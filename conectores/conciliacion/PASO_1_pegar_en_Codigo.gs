@@ -136,7 +136,7 @@ function CONC_procesar(ss, tol, rapido) {
     var res = CONC_calcular(protect, lectura.filas, tol, ajustes, asignaciones);
     var porFila = {}; lectura.filas.forEach(function (r) { porFila[r.fila] = r; });
     res.filas.forEach(function (f) { var u = String(f.filaCons || '').split(',')[0].trim(), r = u ? porFila[Number(u)] : null; f.mesCons = r ? r.mes : 0; f.anioCons = r ? r.anio : 0; });
-    var resumenMeses = CONC_resumenMeses(lectura.filas);
+    var resumenMeses = CONC_resumenMeses(lectura.filas, protect);
     var previos = CONC_leerHistorial(ss);
     var ah = CONC_aplicarHistorial(res.filas, previos, new Date());
     var estadoEnHoja = { escrito: false, rapido: true }, estadoProtect = { escrito: false };
@@ -274,13 +274,32 @@ function CONC_anioNum(v) {
 }
 
 // Resumen de lo consolidado por mes y año, con las columnas Mes y Año de la hoja Consolidado.
-function CONC_resumenMeses(filas) {
-  var m = {}, sin = { n: 0, c: 0, d: 0 };
+// ¿Qué valor se toma de cada pago? C y D son el mismo pago visto de dos formas (con y sin algún concepto), a veces solo viene una.
+//   1) Si solo una tiene valor, esa.   2) Si vienen las dos y una coincide con lo que Protect dice que se pagó (columna P de Protect,
+//   misma cédula), la que coincide.   3) Si no hay pista, la mayor (igual que hace la conciliación al sumar varios pagos).
+function CONC_valorPago(r, pagadosPorCedula) {
+  var c = CONC_sinCero(r.c), d = CONC_sinCero(r.d);
+  if (c === null && d === null) return { v: 0, col: '' };
+  if (c === null) return { v: d, col: 'D' };
+  if (d === null) return { v: c, col: 'C' };
+  if (c === d) return { v: c, col: 'C' };
+  var ps = pagadosPorCedula[CONC_normCedula(r.cedula)] || [], okC = false, okD = false;
+  ps.forEach(function (p) { if (CONC_iguales(c, p, CONC_TOLERANCIA)) okC = true; if (CONC_iguales(d, p, CONC_TOLERANCIA)) okD = true; });
+  if (okC && !okD) return { v: c, col: 'C' };
+  if (okD && !okC) return { v: d, col: 'D' };
+  return c >= d ? { v: c, col: 'C' } : { v: d, col: 'D' };
+}
+
+function CONC_resumenMeses(filas, protect) {
+  var m = {}, sin = { n: 0, c: 0, d: 0 }, ped = {};
+  (protect || []).forEach(function (p) { if (p.pagado === null || p.pagado === undefined) return; var k = CONC_normCedula(p.cedula); (ped[k] = ped[k] || []).push(p.pagado); });
   filas.forEach(function (r) {
     var c = r.c || 0, d = r.d || 0;
     if (!r.mes || !r.anio) { sin.n++; sin.c += c; sin.d += d; return; }
-    var k = r.anio * 100 + r.mes, o = m[k] = m[k] || { anio: r.anio, mes: r.mes, n: 0, c: 0, d: 0, auto: 0 };
-    o.n++; o.c += c; o.d += d; o.auto += (c || d);
+    var k = r.anio * 100 + r.mes, o = m[k] = m[k] || { anio: r.anio, mes: r.mes, n: 0, c: 0, d: 0, auto: 0, nC: 0, nD: 0 };
+    var vp = CONC_valorPago(r, ped);
+    o.n++; o.c += c; o.d += d; o.auto += vp.v;
+    if (vp.col === 'C') o.nC++; else if (vp.col === 'D') o.nD++;
   });
   return { meses: Object.keys(m).sort().map(function (k) { return m[k]; }), sinFecha: sin };
 }
