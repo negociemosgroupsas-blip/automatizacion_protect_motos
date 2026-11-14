@@ -480,7 +480,7 @@ function accionRenovGestiones() {
 }
 
 
-// ==================== CLIENTES ERP-PROTECT: lectura de Protect para el cruce semanal (nuevo, SOLO LEE) ====================
+// ==================== CRUCE SEMANAL ERP: lectura de Protect para el cruce semanal (nuevo, SOLO LEE) ====================
 // Devuelve, por cada fila de la hoja Protect: fila, asesor, cédula, cliente, placa, contrato, valor de la columna P y estado.
 // No escribe nada y no modifica ninguna hoja.
 function numeroErp_(v) {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Clientes ERP-Protect</title>
+<title>Cruce semanal ERP</title>
 <style>
   :root{--azul:#13223f;--azul2:#1f4e79;--dorado:#d6a417;--fondo:#f4f5f7;--tarjeta:#fff;--texto:#1f2430;--suave:#6b7280;--borde:#e3e6eb;--verde:#1f9d55;--naranja:#d97706;--rojo:#dc2626}
   *{box-sizing:border-box}
@@ -44,7 +44,7 @@
 </style>
 </head>
 <body>
-<header><h1>📑 Clientes ERP-Protect</h1><p>Cruce semanal: suba el archivo del jefe y el sistema compara cada cliente con la hoja Protect (por cédula y nombre) y el <b>Total</b> contra la <b>columna P</b>.</p><p class="noimp" style="font-size:.85rem;opacity:.6;margin-top:6px">Solo lee: no modifica ni el archivo ni la hoja Protect · versión de la pantalla: <b>ERP-14nov-A</b></p></header>
+<header><h1>📑 Cruce semanal ERP</h1><p>Clientes ERP-Protect: suba el archivo del jefe y el sistema compara cada cliente con la hoja Protect (por cédula y nombre) y el <b>Total</b> contra la <b>columna P</b>.</p><p class="noimp" style="font-size:.85rem;opacity:.6;margin-top:6px">Solo lee: no modifica ni el archivo ni la hoja Protect · versión de la pantalla: <b>ERP-14nov-A</b></p></header>
 <main>
   <div class="panel nop" style="padding:12px 18px"><div class="fil" style="align-items:center"><button class="btn g" id="bRec" type="button">🔄 Volver a leer la hoja Protect</button><span class="estado" id="est" style="flex:1">Cargando…</span></div></div>
 
@@ -223,7 +223,7 @@
   $('bXlsx').addEventListener('click',function(){
     if(!RES)return;var base=RES.filter(function(r){return !r.dup}),wb=XLSX.utils.book_new(),n=function(e){return base.filter(function(r){return r.estado===e})};
     var hoy=new Date(),f=hoy.getFullYear()+'-'+('0'+(hoy.getMonth()+1)).slice(-2)+'-'+('0'+hoy.getDate()).slice(-2);
-    var R=[['CRUCE CLIENTES ERP-PROTECT'],['Archivo revisado',ARCH.nombre],['Fecha del cruce',f],['Regla','Se compara la columna Total del archivo con la columna P de Protect; deben coincidir exactamente.'],[],['Estado','Clientes','Total archivo']];
+    var R=[['CRUCE SEMANAL ERP · CLIENTES ERP-PROTECT'],['Archivo revisado',ARCH.nombre],['Fecha del cruce',f],['Regla','Se compara la columna Total del archivo con la columna P de Protect; deben coincidir exactamente.'],[],['Estado','Clientes','Total archivo']];
     [ST.C,ST.P,ST.V].forEach(function(e){R.push([e,n(e).length,n(e).reduce(function(s_,r){return s_+(r.total||0)},0)])});
     R.push(['Piden revisión manual',base.filter(function(r){return r.revisar}).length,'']);R.push(['Repetidos en el archivo (no contados)',RES.length-base.length,'']);
     var wr=XLSX.utils.aoa_to_sheet(R);wr['!cols']=[{wch:38},{wch:70},{wch:16}];XLSX.utils.book_append_sheet(wb,wr,'Resumen');
