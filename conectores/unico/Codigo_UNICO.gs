@@ -2278,6 +2278,7 @@ function CONC_leerConsolidados(hoja) {
       mes: colMes >= 0 ? CONC_mesNum(f[colMes]) : 0, anio: colAnio >= 0 ? CONC_anioNum(f[colAnio]) : 0,
       cedula: f[0], cliente: f[1],
       c: CONC_sinCero(CONC_corregirMiles(CONC_aNumero(f[2]))), d: CONC_sinCero(CONC_corregirMiles(CONC_aNumero(f[3]))),
+      h: CONC_sinCero(CONC_corregirMiles(CONC_aNumero(f[CONC_COL_VALOR_DUGO_CONS - 1]))),   // columna H: «Valor pagado a Dugo Motos» (la escribe esta automatización)
       extra: f.slice(4)
     });
   }
@@ -2306,15 +2307,24 @@ function CONC_anioNum(v) {
 }
 
 // Resumen de lo consolidado por mes y año, con las columnas Mes y Año de la hoja Consolidado.
-// ¿Qué valor se toma de cada pago? C y D son el mismo pago visto de dos formas (con y sin algún concepto), a veces solo viene una.
-//   1) Si solo una tiene valor, esa.   2) Si vienen las dos y una coincide con lo que Protect dice que se pagó (columna P de Protect,
-//   misma cédula), la que coincide.   3) Si no hay pista, la mayor (igual que hace la conciliación al sumar varios pagos).
+// ¿Qué valor se toma de cada pago? C y D son el mismo pago visto de dos formas: NUNCA se suman entre sí; se elige UNO.
+//   1) Si solo una de las dos tiene valor, esa.
+//   2) Si vienen las dos: se comparan con la columna H de la misma fila («Valor pagado a Dugo Motos») y se toma la que coincide
+//      (si ninguna coincide exacto, la más cercana a H).
+//   3) Si la fila aún no tiene H, se compara con lo que Protect dice que pagó esa cédula (columna P); y si tampoco hay pista, la mayor.
+// Después, los valores elegidos de cada pago SÍ se suman por mes y por año.
 function CONC_valorPago(r, pagadosPorCedula) {
   var c = CONC_sinCero(r.c), d = CONC_sinCero(r.d);
   if (c === null && d === null) return { v: 0, col: '' };
   if (c === null) return { v: d, col: 'D' };
   if (d === null) return { v: c, col: 'C' };
   if (c === d) return { v: c, col: 'C' };
+  var h = CONC_sinCero(r.h === undefined ? null : r.h);
+  if (h !== null) {
+    if (CONC_iguales(c, h, CONC_TOLERANCIA)) return { v: c, col: 'C' };
+    if (CONC_iguales(d, h, CONC_TOLERANCIA)) return { v: d, col: 'D' };
+    return Math.abs(c - h) <= Math.abs(d - h) ? { v: c, col: 'C' } : { v: d, col: 'D' };
+  }
   var ps = pagadosPorCedula[CONC_normCedula(r.cedula)] || [], okC = false, okD = false;
   ps.forEach(function (p) { if (CONC_iguales(c, p, CONC_TOLERANCIA)) okC = true; if (CONC_iguales(d, p, CONC_TOLERANCIA)) okD = true; });
   if (okC && !okD) return { v: c, col: 'C' };
