@@ -214,7 +214,7 @@
     var q = leer(), fd = (q.propia && q.plazo===12) ? buscarFijo($('pmcr_moto').value) : null;
     $('pmcr_fijobox').style.display = fd ? '' : 'none';
     if(fd) $('pmcr_fijotxt').textContent = 'Esta moto tiene PRECIO FIJO de renovación ('+fd.palabra.toUpperCase()+'): se usan esos valores y no el Fasecolda. Desmarca si quieres calcularla normal.';
-    $('pmcr_gar').value = q.garantizar ? cop(q.garantizar) : '';
+    $('pmcr_gar').value = q.usaFijo ? 'No aplica (precio fijo)' : (q.garantizar ? cop(q.garantizar) : '');
     if(!q.listo){ $('pmcr_res').innerHTML = 'Escribe la factura y el valor de Fasecolda para calcular.'; return; }
     var a = q.factura>0 ? Math.round(q.factura/1.1) : 0, b = q.fasecolda>0 ? Math.round(q.fasecolda/1.1) : 0;
     $('pmcr_res').innerHTML = (q.usaFijo ? '<b>Precio fijo de renovación ('+esc(q.fijoDef.palabra.toUpperCase())+')</b>' : 'Factura −10 %: <b>'+(a?cop(a):'—')+'</b> · Fasecolda −10 %: <b>'+(b?cop(b):'—')+'</b> → valor a garantizar <b>'+cop(q.garantizar)+'</b>'+(q.propia?' · cubre el 80 %: <b>'+cop(q.cubre)+'</b>':''))+'<br>'+
