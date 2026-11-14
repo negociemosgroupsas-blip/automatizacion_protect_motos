@@ -450,7 +450,7 @@
   body.inicio-claro #inBusca{background:#f4f6fb;color:#1f2430;border-color:#d3dcee} body.inicio-claro #inBusca::placeholder{color:#7a88a8}
   .in-sec,#inKpis{scroll-margin-top:72px} .in-sec{cursor:pointer;user-select:none} .in-sec em{font-style:normal;margin-left:auto;font-size:.85rem;opacity:.7;transition:transform .15s} .in-sec:hover{color:#fff}
   body.inicio-claro .in-sec:hover{color:#13223f}
-  #v-inicio .pagina.cierra-ventas [data-sec="ventas"]:not(.in-sec),#v-inicio .pagina.cierra-clientes [data-sec="clientes"]:not(.in-sec),#v-inicio .pagina.cierra-conc [data-sec="conc"]:not(.in-sec),#v-inicio .pagina.cierra-soat [data-sec="soat"]:not(.in-sec),#v-inicio .pagina.cierra-oms [data-sec="oms"]:not(.in-sec),#v-inicio .pagina.cierra-com [data-sec="com"]:not(.in-sec){display:none!important}
+  #v-inicio .pagina.cierra-ventas [data-sec="ventas"]:not(.in-sec),#v-inicio .pagina.cierra-clientes [data-sec="clientes"]:not(.in-sec),#v-inicio .pagina.cierra-conc [data-sec="conc"]:not(.in-sec),#v-inicio .pagina.cierra-soat [data-sec="soat"]:not(.in-sec),#v-inicio .pagina.cierra-oms [data-sec="oms"]:not(.in-sec),#v-inicio .pagina.cierra-com [data-sec="com"]:not(.in-sec),#v-inicio .pagina.cierra-ren [data-sec="ren"]:not(.in-sec){display:none!important}
   #v-inicio .pagina.cierra-ventas #sec-ventas em,#v-inicio .pagina.cierra-clientes #sec-clientes em,#v-inicio .pagina.cierra-conc #sec-conc em,#v-inicio .pagina.cierra-soat #sec-soat em,#v-inicio .pagina.cierra-oms #sec-oms em,#v-inicio .pagina.cierra-com #sec-com em{transform:rotate(-90deg)}
   #v-inicio .pagina.buscando [data-sec]{display:block!important} #v-inicio .pagina.buscando .alertas[data-sec]{display:grid!important}
   #v-inicio .pagina.buscando [data-sec].oculta-b,#v-inicio .pagina .oculta-b{display:none!important}
@@ -463,6 +463,15 @@
   @media(max-width:760px){.in-nav{position:static;flex-direction:column;align-items:stretch} .in-chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px} #inBusca{flex:1 1 auto;width:100%}}
   #v-inicio .vmc{grid-column:1/-1;--acc:#60a5fa} .vmc{cursor:default;max-width:none} .vmc:hover{box-shadow:none;transform:none}
   #v-inicio .vmc{grid-column:1/-1!important;order:3!important}
+  #v-inicio .rnc{grid-column:1/-1!important;order:22!important;--acc:#f472b6} .rnc{cursor:default;max-width:none} .rnc:hover{box-shadow:none;transform:none}
+  .rnc .tot{font-size:.8rem;color:var(--suave);margin:0 0 12px}
+  .rn-g{display:flex;align-items:flex-end;gap:10px;height:230px;padding:8px 4px 0;border-bottom:1px solid #2a3b70}
+  .rn-c{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+  .rn-p{width:70%;max-width:46px;display:flex;flex-direction:column-reverse;border-radius:6px 6px 0 0;overflow:hidden;min-height:0}
+  .rn-p span{display:block;width:100%}
+  .rn-n{font-size:.72rem;margin-bottom:3px;font-weight:700} .rn-e{display:flex;gap:10px;padding:5px 4px 0} .rn-e div{flex:1;text-align:center;font-size:.72rem;color:var(--suave)}
+  .rn-l{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 0;font-size:.78rem} .rn-l i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+  .rn-as{margin:10px 0 0;font-size:.8rem;color:var(--suave)}
   #v-inicio .cmc{grid-column:1/-1!important;order:20!important;--acc:#34d399} .cmc{cursor:default;max-width:none} .cmc:hover{box-shadow:none;transform:none}
   .cmc .tot{font-size:.8rem;color:var(--suave);margin:0 0 12px} .cmc .tot em{font-style:normal;color:#fdc33e;font-weight:700}
   .cm-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:2px 0 16px} .cm-k .in-k{cursor:default} .cm-k .in-k:hover{transform:none} .cm-k .in-kt b{font-size:1.55rem} .cm-k .in-kt small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -539,6 +548,7 @@
     <div class="in-sec" id="sec-soat" data-sec="soat" style="order:15"><i></i>SOAT<em>▾</em></div>
     <div class="in-sec" id="sec-oms" data-sec="oms" style="order:17"><i></i>Clientes OMS<em>▾</em></div>
     <div class="in-sec" id="sec-com" data-sec="com" style="order:19"><i></i>Comisiones<em>▾</em></div>
+    <div class="in-sec" id="sec-ren" data-sec="ren" style="order:21"><i></i>Renovaciones y cotizaciones<em>▾</em></div>
     <h1 style="display:none">Inicio</h1><p class="sub" id="subInicio">Resumen del mes · usa el buscador de arriba para consultar un cliente</p>
     <h2 class="sec-t">Alertas de conciliación</h2>
     <div class="alertas" id="alertas"><div class="nota">Abre Conciliación y guarda su URL para ver aquí las alertas.</div></div>
@@ -974,6 +984,57 @@
   var cmc=document.createElement('div');cmc.className='card cmc';
   cmc.innerHTML='<h3>Comisiones pagadas</h3><p class="tot" id="cmTot">Se muestra al conectar el CRM.</p><div class="ed-per"><label>Ver <select id="cmVista"><option value="mes">Mes a mes</option><option value="asesor">Por asesor</option><option value="anios">Año a año</option></select></label><label id="cmLAnio">Año <select id="cmAnio"></select></label><label id="cmLMes">Mes <select id="cmMes"></select></label><label id="cmLAs">Asesor <select id="cmAs"></select></label></div><div class="cm-k" id="cmKpis"></div><div class="cf-ley" id="cmLey"></div><div id="cmCuerpo"></div>';
   tarjetas.appendChild(cmc);
+  /* ===== Renovaciones y cotizaciones (cotizaciones enviadas + seguimiento de renovación de Cobros) ===== */
+  var rnc=document.createElement('div');rnc.className='card rnc';
+  rnc.innerHTML='<h3>Renovaciones y cotizaciones</h3><p class="tot" id="rnTot">Se muestra al conectar el conector del CRM.</p><div class="ed-per"><label>Año <select id="rnAnio"></select></label><label>Mes <select id="rnMes"></select></label></div><div class="cm-k" id="rnKpis"></div><div id="rnCuerpo"></div>';
+  tarjetas.appendChild(rnc);
+  var RN={cot:null,ges:null},rnY='',rnM='0',rnCarg=false;
+  function rnUrl(){try{var u=localStorage.getItem('pm_crm_url');return /^https:\/\/script\.google\.com\//.test(u||'')?[u,localStorage.getItem('pm_crm_token')||'PM-CRM-2026']:null}catch(e){return null}}
+  function rnLlamar(u,tok,ac,fn){var cb='pmRn'+ac+Date.now(),s=document.createElement('script'),t=setTimeout(fin,60000);function fin(){clearTimeout(t);delete window[cb];s.remove()}
+    window[cb]=function(r){fin();fn(r)};s.onerror=function(){fin();fn(null)};s.src=u+(u.indexOf('?')<0?'?':'&')+'action='+ac+'&token='+encodeURIComponent(tok)+'&callback='+cb+'&_='+Date.now();document.head.appendChild(s)}
+  function cargarRen(){
+    var c=rnUrl();if(!c){RN={cot:null,ges:null};pintarRen();return}
+    if(rnCarg)return;rnCarg=true;var n=0,err='';
+    function listo(){n++;if(n<2)return;rnCarg=false;RN.err=err;pintarRen()}
+    rnLlamar(c[0],c[1],'cotRen_listar',function(r){if(r&&r.ok)RN.cot=r.cotizaciones||[];else{RN.cot=[];err=(r&&r.error)||'sin respuesta'}listo()});
+    rnLlamar(c[0],c[1],'renov_gestiones',function(r){if(r&&r.ok)RN.ges=r.gestiones||[];else{RN.ges=[];if(!err)err=(r&&r.error)||'sin respuesta'}listo()});
+  }
+  window.cargarRen=cargarRen;
+  function rnFecha(t){var m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(t||'');return m?{y:+m[3],m:+m[2]}:null}
+  function pintarRen(){
+    var tot=document.getElementById('rnTot'),k=document.getElementById('rnKpis'),b=document.getElementById('rnCuerpo');if(!tot)return;
+    if(!rnUrl()){tot.textContent='Para ver las renovaciones, pega la URL del conector (único o del CRM) en «Conexiones».';k.innerHTML='';b.innerHTML='';return}
+    if(!RN.cot){tot.textContent='Cargando renovaciones…';return}
+    var cot=RN.cot.map(function(x){var f=rnFecha(x.fecha);return f?{y:f.y,m:f.m,e:x.estado,as:x.aseguradora,fo:x.forma,rc:x.rc,ap:x.ap,v:x.valorFinal}:null}).filter(Boolean);
+    /* gestiones: un cliente (contrato) cuenta una vez, en el mes de su primer mensaje de renovación enviado */
+    var pc={};(RN.ges||[]).forEach(function(g){var o=pc[g.contrato]=pc[g.contrato]||{env:'',resp:'',rf:''};var f=g.fechaISO||'';
+      if(g.accion==='Mensaje de renovación enviado'){if(!o.env||f<o.env)o.env=f}
+      else if(g.accion==='Renovación aceptada'||g.accion==='Renovación no aceptada'){if(!o.rf||f>=o.rf){o.rf=f;o.resp=g.accion==='Renovación aceptada'?'A':'N'}}});
+    var ges=[];Object.keys(pc).forEach(function(c){var o=pc[c];if(o.env)ges.push({y:+o.env.slice(0,4),m:+o.env.slice(5,7),r:o.resp})});
+    var yA=new Date().getFullYear(),ys={};ys[yA]=1;cot.forEach(function(x){ys[x.y]=1});ges.forEach(function(x){ys[x.y]=1});
+    var lst=Object.keys(ys).map(Number).sort(function(a,c){return c-a});
+    if(!rnY||!ys[rnY])rnY=String(yA);
+    var sa=document.getElementById('rnAnio'),sm=document.getElementById('rnMes');
+    sa.innerHTML=lst.map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');sa.value=rnY;
+    sm.innerHTML='<option value="0">Todo el año</option>'+MES_LARGO.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>'}).join('');sm.value=rnM;
+    var fy=function(x){return x.y===+rnY},fm=function(x){return rnM==='0'||x.m===+rnM};
+    var C=cot.filter(function(x){return fy(x)&&fm(x)}),G=ges.filter(function(x){return fy(x)&&fm(x)});
+    var n=C.length,ac=C.filter(function(x){return x.e==='Aceptó renovación'}),no=C.filter(function(x){return x.e==='No aceptó renovación'}),pe=n-ac.length-no.length;
+    var pct=n?Math.round(ac.length*100/n):0,gA=G.filter(function(x){return x.r==='A'}).length,gN=G.filter(function(x){return x.r==='N'}).length;
+    var per=(rnM==='0'?'año '+rnY:MES_LARGO[+rnM-1]+' '+rnY);
+    tot.innerHTML='Renovaciones · '+per+(RN.err?' <em style="color:#fca5a5">⚠️ '+RN.err+(/no disponible/i.test(RN.err)?' — pega el código nuevo del conector y publica «Nueva versión»':'')+'</em>':'');
+    var K=function(c,i,l,v,sm){return '<div class="in-k '+c+'"><div class="in-ki">'+i+'</div><div class="in-kt"><span>'+l+'</span><b>'+v+'</b><small>'+sm+'</small></div></div>'};
+    k.innerHTML=K('k-vio','📨','Mensajes de renovación enviados',G.length,'aceptaron '+gA+' · no '+gN)+K('k-cian','🧾','Cotizaciones enviadas',n,pe+' pendiente(s)')+K('k-oro','✅','Aceptaron la renovación',ac.length,'de '+n+' cotizaciones')+K('k-ros','✖️','No aceptaron',no.length,'cotizaciones')+K('k-oro','📈','% de conversión',pct+' %','aceptadas ÷ cotizadas');
+    var mx=1,cols=[];for(var i=1;i<=12;i++){var cm=cot.filter(function(x){return x.y===+rnY&&x.m===i}),a=cm.filter(function(x){return x.e==='Aceptó renovación'}).length,nn=cm.filter(function(x){return x.e==='No aceptó renovación'}).length;cols.push({a:a,n:nn,p:cm.length-a-nn,t:cm.length});if(cm.length>mx)mx=cm.length}
+    b.innerHTML='<div class="rn-g">'+cols.map(function(c,i){var h=function(v){return (v/mx*100)+'%'};return '<div class="rn-c" title="'+MES_LARGO[i]+': '+c.t+' cotización(es) · aceptaron '+c.a+' · pendientes '+c.p+' · no aceptaron '+c.n+'">'+(c.t?'<div class="rn-n">'+c.t+'</div>':'')+'<div class="rn-p" style="height:'+(c.t?(c.t/mx*86):0)+'%"><span style="background:#34d399;flex:'+c.a+'"></span><span style="background:#fbbf24;flex:'+c.p+'"></span><span style="background:#f87171;flex:'+c.n+'"></span></div></div>'}).join('')+'</div><div class="rn-e">'+MES_C.map(function(m){return '<div>'+m+'</div>'}).join('')+'</div>'+
+      '<div class="rn-l"><span><i style="background:#34d399"></i>Aceptaron</span><span><i style="background:#fbbf24"></i>Pendientes</span><span><i style="background:#f87171"></i>No aceptaron</span><span style="color:var(--suave)">Cada columna = cotizaciones enviadas ese mes</span></div>';
+    var as={};ac.forEach(function(x){var q=x.as||'Sin dato';as[q]=(as[q]||0)+1});var ak=Object.keys(as).sort(function(p,q){return as[q]-as[p]});
+    var con=ac.filter(function(x){return x.fo==='Contado'}).length,fi=ac.filter(function(x){return x.fo==='Financiado'}).length,rc=ac.filter(function(x){return x.rc==='Sí'}).length,ap=ac.filter(function(x){return x.ap==='Sí'}).length,val=ac.reduce(function(s_,x){return s_+(x.v||0)},0);
+    if(ac.length)b.innerHTML+='<p class="rn-as"><b>Aceptadas:</b> '+(ak.length?'por aseguradora → '+ak.map(function(q){return q+': '+as[q]}).join(' · ')+' · ':'')+'contado '+con+' · financiado '+fi+' · con RC '+rc+' · con AP '+ap+' · valor contratado '+cmPesos(val)+'</p>';
+  }
+  document.getElementById('rnAnio').addEventListener('change',function(){rnY=this.value;pintarRen()});
+  document.getElementById('rnMes').addEventListener('change',function(){rnM=this.value;pintarRen()});
+
   var cmV='mes',cmY=String(new Date().getFullYear()),cmM='0',cmA='';
   document.getElementById('cmVista').addEventListener('change',function(){cmV=this.value;pintarCM()});
   document.getElementById('cmAnio').addEventListener('change',function(){cmY=this.value;pintarCM()});
@@ -1395,7 +1456,7 @@
   document.addEventListener('pm-cobros',function(){COB=window.PM_COBROS;marcarHora();if(document.activeElement===q)buscar()});
   if(window.PM_COBROS)COB=window.PM_COBROS;
   $('btnRec').addEventListener('click',function(){if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc()});
-  cargarConc();cargarSoat();cargarOms();
+  cargarConc();cargarSoat();cargarOms();cargarRen();
   var ultimoAuto=Date.now();
   var sv=PMG.sv,stxt=PMG.stxt,enAncho=PMG.enAncho,verTip=PMG.verTip,ocultarTip=PMG.ocultarTip,MES_C=PMG.MES_C;
   /* ----- SOAT: vendidos (columnas) y ganancia (línea), con filtros de año y mes ----- */
@@ -1584,6 +1645,7 @@
     ['.anu','¿Cuántos clientes están activos?','✅','Activos, finalizados, cancelados y anulados de Protect.','Cuenta el texto de la columna AR de la hoja, igual que el botón Cobros. Los anulados se muestran aparte y no cuentan como vendidos. Con «¿Cómo se cuenta?» ves el detalle por año.','clientes',1],
     ['.vmc','Ventas mes a mes, por año','📈','Todas las ventas de cada mes, con un color por año.','Cada columna es el total de contratos de ese mes (contado y financiados juntos) y cada color es un año. Con «Año» ves uno solo y con «Tipo de venta» separas contado o financiadas. Sale de las columnas I, J y T de Protect; no cuenta anulados.','resumen',1],
     ['.cmc','¿Cuánto pagamos en comisiones?','💵','Total de comisiones pagadas a los asesores, mes a mes, por asesor o año a año.','Se calcula igual que el botón Comisiones: contado con RC y AP $40.000, contado sin RC ni AP $25.000, financiado con RC y AP $15.000, financiado sin RC ni AP $10.000; solo RC o solo AP según su regla. Las pólizas OMS de Kelli pagan $40.000 contado y $15.000 financiado. No cuenta anulados ni cancelados ni los casos especiales sin decidir. Las columnas están en miles de pesos colombianos (385 = $385.000 COP).','com',1],
+    ['.rnc','Renovaciones y cotizaciones','🔁','Cuántas cotizaciones de renovación enviamos y cuántas aceptaron.','Las cotizaciones salen de la hoja «Cotizaciones Renovación» (botón ENVIAR COTIZACIÓN en Cobros). Los mensajes de renovación salen de la hoja Gestiones. «Aceptó» y «No aceptó» se marcan en el panel «Cotizaciones de renovación» de Cobros. % de conversión = aceptadas ÷ cotizaciones enviadas.','ren'],
     ['.svc','SOAT: cuántos vendemos y cuánto ganamos','🛡️','SOAT vendidos por mes (columnas) y su ganancia (línea verde).','Sale de la hoja Soat: cada SOAT cuenta en el mes de su fecha de venta. La escala verde de la derecha es la ganancia.','soat',1]
   ];
   function aclarar(){
@@ -1901,7 +1963,7 @@
     setTimeout(function(){window.print();setTimeout(function(){b.classList.remove('imprimiendo');if(infEl&&infEl.parentNode)infEl.parentNode.removeChild(infEl);b.classList.toggle('tema-inicio',tenia);b.classList.toggle('inicio-claro',clar);document.title=t;window.dispatchEvent(new Event('resize'))},300)},400);
     window.dispatchEvent(new Event('resize'));
   }
-  function actualizarTodo(){ultimoAuto=Date.now();if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc();cargarSoat();cargarOms()}
+  function actualizarTodo(){ultimoAuto=Date.now();if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc();cargarSoat();cargarOms();if(window.cargarRen)window.cargarRen()}
   setInterval(function(){if(!document.hidden)actualizarTodo()},60000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&Date.now()-ultimoAuto>60000)actualizarTodo()});
 

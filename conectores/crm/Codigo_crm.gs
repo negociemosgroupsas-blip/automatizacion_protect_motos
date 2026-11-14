@@ -58,6 +58,8 @@ function doGet(e) {
         salida = accionListarReportes();
       } else if (accion === 'verReporte') {
         salida = accionVerReporte(params);
+      } else if (accion === 'renov_gestiones') {
+        salida = accionRenovGestiones();
       } else if (accion === 'cotRen_moto') {
         salida = accionCotRenMoto(params);
       } else if (accion === 'cotRen_listar') {
@@ -67,7 +69,7 @@ function doGet(e) {
       } else if (accion === 'cotRen_estado') {
         salida = accionCotRenEstado(params);
       } else if (accion === 'ping') {
-        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-4' };
+        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-5' };
       } else {
         salida = { ok: false, error: 'Acción no disponible: ' + accion };
       }
@@ -456,4 +458,21 @@ function accionCotRenEstado(p) {
     }
     return { ok: true, id: id, estado: estado };
   } finally { lock.releaseLock(); }
+}
+
+
+// ==================== RENOVACIONES: gestiones para el Inicio (nuevo, solo lee) ====================
+// Devuelve de la hoja «Gestiones» únicamente las filas de renovación (mensaje enviado, aceptada, no aceptada, vencida, seguimientos).
+function accionRenovGestiones() {
+  var h = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Gestiones'), out = [];
+  if (!h || h.getLastRow() < 2) return { ok: true, gestiones: out };
+  var d = h.getRange(2, 1, h.getLastRow() - 1, 6).getValues();
+  for (var i = 0; i < d.length; i++) {
+    var acc = String(d[i][4] || '');
+    if (!/renovaci/i.test(acc)) continue;
+    var contrato = String(d[i][1] || '').trim();
+    if (!contrato) continue;
+    out.push({ fechaISO: formatoISO(d[i][0]), contrato: contrato, cliente: String(d[i][3] || ''), accion: acc });
+  }
+  return { ok: true, gestiones: out };
 }

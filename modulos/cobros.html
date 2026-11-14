@@ -469,7 +469,7 @@
       <span class="sub">Cotizaciones enviadas, quién aceptó y quién no (se guardan en la hoja «Cotizaciones Renovación»)</span>
     </div>
     <div class="contenido-panel">
-      <details id="detCotRen"><summary style="cursor:pointer;font-weight:700;color:var(--azul)">Ver / actualizar cotizaciones</summary><div id="contCotRen" style="margin-top:10px"></div></details>
+      <details id="detCotRen" open><summary style="cursor:pointer;font-weight:700;color:var(--azul)">Ver / actualizar cotizaciones</summary><div id="contCotRen" style="margin-top:10px"></div></details>
     </div>
   </section>
 
@@ -1607,6 +1607,7 @@
 
   (function(){
     var det = document.getElementById('detCotRen'), cargado = false;
+    if(det && det.open) setTimeout(function(){ if(!cargado && window.PMCotRen){ cargado = true; window.PMCotRen.iniciarPanel(document.getElementById('contCotRen')); } }, 300);
     if(det) det.addEventListener('toggle', function(){
       if(det.open && !cargado && window.PMCotRen){ cargado = true; window.PMCotRen.iniciarPanel(document.getElementById('contCotRen')); }
     });
