@@ -467,6 +467,7 @@
   #v-inicio .vmc{grid-column:1/-1!important;order:3!important}
   #v-inicio .rnc{grid-column:1/-1!important;order:22!important;--acc:#f472b6} .rnc{cursor:default;max-width:none} .rnc:hover{box-shadow:none;transform:none}
   .rnc .tot{font-size:.8rem;color:var(--suave);margin:0 0 12px}
+  #v-inicio .rnx{grid-column:span 6!important;order:23!important} @media(max-width:1000px){#v-inicio .rnx{grid-column:1/-1!important}} .rnx .cm-k{grid-template-columns:repeat(3,1fr)} .rnx .rn-g{height:200px}
   .rn-g{display:flex;align-items:flex-end;gap:10px;height:230px;padding:8px 4px 0;border-bottom:1px solid #2a3b70}
   .rn-c{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
   .rn-p{width:70%;max-width:46px;display:flex;flex-direction:column-reverse;border-radius:6px 6px 0 0;overflow:hidden;min-height:0}
@@ -988,7 +989,7 @@
   tarjetas.appendChild(cmc);
   /* ===== Renovaciones y cotizaciones (cotizaciones enviadas + seguimiento de renovación de Cobros) ===== */
   var rnc=document.createElement('div');rnc.className='card rnc';
-  rnc.innerHTML='<h3>Renovaciones: enviados vs aceptaron</h3><p class="tot" id="rnTot">Se muestra al conectar el conector del CRM.</p><div class="ed-per"><label>Año <select id="rnAnio"></select></label><label>Mes <select id="rnMes"></select></label></div><div class="cm-k" id="rnKpis"></div><div id="rnCuerpo"></div>';
+  rnc.innerHTML='<h3>Renovaciones Protect (Cobros): enviados vs aceptaron</h3><p class="tot" id="rnTot">Se muestra al conectar el conector del CRM.</p><div class="ed-per"><label>Año <select id="rnAnio"></select></label><label>Mes <select id="rnMes"></select></label></div><div class="cm-k" id="rnKpis"></div><div id="rnCuerpo"></div>';
   tarjetas.appendChild(rnc);
   var RN={cot:null,ges:null},rnY='',rnM='0',rnCarg=false;
   function rnUrl(){try{var u=localStorage.getItem('pm_crm_url');return /^https:\/\/script\.google\.com\//.test(u||'')?[u,localStorage.getItem('pm_crm_token')||'PM-CRM-2026']:null}catch(e){return null}}
@@ -1003,6 +1004,53 @@
   }
   window.cargarRen=cargarRen;
   function rnFecha(t){var m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(t||'');return m?{y:+m[3],m:+m[2]}:null}
+  /* columnas por mes: clientes a los que se les envió el mensaje de renovación (azul) frente a los que renovaron (verde) */
+  function rnColumnas(ges,y){
+    var mx=1,cols=[];for(var i=1;i<=12;i++){var gm=ges.filter(function(x){return x.y===y&&x.m===i}),a=gm.filter(function(x){return x.r==='A'}).length;cols.push({e:gm.length,a:a});if(gm.length>mx)mx=gm.length}
+    return '<div class="rn-g">'+cols.map(function(c,i){var pc=c.e?Math.round(c.a*100/c.e):0;return '<div class="rn-c" title="'+MES_LARGO[i]+': '+c.e+' mensaje(s) enviado(s) · '+c.a+' renovaron · '+pc+' %"><div style="display:flex;align-items:flex-end;gap:3px;height:86%;width:100%;justify-content:center"><div style="flex:0 1 22px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%">'+(c.e?'<div class="rn-n">'+c.e+'</div>':'')+'<div style="width:100%;height:'+(c.e/mx*100)+'%;background:#60a5fa;border-radius:5px 5px 0 0"></div></div><div style="flex:0 1 22px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%">'+(c.a?'<div class="rn-n">'+c.a+'</div>':'')+'<div style="width:100%;height:'+(c.a/mx*100)+'%;background:#34d399;border-radius:5px 5px 0 0"></div></div></div>'+(c.e?'<div class="rn-n" style="color:#fbbf24;margin:3px 0 0">'+pc+' %</div>':'')+'</div>'}).join('')+'</div><div class="rn-e">'+MES_C.map(function(m){return '<div>'+m+'</div>'}).join('')+'</div>'+
+      '<div class="rn-l"><span><i style="background:#60a5fa"></i>Mensajes de renovación enviados</span><span><i style="background:#34d399"></i>Renovaron</span><span style="color:#fbbf24">% = renovaron ÷ enviados</span></div>';
+  }
+  /* tarjeta de renovaciones de SOAT y de Pólizas OMS (misma gráfica; cada una con su año) */
+  function rnTarjeta(cls,titulo,sub,idp){
+    var c=document.createElement('div');c.className='card rnc rnx '+cls;
+    c.innerHTML='<h3>'+titulo+'</h3><p class="tot" id="'+idp+'Tot">'+sub+'</p><div class="ed-per"><label>Año <select id="'+idp+'Anio"></select></label></div><div class="cm-k" id="'+idp+'Kpis"></div><div id="'+idp+'Cuerpo"></div>';
+    tarjetas.appendChild(c);return c;
+  }
+  function rnPintaGen(idp,ges,vacio){
+    var tot=document.getElementById(idp+'Tot'),k=document.getElementById(idp+'Kpis'),b=document.getElementById(idp+'Cuerpo'),sa=document.getElementById(idp+'Anio');if(!tot)return;
+    if(!ges){tot.textContent=vacio;k.innerHTML='';b.innerHTML='';return}
+    var yA=new Date().getFullYear(),ys={};ys[yA]=1;ges.forEach(function(x){ys[x.y]=1});var lst=Object.keys(ys).map(Number).sort(function(a,c){return c-a});
+    var y=RNY[idp];if(!y||!ys[y])y=RNY[idp]=String(yA);
+    sa.innerHTML=lst.map(function(v){return '<option value="'+v+'">'+v+'</option>'}).join('');sa.value=y;
+    var G=ges.filter(function(x){return x.y===+y}),A=G.filter(function(x){return x.r==='A'}).length,N=G.filter(function(x){return x.r==='N'}).length,P=G.length-A-N,pc=G.length?Math.round(A*100/G.length):0;
+    tot.textContent='Mensajes de renovación enviados frente a renovaciones · año '+y;
+    var K=function(c,i,l,v,sm){return '<div class="in-k '+c+'"><div class="in-ki">'+i+'</div><div class="in-kt"><span>'+l+'</span><b>'+v+'</b><small>'+sm+'</small></div></div>'};
+    k.innerHTML=K('k-azu','📨','Enviados',G.length,'clientes')+K('k-oro','✅','Renovaron',A,pc+' %')+K('k-ros','✖️','No renovarán',N,P+' en espera');
+    b.innerHTML=rnColumnas(ges,+y);
+  }
+  var RNY={rno:'',rns:''};
+  rnTarjeta('rno','Renovaciones OMS: enviados vs renovaron','Se muestra al conectar Clientes OMS.','rno');
+  rnTarjeta('rns','Renovaciones SOAT: enviados vs renovaron','Se muestra al conectar SOAT.','rns');
+  document.getElementById('rnoAnio').addEventListener('change',function(){RNY.rno=this.value;window.pintarRenOms()});
+  document.getElementById('rnsAnio').addEventListener('change',function(){RNY.rns=this.value;window.pintarRenSoat()});
+  window.pintarRenOms=function(){
+    var O=window.PM_OMS;if(!O||!window.PMDashOMS){rnPintaGen('rno',null,'Se muestra al conectar Clientes OMS.');return}
+    var an=PMDashOMS.analizar(O.contratos||[],O.gestiones||[]),env={};
+    (O.gestiones||[]).forEach(function(g){if(g.accion===PMDashOMS.ACC_ENV&&g.contrato){var f=g.fechaGestionISO||'';if(!env[g.contrato]||f<env[g.contrato])env[g.contrato]=f}});
+    var ges=[];an.forEach(function(x){var f=env[x.c.contrato];if(!f)return;ges.push({y:+f.slice(0,4),m:+f.slice(5,7),r:x.tipo==='renovado'?'A':x.tipo==='norenovara'?'N':''})});
+    rnPintaGen('rno',ges,'');
+  };
+  window.pintarRenSoat=function(){
+    var S=window.PM_SOAT;if(!S){rnPintaGen('rns',null,'Se muestra al conectar SOAT.');return}
+    var soat=S.soat||[],porK={};
+    (S.gestiones||[]).forEach(function(g){var o=porK[g.clave]=porK[g.clave]||{env:'',res:'',rf:''},f=g.fechaISO||'';
+      if(g.accion==='Mensaje de renovación enviado'){if(!o.env||f<o.env)o.env=f}
+      else if(g.accion==='Renovó'||g.accion==='No renovará'){if(!o.rf||f>=o.rf){o.rf=f;o.res=g.accion==='Renovó'?'A':'N'}}});
+    var ges=[];soat.forEach(function(x){var o=porK[x.placa+'|'+x.venceISO];if(!o||!o.env)return;
+      var nuevo=soat.some(function(z){return z!==x&&z.placa===x.placa&&z.venceISO>x.venceISO});
+      ges.push({y:+o.env.slice(0,4),m:+o.env.slice(5,7),r:(nuevo||o.res==='A')?'A':o.res==='N'?'N':''})});
+    rnPintaGen('rns',ges,'');
+  };
   function pintarRen(){
     var tot=document.getElementById('rnTot'),k=document.getElementById('rnKpis'),b=document.getElementById('rnCuerpo');if(!tot)return;
     if(!rnUrl()){tot.textContent='Para ver las renovaciones, pega la URL del conector (único o del CRM) en «Conexiones».';k.innerHTML='';b.innerHTML='';return}
@@ -1028,9 +1076,7 @@
     tot.innerHTML='Mensajes de renovación enviados frente a renovaciones aceptadas · '+per+(RN.err?' <em style="color:#fca5a5">⚠️ '+RN.err+(/no disponible/i.test(RN.err)?' — pega el código nuevo del conector y publica «Nueva versión»':'')+'</em>':'');
     var K=function(c,i,l,v,sm){return '<div class="in-k '+c+'"><div class="in-ki">'+i+'</div><div class="in-kt"><span>'+l+'</span><b>'+v+'</b><small>'+sm+'</small></div></div>'};
     k.innerHTML=K('k-azu','📨','Mensajes de renovación enviados',env,'clientes distintos')+K('k-oro','✅','Aceptaron la renovación',gA,pct+' % de los enviados')+K('k-ros','✖️','No aceptaron',gN,gP+' esperando respuesta')+K('k-cian','🧾','Cotizaciones enviadas',n,ac.length+' aceptada(s) · '+pe+' pendiente(s)');
-    var mx=1,cols=[];for(var i=1;i<=12;i++){var gm=ges.filter(function(x){return x.y===+rnY&&x.m===i}),a=gm.filter(function(x){return x.r==='A'}).length;cols.push({e:gm.length,a:a});if(gm.length>mx)mx=gm.length}
-    b.innerHTML='<div class="rn-g">'+cols.map(function(c,i){var pc=c.e?Math.round(c.a*100/c.e):0;return '<div class="rn-c" title="'+MES_LARGO[i]+': '+c.e+' mensaje(s) enviado(s) · '+c.a+' aceptaron · '+pc+' %"><div style="display:flex;align-items:flex-end;gap:3px;height:86%;width:100%;justify-content:center"><div style="flex:0 1 22px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%">'+(c.e?'<div class="rn-n">'+c.e+'</div>':'')+'<div style="width:100%;height:'+(c.e/mx*100)+'%;background:#60a5fa;border-radius:5px 5px 0 0"></div></div><div style="flex:0 1 22px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%">'+(c.a?'<div class="rn-n">'+c.a+'</div>':'')+'<div style="width:100%;height:'+(c.a/mx*100)+'%;background:#34d399;border-radius:5px 5px 0 0"></div></div></div>'+(c.e?'<div class="rn-n" style="color:#fbbf24;margin:3px 0 0">'+pc+' %</div>':'')+'</div>'}).join('')+'</div><div class="rn-e">'+MES_C.map(function(m){return '<div>'+m+'</div>'}).join('')+'</div>'+
-      '<div class="rn-l"><span><i style="background:#60a5fa"></i>Mensajes de renovación enviados</span><span><i style="background:#34d399"></i>Aceptaron la renovación</span><span style="color:#fbbf24">% = aceptaron ÷ enviados</span><span style="color:var(--suave)">Cada cliente cuenta una vez, en el mes de su primer mensaje</span></div>';
+    b.innerHTML=rnColumnas(ges,+rnY);
     var as={};ac.forEach(function(x){var q=x.as||'Sin dato';as[q]=(as[q]||0)+1});var ak=Object.keys(as).sort(function(p,q){return as[q]-as[p]});
     var con=ac.filter(function(x){return x.fo==='Contado'}).length,fi=ac.filter(function(x){return x.fo==='Financiado'}).length,rc=ac.filter(function(x){return x.rc==='Sí'}).length,ap=ac.filter(function(x){return x.ap==='Sí'}).length,val=ac.reduce(function(s_,x){return s_+(x.v||0)},0);
     if(ac.length)b.innerHTML+='<p class="rn-as"><b>Cotizaciones aceptadas:</b> '+(ak.length?'por aseguradora → '+ak.map(function(q){return q+': '+as[q]}).join(' · ')+' · ':'')+'contado '+con+' · financiado '+fi+' · con RC '+rc+' · con AP '+ap+' · valor contratado '+cmPesos(val)+'</p>';
@@ -1539,6 +1585,7 @@
         if(a==='Renovó'||a==='No renovará'||a==='Mensaje de renovación enviado')return;
         n++;if(primeros.length<3)primeros.push(x.cliente.split(' ').slice(0,2).join(' ')+' ('+x.placa+')');
       });
+      window.PM_SOAT={soat:r.soat||[],gestiones:r.gestiones||[]};if(window.pintarRenSoat)window.pintarRenSoat();
       soatRecs=(r.soat||[]).filter(function(x){return /^\d{4}-\d{2}/.test(x.fechaISO||'')}).map(function(x){return {y:+x.fechaISO.slice(0,4),m:+x.fechaISO.slice(5,7),g:Number(x.ganancia)||0}});pintarSoatG();
       bd.hidden=!n;bd.textContent=n;
       PMK.soatRen=n;PMK.soatMes=0;PMK.soatGan=0;var hh0=new Date();soatRecs.forEach(function(x){if(x.y===hh0.getFullYear()&&x.m===hh0.getMonth()+1){PMK.soatMes++;PMK.soatGan+=x.g}});pintarKpis();
@@ -1571,7 +1618,7 @@
       if(!r||!r.ok)return;
       OMS={contratos:(r.contratos||[]).map(function(c){c.origen='OMS';return c}),pagos:r.pagos||[],gestiones:r.gestiones||[]};
       window.PM_OMS=OMS;
-      pintarOms();if(window.pintarCM)window.pintarCM();
+      pintarOms();if(window.pintarCM)window.pintarCM();if(window.pintarRenOms)window.pintarRenOms();
       if(document.activeElement===q&&norm(q.value).length>=2)buscar()};
     s.onerror=function(){fin()};
     s.src=u+(u.indexOf('?')<0?'?':'&')+'action=datos&token=PM-OMS-2026&callback='+cb+'&_='+Date.now();
@@ -1648,7 +1695,9 @@
     ['.anu','¿Cuántos clientes están activos?','✅','Activos, finalizados, cancelados y anulados de Protect.','Cuenta el texto de la columna AR de la hoja, igual que el botón Cobros. Los anulados se muestran aparte y no cuentan como vendidos. Con «¿Cómo se cuenta?» ves el detalle por año.','clientes',1],
     ['.vmc','Ventas mes a mes, por año','📈','Todas las ventas de cada mes, con un color por año.','Cada columna es el total de contratos de ese mes (contado y financiados juntos) y cada color es un año. Con «Año» ves uno solo y con «Tipo de venta» separas contado o financiadas. Sale de las columnas I, J y T de Protect; no cuenta anulados.','resumen',1],
     ['.cmc','¿Cuánto pagamos en comisiones?','💵','Total de comisiones pagadas a los asesores, mes a mes, por asesor o año a año.','Se calcula igual que el botón Comisiones: contado con RC y AP $40.000, contado sin RC ni AP $25.000, financiado con RC y AP $15.000, financiado sin RC ni AP $10.000; solo RC o solo AP según su regla. Las pólizas OMS de Kelli pagan $40.000 contado y $15.000 financiado. No cuenta anulados ni cancelados ni los casos especiales sin decidir. Las columnas están en miles de pesos colombianos (385 = $385.000 COP).','com',1],
-    ['.rnc','Renovaciones: enviados vs aceptaron','🔁','A cuántos clientes les enviamos el mensaje de renovación y cuántos aceptaron, mes a mes.','Los mensajes y las respuestas salen de la hoja Gestiones (botones «Ya envié mensaje», «Acepto renovación» y «No acepto renovación» de Cobros). Cada cliente cuenta una vez, en el mes de su primer mensaje; el % de cada mes = aceptaron ÷ enviados. Las cotizaciones salen de la hoja «Cotizaciones Renovación» (botón ENVIAR COTIZACIÓN en Cobros). Los mensajes de renovación salen de la hoja Gestiones. «Aceptó» y «No aceptó» se marcan en el panel «Cotizaciones de renovación» de Cobros. % de conversión = aceptadas ÷ cotizaciones enviadas.','ren'],
+    ['.rnc:not(.rnx)','Renovaciones Protect (Cobros): enviados vs aceptaron','🔁','A cuántos clientes les enviamos el mensaje de renovación y cuántos aceptaron, mes a mes.','Los mensajes y las respuestas salen de la hoja Gestiones (botones «Ya envié mensaje», «Acepto renovación» y «No acepto renovación» de Cobros). Cada cliente cuenta una vez, en el mes de su primer mensaje; el % de cada mes = aceptaron ÷ enviados. Las cotizaciones salen de la hoja «Cotizaciones Renovación» (botón ENVIAR COTIZACIÓN en Cobros). Los mensajes de renovación salen de la hoja Gestiones. «Aceptó» y «No aceptó» se marcan en el panel «Cotizaciones de renovación» de Cobros. % de conversión = aceptadas ÷ cotizaciones enviadas.','ren'],
+    ['.rno','Renovaciones OMS: enviados vs renovaron','🔁','A cuántos clientes OMS les enviamos el mensaje de renovación y cuántos renovaron, mes a mes.','Sale de la hoja de Clientes OMS y de sus gestiones (botones «Ya envié mensaje», «Renovó» y «No renovará»). Renovó también cuenta si el cliente ya tiene una póliza nueva del mismo vehículo. Cada cliente cuenta una vez, en el mes de su primer mensaje.','ren'],
+    ['.rns','Renovaciones SOAT: enviados vs renovaron','🔁','A cuántos clientes de SOAT les enviamos el mensaje de renovación y cuántos renovaron, mes a mes.','Sale de la hoja Soat y de sus gestiones (botones «Ya envié mensaje», «Renovó» y «No renovará»). Renovó también cuenta si ya hay un SOAT nuevo de la misma placa. Cada cliente cuenta una vez, en el mes de su primer mensaje.','ren'],
     ['.svc','SOAT: cuántos vendemos y cuánto ganamos','🛡️','SOAT vendidos por mes (columnas) y su ganancia (línea verde).','Sale de la hoja Soat: cada SOAT cuenta en el mes de su fecha de venta. La escala verde de la derecha es la ganancia.','soat',1]
   ];
   function aclarar(){
