@@ -1,0 +1,14 @@
+/* PROTECT MOTOS — Jerarquía tipográfica única para todo el sistema.
+   Negrilla solo en: títulos, cifras grandes y datos clave. El resto va en peso normal o medio. */
+:where(body *:not(svg):not(svg *)){font-weight:400!important}
+/* medio: botones, pestañas, chips, menú, filtros */
+button,.btn,.bd,.chip,select,summary,nav li a,.in-chips a,.in-rep button,.in-repm button,.tab,.tabs button,.pill,[role="tab"],.est-l,.etq{font-weight:500!important}
+/* semibold: lo que hay que destacar dentro de un texto, encabezados de tabla, etiquetas en mayúscula */
+b,strong,th,label>span,.in-k span,.in-kt span,.gx-m span,.t>span,.bk-k span,.est-k b,.nm,.cli,.k-l{font-weight:600!important}
+/* títulos */
+h1,h2,h3,h4,h5,legend,.globo,.moto-tag,nav li a.activo,.in-tit h2,.sec,.sec-t,.gx-h,#top h1,.card>h3,.panel>h2,.panel>h3{font-weight:700!important}
+/* cifras grandes (números de las tarjetas y totales) */
+.in-kt b,.gx-m b,.t>b,.bk-k b,.fn-c b,.cm-k .in-kt b,.est-n,.tk-n,.in-ki b,.big,.cifra{font-weight:700!important}
+/* tablas: nombres y valores en peso normal; solo el encabezado en semibold */
+td b,td strong{font-weight:600!important}
+td{font-weight:400!important}
