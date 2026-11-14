@@ -73,7 +73,7 @@ function doGet(e) {
       } else if (accion === 'cotRen_estado') {
         salida = accionCotRenEstado(params);
       } else if (accion === 'ping') {
-        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-8' };
+        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-9' };
       } else {
         salida = { ok: false, error: 'Acción no disponible: ' + accion };
       }
@@ -535,12 +535,17 @@ function accionErpProtect() {
 // ==================== VERIFICACIÓN BANCARIA: lee la hoja de movimientos del banco (nuevo, SOLO LEE) ====================
 // Abre el Google Sheet del banco por su ID (la cuenta que publicó el script debe tener acceso) y devuelve sus filas tal cual
 // (las fechas como texto aaaa-mm-dd). El sistema detecta solo las columnas de fecha, valor y descripción. No escribe nada.
+// Hoja de Google con los movimientos del banco («Consolidado todas las consignaciones»). Si algún día cambia de hoja,
+// cambie este ID (lo que está entre /d/ y /edit en el enlace de la hoja) y publique una Nueva versión.
+var BANCO_SHEET_ID = '1RX0Af2Q8dB99JxrvpxDf1Ru23rA0ktbsQA2RLlaNbSg';
+var BANCO_HOJA = '';    // nombre de la pestaña; vacío = la primera
+
 function accionBancoLeer(p) {
-  var id = String(p.sheetId || '').trim();
-  if (!/^[A-Za-z0-9_-]{20,}$/.test(id)) return { ok: false, error: 'Falta el enlace o el ID de la hoja del banco, o no es válido.' };
+  var id = String(p.sheetId || BANCO_SHEET_ID || '').trim();
+  if (!/^[A-Za-z0-9_-]{20,}$/.test(id)) return { ok: false, error: 'Falta el ID de la hoja del banco en el código (BANCO_SHEET_ID) o no es válido.' };
   var ss;
   try { ss = SpreadsheetApp.openById(id); } catch (e) { return { ok: false, error: 'No pude abrir la hoja del banco. Revise el enlace y que esté en la misma cuenta de Google donde publicó el script. Si junto al nombre del archivo en Google dice «.XLSX», es un Excel y no una hoja de Google: ábralo y use Archivo → Guardar como hoja de cálculo de Google, y pegue el enlace de la copia nueva.' }; }
-  var nombreHoja = String(p.hoja || '').trim();
+  var nombreHoja = String(p.hoja || BANCO_HOJA || '').trim();
   var hoja = nombreHoja ? ss.getSheetByName(nombreHoja) : ss.getSheets()[0];
   var pestanas = ss.getSheets().map(function (x) { return x.getName(); });
   if (!hoja) return { ok: false, error: 'No encontré la pestaña «' + nombreHoja + '». Las pestañas de esa hoja son: ' + pestanas.join(', ') + '.' };

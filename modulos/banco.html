@@ -40,12 +40,12 @@
   <div class="panel nop" style="padding:12px 18px"><div class="fil" style="align-items:center"><button class="btn g" id="bRec" type="button">🔄 Volver a leer la hoja Pagos</button><span class="estado" id="est" style="flex:1">Cargando…</span></div></div>
 
   <section class="panel nop" id="pHoja">
-    <h2>1. Hoja del banco en Google Sheets</h2>
-    <p class="sub">Pegue una sola vez el enlace de la hoja donde guarda los movimientos del banco. Desde ahí el sistema la lee solo, como lee la hoja Protect: no tiene que descargar ni subir nada. (La hoja debe estar en la misma cuenta de Google donde publicó el script. <b>Si junto al nombre del archivo en Google dice «.XLSX», es un Excel:</b> ábralo y use <i>Archivo → Guardar como hoja de cálculo de Google</i>, y pegue el enlace de la copia nueva.)</p>
-    <div class="fil"><label style="flex:1;min-width:320px">Enlace de la hoja del banco<input type="text" id="bkLink" placeholder="https://docs.google.com/spreadsheets/d/…/edit" style="border:1px solid var(--borde);border-radius:8px;padding:8px 11px;font-size:.92rem;width:100%"></label>
+    <h2>1. Hoja del banco (Google Sheets)</h2>
+    <p class="sub">El sistema lee solo la hoja de los movimientos del banco, igual que lee la hoja Protect: la dirección está guardada en el código, así que <b>no tiene que pegar nada ni subir archivos</b>. Solo escriba un enlace aquí si quiere usar <i>otra</i> hoja. (Debe ser una hoja de Google de verdad —no un «.XLSX»— y estar en la misma cuenta donde publicó el script.)</p>
+    <div class="fil"><label style="flex:1;min-width:320px">Otra hoja (opcional)<input type="text" id="bkLink" placeholder="Déjelo vacío para usar la hoja del código" style="border:1px solid var(--borde);border-radius:8px;padding:8px 11px;font-size:.92rem;width:100%"></label>
       <label>Pestaña (opcional)<input type="text" id="bkTab" placeholder="la primera" style="border:1px solid var(--borde);border-radius:8px;padding:8px 11px;font-size:.92rem;width:160px"></label>
       <label>Mirar los últimos<select id="per"><option value="7">7 días</option><option value="15" selected>15 días</option><option value="30">30 días</option><option value="90">90 días</option><option value="0">Todo el historial</option></select></label>
-      <label style="flex-direction:row;align-items:center;gap:6px;padding-bottom:9px"><input type="checkbox" id="ign" checked> Ignorar intereses y valores menores a $1.000</label><button class="btn v" id="bLeer" type="button">Guardar y leer el banco</button></div>
+      <label style="flex-direction:row;align-items:center;gap:6px;padding-bottom:9px"><input type="checkbox" id="ign" checked> Ignorar intereses y valores menores a $1.000</label><button class="btn v" id="bLeer" type="button">Leer el banco</button></div>
     <p class="estado" id="estBanco" style="margin:10px 0 0"></p>
   </section>
 
@@ -121,7 +121,7 @@
       PAGOS=(r.pagos||[]).filter(function(p){return p.fechaPagoISO&&Number(p.valorPagado)>0}).map(function(p,i){return {i:i,fecha:p.fechaPagoISO,valor:Math.round(Number(p.valorPagado)),cliente:p.cliente||'',contrato:p.contrato||'',cuota:p.cuota||'',nota:p.nota||'',usado:false}});
       var f=PAGOS.map(function(p){return p.fecha}).sort();
       est('Conectado ✔ · '+PAGOS.length+' pagos registrados'+(f.length?' (del '+bonita(f[0])+' al '+bonita(f[f.length-1])+')':''),'ok');
-      if(ARCH)cruzar();else if(LS('pm_banco_sheet'))leerHojaBanco();
+      if(ARCH)cruzar();else leerHojaBanco();
     }).catch(function(e){PAGOS=null;est(e.message,'er')}).then(function(){$('bRec').disabled=false});
   }
   $('bRec').addEventListener('click',cargar);
@@ -139,12 +139,12 @@
       window[cb]=function(r){if(fin)return;fin=true;limpiar();ok(r)};
       s.onerror=function(){if(fin)return;fin=true;limpiar();mal(new Error('No se pudo contactar el conector.'))};
       s.src=url+(url.indexOf('?')<0?'?':'&')+'action=banco_leer&token='+encodeURIComponent(tok)+'&sheetId='+encodeURIComponent(id)+'&hoja='+encodeURIComponent(hoja||'')+'&callback='+cb+'&_='+Date.now();document.body.appendChild(s);
-    }).then(function(r){if(!r||r.ok===false){var m=(r&&r.error)||'Respuesta inválida.';if(/Acción no disponible/.test(m))m='El conector todavía no puede leer la hoja del banco (versión crm-8): pegue el código nuevo (Codigo_UNICO.gs) y publique «Nueva versión».';throw new Error(m)}return r});
+    }).then(function(r){if(!r||r.ok===false){var m=(r&&r.error)||'Respuesta inválida.';if(/Acción no disponible/.test(m))m='El conector todavía no puede leer la hoja del banco (versión crm-9): pegue el código nuevo (Codigo_UNICO.gs) y publique «Nueva versión».';throw new Error(m)}return r});
   }
   function leerHojaBanco(){
-    var link=$('bkLink').value.trim(),id=idDe(link);
-    if(!id){estB('Pegue el enlace completo de la hoja del banco (el que empieza con https://docs.google.com/spreadsheets/…).','er');return Promise.resolve()}
-    try{localStorage.setItem('pm_banco_sheet',id);localStorage.setItem('pm_banco_tab',$('bkTab').value.trim());localStorage.setItem('pm_banco_dias',$('per').value)}catch(e){}
+    var link=$('bkLink').value.trim(),id=link?idDe(link):'';
+    if(link&&!id){estB('Ese enlace no parece de una hoja de Google. Déjelo vacío para usar la del código, o pegue el enlace completo (https://docs.google.com/spreadsheets/…).','er');return Promise.resolve()}
+    try{if(id)localStorage.setItem('pm_banco_sheet',id);else localStorage.removeItem('pm_banco_sheet');localStorage.setItem('pm_banco_tab',$('bkTab').value.trim());localStorage.setItem('pm_banco_dias',$('per').value)}catch(e){}
     estB('Leyendo la hoja del banco…');$('bLeer').disabled=true;
     return llamarBanco(id,$('bkTab').value.trim()).then(function(r){
       ARCH=leerMatrices([[r.hoja,r.filas]],r.nombre+' · '+r.hoja);ARCH.origen='hoja';ARCH.recortado=r.recortado;filtro='';
@@ -154,7 +154,7 @@
   }
   $('bLeer').addEventListener('click',leerHojaBanco);
   $('per').addEventListener('change',function(){try{localStorage.setItem('pm_banco_dias',$('per').value)}catch(e){}if(ARCH&&PAGOS)cruzar()});
-  (function(){var id=LS('pm_banco_sheet');if(id){$('bkLink').value='https://docs.google.com/spreadsheets/d/'+id+'/edit';$('bkTab').value=LS('pm_banco_tab');if(LS('pm_banco_dias'))$('per').value=LS('pm_banco_dias')}})();
+  (function(){var id=LS('pm_banco_sheet');if(id)$('bkLink').value='https://docs.google.com/spreadsheets/d/'+id+'/edit';$('bkTab').value=LS('pm_banco_tab');if(LS('pm_banco_dias'))$('per').value=LS('pm_banco_dias')})();
 
   /* ---------- lectura del archivo del banco ---------- */
   function leerBanco(buf,nombre){
