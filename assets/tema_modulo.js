@@ -2,7 +2,7 @@
    Un botón flotante cambia el tema y se acuerda de la elección (también entre los dos módulos). Solo cambia colores. */
 (function(){
   var K='pm_tema_modulo', body=document.body;
-  function leer(){ try{ return localStorage.getItem(K)==='oscuro'; }catch(e){ return false; } }
+  function leer(){ try{ return localStorage.getItem(K)!=='dia'; }catch(e){ return true; } }   // por defecto oscuro, igual que el Inicio; «dia» solo si la persona lo eligió
   var css=document.createElement('style');
   css.textContent=[
     'body.pm-oscuro{--suave:#a3b4d8;--azul2:#2a3b70;--fondo:#0a1124;--tarjeta:#131d38;--texto:#e8eefc;--texto-suave:#a3b4d8;--borde:#2a3b70;--azul:#aebff0;--azul-claro:#2a3b70;--verde-bg:#0f3d33;--rojo-bg:#4a1d24;--naranja-bg:#4a3510;--azulinfo-bg:#16264f;--azulinfo:#8fb0ff;color-scheme:dark}',
@@ -19,6 +19,7 @@
     'body.pm-oscuro .estado-conexion.ok{color:#6ee7b7}',
     /* tablero de SOAT */
     'body.pm-oscuro .svg-d .t-s{fill:#a3b4d8} body.pm-oscuro .svg-d .t-v,body.pm-oscuro .svg-d .t-n,body.pm-oscuro .svg-d text.t-gn{fill:#fff} body.pm-oscuro .svg-d .grid{stroke:#2a3b70}',
+    'body.pm-oscuro .svg-d .t-g{stroke:#131d38}',
     'body.pm-oscuro .gauge-n{fill:#fff} body.pm-oscuro .gauge-s{fill:#a3b4d8} body.pm-oscuro .dona-leg i[style*="#13223f"]{background:#6f8fe0!important} body.pm-oscuro .dona-leg b,body.pm-oscuro .dona-leg span{color:#e8eefc} body.pm-oscuro .dona-leg .p{color:#a3b4d8}',
     'body.pm-oscuro .svg-d [fill="#13223f"]{fill:#6f8fe0} body.pm-oscuro .svg-d [fill="#fff"]{fill:#131d38}',
     'body.pm-oscuro .tipo-band,body.pm-oscuro .dash-top select,body.pm-oscuro .dcard .d-sel{background:#0d1530}',
