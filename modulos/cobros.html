@@ -860,6 +860,26 @@
     return mapa;
   }
 
+  // ---- Fin de contrato: FINALIZADO (siempre pagó) o CANCELADO (dejó de pagar) ----
+  // FINALIZADO = el cliente pagó todo (contado, o financiado con todas las cuotas pagadas) y terminó su contrato.
+  // CANCELADO  = dejó de pagar y se le canceló la cobertura (también lo marca el botón «Cancelar»).
+  var ACCION_RENOVACION_VENCIDA_FIN = 'Finalizado automático — venció sin confirmar renovación';
+  function destinoAlTerminar(c, mapaPagos){
+    if(c.forma==='CONTADO') return 'FINALIZADO';
+    if(c.forma==='FINANCIADO'){ return calcularEstadoCuotas(c, mapaPagos).completado ? 'FINALIZADO' : 'CANCELADO'; }
+    return 'CANCELADO';
+  }
+  // Contratos cuya renovación ya se resolvió (aceptó, no aceptó o venció sin respuesta): salen de las listas «Por renovar»
+  // aunque su estado sea FINALIZADO (antes salían porque quedaban CANCELADOS).
+  function construirSetRenovResuelta(){
+    var set = {};
+    (estado.gestiones||[]).forEach(function(g){
+      var a = g.accion;
+      if(a==='Renovación aceptada' || a==='Renovación no aceptada' || a===ACCION_RENOVACION_VENCIDA || a===ACCION_RENOVACION_VENCIDA_FIN) set[g.contrato] = true;
+    });
+    return set;
+  }
+
   function construirMapaPagos(){
     var mapa = {}; // contrato -> {cuotasPagadas:Set, totalPagado:number, pagos:[]}
     estado.pagos.forEach(function(p){
@@ -951,9 +971,9 @@
 
   // Si a un cliente ya se le envió el mensaje de renovación y llegó (o pasó)
   // la fecha de vencimiento de su póliza sin que se haya registrado
-  // Acepto/No acepto renovación, el sistema mismo lo marca CANCELADO — no
-  // debe quedar esperando una respuesta indefinidamente después de vencido.
-  function sincronizarRenovacionesVencidas(){
+  // Acepto/No acepto renovación, el sistema mismo cierra el contrato — FINALIZADO si siempre pagó,
+  // CANCELADO si dejó de pagar — para que no quede esperando una respuesta indefinidamente.
+  function sincronizarRenovacionesVencidas(mapaPagos){
     var hoyD = hoy();
     var renovacionEnviadaMapa = construirMapaRenovacionEnviada();
     var vencidos = [];
@@ -968,13 +988,16 @@
 
     var registradoPor = localStorage.getItem('pm_cobros_registrado_por') || '';
     var promesas = vencidos.map(function(c){
-      return llamarConector({action:'estado', contrato:c.contrato, nuevoEstado:'CANCELADO'}).then(function(resp){
+      // Si siempre pagó → FINALIZADO; si dejó de pagar → CANCELADO
+      var destino = destinoAlTerminar(c, mapaPagos || construirMapaPagos());
+      var accionGestion = destino==='FINALIZADO' ? ACCION_RENOVACION_VENCIDA_FIN : ACCION_RENOVACION_VENCIDA;
+      return llamarConector({action:'estado', contrato:c.contrato, nuevoEstado:destino}).then(function(resp){
         if(!resp.ok) return;
-        c.estado = 'CANCELADO';
-        estadosLocalesPendientes[c.contrato] = 'CANCELADO';
+        c.estado = destino;
+        estadosLocalesPendientes[c.contrato] = destino;
         return llamarConector({
           action:'registrarGestion', contrato:c.contrato, cedula:c.cedula, cliente:c.cliente,
-          registradoPor:registradoPor, accion:ACCION_RENOVACION_VENCIDA
+          registradoPor:registradoPor, accion:accionGestion
         }).then(function(respGestion){
           if(!respGestion.ok) return;
           if(!Array.isArray(estado.gestiones)) estado.gestiones = [];
@@ -982,7 +1005,7 @@
           estado.gestiones.push({
             fechaGestion: formatoFechaCO(hoyD2), fechaGestionISO: formatoFechaInput(hoyD2),
             contrato: c.contrato, cedula: c.cedula, cliente: c.cliente,
-            accion: ACCION_RENOVACION_VENCIDA, registradoPor: registradoPor
+            accion: accionGestion, registradoPor: registradoPor
           });
         }).catch(function(){});
       }).catch(function(){});
@@ -993,7 +1016,7 @@
   // ==================== RENDERIZADO ====================
   function renderizarTodo(){
     var mapaPagos = construirMapaPagos();
-    Promise.all([sincronizarFinalizados(mapaPagos), sincronizarRenovacionesVencidas()]).then(function(){
+    Promise.all([sincronizarFinalizados(mapaPagos), sincronizarRenovacionesVencidas(mapaPagos)]).then(function(){
       renderizarVistas(mapaPagos);
     });
   }
@@ -1012,7 +1035,7 @@
     var porContrato = {};
     (estado.gestiones||[]).forEach(function(g){
       var a = g.accion, k = g.contrato; if(!k) return;
-      if(a!==ACCION_RENOVACION_ENVIADA && a!==ACCION_ACEPTADA && a!==ACCION_NO_ACEPTADA && a!==ACCION_RENOVACION_VENCIDA) return;
+      if(a!==ACCION_RENOVACION_ENVIADA && a!==ACCION_ACEPTADA && a!==ACCION_NO_ACEPTADA && a!==ACCION_RENOVACION_VENCIDA && a!==ACCION_RENOVACION_VENCIDA_FIN) return;
       var o = porContrato[k] = porContrato[k] || {contrato:k, cliente:g.cliente, cedula:g.cedula, envio:'', resp:'', respISO:''};
       var f = g.fechaGestionISO||'';
       if(a===ACCION_RENOVACION_ENVIADA){ if(!o.envio || (f && f<o.envio)) o.envio = f; }
@@ -1185,6 +1208,7 @@
     var hoyD = hoy();
     var gestionadosHoy = construirSetGestionadosHoy();
     var renovacionEnviadaMapa = construirMapaRenovacionEnviada();
+    var renovResuelta = construirSetRenovResuelta();
 
     estado.contratos.forEach(function(c){
       if(c.estado==='ACTIVO') activos++;
@@ -1201,7 +1225,7 @@
         }
       }
 
-      if(c.estado!=='CANCELADO' && c.finISO){
+      if(c.estado!=='CANCELADO' && !renovResuelta[c.contrato] && c.finISO){
         var fin = parsearISO(c.finISO);
         if(fin){
           var dias = diferenciaDias(fin, hoyD);
@@ -1301,9 +1325,10 @@
 
     var hoyD = hoy();
     var renovacionEnviadaMapa = construirMapaRenovacionEnviada();
+    var renovResuelta = construirSetRenovResuelta();
     var lista = [];
     estado.contratos.forEach(function(c){
-      if(c.estado==='CANCELADO' || !c.finISO) return;
+      if(c.estado==='CANCELADO' || renovResuelta[c.contrato] || !c.finISO) return;
       if(renovacionEnviadaMapa[c.contrato]) return; // ya se le envió el mensaje: está en "Renovaciones enviadas"
       var fin = parsearISO(c.finISO);
       if(!fin) return;
@@ -1468,8 +1493,9 @@
       // Los de hoy primero; los más atrasados van quedando al final (a la cola)
       filas.sort(function(a,b){ return a.info.cuotaPendiente.diasAtraso - b.info.cuotaPendiente.diasAtraso; });
     } else if(tipo==='renovar'){
+      var renovResueltaF = construirSetRenovResuelta();
       estado.contratos.forEach(function(c){
-        if(c.estado==='CANCELADO' || !c.finISO) return;
+        if(c.estado==='CANCELADO' || renovResueltaF[c.contrato] || !c.finISO) return;
         if(renovacionEnviadaMapa[c.contrato]) return; // ya enviado: sale en "renovacionesEnviadas"
         var fin = parsearISO(c.finISO);
         if(!fin) return;
@@ -2243,16 +2269,21 @@
   // "Cobros de hoy".
   function marcarRenovacion(c, acepto, boton){
     var textoAccion = acepto ? 'Renovación aceptada' : 'Renovación no aceptada';
+    // Terminó su contrato: FINALIZADO si siempre pagó, CANCELADO solo si dejó de pagar
+    var destino = destinoAlTerminar(c, construirMapaPagos());
+    var queda = destino==='FINALIZADO'
+      ? 'quedará marcado como FINALIZADO (pagó todo y terminó su contrato)'
+      : 'quedará marcado como CANCELADO (tiene cuotas sin pagar: dejó de pagar)';
     var pregunta = acepto
-      ? '¿Confirmas que '+c.cliente+' ACEPTÓ la renovación?\n\nEl contrato '+c.contrato+' quedará marcado como CANCELADO (el contrato nuevo se registra aparte).'
-      : '¿Confirmas que '+c.cliente+' NO aceptó la renovación?\n\nEl contrato '+c.contrato+' quedará marcado como CANCELADO.';
+      ? '¿Confirmas que '+c.cliente+' ACEPTÓ la renovación?\n\nEl contrato '+c.contrato+' '+queda+'. El contrato nuevo se registra aparte.'
+      : '¿Confirmas que '+c.cliente+' NO aceptó la renovación?\n\nEl contrato '+c.contrato+' '+queda+'.';
     if(!window.confirm(pregunta)) return;
 
     var registradoPor = localStorage.getItem('pm_cobros_registrado_por') || '';
     var textoOriginal = boton ? boton.textContent : null;
     if(boton){ boton.disabled = true; boton.textContent = 'Guardando...'; }
 
-    llamarConector({action:'estado', contrato:c.contrato, nuevoEstado:'CANCELADO'}).then(function(resp){
+    llamarConector({action:'estado', contrato:c.contrato, nuevoEstado:destino}).then(function(resp){
       if(!resp.ok){
         if(boton){ boton.disabled = false; boton.textContent = textoOriginal; }
         var mensajeError = resp.error || 'No se pudo actualizar el estado.';
@@ -2260,9 +2291,9 @@
         window.alert('No se pudo registrar la renovación de '+c.cliente+':\n\n'+mensajeError);
         return;
       }
-      c.estado = 'CANCELADO';
-      estadosLocalesPendientes[c.contrato] = 'CANCELADO';
-      mostrarEstado('ok', '✓ '+textoAccion+' — '+c.cliente+'. Contrato '+c.contrato+' marcado como CANCELADO.');
+      c.estado = destino;
+      estadosLocalesPendientes[c.contrato] = destino;
+      mostrarEstado('ok', '✓ '+textoAccion+' — '+c.cliente+'. Contrato '+c.contrato+' marcado como '+destino+'.');
       renderizarVistas(construirMapaPagos());
       if(document.getElementById('inputBusqueda').value.trim()){
         buscarCliente();
@@ -2616,7 +2647,7 @@
         estado.contratos.forEach(function(c){if(c.estado!=='ACTIVO'||c.forma!=='FINANCIADO')return;var i=calcularEstadoCuotas(c,mp);if(!i.cuotaPendiente)return;f.push([c.cliente,c.cedula,c.placa,c.contrato,c.celular,'#'+i.cuotaPendiente.numero,formatoFechaCO(i.cuotaPendiente.fechaVence),i.cuotaPendiente.diasAtraso,c.valorCuota||'',i.saldo])});
         f.sort(function(a,b){return (b[7]||0)-(a[7]||0)});return ['pendientes_de_cobro',f]}],
       ['🔔 Pólizas por renovar (8 días o menos)',function(){var f=[['Cliente','Cédula','Placa','N° contrato','Celular','Forma de pago','Vence la póliza','Días para vencer']],h=hoy();
-        estado.contratos.forEach(function(c){if(c.estado==='CANCELADO'||!c.finISO)return;var d=diferenciaDias(parsearISO(c.finISO),h);if(d>8||d<-30)return;f.push([c.cliente,c.cedula,c.placa,c.contrato,c.celular,c.forma,c.fin,d])});f.sort(function(a,b){return a[7]-b[7]});return ['polizas_por_renovar',f]}],
+        var rr=construirSetRenovResuelta();estado.contratos.forEach(function(c){if(c.estado==='CANCELADO'||rr[c.contrato]||!c.finISO)return;var d=diferenciaDias(parsearISO(c.finISO),h);if(d>8||d<-30)return;f.push([c.cliente,c.cedula,c.placa,c.contrato,c.celular,c.forma,c.fin,d])});f.sort(function(a,b){return a[7]-b[7]});return ['polizas_por_renovar',f]}],
       ['💰 Pagos registrados',function(){var f=[['Fecha de pago','N° contrato','Cédula','Cliente','Cuota','Valor pagado','Nota','Registrado por']];estado.pagos.forEach(function(p){f.push([p.fechaPago,p.contrato,p.cedula,p.cliente,p.cuota,p.valorPagado,p.nota,p.registradoPor])});return ['pagos_registrados',f]}],
       ['📈 Seguimiento de renovaciones (enviados y aceptaron)',function(){var S=seguimientoRenovaciones(),f=[['Cliente','Cédula','N° contrato','Placa','Celular','Fecha del primer mensaje','Resultado','Fecha de la respuesta']];
         S.lista.sort(function(a,b){return (b.envio||'').localeCompare(a.envio||'')}).forEach(function(o){f.push([o.cliente,o.cedula,o.contrato,o.placa,o.celular,dIso(o.envio),o.resultado,dIso(o.respISO)])});return ['seguimiento_renovaciones',f]}],
