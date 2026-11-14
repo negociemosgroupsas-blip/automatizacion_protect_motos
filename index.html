@@ -477,6 +477,16 @@
   #v-inicio .vmc{grid-column:1/-1!important;order:3!important}
   #v-inicio .gxc{grid-column:1/-1!important;order:3!important;--acc:#fdc33e} .gxc{cursor:default;max-width:none} .gxc:hover{box-shadow:none;transform:none} .gxc[hidden]{display:none!important}
   .gxc .tot{font-size:.85rem;color:var(--suave);margin:0 0 12px}
+  #v-inicio .fnx{grid-column:1/-1!important;order:3!important;--acc:#1f9d55} .fnx:hover{box-shadow:none;transform:none} .fnx[hidden]{display:none!important}
+  .fnx .tot{font-size:.85rem;color:var(--suave);margin:0 0 12px} .fn-w{display:flex;gap:28px;align-items:center;flex-wrap:wrap}
+  .fn-d{position:relative;width:200px;height:200px;flex:none} .fn-d svg{width:100%;height:100%;transform:rotate(-90deg)} .fn-d .fn-c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .fn-d .fn-c b{font-size:2.1rem;line-height:1} .fn-d .fn-c small{font-size:.72rem;color:var(--suave);max-width:110px}
+  .fn-y{flex:1;min-width:260px;display:flex;align-items:flex-end;gap:14px;height:190px;padding-bottom:22px;position:relative}
+  .fn-col{flex:1;max-width:90px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
+  .fn-col .fn-s{width:100%;display:flex;flex-direction:column;justify-content:flex-end;border-radius:6px 6px 0 0;overflow:hidden}
+  .fn-col .fn-s i{display:block;width:100%} .fn-col .fn-p{font-size:.78rem;font-weight:700;margin-bottom:4px;color:#1f9d55}
+  .fn-col .fn-a{position:absolute;bottom:-20px;font-size:.78rem;color:var(--suave)}
+  .fn-l{display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--suave);margin-top:10px} .fn-l i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
   .gx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
   .gx-m{background:rgba(120,140,190,.12);border:1px solid rgba(120,140,190,.28);border-radius:14px;padding:12px 14px;min-width:0}
   .gx-m span{display:block;font-size:.85rem;letter-spacing:.5px;text-transform:uppercase;opacity:.85;font-weight:700} .gx-m b{display:block;font-size:1.6rem;line-height:1.15;margin:3px 0}
@@ -570,6 +580,7 @@
     </div>
     <div class="in-kpis" id="inKpis"></div>
     <section class="card gxc" id="gxWrap" data-sec="gerencia" hidden><h3>📋 Resumen gerencial</h3><p class="tot" id="gxSub"></p><div class="gx-grid" id="gxGrid"></div><h4 class="gx-h">⚠️ Atención requerida</h4><div class="gx-at" id="gxAt"></div></section>
+    <section class="card fnx" id="fnWrap" data-sec="gerencia" hidden><h3>🏁 Contratos terminados: finalizados vs cancelados</h3><p class="tot" id="fnSub"></p><div class="fn-w"><div class="fn-d" id="fnDon"></div><div class="fn-y" id="fnCols"></div></div><div class="fn-l"><span><i style="background:#1f9d55"></i>Finalizados (siempre pagó)</span><span><i style="background:#dc2626"></i>Cancelados (dejó de pagar)</span><span>% sobre cada columna = finalizados ÷ terminados · columnas por año en que terminó el contrato</span></div></section>
     <div class="in-sec" id="sec-ventas" data-sec="ventas" style="order:4"><i></i>Ventas y contratos<em>▾</em></div>
     <div class="in-sec" id="sec-clientes" data-sec="clientes" style="order:8"><i></i>Clientes y seguros<em>▾</em></div>
     <div class="in-sec" id="sec-conc" data-sec="conc" style="order:13"><i></i>Conciliación de pagos<em>▾</em></div>
@@ -1411,6 +1422,19 @@
       M_('Finalizados satisfactoriamente',(fin+canc?Math.round(fin*100/(fin+canc)*10)/10:0)+' %',fin+' de '+(fin+canc)+' contratos que ya terminaron','Finalizado = siempre pagó · Cancelado = dejó de pagar')+
       M_('Cancelaciones',tc+' %',canc+' de '+tot+' contratos cancelados','Indicador de calidad de la venta',null)+
       (rc?M_('Comisiones del mes',cop(cmM),gxDelta(cmM,cmP,true).replace(/ (up|dn)"/,'"')+' vs '+MESN[PM-1]+' completo',vM?('Equivale al '+(Math.round(cmM/vM*1000)/10)+' % del valor contratado'):''):'');
+    /* gráfica de contratos terminados */
+    (function(){
+      var FW=document.getElementById('fnWrap');if(!FW)return;
+      var T=base.filter(function(o){return o.e==='FINALIZADO'||o.e==='CANCELADO'}),F=T.filter(function(o){return o.e==='FINALIZADO'}).length,C=T.length-F;
+      if(!T.length){FW.hidden=true;return}FW.hidden=false;
+      var pc=Math.round(F*100/T.length*10)/10,circ=2*Math.PI*80,df=circ*F/T.length;
+      document.getElementById('fnSub').textContent='De '+T.length+' contratos que ya terminaron, '+F+' finalizaron satisfactoriamente y '+C+' se cancelaron.';
+      document.getElementById('fnDon').innerHTML='<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="80" fill="none" stroke="#dc2626" stroke-width="26"/><circle cx="100" cy="100" r="80" fill="none" stroke="#1f9d55" stroke-width="26" stroke-dasharray="'+df+' '+circ+'"/></svg><div class="fn-c"><b style="color:#1f9d55">'+pc+' %</b><small>finalizaron satisfactoriamente</small></div>';
+      var ys={};T.forEach(function(o){var mm=/(\d{4})/.exec(o.x.finISO||'')||/(\d{4})\s*$/.exec(String(o.x.fin||'')),yy=mm?+mm[1]:(o.y||0);if(!yy)return;ys[yy]=ys[yy]||{f:0,c:0};if(o.e==='FINALIZADO')ys[yy].f++;else ys[yy].c++});
+      var ks=Object.keys(ys).sort().slice(-6),mx=1;ks.forEach(function(k){mx=Math.max(mx,ys[k].f+ys[k].c)});
+      document.getElementById('fnCols').innerHTML=ks.map(function(k){var v=ys[k],t=v.f+v.c,h=Math.max(6,Math.round(t/mx*130));
+        return '<div class="fn-col" title="'+k+': '+v.f+' finalizados · '+v.c+' cancelados"><div class="fn-p">'+Math.round(v.f*100/t)+' %</div><div class="fn-s" style="height:'+h+'px"><i style="background:#dc2626;flex:'+v.c+'"></i><i style="background:#1f9d55;flex:'+v.f+'"></i></div><span class="fn-a">'+k+'</span></div>'}).join('');
+    })();
     /* atención */
     var h8=0,hD=new Date(Y,hoyD.getMonth(),hoyD.getDate());
     base.forEach(function(o){if(o.e!=='ACTIVO'||!o.x.finISO)return;var p=o.x.finISO.split('-'),f=new Date(+p[0],+p[1]-1,+p[2]),d=Math.round((f-hD)/86400000);if(d>=0&&d<=8)h8++});
