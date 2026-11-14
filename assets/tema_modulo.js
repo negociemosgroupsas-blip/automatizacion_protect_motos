@@ -5,7 +5,7 @@
   function leer(){ try{ return localStorage.getItem(K)==='oscuro'; }catch(e){ return false; } }
   var css=document.createElement('style');
   css.textContent=[
-    'body.pm-oscuro{--fondo:#0a1124;--tarjeta:#131d38;--texto:#e8eefc;--texto-suave:#a3b4d8;--borde:#2a3b70;--azul:#aebff0;--azul-claro:#2a3b70;--verde-bg:#0f3d33;--rojo-bg:#4a1d24;--naranja-bg:#4a3510;--azulinfo-bg:#16264f;--azulinfo:#8fb0ff;color-scheme:dark}',
+    'body.pm-oscuro{--suave:#a3b4d8;--azul2:#2a3b70;--fondo:#0a1124;--tarjeta:#131d38;--texto:#e8eefc;--texto-suave:#a3b4d8;--borde:#2a3b70;--azul:#aebff0;--azul-claro:#2a3b70;--verde-bg:#0f3d33;--rojo-bg:#4a1d24;--naranja-bg:#4a3510;--azulinfo-bg:#16264f;--azulinfo:#8fb0ff;color-scheme:dark}',
     'body.pm-oscuro header,body.pm-oscuro .barra-sup,body.pm-oscuro .cabecera-app{background:#0e1632!important;border-bottom:1px solid #1f2e5b}',
     'body.pm-oscuro .btn-azul{background:#2f4690;color:#fff} body.pm-oscuro .btn-gris{background:#1b2850;color:#e8eefc}',
     'body.pm-oscuro .btn-oro{color:#1a1200}',
@@ -33,6 +33,17 @@
     'body.pm-oscuro .od-rp,body.pm-oscuro .od-band{background:#0d1530} body.pm-oscuro .od-rb[style*="#13223f"]{background-color:#6f8fe0!important}',
     'body.pm-oscuro .od-svg circle[fill="#fff"]{fill:#131d38}',
     'body.pm-oscuro .od-svg circle[stroke="#13223f"]{stroke:#6f8fe0} body.pm-oscuro .od-leg i[style*="#13223f"]{background:#6f8fe0!important} body.pm-oscuro .svg-d circle[stroke="#13223f"]{stroke:#6f8fe0} body.pm-oscuro .d-leg i[style*="#13223f"]{background:#6f8fe0!important}',
+    /* Comisiones, Cobros y precobros y Conciliación: fondos blancos que no son de impresión */
+    'body.pm-oscuro .btn{background:#2f4690;color:#fff} body.pm-oscuro .btn.g{background:#1b2850;color:#e8eefc} body.pm-oscuro .btn.d{background:#d6a417;color:#13223f}',
+    'body.pm-oscuro .tab{background:#131d38;border-color:#25376b;color:#c9d6ff} body.pm-oscuro .tab.act,body.pm-oscuro .tab.on,body.pm-oscuro .tab.activo{background:#2f4690;color:#fff;border-color:#2f4690}',
+    'body.pm-oscuro .drop{background:#0d1530;border-color:#3b4f8f} body.pm-oscuro .drop:hover,body.pm-oscuro .drop.on{background:#16224a} body.pm-oscuro .drop *{color:#c9d6ff}',
+    'body.pm-oscuro .t,body.pm-oscuro .rcard,body.pm-oscuro .caso,body.pm-oscuro .mm-w,body.pm-oscuro .ficha-inline,body.pm-oscuro .persona,body.pm-oscuro .ficha,body.pm-oscuro .vcard,body.pm-oscuro .fdet,body.pm-oscuro .decision{background:#131d38;border-color:#25376b;color:#e8eefc;box-shadow:none}',
+    'body.pm-oscuro .caso.dec{background:#0f2a2a} body.pm-oscuro .rfrase{background:#16224a;color:#dbe5ff} body.pm-oscuro .titulo-lista,body.pm-oscuro .dato,body.pm-oscuro .persona th{background:#1b2850;color:#dbe5ff;border-color:#25376b}',
+    'body.pm-oscuro .busqueda input,body.pm-oscuro .mm-f select,body.pm-oscuro .pagos input.contrato{background:#0d1530;color:#e8eefc;border-color:#2f4284} body.pm-oscuro .pagos{background:#16224a;border-color:#3b4f8f}',
+    'body.pm-oscuro .alerta,body.pm-oscuro .aviso,body.pm-oscuro .alr{background:#3a2a10;border-color:#7a5b00;color:#ffe4a3} body.pm-oscuro .alerta,body.pm-oscuro .alr{background:#3a1a1f;border-color:#7a2a35;color:#ffc9cf}',
+    'body.pm-oscuro .panel{color:#e8eefc} body.pm-oscuro .menos td,body.pm-oscuro .noenc td,body.pm-oscuro tr.alerta td{background:#2a1a22}',
+    'body.pm-oscuro .callout.gris{background:#1b2850;color:#c9d6ff} body.pm-oscuro .pago-botones button{background:#0d1530;color:#c9d6ff;border-color:#3b4f8f}',
+    'body.pm-oscuro #hoja,body.pm-oscuro .inf,body.pm-oscuro .infk{background:#fff;color:#1f2430;--texto:#1f2430;--azul:#13223f}   /* los informes para imprimir siguen en blanco */',
     '#pmTemaBtn{position:fixed;left:14px;bottom:14px;z-index:9998;border:1px solid #c9d1e4;background:#fff;color:#13223f;border-radius:999px;padding:8px 14px;font:700 .82rem system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}',
     'body.pm-oscuro #pmTemaBtn{background:#1b2850;color:#fff;border-color:#3b4f8f}',
     '@media print{#pmTemaBtn{display:none!important}}'

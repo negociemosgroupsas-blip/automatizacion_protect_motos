@@ -15,6 +15,7 @@
   .marca .crm{color:var(--azul);font-weight:800;font-size:.82rem;letter-spacing:.14em;padding-left:.14em;margin-top:2px;line-height:1}
   .marca small{color:#5f6882;font-size:.72rem;letter-spacing:.4px}
   nav ul{list-style:none;margin:10px 0;padding:0 10px;flex:1}
+  nav li.grp{font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:#8fa2cf;margin:14px 8px 4px;padding-top:10px;border-top:1px solid rgba(143,162,207,.22)} @media(max-width:760px){nav li.grp{display:none}}
   nav li a{display:flex;align-items:center;gap:10px;padding:11px 12px;margin-bottom:4px;border-radius:10px;color:#dbe3f2;text-decoration:none;font-size:.93rem;border-left:3px solid transparent}
   nav li a:hover{background:var(--azul2);color:#fff}
   nav li a.activo{background:var(--azul2);color:#fff;border-left-color:var(--dorado);font-weight:600}
@@ -465,6 +466,22 @@
   @media(max-width:760px){.in-nav{position:static;flex-direction:column;align-items:stretch} .in-chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px} #inBusca{flex:1 1 auto;width:100%}}
   #v-inicio .vmc{grid-column:1/-1;--acc:#60a5fa} .vmc{cursor:default;max-width:none} .vmc:hover{box-shadow:none;transform:none}
   #v-inicio .vmc{grid-column:1/-1!important;order:3!important}
+  #v-inicio .gxc{grid-column:1/-1!important;order:3!important;--acc:#fdc33e} .gxc{cursor:default;max-width:none} .gxc:hover{box-shadow:none;transform:none} .gxc[hidden]{display:none!important}
+  .gxc .tot{font-size:.8rem;color:var(--suave);margin:0 0 12px}
+  .gx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  .gx-m{background:rgba(120,140,190,.12);border:1px solid rgba(120,140,190,.28);border-radius:14px;padding:12px 14px;min-width:0}
+  .gx-m span{display:block;font-size:.7rem;letter-spacing:.5px;text-transform:uppercase;opacity:.85;font-weight:700} .gx-m b{display:block;font-size:1.6rem;line-height:1.15;margin:3px 0}
+  .gx-m small{display:block;font-size:.74rem;opacity:.85;line-height:1.35}
+  .gx-d{display:inline-block;font-weight:800;font-size:.76rem;padding:1px 7px;border-radius:999px;background:rgba(120,140,190,.25)} .gx-d.up{background:rgba(52,211,153,.22);color:#34d399} .gx-d.dn{background:rgba(248,113,113,.22);color:#f87171}
+  body.inicio-claro .gx-d.up{color:#0b6b2b} body.inicio-claro .gx-d.dn{color:#b3261e}
+  .gx-h{margin:18px 0 8px;font-size:.92rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .gx-at{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+  .gx-a{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;border-radius:12px;padding:10px 12px;border:1px solid rgba(120,140,190,.28);background:rgba(120,140,190,.10)}
+  .gx-a b{font-size:1.4rem;min-width:34px;text-align:center} .gx-a small{font-size:.78rem;line-height:1.3}
+  .gx-a.mal{border-color:#f87171;background:rgba(248,113,113,.14)} .gx-a.med{border-color:#fbbf24;background:rgba(251,191,36,.12)} .gx-a.bien{border-color:#34d399;background:rgba(52,211,153,.10)}
+  .gx-q{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;font-size:.82rem}
+  .gx-q div{display:flex;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:10px;background:rgba(120,140,190,.10)} .gx-q div.mal b{color:#f87171} .gx-q div.bien b{color:#34d399}
+  .gx-b{border:1px solid rgba(120,140,190,.5);background:transparent;color:inherit;border-radius:8px;padding:3px 10px;font-size:.74rem;cursor:pointer;font-weight:700} .gx-b:hover{background:#fdc33e;color:#1a1200;border-color:#fdc33e}
   #v-inicio .rnc{grid-column:1/-1!important;order:22!important;--acc:#f472b6} .rnc{cursor:default;max-width:none} .rnc:hover{box-shadow:none;transform:none}
   .rnc .tot{font-size:.8rem;color:var(--suave);margin:0 0 12px}
   #v-inicio .rnx{grid-column:span 6!important;order:23!important} @media(max-width:1000px){#v-inicio .rnx{grid-column:1/-1!important}} .rnx .cm-k{grid-template-columns:repeat(3,1fr)} .rnx .rn-g{height:200px}
@@ -521,7 +538,7 @@
 <nav>
   <div class="marca"><img src="assets/logo.png" alt="Protect Motos"><div class="crm">SISTEMA DE GESTIÓN</div></div>
   <ul id="menu"></ul>
-  <div class="pie"><a id="solo" href="#" target="_blank" style="color:var(--dorado2);display:none;margin-bottom:8px">↗ Abrir este módulo en pestaña propia</a><br>Negociemos Group S.A.S.<br>Todos los módulos usan el mismo Google Sheet.</div>
+  <div class="pie"><a id="solo" href="#" target="_blank" style="color:var(--dorado2);display:none;margin-bottom:8px">↗ Abrir este módulo en pestaña propia</a><br>Negociemos Group S.A.S.<br><span style="opacity:.7">Sistema v2026.11.14 · conector crm-5</span><br>Todos los módulos usan el mismo Google Sheet.</div>
 </nav>
 <main>
   <div id="top"><input id="q" type="search" placeholder="Buscar cliente: cédula, placa, nombre o contrato" autocomplete="off" aria-label="Buscar cliente"><button id="btnRec" type="button" title="Volver a leer los datos de Cobros y Conciliación">↻ Actualizar</button><span id="ultAct" style="font-size:.74rem;color:var(--suave);white-space:nowrap" title="Se actualiza solo cada minuto">Se actualiza cada minuto</span><div id="res"></div></div>
@@ -545,6 +562,7 @@
       <input type="search" id="inBusca" placeholder="Buscar gráfica… (ej. asesor, RC, SOAT)" aria-label="Buscar gráfica">
     </div>
     <div class="in-kpis" id="inKpis"></div>
+    <section class="card gxc" id="gxWrap" data-sec="gerencia" hidden><h3>📋 Resumen gerencial</h3><p class="tot" id="gxSub"></p><div class="gx-grid" id="gxGrid"></div><h4 class="gx-h">⚠️ Atención requerida</h4><div class="gx-at" id="gxAt"></div><h4 class="gx-h">🔎 Calidad de los datos <button type="button" class="gx-b" id="gxCsv">⬇ Descargar detalle (CSV)</button></h4><div class="gx-q" id="gxQ"></div></section>
     <div class="in-sec" id="sec-ventas" data-sec="ventas" style="order:4"><i></i>Ventas y contratos<em>▾</em></div>
     <div class="in-sec" id="sec-clientes" data-sec="clientes" style="order:8"><i></i>Clientes y seguros<em>▾</em></div>
     <div class="in-sec" id="sec-conc" data-sec="conc" style="order:13"><i></i>Conciliación de pagos<em>▾</em></div>
@@ -614,17 +632,18 @@
 
   var MODULOS=[
     {id:'inicio',   nombre:'Inicio',        ico:'🏠'},
+    {id:'contratos',grupo:'Operación',nombre:'Contratos',     ico:'📄', src:'modulos/contratos.html',     disponible:true , desc:'Automatizador: cotiza, genera e imprime el contrato y lo guarda en el Sheet.'},
     {id:'cobros',   nombre:'Cobros',        ico:'💰', src:'modulos/cobros.html',        disponible:true,  desc:'Cuotas pendientes, registro de pagos, renovaciones, historial y WhatsApp.'},
     {id:'precobros',nombre:'Cobros y precobros',ico:'🧾', src:'modulos/precobros.html',    disponible:true,  desc:'Sube el precobro del proveedor y ve el asesor y el contrato de cada cliente, listo para imprimir.'},
     {id:'conciliacion',nombre:'Conciliación',ico:'✅', src:'modulos/conciliacion.html',  disponible:true,  desc:'Cruza los contratos de Protect con la lista de pagos de contabilidad (Consolidado).'},
-    {id:'oms',     nombre:'Clientes OMS',  ico:'🏍️', src:'modulos/oms.html',           disponible:true,  desc:'Clientes de la hoja OMS: cobros, pagos, renovaciones y WhatsApp.'},
+    {id:'oms',grupo:'Seguros',     nombre:'Clientes OMS',  ico:'🏍️', src:'modulos/oms.html',           disponible:true,  desc:'Clientes de la hoja OMS: cobros, pagos, renovaciones y WhatsApp.'},
     {id:'soat',    nombre:'SOAT',         ico:'🛡️', src:'modulos/soat.html',          disponible:true,  desc:'Ventas de SOAT y aviso 8 días antes de cada renovación.'},
-    {id:'contratos',nombre:'Contratos',     ico:'📄', src:'modulos/contratos.html',     disponible:true , desc:'Automatizador: cotiza, genera e imprime el contrato y lo guarda en el Sheet.'},
-    {id:'comisiones',nombre:'Comisiones',  ico:'💵', src:'modulos/comisiones.html',    disponible:true , desc:'Informe de bonificaciones: comisión de cada asesor por mes, listo para contabilidad.'},
-    {id:'ayuda',    nombre:'Conexiones',    ico:'⚙️'}
+    {id:'comisiones',grupo:'Gestión',nombre:'Comisiones',  ico:'💵', src:'modulos/comisiones.html',    disponible:true , desc:'Informe de bonificaciones: comisión de cada asesor por mes, listo para contabilidad.'},
+    {id:'ayuda',grupo:'Sistema',    nombre:'Conexiones',    ico:'⚙️'}
   ];
   var menu=document.getElementById('menu'), tarjetas=document.getElementById('tarjetas');
   MODULOS.forEach(function(m){
+    if(m.grupo){var gl=document.createElement('li');gl.className='grp';gl.textContent=m.grupo;menu.appendChild(gl)}
     var li=document.createElement('li');
     li.innerHTML='<a href="#'+m.id+'" data-id="'+m.id+'"><span class="ico">'+m.ico+'</span>'+m.nombre+(m.disponible===false?'<span class="tag">PRÓXIMO</span>':'')+''+'</a>';
     menu.appendChild(li);
@@ -1298,6 +1317,80 @@
     columnas(b.querySelector('.vm-c'),{datos:dm,n:n,max:(mx2||1)*1.2,alto:280,etiquetas:etq,grupo:true,valDentro:true,gwMax:34,colores:cols,txtVal:txt,activo:-1,aria:aria,etqBarra:function(){return ''},tip:tip});
   }
   window.pintarCM=pintarCM;
+  /* ===== Resumen gerencial: variaciones, atención requerida y calidad de los datos ===== */
+  var gxProblemas=[];
+  function gxDelta(a,b,inv){
+    if(b===null||b===undefined)return '';
+    if(!b)return a?'<span class="gx-d up">nuevo</span>':'<span class="gx-d">sin cambio</span>';
+    var p=Math.round((a-b)/b*100),cl=p===0?'':((p>0)!==!!inv?'up':'dn');
+    return '<span class="gx-d '+cl+'">'+(p>0?'▲ +':p<0?'▼ ':'= ')+p+' %</span>';
+  }
+  function pintarGerencia(){
+    var PK=window.PMK||{};
+    var W=document.getElementById('gxWrap'),R=window.PM_COBROS;if(!W)return;
+    if(!R||!R.contratos||!R.contratos.length){W.hidden=true;return}
+    W.hidden=false;
+    var hoyD=new Date(),Y=hoyD.getFullYear(),M=hoyD.getMonth()+1,PM=M===1?12:M-1,PY=M===1?Y-1:Y,MESN=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    var base=[],dupC={},probs=[];
+    R.contratos.forEach(function(x){
+      var cli=String(x.cliente||'').trim();if(!cli||estadoFila(x)==='ANULADO')return;
+      var r=mesAnio(x),e=estadoFila(x),v=Number(x.valorProtect)||0,o={x:x,y:r.a||0,m:r.m||0,e:e,v:v,f:x.forma};
+      base.push(o);var k=String(x.contrato||'').trim();if(k)dupC[k]=(dupC[k]||0)+1;
+    });
+    var cnt=function(y,m){return base.filter(function(o){return o.y===y&&o.m===m}).length};
+    var val=function(y,m){return base.filter(function(o){return o.y===y&&o.m===m}).reduce(function(s_,o){return s_+o.v},0)};
+    var ytd=function(y){return base.filter(function(o){return o.y===y&&o.m>=1&&o.m<=M})};
+    var cM=cnt(Y,M),cP=cnt(PY,PM),cA=cnt(Y-1,M),yN=ytd(Y),yP=ytd(Y-1);
+    var vM=val(Y,M),vP=val(PY,PM),dMes=new Date(Y,M,0).getDate(),proy=Math.round(cM/Math.max(1,hoyD.getDate())*dMes);
+    var pf=function(a){return a.length?Math.round(a.filter(function(o){return o.f==='FINANCIADO'}).length*100/a.length):0},pfN=pf(yN),pfP=pf(yP);
+    var tot=base.length,canc=base.filter(function(o){return o.e==='CANCELADO'}).length,tc=tot?Math.round(canc*100/tot*10)/10:0;
+    var rc=cmRecs(),cmM=0,cmP=0;if(rc)rc.forEach(function(r){if(r.y===Y&&r.m===M)cmM+=r.pay;else if(r.y===PY&&r.m===PM)cmP+=r.pay});
+    var M_=function(l,b,s1,s2){return '<div class="gx-m"><span>'+l+'</span><b>'+b+'</b><small>'+s1+'</small>'+(s2?'<small>'+s2+'</small>':'')+'</div>'};
+    var cop=function(n){return '$'+Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')};
+    document.getElementById('gxSub').textContent='Corte a hoy · '+MESN[M-1]+' '+Y+' · cada indicador se compara con el período anterior';
+    document.getElementById('gxGrid').innerHTML=
+      M_('Contratos del mes',cM,gxDelta(cM,cP)+' vs '+MESN[PM-1]+' completo','Día '+hoyD.getDate()+' de '+dMes+' · proyección al cierre: ~'+proy+' contratos','Mismo mes del año pasado (completo): '+cA+' '+gxDelta(proy,cA))+
+      M_('Acumulado del año',yN.length,gxDelta(yN.length,yP.length)+' vs mismo período de '+(Y-1),'Ene–'+MESN[M-1].slice(0,3)+' '+(Y-1)+': '+yP.length)+
+      M_('Valor contratado del mes',cop(vM),gxDelta(vM,vP)+' vs '+MESN[PM-1]+' completo','Suma del valor Protect firmado · el mes en curso aún no cierra')+
+      M_('Mezcla financiada (año)',pfN+' %','financiados sobre el total · '+(pfN-pfP>=0?'+':'')+(pfN-pfP)+' pts vs '+(Y-1),'Más financiado = más cartera por cobrar')+
+      M_('Cancelaciones',tc+' %',canc+' de '+tot+' contratos cancelados','Indicador de calidad de la venta',null)+
+      (rc?M_('Comisiones del mes',cop(cmM),gxDelta(cmM,cmP,true).replace(/ (up|dn)"/,'"')+' vs '+MESN[PM-1]+' completo',vM?('Equivale al '+(Math.round(cmM/vM*1000)/10)+' % del valor contratado'):''):'');
+    /* atención */
+    var h8=0,hD=new Date(Y,hoyD.getMonth(),hoyD.getDate());
+    base.forEach(function(o){if(o.e!=='ACTIVO'||!o.x.finISO)return;var p=o.x.finISO.split('-'),f=new Date(+p[0],+p[1]-1,+p[2]),d=Math.round((f-hD)/86400000);if(d>=0&&d<=8)h8++});
+    var A=function(n,t,sub,href,inv){var cl=n>0?(inv?'med':'mal'):'bien';return '<a class="gx-a '+cl+'" href="'+href+'"><b>'+(n==null?'—':n)+'</b><small><strong>'+t+'</strong><br>'+sub+'</small></a>'};
+    document.getElementById('gxAt').innerHTML=
+      A(h8,'Contratos que vencen en ≤ 8 días','Protect activos: es hora de ofrecer la renovación','#cobros',true)+
+      (PK.soatRen!=null?A(PK.soatRen,'SOAT por renovar','Vencen en 8 días o menos','#soat',true):'')+
+      (PK.omsRen!=null?A(PK.omsRen,'Pólizas OMS por renovar','Vencen en 8 días o menos','#oms',true):'')+
+      (PK.faltaConc!=null?A(PK.faltaConc,'Faltan por consolidar','Pagos pendientes de conciliar'+(PK.menos?' · '+PK.menos+' pagaron de menos':''),'#conciliacion'):'')+
+      (rc?A(cmPend,'Comisiones sin decidir','Casos especiales que esperan su decisión','#comisiones'):'');
+    /* calidad de datos */
+    gxProblemas=[];var Q={sinCed:0,sinCel:0,sinFin:0,sinForma:0,sinAse:0,sinVal:0,sinFecha:0,dup:0,finAntes:0,finSinPlazo:0};
+    var add=function(o,t,k){Q[k]++;gxProblemas.push([o.x.contrato||'',o.x.cliente||'',o.x.asesor||'',t])};
+    base.forEach(function(o){var x=o.x;
+      if(!String(x.cedula||'').trim())add(o,'Sin cédula','sinCed');
+      if(String(x.celular||'').replace(/\D/g,'').length<10&&o.e==='ACTIVO')add(o,'Celular faltante o incompleto','sinCel');
+      if(!x.finISO)add(o,'Sin fecha de vencimiento','sinFin');
+      if(x.forma!=='CONTADO'&&x.forma!=='FINANCIADO')add(o,'Forma de pago sin dato (contado/financiado)','sinForma');
+      if(!String(x.asesor||'').trim())add(o,'Sin asesor','sinAse');
+      if(!(o.v>0))add(o,'Valor Protect en cero o vacío','sinVal');
+      if(!o.y||!o.m)add(o,'Mes/año de venta no reconocido','sinFecha');
+      if(x.contrato&&dupC[String(x.contrato).trim()]>1)add(o,'N.º de contrato repetido','dup');
+      if(x.finISO&&x.fechaFirmaISO&&x.finISO<x.fechaFirmaISO)add(o,'Vencimiento anterior a la firma','finAntes');
+      if(x.forma==='FINANCIADO'&&!(Number(x.plazo)>0))add(o,'Financiado sin plazo','finSinPlazo');
+    });
+    var T=[['sinCed','Sin cédula'],['sinCel','Activos sin celular válido'],['sinFin','Sin fecha de vencimiento'],['sinForma','Forma de pago sin dato'],['sinAse','Sin asesor'],['sinVal','Valor Protect en cero'],['sinFecha','Mes/año no reconocido'],['dup','N.º de contrato repetido'],['finAntes','Vence antes de la firma'],['finSinPlazo','Financiado sin plazo']];
+    var malos=T.filter(function(t){return Q[t[0]]>0});
+    document.getElementById('gxQ').innerHTML=(malos.length?T.map(function(t){return '<div class="'+(Q[t[0]]?'mal':'bien')+'"><span>'+t[1]+'</span><b>'+Q[t[0]]+'</b></div>'}).join(''):'<div class="bien"><span>✅ Sin problemas detectados en '+tot+' contratos</span><b>OK</b></div>');
+    document.getElementById('gxCsv').style.display=gxProblemas.length?'':'none';
+  }
+  window.pintarGerencia=pintarGerencia;
+  document.addEventListener('pm-cobros',function(){try{pintarGerencia()}catch(e){}});
+  document.getElementById('gxCsv').addEventListener('click',function(){
+    var f=[['Contrato','Cliente','Asesor','Problema']].concat(gxProblemas),csv='﻿'+f.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"'}).join(';')}).join('\r\n');
+    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='Calidad_de_datos_Protect_Motos.csv';document.body.appendChild(a);a.click();a.remove();
+  });
   function mesAnio(x){
     var m=numMes(x.mes),a=numAnio(x.anio),r=false,tx=String(x.mes||''),q;
     if(!m){q=tx.match(/^\s*(\d{1,2})\s*[\/\-]\s*(\d{2,4})\s*$/);if(q&&+q[1]>=1&&+q[1]<=12){m=+q[1];if(!a)a=numAnio(q[2])}else{q=tx.match(/^\s*(\d{4})\s*[\/\-]\s*(\d{1,2})\s*$/);if(q&&+q[2]>=1&&+q[2]<=12){m=+q[2];if(!a)a=+q[1]}}}
@@ -1652,6 +1745,7 @@
     box.innerHTML=K.map(function(x){return '<a class="in-k '+x[0]+'" href="'+(x[0]==='k-nar'?'#conciliacion':x[0]==='k-vio'?'#soat':x[0]==='k-azu'?'#cobros':'#inicio')+'"><div class="in-ki">'+x[1]+'</div><div class="in-kt"><span>'+x[2]+'</span><b>'+x[3]+'</b><small>'+x[4]+'</small></div>'+(x[5]!==null?'<div class="in-kp"><i style="width:'+x[5]+'%"></i></div>':'')+'</a>'}).join('');
     var u=$('gUlt');if(u)u.textContent='Actualizado '+new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
     var sub=$('inSub');if(sub)sub.textContent='Mes en curso: '+MES_TXT_G()+' · todo se actualiza solo cada minuto';
+    try{if(window.pintarGerencia)window.pintarGerencia()}catch(e){}
   }
   function MES_TXT_G(){var m=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'],h=new Date();return m[h.getMonth()]+' '+h.getFullYear()}
   function dineroK(v){v=Number(v)||0;if(v>=1e6)return '$'+(v/1e6).toFixed(1).replace('.',',')+' M';if(v>=1e3)return '$'+Math.round(v/1e3)+' mil';return '$'+Math.round(v)}
