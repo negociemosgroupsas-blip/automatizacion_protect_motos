@@ -64,7 +64,7 @@
       <div class="tiles" id="rsTiles" style="margin-top:10px"></div>
       <details id="rsDet" style="margin:6px 0 12px"><summary style="cursor:pointer;font-weight:700">🧹 ¿Qué cuenta como consignación de cliente? <span id="rsExN" style="font-weight:400;color:var(--suave)"></span></summary>
         <p class="sub" style="margin:8px 0">Estas son todas las descripciones distintas que traen las entradas del banco. <b>Marque las que NO son consignaciones de clientes</b> (traslados suyos, préstamos, reintegros…) y quedan fuera de los totales. Se guarda para la próxima vez. Los números dentro de la descripción se ignoran para agrupar.</p>
-        <div class="fil nop"><label>Buscar descripción<input type="search" id="rsBus" placeholder="ej. traslado"></label><button class="btn d" id="rsLimpia" type="button">Quitar todas las marcas</button></div>
+        <div class="fil nop"><label>Buscar descripción<input type="search" id="rsBus" placeholder="ej. traslado"></label><button class="btn v" id="rsSug" type="button">✨ Marcar las que parecen no ser de clientes</button><button class="btn d" id="rsLimpia" type="button">Quitar todas las marcas</button><span class="estado" id="rsSugT" style="margin:0"></span></div>
         <div class="scroll" style="max-height:340px;overflow:auto"><table><thead><tr><th>No es de cliente</th><th>Descripción (ejemplo)</th><th class="num">Veces</th><th class="num">Total</th></tr></thead><tbody id="rsDesc"></tbody></table></div></details>
       <div class="scroll"><table><thead><tr><th id="rsTh">Período</th><th class="num">Total que entró</th><th class="num">Con pago registrado</th><th class="num">Sin comprobante</th><th class="num">% sin comprobante</th><th class="num">Consignaciones</th></tr></thead><tbody id="rsCuerpo"></tbody></table></div>
     </section>
@@ -218,10 +218,18 @@
   function exclGuardar(L){try{localStorage.setItem('pm_banco_excl',JSON.stringify(L))}catch(e){}}
   function pintarDescripciones(D0,EX){
     var g={};D0.forEach(function(d){var o=g[d.k]=g[d.k]||{k:d.k,ej:d.d,n:0,t:0};o.n++;o.t+=d.v});
-    var q=norm($('rsBus').value||''),L=Object.keys(g).map(function(k){return g[k]}).sort(function(a,b){return b.t-a.t}).filter(function(o){return !q||norm(o.ej).indexOf(q)>=0||o.k.indexOf(q)>=0});
+    var q=norm($('rsBus').value||''),L=Object.keys(g).map(function(k){return g[k]}).sort(function(a,b){return (EX[b.k]?1:0)-(EX[a.k]?1:0)||b.t-a.t}).filter(function(o){return !q||norm(o.ej).indexOf(q)>=0||o.k.indexOf(q)>=0});
     $('rsDesc').innerHTML=L.map(function(o){return'<tr><td style="text-align:center"><input type="checkbox" data-k="'+esc(o.k)+'"'+(EX[o.k]?' checked':'')+'></td><td>'+esc(o.ej||'(sin descripción)')+'</td><td class="num">'+o.n+'</td><td class="num">'+cop(o.t)+'</td></tr>'}).join('')||'<tr><td colspan="4">No hay descripciones con ese texto.</td></tr>';
   }
   $('rsDesc').addEventListener('change',function(ev){var k=ev.target.getAttribute('data-k');if(k===null)return;var L=exclGet().filter(function(x){return x!==k});if(ev.target.checked)L.push(k);exclGuardar(L);pintarResumen()});
+  var PALABRAS_NO=/\b(traslado|entre cuentas|propia|prestamo|desembolso|reintegro|devoluc|reversi|anulaci|ajuste|rendimiento|interes|aporte|capital|cierre de caja|apertura|gmf|4x1000|comision)|\biva\b/;
+  $('rsSug').addEventListener('click',function(){
+    var D0=datosHistoricos();if(!D0)return;var ks={};D0.forEach(function(d){if(PALABRAS_NO.test(d.k))ks[d.k]=1});
+    var L=exclGet(),nuevos=0;Object.keys(ks).forEach(function(k){if(L.indexOf(k)<0){L.push(k);nuevos++}});exclGuardar(L);
+    $('rsSugT').textContent=nuevos?'Marqué '+nuevos+' descripción(es). Revíselas: desmarque la que sí sea de un cliente.':'No encontré descripciones con esas palabras.';
+    pintarResumen();
+    /* las marcadas primero para revisarlas rápido */
+  });
   $('rsBus').addEventListener('input',function(){pintarResumen()});
   $('rsLimpia').addEventListener('click',function(){exclGuardar([]);pintarResumen()});
   function pintarResumen(){
