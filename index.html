@@ -481,6 +481,7 @@
   .gx-a{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;border-radius:12px;padding:10px 12px;border:1px solid rgba(120,140,190,.28);background:rgba(120,140,190,.10)}
   .gx-a b{font-size:1.4rem;min-width:46px;text-align:center} .gx-a small{font-size:.85rem;line-height:1.3}
   .gx-a.mal{border-color:#f87171;background:rgba(248,113,113,.14)} .gx-a.med{border-color:#fbbf24;background:rgba(251,191,36,.12)} .gx-a.bien{border-color:#34d399;background:rgba(52,211,153,.10)}
+  #v-inicio .cnc{grid-column:1/-1!important;order:14!important;--acc:#fdc33e} .cnc{cursor:default;max-width:none} .cnc:hover{box-shadow:none;transform:none} .cnc .tot{font-size:.85rem;color:var(--suave);margin:0 0 12px} .cnc .cm-k .in-kt b{font-size:1.55rem}
   #v-inicio .rnc{grid-column:1/-1!important;order:22!important;--acc:#f472b6} .rnc{cursor:default;max-width:none} .rnc:hover{box-shadow:none;transform:none}
   .rnc .tot{font-size:.85rem;color:var(--suave);margin:0 0 12px}
   #v-inicio .rnx{grid-column:span 6!important;order:23!important} @media(max-width:1000px){#v-inicio .rnx{grid-column:1/-1!important}} .rnx .cm-k{grid-template-columns:repeat(3,1fr)} .rnx .rn-g{height:200px}
@@ -788,7 +789,7 @@
           if(hs>16)labs.push(stxt(xs(i),pt+ih-hr-hs/2+4,d.sin,'ch-in-b'));
         }else if(o.grupo){
           var nb=d.vals.length,gw=Math.min(o.gwMax||30,slot*(nb>2?0.8/nb:0.34)),tw=gw*nb+3*(nb-1),x0=xs(i)-tw/2;
-          d.vals.forEach(function(v,gi){var hh=v/o.max*ih;g.appendChild(sv('rect',{x:x0+gi*(gw+3),y:pt+ih-hh,width:gw,height:Math.max(hh,v?2:0),rx:4,fill:o.colores[gi]}));if(o.valDentro){if(v){if(hh>=22&&gw>=19)labs.push(stxt(x0+gi*(gw+3)+gw/2,pt+ih-hh+14,v,'ch-vd '+(o.txtVal?o.txtVal[gi]:'')));else labs.push(stxt(x0+gi*(gw+3)+gw/2,pt+ih-hh-5,v,'ch-v ch-vg'))}}else if(v||o.verCeros)labs.push(stxt(x0+gi*(gw+3)+gw/2,pt+ih-hh-5,v,'ch-v ch-vg'));if(o.nombres&&gw>=17&&hh>=o.nombres[gi].length*7+12){var cx=x0+gi*(gw+3)+gw/2,cy=pt+ih-hh/2,tn=stxt(cx,cy+3.5,o.nombres[gi],'ch-nom '+(o.txtNom?o.txtNom[gi]:''));tn.setAttribute('transform','rotate(-90 '+cx+' '+cy+')');labs.push(tn)}})
+          d.vals.forEach(function(v,gi){var hh=v/o.max*ih;g.appendChild(sv('rect',{x:x0+gi*(gw+3),y:pt+ih-hh,width:gw,height:Math.max(hh,v?2:0),rx:4,fill:o.colores[gi]}));if(o.valDentro){if(v){if(hh>=22&&gw>=19)labs.push(stxt(x0+gi*(gw+3)+gw/2,pt+ih-hh+14,(o.fmt?o.fmt(v):v),'ch-vd '+(o.txtVal?o.txtVal[gi]:'')));else labs.push(stxt(x0+gi*(gw+3)+gw/2,pt+ih-hh-5,(o.fmt?o.fmt(v):v),'ch-v ch-vg'))}}else if(v||o.verCeros)labs.push(stxt(x0+gi*(gw+3)+gw/2,pt+ih-hh-5,(o.fmt?o.fmt(v):v),'ch-v ch-vg'));if(o.nombres&&gw>=17&&hh>=o.nombres[gi].length*7+12){var cx=x0+gi*(gw+3)+gw/2,cy=pt+ih-hh/2,tn=stxt(cx,cy+3.5,o.nombres[gi],'ch-nom '+(o.txtNom?o.txtNom[gi]:''));tn.setAttribute('transform','rotate(-90 '+cx+' '+cy+')');labs.push(tn)}})
         }else if(o.segs){
           var acc=0;d.segs.forEach(function(c,si){if(!c)return;var hh=c/o.max*ih;g.appendChild(sv('rect',{x:x,y:pt+ih-acc-hh,width:bw,height:hh,fill:o.colores[si],rx:si===d.segs.length-1?5:0}));if(hh>15)labs.push(stxt(xs(i),pt+ih-acc-hh/2+4,c,o.txtCls?o.txtCls[si]:(si<3?'ch-in-b':'ch-in-o')));acc+=hh})
         }else{
@@ -1005,6 +1006,47 @@
   var cmc=document.createElement('div');cmc.className='card cmc';
   cmc.innerHTML='<h3>Comisiones pagadas</h3><p class="tot" id="cmTot">Se muestra al conectar el CRM.</p><div class="ed-per"><label>Ver <select id="cmVista"><option value="mes">Mes a mes</option><option value="asesor">Por asesor</option><option value="anios">Año a año</option></select></label><label id="cmLAnio">Año <select id="cmAnio"></select></label><label id="cmLMes">Mes <select id="cmMes"></select></label><label id="cmLAs">Asesor <select id="cmAs"></select></label></div><div class="cm-k" id="cmKpis"></div><div class="cf-ley" id="cmLey"></div><div id="cmCuerpo"></div>';
   tarjetas.appendChild(cmc);
+  /* ===== Dinero consolidado por mes y por año (hoja Consolidado: columnas J = Mes y K = Año) ===== */
+  var cnc=document.createElement('div');cnc.className='card cnc';
+  cnc.innerHTML='<h3>¿Cuánto dinero se ha consolidado?</h3><p class="tot" id="cnTot">Se muestra al conectar Conciliación.</p><div class="ed-per"><label>Ver <select id="cnVista"><option value="mes">Mes a mes</option><option value="anio">Año a año</option></select></label><label id="cnLAnio">Año <select id="cnAnio"></select></label></div><div class="cm-k" id="cnKpis"></div><div class="cf-ley" id="cnLey"></div><div id="cnCuerpo"></div>';
+  tarjetas.appendChild(cnc);
+  var cnV='mes',cnY='todos';
+  function cnPesos(n){return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+' COP'}
+  function cnK(n){return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+'<em style="font-size:.5em;font-style:normal;opacity:.85"> COP</em>'}
+  window.pintarCons=function(){
+    var tot=document.getElementById('cnTot'),k=document.getElementById('cnKpis'),b=document.getElementById('cnCuerpo'),ley=document.getElementById('cnLey'),C=window.PM_CONS;if(!tot)return;
+    if(!C||!C.meses){tot.textContent=C===undefined?'Se muestra al conectar Conciliación (URL en «Conexiones»).':'⚠️ El conector de Conciliación todavía no envía el mes y el año: pegue el código nuevo y publique «Nueva versión» (debe responder v12).';k.innerHTML='';b.innerHTML='';ley.innerHTML='';return}
+    var L=C.meses.map(function(o){return {y:o.anio,m:o.mes,n:o.n,v:(o.auto!=null?o.auto:(o.c||o.d||0))}});
+    var yA=new Date().getFullYear(),ys={};ys[yA]=1;L.forEach(function(r){ys[r.y]=1});var lst=Object.keys(ys).map(Number).sort(function(a,c){return a-c});
+    var sa=document.getElementById('cnAnio');sa.innerHTML='<option value="todos">Todos los años</option>'+lst.slice().reverse().map(function(y){return '<option value="'+y+'">'+y+'</option>'}).join('');
+    if(cnY!=='todos'&&!ys[cnY])cnY='todos';sa.value=cnY;document.getElementById('cnVista').value=cnV;document.getElementById('cnLAnio').style.display=cnV==='anio'?'none':'';
+    var F=L.filter(function(r){return cnV==='anio'||cnY==='todos'||r.y===+cnY});
+    var T=F.reduce(function(s_,r){return s_+r.v},0),N=F.reduce(function(s_,r){return s_+r.n},0),con=F.filter(function(r){return r.v>0}),mejor=con.slice().sort(function(p,q){return q.v-p.v})[0];
+    var sf=C.sinFecha&&C.sinFecha.n?C.sinFecha:null,nota='';
+    if(C.col&&(C.col.mes<0||C.col.anio<0))nota=' · ⚠️ no encuentro la columna «'+(C.col.mes<0?'Mes':'Año')+'» en la hoja Consolidado';
+    else if(sf)nota=' · ⚠️ '+sf.n+' pago(s) sin mes o año no están en la gráfica ('+cnPesos(sf.c||sf.d)+')';
+    tot.innerHTML=(T?'Dinero consolidado · '+(cnV==='anio'||cnY==='todos'?'todos los años':'año '+cnY):'Todavía no hay dinero consolidado en el período elegido.')+(nota?'<em style="color:#fca5a5;font-style:normal">'+nota+'</em>':'');
+    var K=function(c,i,l,v,sm){return '<div class="in-k '+c+'"><div class="in-ki">'+i+'</div><div class="in-kt"><span>'+l+'</span><b>'+v+'</b><small>'+sm+'</small></div></div>'};
+    k.innerHTML=T?K('k-oro','💰','Total consolidado (COP)',cnK(T),N+' pago(s)')+K('k-cian','📆','Promedio por mes (COP)',cnK(T/con.length),'en '+con.length+' mes(es) con pagos')+K('k-vio','🏆','Mejor mes (COP)',mejor?cnK(mejor.v):'—',mejor?MES_LARGO[mejor.m-1]+' '+mejor.y:''):'';
+    var M=function(x){return Math.round(x/1e5)/10},COL=['#9fb8e8','#fdc33e','#38bdf8','#5b78c7','#e08a00','#d5dcf0'],TXT=['vd-o','vd-o','vd-o','vd-b','vd-o','vd-o'],dm,etq,cols,txt,aria,tip,mx2=0,n;
+    if(cnV==='mes'){
+      var sy=cnY==='todos'?lst.filter(function(y){return L.some(function(r){return r.y===y})}):[+cnY],colY=function(y){return COL[lst.indexOf(y)%6]};if(!sy.length)sy=[yA];
+      dm=[];for(var i=1;i<=12;i++){var raw=sy.map(function(y){return L.filter(function(r){return r.y===y&&r.m===i}).reduce(function(s_,r){return s_+r.v},0)});raw.forEach(function(x){if(M(x)>mx2)mx2=M(x)});dm.push(raw.some(function(x){return x>0})?{vals:raw.map(M),raw:raw,m:i-1,t:0}:null)}
+      etq=MES_C;n=12;cols=sy.map(colY);txt=sy.map(function(y){return TXT[lst.indexOf(y)%6]});aria='Dinero consolidado mes a mes';
+      ley.innerHTML=sy.map(function(y){var t=L.filter(function(r){return r.y===y}).reduce(function(s_,r){return s_+r.v},0);return '<span><i style="background:'+colY(y)+'"></i><b>'+y+'</b> · '+cnPesos(t)+'</span>'}).join('')+'<span class="cf-ley-t">Cada columna es el dinero consolidado en ese mes, en millones de pesos colombianos (7,5 = $7.500.000 COP).</span>';
+      tip=function(d,ix){return '<b>'+MES_LARGO[ix]+'</b> · consolidado<br>'+sy.map(function(y,si){return '<span style="display:inline-block;width:9px;height:9px;border-radius:2px;border:1px solid #fff;background:'+colY(y)+';margin-right:5px"></span>'+y+': <b>'+cnPesos(d.raw[si])+'</b>'}).join('<br>')};
+    }else{
+      var ay=lst;dm=ay.map(function(y,i){var raw=L.filter(function(r){return r.y===y}).reduce(function(s_,r){return s_+r.v},0);if(M(raw)>mx2)mx2=M(raw);return {vals:[M(raw)],raw:[raw],m:i,t:0}});
+      etq=ay.map(String);n=ay.length;cols=['#fdc33e'];txt=['vd-o'];aria='Dinero consolidado año a año';
+      ley.innerHTML='<span class="cf-ley-t">Dinero consolidado en cada año, en millones de pesos colombianos (7,5 = $7.500.000 COP).</span>';
+      tip=function(d,ix){return '<b>'+ay[ix]+'</b> · consolidado: <b>'+cnPesos(d.raw[0])+'</b>'};
+    }
+    b.innerHTML='<div class="vm-c"></div>';
+    columnas(b.querySelector('.vm-c'),{datos:dm,n:n,max:(mx2||1)*1.2,alto:280,etiquetas:etq,grupo:true,valDentro:true,gwMax:34,colores:cols,txtVal:txt,activo:-1,aria:aria,etqBarra:function(){return ''},fmt:function(v){return String(v).replace('.',',')},tip:tip});
+  };
+  document.getElementById('cnVista').addEventListener('change',function(){cnV=this.value;window.pintarCons()});
+  document.getElementById('cnAnio').addEventListener('change',function(){cnY=this.value;window.pintarCons()});
+  window.pintarCons();
   /* ===== Renovaciones y cotizaciones (cotizaciones enviadas + seguimiento de renovación de Cobros) ===== */
   var rnc=document.createElement('div');rnc.className='card rnc';
   rnc.innerHTML='<h3>Renovaciones Protect (Cobros): enviados vs aceptaron</h3><p class="tot" id="rnTot">Se muestra al conectar el conector del CRM.</p><div class="ed-per"><label>Año <select id="rnAnio"></select></label><label>Mes <select id="rnMes"></select></label></div><div class="cm-k" id="rnKpis"></div><div id="rnCuerpo"></div>';
@@ -1484,7 +1526,7 @@
     function fin(){clearTimeout(t);cargandoConc=false;delete window[cb];s.remove()}
     window[cb]=function(r){fin();
       if(!r||!r.ok){al.innerHTML='<div class="nota">No se pudo leer la conciliación: '+esc(r&&r.error||'sin respuesta')+'</div>';return}
-      CON=(r.data&&r.data.filas)||[];pintarAlertas()};
+      CON=(r.data&&r.data.filas)||[];window.PM_CONS=(r.data&&r.data.consMeses)?{meses:r.data.consMeses.meses||[],sinFecha:r.data.consMeses.sinFecha||null,col:r.data.colMesAnio||null}:null;if(window.pintarCons)window.pintarCons();pintarAlertas()};
     s.onerror=function(){fin();al.innerHTML='<div class="nota">No se pudo conectar con Conciliación.</div>'};
     s.src=u+(u.indexOf('?')<0?'?':'&')+'action=conciliar&token='+encodeURIComponent(TOKEN_CONC)+'&tolerancia=&rapido=1&callback='+cb+'&_='+Date.now();
     document.head.appendChild(s);
@@ -1767,6 +1809,7 @@
     ['.rnc:not(.rnx)','Renovaciones Protect (Cobros): enviados vs aceptaron','🔁','A cuántos clientes les enviamos el mensaje de renovación y cuántos aceptaron, mes a mes.','Los mensajes y las respuestas salen de la hoja Gestiones (botones «Ya envié mensaje», «Acepto renovación» y «No acepto renovación» de Cobros). Cada cliente cuenta una vez, en el mes de su primer mensaje; el % de cada mes = aceptaron ÷ enviados. Las cotizaciones salen de la hoja «Cotizaciones Renovación» (botón ENVIAR COTIZACIÓN en Cobros). Los mensajes de renovación salen de la hoja Gestiones. «Aceptó» y «No aceptó» se marcan en el panel «Cotizaciones de renovación» de Cobros. % de conversión = aceptadas ÷ cotizaciones enviadas.','ren'],
     ['.rno','Renovaciones OMS: enviados vs renovaron','🔁','A cuántos clientes OMS les enviamos el mensaje de renovación y cuántos renovaron, mes a mes.','Sale de la hoja de Clientes OMS y de sus gestiones (botones «Ya envié mensaje», «Renovó» y «No renovará»). Renovó también cuenta si el cliente ya tiene una póliza nueva del mismo vehículo. Cada cliente cuenta una vez, en el mes de su primer mensaje.','ren'],
     ['.rns','Renovaciones SOAT: enviados vs renovaron','🔁','A cuántos clientes de SOAT les enviamos el mensaje de renovación y cuántos renovaron, mes a mes.','Sale de la hoja Soat y de sus gestiones (botones «Ya envié mensaje», «Renovó» y «No renovará»). Renovó también cuenta si ya hay un SOAT nuevo de la misma placa. Cada cliente cuenta una vez, en el mes de su primer mensaje.','ren'],
+    ['.cnc','¿Cuánto dinero se ha consolidado?','💰','Dinero que ya aparece en la hoja Consolidado, mes a mes o año a año.','Suma el valor de cada pago de la hoja Consolidado (columna C, o D si C está vacía) y lo ubica según las columnas Mes (J) y Año (K) que usted escribe allí. Los pagos sin mes o sin año no entran a la gráfica y se avisan. Valores en pesos colombianos (COP).','conc'],
     ['.svc','SOAT: cuántos vendemos y cuánto ganamos','🛡️','SOAT vendidos por mes (columnas) y su ganancia (línea verde).','Sale de la hoja Soat: cada SOAT cuenta en el mes de su fecha de venta. La escala verde de la derecha es la ganancia.','soat',1]
   ];
   function aclarar(){
