@@ -64,6 +64,7 @@
     '.chips{padding:0 12px 9px;display:flex;flex-wrap:wrap;gap:4px 6px}',
     '.chips div{display:flex;gap:6px;align-items:center;font-size:11px;background:#eef6ff;border-radius:999px;padding:2px 10px 2px 4px;color:#0b2a6b} .chips i{flex:0 0 15px;height:15px;border-radius:50%;background:#0b63c9;color:#fff;font-style:normal;font-size:10px;text-align:center;line-height:15px}',
     /* coberturas dentro de la opción 2 (en la misma hoja) */
+    '.regalo{margin:0 12px 8px;display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,#ffe08a,#ffc928);color:#0b2a6b;border-radius:999px;padding:5px 16px;box-shadow:0 2px 6px rgba(0,0,0,.15)} .regalo .ic{font-size:20px;line-height:1} .regalo b{font-size:13px;letter-spacing:.3px} .regalo span{font-size:12px}',
     '.cob{display:grid;grid-template-columns:1.55fr 1fr;gap:8px;padding:0 12px 10px;align-items:start}',
     '.cob .dc{background:#f5f9ff;color:#0b2a6b;border-radius:14px;overflow:hidden;padding-bottom:6px;border:1px solid #dbe8f8}',
     '.cob .dc h4{margin:0 0 4px;background:#0b63c9;color:#fff;padding:5px 12px;font-size:11px;letter-spacing:.4px;text-transform:uppercase}',
@@ -120,9 +121,10 @@
         cob = '<div class="cob"><div class="dc">'+rc.map(seccion).join('')+'</div>'+(ot.length?'<div class="dc">'+ot.map(seccion).join('')+'</div>':'')+'</div>';
         if(!ot.length) cob = cob.replace('grid-template-columns','grid-template-columns');
       }
+      var regalo = conCob ? '<div class="regalo"><span class="ic">🎁</span><div><b>¡DE REGALO!</b> <span>'+esc(d.regalo||'Plan de salud por llevar la Opción 2')+'</span></div></div>' : '';
       return '<div class="op"><h3>OPCIÓN '+n+' · '+esc(titulo)+(sub?'<small>'+esc(sub)+'</small>':'')+'</h3>'+
         '<div class="pre"><div><span>De contado</span><b>'+cop(o.contado)+'</b></div>'+
-        '<div><span>Financiado a '+d.plazo+' meses</span>'+celdaFin(o, d.plazo)+'</div></div>'+chips(pp.chips)+cob+'</div>';
+        '<div><span>Financiado a '+d.plazo+' meses</span>'+celdaFin(o, d.plazo)+'</div></div>'+chips(pp.chips)+regalo+cob+'</div>';
     };
     var primer = String(d.nombre||'').split(' ')[0];
     return '<div class="doc">'+
