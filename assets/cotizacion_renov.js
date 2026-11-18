@@ -110,15 +110,17 @@
   function abrir(c){
     cur = { c:c, guardada:null };
     var f = ventana('pmcr_fcot',
-      '<h3>Enviar cotización de renovación</h3><p class="pmcr-sub">Datos del cliente tomados del sistema. Revisa, escribe el valor actual de Fasecolda, elige la aseguradora y confirma.</p>'+
+      '<h3>Enviar cotización de renovación</h3><p class="pmcr-sub">Datos del cliente tomados del sistema. Elige con qué cotizador calculas (factura y Fasecolda, o valor de la moto), elige la aseguradora y confirma.</p>'+
       '<div class="pmcr-g">'+
       '<label>Nombre<input id="pmcr_nom" value="'+esc(c.cliente)+'"></label>'+
       '<label>Cédula<input id="pmcr_ced" value="'+esc(c.cedula||'')+'"></label>'+
       '<label>Placa<input id="pmcr_pla" value="'+esc(c.placa)+'"></label>'+
       '<label>Marca / referencia<input id="pmcr_moto" placeholder="cargando…"></label>'+
-      '<label>Valor factura del año anterior<input id="pmcr_fac" inputmode="numeric" placeholder="$"></label>'+
-      '<label>Valor Fasecolda actual<input id="pmcr_fas" inputmode="numeric" placeholder="$ (escríbelo)"></label>'+
-      '<label>Valor a garantizar (−10 %, el menor)<input id="pmcr_gar" readonly></label>'+
+      '<label style="grid-column:1/-1">¿Con qué cotizador calculo?<select id="pmcr_met"><option value="fas">Cotizador de renovación: con la factura y el valor de Fasecolda</option><option value="val">Cotizador de Contratos: con el valor de la moto</option></select></label>'+
+      '<label id="pmcr_lfac">Valor factura del año anterior<input id="pmcr_fac" inputmode="numeric" placeholder="$"></label>'+
+      '<label id="pmcr_lfas">Valor Fasecolda actual<input id="pmcr_fas" inputmode="numeric" placeholder="$ (escríbelo)"></label>'+
+      '<label id="pmcr_lgar">Valor a garantizar (−10 %, el menor)<input id="pmcr_gar" readonly></label>'+
+      '<label id="pmcr_lval" style="display:none">Valor de la moto (como en Contratos)<input id="pmcr_val" inputmode="numeric" placeholder="$ 11.499.000"></label>'+
       '<label>Plazo financiado<select id="pmcr_plz"><option value="3">3 meses</option><option value="6">6 meses</option><option value="12" selected>12 meses</option></select></label>'+
       '<label>¿Con qué aseguradora va?<select id="pmcr_ase">'+ASEG.map(function(a){return '<option>'+a+'</option>';}).join('')+'</select></label>'+
       '<label id="pmcr_otral" style="display:none">Nombre de la aseguradora<input id="pmcr_otra" placeholder="Ej.: Mundial"></label>'+
@@ -147,7 +149,8 @@
       '<button class="pmcr-b g" id="pmcr_cer">Cerrar</button></div>'+
       '<p class="pmcr-sub" style="margin-top:8px">Para enviarla: descarga el PDF o la imagen, abre WhatsApp con el botón verde y adjunta el archivo. Nada se envía solo.</p>');
     var fac=$('pmcr_fac'), fas=$('pmcr_fas');
-    ['pmcr_nom','pmcr_ced','pmcr_pla','pmcr_moto','pmcr_fac','pmcr_fas','pmcr_plz','pmcr_ase','pmcr_otra','pmcr_m1c','pmcr_m1q','pmcr_m2c','pmcr_m2q'].forEach(function(id){ $(id).addEventListener('input', recalcular); $(id).addEventListener('change', recalcular); });
+    try{ if(localStorage.getItem('pm_cot_met')==='val') $('pmcr_met').value='val'; }catch(e){}
+    ['pmcr_nom','pmcr_ced','pmcr_pla','pmcr_moto','pmcr_met','pmcr_val','pmcr_fac','pmcr_fas','pmcr_plz','pmcr_ase','pmcr_otra','pmcr_m1c','pmcr_m1q','pmcr_m2c','pmcr_m2q'].forEach(function(id){ $(id).addEventListener('input', recalcular); $(id).addEventListener('change', recalcular); });
     $('pmcr_fij').value = leerFijos().join('\n');
     $('pmcr_fij').addEventListener('change', function(){ var L=$('pmcr_fij').value.split('\n').map(function(x){return x.trim();}).filter(Boolean); LSset('pm_ren_fijos', JSON.stringify(L)); recalcular(); });
     $('pmcr_fijrest').onclick = function(e){ e.preventDefault(); try{ localStorage.removeItem('pm_ren_fijos'); }catch(x){} $('pmcr_fij').value = FIJOS_DEF.join('\n'); recalcular(); };
@@ -181,6 +184,13 @@
     }).catch(function(e){ $('pmcr_moto').placeholder='escríbela'; setSt(e.message,'mal'); recalcular(); });
     recalcular();
   }
+  function metodo(){ var e=$('pmcr_met'); return e&&e.value==='val' ? 'val' : 'fas'; }
+  function aplicarMetodo(){
+    var v = metodo()==='val';
+    ['pmcr_lfac','pmcr_lfas','pmcr_lgar'].forEach(function(id){ $(id).style.display = v ? 'none' : ''; });
+    $('pmcr_lval').style.display = v ? '' : 'none';
+    try{ localStorage.setItem('pm_cot_met', v?'val':'fas'); }catch(e){}
+  }
   function aseguradora(){ var a=$('pmcr_ase').value; return a==='Otra' ? ($('pmcr_otra').value.trim()||'Otra') : a; }
   function lineasCob(id){ return $(id).value.split('\n').map(function(t){return t.trim();}).filter(Boolean); }
   function cargarCob(){
@@ -194,8 +204,8 @@
   function setSt(t,k){ var e=$('pmcr_st'); if(e){ e.textContent=t; e.className='pmcr-st '+(k||''); } }
   function leer(){
     var fac=num($('pmcr_fac').value), fas=num($('pmcr_fas').value), plz=Number($('pmcr_plz').value), ase=aseguradora(), propia=$('pmcr_ase').value==='Protect Motos';
-    var gar = PMCot.valorAGarantizar(fac, fas), O = PMCot.opciones(gar, plz), op1, op2;
-    var fijoDef = (propia && plz===12) ? buscarFijo($('pmcr_moto').value) : null, usaFijo = !!(fijoDef && $('pmcr_fijo') && $('pmcr_fijo').checked);
+    var met = metodo(), gar = met==='val' ? num($('pmcr_val').value) : PMCot.valorAGarantizar(fac, fas), O = PMCot.opciones(gar, plz), op1, op2;
+    var fijoDef = (propia && plz===12 && met==='fas') ? buscarFijo($('pmcr_moto').value) : null, usaFijo = !!(fijoDef && $('pmcr_fijo') && $('pmcr_fijo').checked);
     if(usaFijo){
       op1 = {contado:fijoDef.c1, cuota:fijoDef.q1, total:fijoDef.q1*12, primera:fijoDef.q1, resto:fijoDef.q1};
       op2 = {contado:fijoDef.c2, cuota:fijoDef.q2, total:fijoDef.p2+11*fijoDef.q2, primera:fijoDef.p2, resto:fijoDef.q2};
@@ -205,20 +215,21 @@
       op1 = m('pmcr_m1c','pmcr_m1q'); op2 = m('pmcr_m2c','pmcr_m2q');
     }
     return { nombre:$('pmcr_nom').value.trim(), cedula:$('pmcr_ced').value.trim(), placa:$('pmcr_pla').value.trim(), moto:$('pmcr_moto').value.trim(),
-      factura:fac, fasecolda:fas, garantizar:gar, plazo:plz, aseguradora:ase, propia:propia, op1:op1, op2:op2, cubre:O?O.cubre:0, rc:(O?O.rc:PMCot.RC_DEFECTO), ap:(O?O.ap:PMCot.AP_DEFECTO),
+      metodo:met, factura:(met==='val'?gar:fac), fasecolda:(met==='val'?0:fas), garantizar:gar, plazo:plz, aseguradora:ase, propia:propia, op1:op1, op2:op2, cubre:O?O.cubre:0, rc:(O?O.rc:PMCot.RC_DEFECTO), ap:(O?O.ap:PMCot.AP_DEFECTO),
       contado:op1.contado, financiado:op1.total, cuota:op1.cuota, contrato:cur.c.contrato, fijoDef:fijoDef, usaFijo:usaFijo, listo:(gar>0||usaFijo) };
   }
   function resumenOp(o, plz){ return 'contado <b>'+cop(o.contado)+'</b> · '+plz+' cuotas'+(o.primera!==o.resto?' (1ª de <b>'+cop(o.primera)+'</b>, luego <b>'+cop(o.resto)+'</b>)':' de <b>'+cop(o.cuota)+'</b>')+' · total <b>'+cop(o.total)+'</b>'; }
   function recalcular(){
     if(!cur) return;
     cur.guardada = null; // si cambian valores, se guardaría como una cotización nueva
-    var q = leer(), fd = (q.propia && q.plazo===12) ? buscarFijo($('pmcr_moto').value) : null;
+    aplicarMetodo();
+    var q = leer(), fd = (q.propia && q.plazo===12 && q.metodo==='fas') ? buscarFijo($('pmcr_moto').value) : null;
     $('pmcr_fijobox').style.display = fd ? '' : 'none';
     if(fd) $('pmcr_fijotxt').textContent = 'Esta moto tiene PRECIO FIJO de renovación ('+fd.palabra.toUpperCase()+'): se usan esos valores y no el Fasecolda. Desmarca si quieres calcularla normal.';
     $('pmcr_gar').value = q.usaFijo ? 'No aplica (precio fijo)' : (q.garantizar ? cop(q.garantizar) : '');
-    if(!q.listo){ $('pmcr_res').innerHTML = 'Escribe la factura y el valor de Fasecolda para calcular.'; return; }
+    if(!q.listo){ $('pmcr_res').innerHTML = q.metodo==='val' ? 'Escribe el <b>valor de la moto</b> para calcular.' : 'Escribe la factura y el valor de Fasecolda para calcular.'; return; }
     var a = q.factura>0 ? Math.round(q.factura/1.1) : 0, b = q.fasecolda>0 ? Math.round(q.fasecolda/1.1) : 0;
-    $('pmcr_res').innerHTML = (q.usaFijo ? '<b>Precio fijo de renovación ('+esc(q.fijoDef.palabra.toUpperCase())+')</b>' : 'Factura −10 %: <b>'+(a?cop(a):'—')+'</b> · Fasecolda −10 %: <b>'+(b?cop(b):'—')+'</b> → valor a garantizar <b>'+cop(q.garantizar)+'</b>'+(q.propia?' · cubre el 80 %: <b>'+cop(q.cubre)+'</b>':''))+'<br>'+
+    $('pmcr_res').innerHTML = (q.metodo==='val' ? 'Valor de la moto <b>'+cop(q.garantizar)+'</b> · contado 7,5 % · financiado '+(q.plazo===3?9:q.plazo===6?10:12)+' %'+(q.propia?' · cubre el 80 %: <b>'+cop(q.cubre)+'</b>':'') : q.usaFijo ? '<b>Precio fijo de renovación ('+esc(q.fijoDef.palabra.toUpperCase())+')</b>' : 'Factura −10 %: <b>'+(a?cop(a):'—')+'</b> · Fasecolda −10 %: <b>'+(b?cop(b):'—')+'</b> → valor a garantizar <b>'+cop(q.garantizar)+'</b>'+(q.propia?' · cubre el 80 %: <b>'+cop(q.cubre)+'</b>':''))+'<br>'+
       '<b>Opción 1</b> (hurto o pérdida total): '+resumenOp(q.op1,q.plazo)+'<br><b>Opción 2</b> (+ RC + asistencias): '+resumenOp(q.op2,q.plazo)+(q.propia?'':'<br><i>Valores escritos a mano para '+esc(q.aseguradora)+'.</i>');
     if(!cur.editado) $('pmcr_txt').value = mensaje(q);
   }
@@ -229,7 +240,7 @@
   function hacerDoc(tipo){
     var q = leer();
     if(!q.nombre){ setSt('Falta el nombre.','mal'); return; }
-    if(!q.listo){ setSt('Escribe la factura y/o el valor de Fasecolda antes.','mal'); return; }
+    if(!q.listo){ setSt(metodo()==='val'?'Escribe el valor de la moto antes.':'Escribe la factura y/o el valor de Fasecolda antes.','mal'); return; }
     if(!(q.op1.contado>0) || !(q.op2.contado>0)){ setSt('Faltan los valores de contado de las dos opciones.','mal'); return; }
     var d1 = datosDoc(q);
     if(tipo==='pdf'){
@@ -246,7 +257,7 @@
   function guardar(silencioso){
     var q = leer();
     if(!q.nombre) { setSt('Falta el nombre.','mal'); return Promise.reject(); }
-    if(!q.listo){ setSt('Escribe la factura y/o el valor de Fasecolda antes de guardar.','mal'); return Promise.reject(); }
+    if(!q.listo){ setSt(metodo()==='val'?'Escribe el valor de la moto antes de guardar.':'Escribe la factura y/o el valor de Fasecolda antes de guardar.','mal'); return Promise.reject(); }
     if(!(q.op1.contado>0) || !(q.op2.contado>0)){ setSt('Faltan los valores de contado de las dos opciones.','mal'); return Promise.reject(); }
     if(cur.guardada){ setSt('Esta cotización ya quedó guardada ('+cur.guardada+').','bien'); return Promise.resolve(cur.guardada); }
     setSt('Guardando…'); $('pmcr_gua').disabled = true;
@@ -254,7 +265,7 @@
     return llamar({action:'cotRen_guardar', nombre:q.nombre, cedula:q.cedula, placa:q.placa, moto:q.moto, factura:q.factura, fasecolda:q.fasecolda,
       contado:q.contado, financiado:q.financiado, plazo:q.plazo, contrato:q.contrato, obs:obs}).then(function(r){
       cur.guardada = r.id; setSt('Cotización guardada: '+r.id+' (estado Pendiente).','bien');
-      try{ var k=(q.moto.split(' ').slice(1).join(' ')||q.moto).toUpperCase(); var db=JSON.parse(LS('pm_cotren_fase')||'{}'); db[k]=q.fasecolda; LSset('pm_cotren_fase',JSON.stringify(db)); }catch(e){}
+      try{ var k=(q.moto.split(' ').slice(1).join(' ')||q.moto).toUpperCase(); var db=JSON.parse(LS('pm_cotren_fase')||'{}'); if(q.fasecolda>0) db[k]=q.fasecolda; LSset('pm_cotren_fase',JSON.stringify(db)); }catch(e){}
       $('pmcr_gua').disabled = false; if(w.PMCotRen && w.PMCotRen.panelRefrescar) w.PMCotRen.panelRefrescar();
       return r.id;
     }).catch(function(e){ setSt(e.message,'mal'); $('pmcr_gua').disabled=false; throw e; });
@@ -267,7 +278,7 @@
   }
   function abrirWA(){
     var q = leer();
-    if(!q.listo){ setSt('Primero escribe la factura y el valor de Fasecolda.','mal'); return; }
+    if(!q.listo){ setSt(metodo()==='val'?'Primero escribe el valor de la moto.':'Primero escribe la factura y el valor de Fasecolda.','mal'); return; }
     if(!(q.op1.contado>0) || !(q.op2.contado>0)){ setSt('Faltan los valores de contado de las dos opciones.','mal'); return; }
     var cel = cur.celular || cur.c.celular;
     if(!w.confirm('¿Abrir WhatsApp con el mensaje para '+q.nombre+'?\n\nEl mensaje NO se envía solo: tú lo revisas, adjuntas el PDF o la imagen y le das enviar. Si la cotización no está guardada, se guardará ahora como Pendiente.')) return;

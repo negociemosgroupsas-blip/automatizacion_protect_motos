@@ -42,42 +42,39 @@
 
   /* ---- Estilos del documento (limpio: lo esencial arriba, el detalle de coberturas en la segunda hoja) ---- */
   var CSS = [
-    '@page{size:letter;margin:8mm}',
+    '@page{size:letter;margin:6mm}',
     '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
     'body{margin:0;background:#fff;color:#13223f;font-family:Arial,Helvetica,sans-serif}',
-    '.doc{font-family:Arial,Helvetica,sans-serif;width:794px;margin:0 auto;padding:26px 28px 24px;font-size:13px;line-height:1.4;color:#fff;border-radius:26px;position:relative;overflow:hidden;',
+    '.doc{font-family:Arial,Helvetica,sans-serif;width:794px;margin:0 auto;padding:16px 22px 14px;font-size:12px;line-height:1.3;color:#fff;border-radius:22px;position:relative;overflow:hidden;',
       'background:radial-gradient(circle at 92% 3%,rgba(255,255,255,.26),rgba(255,255,255,0) 32%),radial-gradient(circle at 3% 60%,rgba(255,255,255,.14),rgba(255,255,255,0) 30%),linear-gradient(165deg,#0b63c9 0%,#1596e0 52%,#0a4fae 100%)}',
-    '.sup{display:flex;justify-content:space-between;align-items:center;gap:14px}',
-    '.logo{background:#fff;border-radius:999px;padding:7px 18px;display:flex;align-items:center;box-shadow:0 4px 14px rgba(0,0,0,.18)} .logo img{height:56px;width:auto;display:block}',
-    '.fecha{font-size:12.5px;text-align:right;line-height:1.5} .fecha b{display:block;font-size:13px}',
-    '.titulo{margin-top:16px;background:#0b2a6b;border-radius:22px 22px 22px 4px;padding:16px 24px;box-shadow:0 6px 16px rgba(0,0,0,.22)}',
-    '.titulo small{display:block;font-size:12px;letter-spacing:.32em;opacity:.85;font-weight:700} .titulo b{display:block;font-size:30px;line-height:1.1;font-weight:900;margin:3px 0 6px}',
-    '.titulo .cl{font-size:17px;font-weight:800;color:#ffd54a} .titulo .mt{font-size:13.5px;opacity:.95;margin-top:1px}',
-    '.hola{margin:12px 6px 0;font-size:14px}',
-    '.op{margin-top:14px;background:#fff;color:#13223f;border-radius:22px;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.2);page-break-inside:avoid}',
-    '.op h3{margin:0;background:#0b2a6b;color:#fff;padding:10px 18px;font-size:14.5px;letter-spacing:.3px;border-radius:0 0 18px 0;display:inline-block;max-width:94%}',
-    '.op h3 small{font-weight:400;color:#ffd54a;margin-left:8px;font-size:12.5px}',
-    '.pre{display:grid;grid-template-columns:1fr 1.15fr;gap:10px;padding:12px 14px 8px}',
-    '.pre>div{border-radius:16px;padding:11px 16px}',
+    '.sup{display:flex;justify-content:space-between;align-items:center;gap:12px}',
+    '.logo{background:#fff;border-radius:999px;padding:5px 16px;display:flex;align-items:center;box-shadow:0 3px 10px rgba(0,0,0,.18)} .logo img{height:44px;width:auto;display:block}',
+    '.fecha{font-size:12px;text-align:right;line-height:1.4} .fecha b{display:block;font-size:12.5px}',
+    '.titulo{margin-top:10px;background:#0b2a6b;border-radius:18px 18px 18px 4px;padding:10px 20px;box-shadow:0 4px 12px rgba(0,0,0,.22);display:flex;justify-content:space-between;align-items:center;gap:12px}',
+    '.titulo small{display:block;font-size:11px;letter-spacing:.3em;opacity:.85;font-weight:700} .titulo b{display:block;font-size:25px;line-height:1.1;font-weight:900;margin:1px 0 0}',
+    '.titulo .der{text-align:right} .titulo .cl{font-size:16px;font-weight:800;color:#ffd54a} .titulo .mt{font-size:12.5px;opacity:.95;margin-top:1px}',
+    '.hola{margin:8px 6px 0;font-size:13px}',
+    '.op{margin-top:9px;background:#fff;color:#13223f;border-radius:18px;overflow:hidden;box-shadow:0 6px 16px rgba(0,0,0,.2);page-break-inside:avoid}',
+    '.op h3{margin:0;background:#0b2a6b;color:#fff;padding:7px 16px;font-size:13.5px;letter-spacing:.3px;border-radius:0 0 16px 0;display:inline-block;max-width:96%}',
+    '.op h3 small{font-weight:400;color:#ffd54a;margin-left:8px;font-size:12px}',
+    '.pre{display:grid;grid-template-columns:1fr 1.15fr;gap:8px;padding:8px 12px 6px}',
+    '.pre>div{border-radius:14px;padding:8px 14px}',
     '.pre>div:first-child{background:#ffc928;color:#0b2a6b} .pre>div:last-child{background:#e3f2fd;color:#0b2a6b}',
-    '.pre span{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:800;opacity:.85} .pre b{display:block;font-size:28px;line-height:1.1;margin:3px 0 1px;font-weight:900} .pre small{display:block;font-size:12px;opacity:.9}',
-    '.chips{padding:2px 14px 14px;display:flex;flex-wrap:wrap;gap:6px}',
-    '.chips div{display:flex;gap:7px;align-items:center;font-size:12px;background:#eef6ff;border-radius:999px;padding:4px 12px 4px 5px;color:#0b2a6b} .chips i{flex:0 0 18px;height:18px;border-radius:50%;background:#0b63c9;color:#fff;font-style:normal;font-size:11px;text-align:center;line-height:18px}',
-    '.cta{margin-top:16px;display:flex;align-items:center;justify-content:space-between;gap:14px;background:#0b2a6b;border-radius:22px;padding:13px 20px;box-shadow:0 6px 16px rgba(0,0,0,.22)}',
-    '.cta b{font-size:19px;letter-spacing:.3px} .cta .ph{background:#fff;color:#0b2a6b;border-radius:999px;padding:8px 20px;font-weight:900;font-size:17px;white-space:nowrap}',
-    '.pie{margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;color:#13223f;border-radius:999px;padding:7px 22px;font-size:12px}',
-    '.pie img{height:38px;width:auto;display:block}',
-    /* segunda hoja: detalle de coberturas */
-    '.det{page-break-before:always;margin-top:18px}',
-    '.det .dt{background:#0b2a6b;border-radius:18px;padding:11px 20px;font-weight:900;font-size:16px;letter-spacing:.3px}',
-    '.det .cols{margin-top:12px;display:grid;grid-template-columns:1.5fr 1fr;gap:12px;align-items:start}',
-    '.dc{background:#fff;color:#0b2a6b;border-radius:20px;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.2);padding-bottom:10px}',
-    '.dc h4{margin:0 0 6px;background:#0b63c9;color:#fff;padding:9px 16px;font-size:13px;letter-spacing:.4px;text-transform:uppercase}',
-    '.dc .f3{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:4px;margin:0 10px 4px;font-size:11.5px} .dc .f3 span{background:#eef6ff;border-radius:999px;padding:5px 10px;line-height:1.2;display:flex;align-items:center} .dc .f3 span+span{justify-content:center;text-align:center;font-weight:700}',
-    '.dc .f3.h span{background:none;color:#0b63c9;font-weight:800;font-size:11px;justify-content:center} .dc .f3.h span:first-child{justify-content:flex-start}',
-    '.dc .f2{display:flex;justify-content:space-between;gap:8px;margin:0 10px 4px;background:#eef6ff;border-radius:999px;padding:5px 12px;font-size:12px} .dc .f2 b{white-space:nowrap}',
-    '.dc .tot{display:flex;justify-content:space-between;align-items:center;background:#0b2a6b;color:#fff;border-radius:999px;margin:8px 10px 0;padding:7px 14px} .dc .tot span{font-weight:800;font-size:12px;letter-spacing:.4px} .dc .tot b{font-size:16px;color:#ffd54a}',
-    '.dc .tl{margin:6px 10px 6px;background:#fff6d6;border:1.5px solid #f0cf6a;color:#7a4b00;border-radius:14px;padding:6px 12px;font-size:12px} .dc .tl b{color:#b45309;display:block;font-size:13px}'
+    '.pre span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:800;opacity:.85} .pre b{display:block;font-size:23px;line-height:1.1;margin:2px 0 0;font-weight:900} .pre small{display:block;font-size:11px;opacity:.9}',
+    '.chips{padding:0 12px 9px;display:flex;flex-wrap:wrap;gap:4px 6px}',
+    '.chips div{display:flex;gap:6px;align-items:center;font-size:11px;background:#eef6ff;border-radius:999px;padding:2px 10px 2px 4px;color:#0b2a6b} .chips i{flex:0 0 15px;height:15px;border-radius:50%;background:#0b63c9;color:#fff;font-style:normal;font-size:10px;text-align:center;line-height:15px}',
+    /* coberturas dentro de la opción 2 (en la misma hoja) */
+    '.cob{display:grid;grid-template-columns:1.55fr 1fr;gap:8px;padding:0 12px 10px;align-items:start}',
+    '.cob .dc{background:#f5f9ff;color:#0b2a6b;border-radius:14px;overflow:hidden;padding-bottom:6px;border:1px solid #dbe8f8}',
+    '.cob .dc h4{margin:0 0 4px;background:#0b63c9;color:#fff;padding:5px 12px;font-size:11px;letter-spacing:.4px;text-transform:uppercase}',
+    '.dc .f3{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:3px;margin:0 8px 2px;font-size:10.5px} .dc .f3 span{background:#fff;border-radius:999px;padding:2px 8px;line-height:1.2;display:flex;align-items:center} .dc .f3 span+span{justify-content:center;text-align:center;font-weight:700}',
+    '.dc .f3.h span{background:none;color:#0b63c9;font-weight:800;font-size:10px;justify-content:center;padding:1px 0} .dc .f3.h span:first-child{justify-content:flex-start}',
+    '.dc .f2{display:flex;justify-content:space-between;gap:6px;margin:0 8px 2px;background:#fff;border-radius:999px;padding:2px 10px;font-size:10.5px} .dc .f2 b{white-space:nowrap}',
+    '.dc .tl{margin:4px 8px 4px;background:#fff6d6;border:1px solid #f0cf6a;color:#7a4b00;border-radius:10px;padding:3px 10px;font-size:10.5px} .dc .tl b{color:#b45309;display:block;font-size:11px}',
+    '.cta{margin-top:9px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0b2a6b;border-radius:18px;padding:8px 18px;box-shadow:0 4px 12px rgba(0,0,0,.22)}',
+    '.cta b{font-size:16px;letter-spacing:.3px} .cta .ph{background:#fff;color:#0b2a6b;border-radius:999px;padding:5px 16px;font-weight:900;font-size:15px;white-space:nowrap}',
+    '.pie{margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;color:#13223f;border-radius:999px;padding:4px 20px;font-size:11px}',
+    '.pie img{height:30px;width:auto;display:block}'
   ].join('');
 
   function celdaFin(o, plazo){
@@ -116,27 +113,27 @@
     var fecha = d.fecha || new Date().toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'});
     var p1 = partes(d.cob1, d), p2 = partes(d.cob2, d);
     var chips = function(a){ return a.length ? '<div class="chips">'+a.map(function(t){ return '<div><i>✓</i><span>'+esc(t)+'</span></div>'; }).join('')+'</div>' : ''; };
-    var op = function(n, titulo, sub, o, pp){
+    var op = function(n, titulo, sub, o, pp, conCob){
+      var cob = '';
+      if(conCob && pp.secs.length){
+        var rc = pp.secs.filter(function(x){ return !/^(ap|carro)/i.test(x.titulo); }), ot = pp.secs.filter(function(x){ return /^(ap|carro)/i.test(x.titulo); });
+        cob = '<div class="cob"><div class="dc">'+rc.map(seccion).join('')+'</div>'+(ot.length?'<div class="dc">'+ot.map(seccion).join('')+'</div>':'')+'</div>';
+        if(!ot.length) cob = cob.replace('grid-template-columns','grid-template-columns');
+      }
       return '<div class="op"><h3>OPCIÓN '+n+' · '+esc(titulo)+(sub?'<small>'+esc(sub)+'</small>':'')+'</h3>'+
         '<div class="pre"><div><span>De contado</span><b>'+cop(o.contado)+'</b></div>'+
-        '<div><span>Financiado a '+d.plazo+' meses</span>'+celdaFin(o, d.plazo)+'</div></div>'+chips(pp.chips)+'</div>';
+        '<div><span>Financiado a '+d.plazo+' meses</span>'+celdaFin(o, d.plazo)+'</div></div>'+chips(pp.chips)+cob+'</div>';
     };
-    var secs = p1.secs.concat(p2.secs), detalle = '';
-    if(secs.length){
-      var rc = secs.filter(function(x){ return !/^(ap|carro)/i.test(x.titulo); }), ot = secs.filter(function(x){ return /^(ap|carro)/i.test(x.titulo); });
-      detalle = '<div class="det"><div class="dt">DETALLE DE COBERTURAS · OPCIÓN 2</div><div class="cols"><div class="dc">'+rc.map(seccion).join('')+'</div><div class="dc">'+ot.map(seccion).join('')+'</div></div></div>';
-    }
     var primer = String(d.nombre||'').split(' ')[0];
     return '<div class="doc">'+
       '<div class="sup"><div class="logo">'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'<b style="color:#0b2a6b;font-size:20px">PROTECT MOTOS</b>')+'</div>'+
       '<div class="fecha"><b>'+esc(fecha)+'</b>'+(d.id?'N.º '+esc(d.id):'')+'</div></div>'+
-      '<div class="titulo"><small>'+(d.tipo==='nueva'?'GARANTÍA':'RENOVACIÓN')+'</small><b>COTIZACIÓN</b><div class="cl">'+esc(d.nombre)+'</div><div class="mt">'+esc([d.moto,d.placa].filter(Boolean).join(' · '))+' · Respaldo: '+esc(d.aseguradora)+'</div></div>'+
+      '<div class="titulo"><div><small>'+(d.tipo==='nueva'?'GARANTÍA':'RENOVACIÓN')+'</small><b>COTIZACIÓN</b></div><div class="der"><div class="cl">'+esc(d.nombre)+'</div><div class="mt">'+esc([d.moto,d.placa].filter(Boolean).join(' · '))+' · Respaldo: '+esc(d.aseguradora)+'</div></div></div>'+
       '<p class="hola">Hola, '+esc(primer)+'. Estas son tus opciones'+(d.tipo==='nueva'?' de protección:':' para renovar:')+'</p>'+
-      op(1,'Hurto o pérdida total',(d.aseguradora==='Protect Motos'?'cubre el 80 %':''),d.op1,p1)+
-      op(2,'Hurto o pérdida total + RC + Asistencias','',d.op2,p2)+
+      op(1,'Hurto o pérdida total',(d.aseguradora==='Protect Motos'?'cubre el 80 %':''),d.op1,p1,false)+
+      op(2,'Hurto o pérdida total + RC + Asistencias','',d.op2,p2,true)+
       '<div class="cta"><b>¡CONTÁCTANOS HOY!</b><div class="ph">📞 312 880 68 73</div></div>'+
       '<div class="pie">'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'<b>PROTECT MOTOS</b>')+'<div>protectmotos@gmail.com</div></div>'+
-      detalle+
       '</div>';
   }
   function pagina(d){
@@ -148,7 +145,10 @@
     var v = w.open('', '_blank');
     if(!v){ return false; }
     v.document.open(); v.document.write(pagina(d)); v.document.close();
-    var lanzar = function(){ try{ v.focus(); v.print(); }catch(e){} };
+    var lanzar = function(){ try{
+      /* una sola hoja carta: si el documento es más alto o ancho que la hoja, se reduce para que quepa */
+      var doc = v.document.querySelector('.doc'); if(doc){ var h = doc.offsetHeight, z = Math.min(1, 1000/h, 765/794); if(z<1) doc.style.zoom = String(Math.round(z*1000)/1000); }
+      v.focus(); v.print(); }catch(e){} };
     if(v.document.readyState === 'complete') setTimeout(lanzar, 400); else v.onload = function(){ setTimeout(lanzar, 400); };
     return true;
   }

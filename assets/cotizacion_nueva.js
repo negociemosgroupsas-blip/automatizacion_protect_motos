@@ -43,17 +43,23 @@
     recalcular();
   }
 
+  function metodo(){ var e=$('cn_met'); return e&&e.value==='fas' ? 'fas' : 'val'; }
+  function aplicarMetodo(){
+    var f = metodo()==='fas';
+    $('cn_lval').style.display = f ? 'none' : ''; ['cn_lfac','cn_lfas','cn_lgar'].forEach(function(id){ $(id).style.display = f ? '' : 'none'; });
+    try{ localStorage.setItem('pm_cot_met', f?'fas':'val'); }catch(e){}
+  }
   function refActual(){ var n=$('cn_ref').value; for(var i=0;i<REFS.length;i++) if(REFS[i].nombre===n) return REFS[i]; return null; }
   function leer(){
     var plz = Number($('cn_plz').value), usada = $('cn_estado').value==='USADA', ref = refActual(), propia = $('cn_ase').value==='Protect Motos';
-    var valor = num($('cn_valor').value), O = PMCot.opcionesNueva(valor, plz, {esp:ref, usada:usada}), op1, op2;
+    var met = metodo(), valor = met==='fas' ? PMCot.valorAGarantizar(num($('cn_fac').value), num($('cn_fas').value)) : num($('cn_valor').value), O = PMCot.opcionesNueva(valor, plz, {esp:(met==='fas'?null:ref), usada:usada}), op1, op2;
     if(propia){ var cero = {contado:0,cuota:0,total:0,primera:0,resto:0}; op1 = O?O.op1:cero; op2 = O?O.op2:cero; }
     else{
       var m = function(a,b){ var c=num($(a).value), q=num($(b).value); return {contado:c, cuota:q, total:q*plz, primera:q, resto:q}; };
       op1 = m('cn_m1c','cn_m1q'); op2 = m('cn_m2c','cn_m2q');
     }
     return { nombre:$('cn_nom').value.trim(), celular:$('cn_cel').value.trim(), cedula:$('cn_ced').value.trim(), placa:$('cn_pla').value.trim(), moto:$('cn_moto').value.trim(),
-      valor:valor, plazo:plz, usada:usada, ref:(ref&&!usada)?ref:null, aseguradora:aseguradora(), propia:propia, op1:op1, op2:op2, cubre:O?O.cubre:0,
+      metodo:met, valor:valor, plazo:plz, usada:usada, ref:(ref&&!usada&&met==='val')?ref:null, aseguradora:aseguradora(), propia:propia, op1:op1, op2:op2, cubre:O?O.cubre:0,
       rc:O?O.rc:PMCot.RC_DEFECTO, ap:O?O.ap:PMCot.AP_DEFECTO, listo:propia ? !!O : (op1.contado>0 && op2.contado>0) };
   }
   function lineaFin(o, plazo){ return o.primera!==o.resto ? ('1ª cuota '+cop(o.primera)+' y '+(plazo-1)+' cuotas de '+cop(o.resto)+' (total '+cop(o.total)+')') : (plazo+' cuotas de '+cop(o.cuota)+' (total '+cop(o.total)+')'); }
@@ -67,11 +73,13 @@
   function resumenOp(o, plz){ return 'contado <b>'+cop(o.contado)+'</b> · '+plz+' cuotas'+(o.primera!==o.resto?' (1ª de <b>'+cop(o.primera)+'</b>, luego <b>'+cop(o.resto)+'</b>)':' de <b>'+cop(o.cuota)+'</b>')+' · total <b>'+cop(o.total)+'</b>'; }
   function recalcular(){
     guardada = null;
+    aplicarMetodo();
     var ref = refActual(), usada = $('cn_estado').value==='USADA';
-    $('cn_refaviso').textContent = ref ? (usada ? 'La moto es USADA: no aplica el precio especial, se cotiza por el valor de la moto.' : 'Precio especial de la referencia '+ref.nombre+': no hace falta el valor de la moto.') : '';
+    $('cn_refaviso').textContent = (metodo()==='fas') ? 'Calculando con la factura y el valor de Fasecolda: no aplican los precios especiales por referencia.' : ref ? (usada ? 'La moto es USADA: no aplica el precio especial, se cotiza por el valor de la moto.' : 'Precio especial de la referencia '+ref.nombre+': no hace falta el valor de la moto.') : '';
     var q = leer();
-    if(!q.listo){ $('cn_res').innerHTML = q.propia ? 'Escribe el <b>valor de la moto</b> (o elige una referencia con precio especial) para calcular.' : 'Escribe los valores de la aseguradora.'; return; }
-    $('cn_res').innerHTML = (q.propia ? (q.ref ? 'Precio especial <b>'+esc(q.ref.nombre)+'</b>' : 'Valor de la moto <b>'+cop(q.valor)+'</b> · contado 7,5 % · financiado '+(q.plazo===3?9:q.plazo===6?10:12)+' %')+'<br>' : '')+
+    $('cn_gar').value = (q.metodo==='fas' && q.valor>0) ? cop(q.valor) : '';
+    if(!q.listo){ $('cn_res').innerHTML = q.metodo==='fas' ? 'Escribe la <b>factura</b> y el valor de <b>Fasecolda</b> para calcular.' : q.propia ? 'Escribe el <b>valor de la moto</b> (o elige una referencia con precio especial) para calcular.' : 'Escribe los valores de la aseguradora.'; return; }
+    $('cn_res').innerHTML = (q.propia ? (q.ref ? 'Precio especial <b>'+esc(q.ref.nombre)+'</b>' : (q.metodo==='fas' ? 'Valor a garantizar (factura y Fasecolda −10 %) <b>'+cop(q.valor)+'</b>' : 'Valor de la moto <b>'+cop(q.valor)+'</b>')+' · contado 7,5 % · financiado '+(q.plazo===3?9:q.plazo===6?10:12)+' %')+'<br>' : '')+
       '<b>Opción 1</b> (hurto o pérdida total): '+resumenOp(q.op1,q.plazo)+'<br><b>Opción 2</b> (+ RC + asistencias): '+resumenOp(q.op2,q.plazo)+(q.propia?'':'<br><i>Valores escritos a mano para '+esc(q.aseguradora)+'.</i>');
     if(!editado) $('cn_txt').value = mensaje(q);
   }
@@ -111,7 +119,7 @@
     if(guardada){ ir(); return; } guardar().then(ir, function(){});
   }
   function limpiar(){
-    ['cn_nom','cn_cel','cn_ced','cn_pla','cn_moto','cn_valor','cn_m1c','cn_m1q','cn_m2c','cn_m2q'].forEach(function(i){ $(i).value=''; });
+    ['cn_fac','cn_fas','cn_nom','cn_cel','cn_ced','cn_pla','cn_moto','cn_valor','cn_m1c','cn_m1q','cn_m2c','cn_m2q'].forEach(function(i){ $(i).value=''; });
     $('cn_estado').value='NUEVA'; $('cn_ref').value=''; $('cn_plz').value='12'; editado=false; guardada=null; setSt(''); recalcular(); $('cn_nom').focus();
   }
 
@@ -123,10 +131,14 @@
       '<label>Celular (WhatsApp) *<input id="cn_cel" inputmode="tel" autocomplete="off" placeholder="3001234567"></label>'+
       '<label>Cédula (opcional)<input id="cn_ced" autocomplete="off"></label>'+
       '<label>Placa (opcional)<input id="cn_pla" autocomplete="off"></label>'+
+      '<label style="grid-column:1/-1">¿Con qué cotizador calculo?<select id="cn_met"><option value="val">Cotizador de Contratos: con el valor de la moto</option><option value="fas">Cotizador de renovación: con la factura y el valor de Fasecolda</option></select></label>'+
       '<label>Estado de la moto<select id="cn_estado"><option>NUEVA</option><option>USADA</option></select></label>'+
       '<label>Referencia con precio especial<select id="cn_ref"><option value="">— Ninguna: cotizar por el valor de la moto —</option>'+REFS.map(function(r){ return '<option value="'+esc(r.nombre)+'">'+esc(r.nombre)+(r.marca?' ('+esc(r.marca)+')':'')+'</option>'; }).join('')+'</select></label>'+
       '<label>Marca / referencia de la moto<input id="cn_moto" autocomplete="off" placeholder="Ej.: YAMAHA FZ 150"></label>'+
-      '<label>Valor de la moto<input id="cn_valor" inputmode="numeric" autocomplete="off" placeholder="$ 11.499.000"></label>'+
+      '<label id="cn_lval">Valor de la moto<input id="cn_valor" inputmode="numeric" autocomplete="off" placeholder="$ 11.499.000"></label>'+
+      '<label id="cn_lfac" style="display:none">Valor factura de la moto<input id="cn_fac" inputmode="numeric" autocomplete="off" placeholder="$"></label>'+
+      '<label id="cn_lfas" style="display:none">Valor Fasecolda actual<input id="cn_fas" inputmode="numeric" autocomplete="off" placeholder="$ (escríbelo)"></label>'+
+      '<label id="cn_lgar" style="display:none">Valor a garantizar (−10 %, el menor)<input id="cn_gar" readonly></label>'+
       '<label>Plazo financiado<select id="cn_plz"><option value="3">3 meses</option><option value="6">6 meses</option><option value="12" selected>12 meses</option></select></label>'+
       '<label>¿Con qué aseguradora va?<select id="cn_ase"><option>Protect Motos</option><option>Sura</option><option>Otra</option></select></label>'+
       '<label id="cn_otral" style="display:none">Nombre de la aseguradora<input id="cn_otra" placeholder="Ej.: Mundial"></label>'+
@@ -144,7 +156,7 @@
       '<div class="cn-bar"><button class="cn-b o" id="cn_pdf" type="button">📄 Cotización en PDF</button><button class="cn-b o" id="cn_img" type="button">🖼️ Cotización en imagen</button>'+
       '<button class="cn-b" id="cn_gua" type="button">Guardar cotización</button><button class="cn-b g" id="cn_cop" type="button">Copiar mensaje</button><button class="cn-b v" id="cn_wa" type="button">Abrir WhatsApp</button><button class="cn-b g" id="cn_new" type="button">🆕 Nueva cotización</button></div>'+
       '<p class="cn-nota">Para enviarla: descarga el PDF o la imagen, abre WhatsApp con el botón verde y adjunta el archivo. Nada se envía solo.</p>';
-    ['cn_nom','cn_cel','cn_ced','cn_pla','cn_moto','cn_valor','cn_plz','cn_estado','cn_ref','cn_ase','cn_otra','cn_m1c','cn_m1q','cn_m2c','cn_m2q'].forEach(function(id){ $(id).addEventListener('input', recalcular); $(id).addEventListener('change', recalcular); });
+    ['cn_met','cn_fac','cn_fas','cn_nom','cn_cel','cn_ced','cn_pla','cn_moto','cn_valor','cn_plz','cn_estado','cn_ref','cn_ase','cn_otra','cn_m1c','cn_m1q','cn_m2c','cn_m2q'].forEach(function(id){ $(id).addEventListener('input', recalcular); $(id).addEventListener('change', recalcular); });
     $('cn_ref').addEventListener('change', function(){ var r=refActual(); if(r){ $('cn_moto').value=[r.marca, r.nombre].filter(Boolean).join(' '); } recalcular(); });
     $('cn_ase').addEventListener('change', cargarCob); $('cn_otra').addEventListener('change', cargarCob);
     ['cn_cb1','cn_cb2'].forEach(function(id){ $(id).addEventListener('change', function(){ var a=aseguradora(); if($('cn_ase').value==='Otra' && !$('cn_otra').value.trim()) return; PMCotDoc.guardarCoberturas(a, id==='cn_cb1'?'op1':'op2', lineasCob(id)); }); });
@@ -152,6 +164,7 @@
     $('cn_txt').addEventListener('input', function(){ editado = true; });
     $('cn_pdf').onclick = function(){ hacerDoc('pdf'); }; $('cn_img').onclick = function(){ hacerDoc('img'); };
     $('cn_gua').onclick = function(){ guardar().catch(function(){}); }; $('cn_cop').onclick = copiar; $('cn_wa').onclick = abrirWA; $('cn_new').onclick = limpiar;
+    try{ if(localStorage.getItem('pm_cot_met')==='fas') $('cn_met').value='fas'; }catch(e){}
     cargarCob();
   }
   w.PMCotNueva = { iniciar:iniciar, _mensaje:mensaje };
