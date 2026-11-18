@@ -120,12 +120,21 @@ function accionDatos() {
   return { ok: true, contratos: leerContratos(hojaSeg), pagos: leerPagos(hojaPagos), gestiones: [], comisionesCfg: leerConfigComisiones(ss) };
 }
 
+// Número de columna con ese título en la fila 1 (0 si no existe). Las columnas de cancelación las crea el conector de Cobros.
+function columnaPorEncabezado(hoja, titulo) {
+  var ult = Math.max(hoja.getLastColumn(), 1);
+  var enc = hoja.getRange(1, 1, 1, ult).getValues()[0], b = String(titulo).trim().toLowerCase();
+  for (var i = 0; i < enc.length; i++) { if (String(enc[i] || '').trim().toLowerCase() === b) return i + 1; }
+  return 0;
+}
+
 function leerContratos(hoja) {
   var ultimaFila = hoja.getLastRow();
   if (ultimaFila < FILA_INICIO_DATOS) return [];
 
   var ultimaCol = hoja.getLastColumn();
   var datos = hoja.getRange(FILA_INICIO_DATOS, 1, ultimaFila - FILA_INICIO_DATOS + 1, ultimaCol).getValues();
+  var colFC = columnaPorEncabezado(hoja, 'Fecha de cancelación'), colMC = columnaPorEncabezado(hoja, 'Motivo de cancelación');
 
   var resultado = [];
   for (var i = 0; i < datos.length; i++) {
@@ -158,7 +167,9 @@ function leerContratos(hoja) {
       comision: Number(fila[COL.COMISION - 1]) || 0,
       rc: String(fila[COL.RC - 1] || '').trim().toUpperCase(),
       ap: String(fila[COL.AP - 1] || '').trim().toUpperCase(),
-      estado: String(fila[COL.ESTADO_CLIENTE - 1] || '').trim().toUpperCase()
+      estado: String(fila[COL.ESTADO_CLIENTE - 1] || '').trim().toUpperCase(),
+      fechaCancelacionISO: colFC ? formatoISO(fila[colFC - 1]) : '',
+      motivoCancelacion: colMC ? String(fila[colMC - 1] || '').trim() : ''
     });
   }
   return resultado;

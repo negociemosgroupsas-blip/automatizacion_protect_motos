@@ -436,6 +436,18 @@
     </div>
   </section>
 
+  <section class="panel" id="panelPermanencia">
+    <div class="cabecera">
+      <h2>Permanencia y cancelaciones</h2>
+      <span class="sub" id="perSub">Cuánto tiempo se quedan los clientes y cuántos cancelan cada mes</span>
+    </div>
+    <div class="contenido-panel">
+      <div class="seg-tiles" id="perTiles"></div>
+      <div class="seg-tabla-w"><table id="tablaPer"><thead><tr><th>Mes</th><th>Clientes activos al inicio</th><th>Cancelaron</th><th>Voluntarias</th><th>Por no pago / otro</th><th>% de retención del mes</th></tr></thead><tbody id="cuerpoPer"></tbody></table></div>
+      <p class="seg-nota" id="perNota"></p>
+    </div>
+  </section>
+
   <section class="panel" id="panelRetencion">
     <div class="cabecera">
       <h2>Retención de clientes</h2>
@@ -1112,6 +1124,58 @@
   document.getElementById('segMes').addEventListener('change', function(){ segMes = this.value; renderizarSeguimiento(); });
 
   function isoLocalHoy(){ var h = new Date(); return h.getFullYear()+'-'+('0'+(h.getMonth()+1)).slice(-2)+'-'+('0'+h.getDate()).slice(-2); }
+  // ==================== PERMANENCIA Y CANCELACIONES (medición desde el inicio de la automatización) ====================
+  var MEDICION_DESDE = '2026-11-18';   // desde esta fecha se mide; los cancelados anteriores no tienen fecha de cancelación
+  function mesesEntre(isoA, isoB){ var a = parsearISO(isoA), b = parsearISO(isoB); return a && b ? Math.round((b-a)/86400000/30.44*10)/10 : 0; }
+  function activoEn(c, x){   // ¿el contrato estaba vigente (cliente activo) en la fecha x?
+    if(!c.fechaFirmaISO || c.fechaFirmaISO>x) return false;
+    if(c.finISO && c.finISO<x) return false;
+    if(c.estado==='CANCELADO'){ if(!c.fechaCancelacionISO) return false; if(c.fechaCancelacionISO<x) return false; }
+    return true;
+  }
+  function renderizarPermanencia(){
+    var cuerpo = document.getElementById('cuerpoPer'); if(!cuerpo) return;
+    var hoyISO = isoLocalHoy(), D = MEDICION_DESDE, fmt = function(iso){ var p = iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
+    // universo: clientes que estaban activos al empezar la medición, más los que firmen desde entonces
+    var U = estado.contratos.filter(function(c){
+      if(!String(c.cliente||'').trim() || c.estado==='ANULADO' || !c.fechaFirmaISO) return false;
+      if(c.estado==='CANCELADO' && !c.fechaCancelacionISO) return false;                  // cancelado antes: sin fecha, no se sabe cuándo
+      if(c.estado==='CANCELADO' && c.fechaCancelacionISO<D) return false;
+      if(c.finISO && c.finISO<D) return false;
+      return true;
+    });
+    var cancel = U.filter(function(c){ return c.estado==='CANCELADO'; });
+    var vol = cancel.filter(function(c){ return c.motivoCancelacion==='Solicitud del cliente'; }).length;
+    var act = U.filter(function(c){ return c.estado==='ACTIVO'; }).length, fin = U.filter(function(c){ return c.estado==='FINALIZADO'; }).length;
+    var pct = function(a,b){ return b ? Math.round(a/b*1000)/10 : 0; };
+    var dur = cancel.map(function(c){ return mesesEntre(c.fechaFirmaISO, c.fechaCancelacionISO); });
+    var prom = dur.length ? Math.round(dur.reduce(function(a,b){return a+b;},0)/dur.length*10)/10 : null;
+    // tabla por mes: desde el mes de inicio hasta el mes actual
+    var filas = [], y = +D.slice(0,4), m = +D.slice(5,7), yh = +hoyISO.slice(0,4), mh = +hoyISO.slice(5,7), mesAct = null;
+    while(y<yh || (y===yh && m<=mh)){
+      var ini = y+'-'+('0'+m).slice(-2)+'-01', iniMedido = ini<D ? D : ini;
+      var sig = m===12 ? (y+1)+'-01-01' : y+'-'+('0'+(m+1)).slice(-2)+'-01';
+      var act0 = U.filter(function(c){ return activoEn(c, iniMedido); }).length;
+      var cm = cancel.filter(function(c){ return c.fechaCancelacionISO>=iniMedido && c.fechaCancelacionISO<sig; });
+      var vm = cm.filter(function(c){ return c.motivoCancelacion==='Solicitud del cliente'; }).length;
+      var fila = {y:y, m:m, a0:act0, c:cm.length, v:vm, r:act0 ? Math.round((1-cm.length/act0)*1000)/10 : null};
+      filas.push(fila); if(y===yh && m===mh) mesAct = fila;
+      m++; if(m>12){ m = 1; y++; }
+    }
+    var A0 = U.filter(function(c){ return activoEn(c, D); }).length;
+    document.getElementById('perSub').textContent = 'Medición desde el '+fmt(D)+' · cuánto tiempo se quedan los clientes y cuántos cancelan cada mes';
+    document.getElementById('perTiles').innerHTML =
+      '<div class="seg-t" style="--c:#fdc33e"><span>Retención del mes actual</span><b>'+(mesAct && mesAct.r!==null ? mesAct.r+' %' : '—')+'</b><small>'+(mesAct ? mesAct.c+' cancelaron de '+mesAct.a0+' activos al inicio' : '')+'</small></div>'+
+      '<div class="seg-t" style="--c:#38bdf8"><span>Clientes en seguimiento</span><b>'+U.length+'</b><small>'+A0+' activos al empezar + los que firmaron después</small></div>'+
+      '<div class="seg-t" style="--c:#1f9d55"><span>Siguen activos</span><b>'+act+'</b><small>'+pct(act,U.length)+' % de los que seguimos</small></div>'+
+      '<div class="seg-t" style="--c:#dc2626"><span>Cancelaron</span><b>'+cancel.length+'</b><small>'+vol+' voluntarias · '+(cancel.length-vol)+' por no pago u otro</small></div>'+
+      '<div class="seg-t" style="--c:#5b78c7"><span>Terminaron su contrato completo</span><b>'+fin+'</b><small>finalizados desde que empezamos a medir</small></div>'+
+      '<div class="seg-t" style="--c:#e08a00"><span>Permanencia de los que cancelaron</span><b>'+(prom!==null ? prom+' meses' : '—')+'</b><small>promedio desde la firma hasta cancelar</small></div>';
+    cuerpo.innerHTML = filas.slice().reverse().map(function(f){
+      return '<tr><td data-etiqueta="Mes">'+MESES_SEG[f.m-1]+' '+f.y+'</td><td data-etiqueta="Activos al inicio"><strong>'+f.a0+'</strong></td><td data-etiqueta="Cancelaron">'+f.c+'</td><td data-etiqueta="Voluntarias">'+f.v+'</td><td data-etiqueta="Por no pago / otro">'+(f.c-f.v)+'</td><td data-etiqueta="% de retención del mes"><strong>'+(f.r!==null ? f.r+' %' : '—')+'</strong></td></tr>'; }).join('');
+    document.getElementById('perNota').textContent = 'Retención del mes = 1 − (clientes que cancelaron en el mes ÷ clientes activos al inicio del mes). Los contratos que terminaron completos no cuentan como cancelación. Solo cuentan las cancelaciones registradas desde el '+fmt(D)+' (las anteriores no tienen fecha). La permanencia se irá llenando a medida que se registren cancelaciones.';
+  }
+
   // ==================== RETENCIÓN DE CLIENTES ====================
   var retAnio = 'todos', retMes = '0';
   function sumarDiasISO(iso, d){ var p = parsearISO(iso); p.setDate(p.getDate()+d); return p.getFullYear()+'-'+('0'+(p.getMonth()+1)).slice(-2)+'-'+('0'+p.getDate()).slice(-2); }
@@ -1214,7 +1278,7 @@
       var h = hoy(); if(!Array.isArray(estado.gestiones)) estado.gestiones = [];
       estado.gestiones.push({fechaGestion:formatoFechaCO(h), fechaGestionISO:formatoFechaInput(h), contrato:c.contrato, cedula:c.cedula, cliente:c.cliente, accion:accion, registradoPor:registradoPor});
       mostrarEstado('ok', '✓ '+textoOk);
-      renderizarSegCli(); renderizarSeguimiento(); renderizarRetencion();
+      renderizarSegCli(); renderizarSeguimiento(); renderizarRetencion(); renderizarPermanencia();
     }).catch(function(err){
       if(boton){ boton.disabled = false; boton.textContent = t0; }
       mostrarEstado('error', err.message); window.alert('No se pudo guardar:\n\n'+err.message);
@@ -1280,7 +1344,7 @@
     renderizarCobros(mapaPagos);
     renderizarRenovaciones();
     renderizarRenovacionesEnviadas();
-    renderizarSeguimiento(); renderizarRetencion();
+    renderizarSeguimiento(); renderizarRetencion(); renderizarPermanencia();
     renderizarSegCli();
     renderizarFiltro(mapaPagos);
   }

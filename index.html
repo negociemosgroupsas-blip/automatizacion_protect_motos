@@ -483,6 +483,12 @@
   #v-inicio .vmc{grid-column:1/-1!important;order:3!important}
   #v-inicio .gxc{grid-column:1/-1!important;order:3!important;--acc:#fdc33e} .gxc{cursor:default;max-width:none} .gxc:hover{box-shadow:none;transform:none} .gxc[hidden]{display:none!important}
   .gxc .tot{font-size:.85rem;color:var(--suave);margin:0 0 12px}
+  #v-inicio .rtx{grid-column:1/-1!important;order:3!important;--acc:#fdc33e} .rtx:hover{box-shadow:none;transform:none} .rtx[hidden]{display:none!important} .rtx .tot{font-size:.85rem;color:var(--suave);margin:0 0 12px}
+  .rt-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:10px 0 14px} .rt-k div{border-radius:12px;padding:12px 14px;background:linear-gradient(135deg,#e0a21c,#fdc33e);color:#04202e} .rt-k div:nth-child(2){background:linear-gradient(135deg,#0ea5e9,#38bdf8)} .rt-k div:nth-child(3){background:linear-gradient(135deg,#4a64b0,#5b78c7);color:#fff} .rt-k div:nth-child(4){background:linear-gradient(135deg,#c23a3a,#d64545);color:#fff}
+  .rt-k span{display:block;font-size:.74rem;font-weight:600;text-transform:uppercase;opacity:.9} .rt-k b{font-size:1.6rem;display:block} .rt-k small{font-size:.74rem;opacity:.9}
+  .rt-g{display:flex;align-items:flex-end;gap:16px;height:230px;padding:0 4px 30px;overflow-x:auto} .rt-m{flex:1;min-width:80px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
+  .rt-b{display:flex;align-items:flex-end;gap:5px;height:170px;width:100%;justify-content:center} .rt-c{width:30px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%} .rt-c b{font-size:.72rem;margin-bottom:2px} .rt-c i{display:block;width:100%;border-radius:5px 5px 0 0}
+  .rt-p{font-size:.85rem;font-weight:700!important;color:#fdc33e;margin-bottom:4px} .rt-n{position:absolute;bottom:-24px;font-size:.78rem;color:var(--suave);white-space:nowrap}
   #v-inicio .bkx{grid-column:1/-1!important;order:3!important;--acc:#38bdf8} .bkx:hover{box-shadow:none;transform:none} .bkx[hidden]{display:none!important}
   .bkx .tot{font-size:.85rem;color:var(--suave);margin:0 0 12px} .bk-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:10px 0 14px}
   .bk-k div{border-radius:12px;padding:12px 14px;background:linear-gradient(135deg,#0ea5e9,#38bdf8);color:#04202e} .bk-k div:nth-child(2){background:linear-gradient(135deg,#e0a21c,#fdc33e)} .bk-k div:nth-child(3){background:linear-gradient(135deg,#4a64b0,#5b78c7);color:#fff}
@@ -595,6 +601,7 @@
     <section class="card gxc" id="gxWrap" data-sec="gerencia" hidden><h3>📋 Resumen gerencial</h3><p class="tot" id="gxSub"></p><div class="gx-grid" id="gxGrid"></div><h4 class="gx-h">⚠️ Atención requerida</h4><div class="gx-at" id="gxAt"></div></section>
     <section class="card fnx" id="fnWrap" data-sec="gerencia" hidden><h3>🏁 Contratos terminados: finalizados vs cancelados</h3><p class="tot" id="fnSub"></p><div class="ed-per"><label>Año en que terminó <select id="fnAnio"></select></label> <label>Tipo de venta <select id="fnForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="fnAses"></select></label></div><div class="fn-w"><div class="fn-d" id="fnDon"></div><div class="fn-y" id="fnCols"></div></div><div class="fn-l"><span><i style="background:#5b78c7"></i>Finalizados (siempre pagó)</span><span><i style="background:#d64545"></i>Cancelados (dejó de pagar)</span><span>% sobre cada columna = finalizados ÷ terminados · columnas por año en que terminó el contrato</span></div></section>
     <section class="card bkx" id="bkWrap" data-sec="gerencia" hidden><h3>🏦 Dinero que entra al banco por consignaciones</h3><p class="tot" id="bkSub"></p><div class="ed-per"><label>Año <select id="bkAnio"></select></label> <label>Mes <select id="bkMes"><option value="">Todos los meses</option><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></label></div><div class="bk-k" id="bkK"></div><div class="bk-g" id="bkG"></div><p class="tot" style="margin:8px 0 0">Suma de todo lo que entró a la hoja del banco (incluye consignaciones sin comprobante). No cuenta intereses, valores menores a $1.000 ni las descripciones que usted excluyó en «Verificación bancaria».</p></section>
+    <section class="card rtx" id="rtWrap" data-sec="gerencia" hidden><h3>🤝 Retención de clientes</h3><p class="tot" id="rtSub"></p><div class="ed-per"><label>Tipo de venta <select id="rtForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="rtAses"></select></label></div><div class="rt-k" id="rtK"></div><div class="rt-g" id="rtG"></div><div class="fn-l"><span><i style="background:#38bdf8"></i>Clientes activos al inicio del mes</span><span><i style="background:#d64545"></i>Cancelaron en el mes</span><span>% = retención del mes · 100 % menos los que cancelaron</span></div></section>
     <div class="in-sec" id="sec-ventas" data-sec="ventas" style="order:4"><i></i>Ventas y contratos<em>▾</em></div>
     <div class="in-sec" id="sec-clientes" data-sec="clientes" style="order:8"><i></i>Clientes y seguros<em>▾</em></div>
     <div class="in-sec" id="sec-conc" data-sec="conc" style="order:13"><i></i>Valor cobrado a Dugo Motos<em>▾</em></div>
@@ -1492,6 +1499,35 @@
   }
   window.pintarBanco=pintarBanco;window.cargarBanco=cargarBanco;
   document.addEventListener('pm-cobros',function(){try{cargarBanco()}catch(e){}});setTimeout(function(){try{cargarBanco()}catch(e){}},2500);
+  /* ===== Retención de clientes: permanencia y cancelaciones (se mide desde el inicio de la automatización) ===== */
+  var RT={f:'',a:''},RT_DESDE='2026-11-18';
+  function rtIso(h){return h.getFullYear()+'-'+('0'+(h.getMonth()+1)).slice(-2)+'-'+('0'+h.getDate()).slice(-2)}
+  function pintarRetencion(){
+    var W=document.getElementById('rtWrap'),R=window.PM_COBROS;if(!W)return;
+    if(!R||!R.contratos||!R.contratos.length){W.hidden=true;return}W.hidden=false;
+    var MESN=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],hoyISO=rtIso(new Date()),D=RT_DESDE;
+    var sa=document.getElementById('rtAses'),sf=document.getElementById('rtForma'),as={};
+    R.contratos.forEach(function(c){var a=String(c.asesor||'').trim().toUpperCase();if(a)as[a]=1});
+    sa.innerHTML='<option value="">Todos</option>'+Object.keys(as).sort().map(function(a){return '<option>'+a+'</option>'}).join('');if(!as[RT.a])RT.a='';sa.value=RT.a;sf.value=RT.f;
+    var U=R.contratos.filter(function(c){
+      if(!String(c.cliente||'').trim()||!c.fechaFirmaISO)return false;var st=String(c.estado||'').toUpperCase();
+      if(st==='ANULADO'||(st==='CANCELADO'&&(!c.fechaCancelacionISO||c.fechaCancelacionISO<D)))return false;if(c.finISO&&c.finISO<D)return false;
+      if(RT.f&&c.forma!==RT.f)return false;if(RT.a&&String(c.asesor||'').trim().toUpperCase()!==RT.a)return false;return true});
+    var activoEn=function(c,x){if(c.fechaFirmaISO>x)return false;if(c.finISO&&c.finISO<x)return false;if(String(c.estado).toUpperCase()==='CANCELADO'&&(!c.fechaCancelacionISO||c.fechaCancelacionISO<x))return false;return true};
+    var canc=U.filter(function(c){return String(c.estado).toUpperCase()==='CANCELADO'}),vol=canc.filter(function(c){return c.motivoCancelacion==='Solicitud del cliente'}).length;
+    var act=U.filter(function(c){return String(c.estado).toUpperCase()==='ACTIVO'}).length;
+    var y=+D.slice(0,4),m=+D.slice(5,7),yh=+hoyISO.slice(0,4),mh=+hoyISO.slice(5,7),filas=[],mx=1;
+    while(y<yh||(y===yh&&m<=mh)){var ini=y+'-'+('0'+m).slice(-2)+'-01',im=ini<D?D:ini,sig=m===12?(y+1)+'-01-01':y+'-'+('0'+(m+1)).slice(-2)+'-01';
+      var a0=U.filter(function(c){return activoEn(c,im)}).length,cm=canc.filter(function(c){return c.fechaCancelacionISO>=im&&c.fechaCancelacionISO<sig}).length;
+      filas.push({n:MESN[m-1]+' '+String(y).slice(2),a0:a0,c:cm,r:a0?Math.round((1-cm/a0)*1000)/10:null});mx=Math.max(mx,a0);m++;if(m>12){m=1;y++}}
+    var cur=filas[filas.length-1],pc=function(a,b){return b?Math.round(a/b*1000)/10:0},fd=D.split('-').reverse().join('/');
+    document.getElementById('rtSub').textContent='Medición desde el '+fd+' · cuántos clientes se quedan cada mes y cuántos cancelan (permanencia). Los cancelados anteriores no tienen fecha y no se cuentan.';
+    document.getElementById('rtK').innerHTML='<div><span>Retención del mes actual</span><b>'+(cur&&cur.r!==null?cur.r+' %':'—')+'</b><small>'+(cur?cur.c+' cancelaron de '+cur.a0+' activos al inicio':'')+'</small></div><div><span>Clientes en seguimiento</span><b>'+U.length+'</b><small>'+act+' siguen activos</small></div><div><span>Siguen activos</span><b>'+pc(act,U.length)+' %</b><small>de los clientes en seguimiento</small></div><div><span>Cancelaron</span><b>'+canc.length+'</b><small>'+vol+' voluntarias · '+(canc.length-vol)+' por no pago u otro</small></div>';
+    document.getElementById('rtG').innerHTML=filas.map(function(f){var h1=f.a0?Math.max(4,Math.round(f.a0/mx*130)):0,h2=f.c?Math.max(4,Math.round(f.c/mx*130)):0;
+      return '<div class="rt-m" title="'+f.n+': '+f.a0+' activos al inicio · '+f.c+' cancelaron"><div class="rt-p">'+(f.r!==null?f.r+' %':'')+'</div><div class="rt-b"><div class="rt-c"><b>'+(f.a0||'')+'</b><i style="height:'+h1+'px;background:#38bdf8"></i></div><div class="rt-c"><b>'+(f.c||'')+'</b><i style="height:'+h2+'px;background:#d64545"></i></div></div><span class="rt-n">'+f.n+'</span></div>'}).join('');
+  }
+  window.pintarRetencion=pintarRetencion;
+  document.getElementById('rtForma').addEventListener('change',function(){RT.f=this.value;pintarRetencion()});document.getElementById('rtAses').addEventListener('change',function(){RT.a=this.value;pintarRetencion()});
   function pintarGerencia(){
     var PK=window.PMK||{};
     var W=document.getElementById('gxWrap'),R=window.PM_COBROS;if(!W)return;
@@ -1524,7 +1560,7 @@
       M_('Cancelaciones',tc+' %',canc+' de '+tot+' contratos cancelados','Indicador de calidad de la venta',null)+
       (rc?M_('Comisiones del mes',cop(cmM),gxDelta(cmM,cmP,true).replace(/ (up|dn)"/,'"')+' vs '+MESN[PM-1]+' completo',vM?('Equivale al '+(Math.round(cmM/vM*1000)/10)+' % del valor contratado'):''):'');
     /* gráfica de contratos terminados */
-    window.PM_FN_BASE=base;pintarFin();
+    window.PM_FN_BASE=base;pintarFin();try{pintarRetencion()}catch(e){}
     /* atención */
     var h8=0,hD=new Date(Y,hoyD.getMonth(),hoyD.getDate());
     base.forEach(function(o){if(o.e!=='ACTIVO'||!o.x.finISO)return;var p=o.x.finISO.split('-'),f=new Date(+p[0],+p[1]-1,+p[2]),d=Math.round((f-hD)/86400000);if(d>=0&&d<=8)h8++});
