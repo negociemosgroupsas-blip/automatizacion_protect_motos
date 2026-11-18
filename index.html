@@ -753,11 +753,12 @@
     var fil=asy.querySelector('#asyFil'),g=asy.querySelector('#asyG'),l=asy.querySelector('#asyL');
     var colW=document.createElement('div');colW.id='asyColsWrap';fil.parentNode.insertBefore(colW,fil);colW.appendChild(fil);colW.appendChild(g);colW.appendChild(l);
     var rkW=document.createElement('div');rkW.id='asyRankWrap';['#rkTot','.ed-per','.scroll'].forEach(function(q){var e=r.querySelector(q);if(e)rkW.appendChild(e)});
-    var v=document.createElement('div');v.className='ed-per';v.innerHTML='<label>Vista <select id="asyVista"><option value="rank">Ranking del año (tabla)</option><option value="anios">Año por año (columnas)</option></select></label>';
+    var v=document.createElement('div');v.className='ed-per';v.innerHTML='<label>Vista <select id="asyVista"><option value="rank">Ranking del año (tabla)</option><option value="anios">Año por año (columnas)</option></select></label> <label>Ordenar por <select id="asyOrd"><option value="p">Ventas de Protect Motos</option><option value="rc">Ventas con RC</option><option value="ap">Ventas con AP</option></select></label>';
     asy.insertBefore(v,colW);asy.insertBefore(rkW,colW);
     var tt=asy.querySelector('#asyTot'),sel=v.querySelector('select');
     function ver(){var x=sel.value;rkW.style.display=x==='rank'?'':'none';colW.style.display=x==='anios'?'':'none';if(tt)tt.style.display=x==='anios'?'':'none'}
-    sel.addEventListener('change',ver);ver();r.parentNode.removeChild(r);
+    sel.addEventListener('change',ver);ver();
+    v.querySelector('#asyOrd').addEventListener('change',function(){ASY.o=this.value;if(window.pintarAsesAnio)pintarAsesAnio(asyRecs,asyOk);if(window.pintarRanking)pintarRanking(rkRecs,rkOk)});r.parentNode.removeChild(r);
   })();
   var rkRecs=null,rkOk=false,rkY='';
   document.getElementById('rkAnio').addEventListener('change',function(){rkY=this.value;pintarRanking(rkRecs,rkOk)});
@@ -768,14 +769,14 @@
     if(!ys[rkY])rkY=ys[new Date().getFullYear()]?String(new Date().getFullYear()):String(yl[0]);
     sa.innerHTML=yl.map(function(y){return '<option>'+y+'</option>'}).join('');sa.value=rkY;
     var v={};recs.forEach(function(r){if(Math.floor((r.k-1)/12)!==+rkY)return;var o=v[r.a]=v[r.a]||{a:r.a,p:0,rc:0,ap:0};o.p++;if(r.rc)o.rc++;if(r.ap)o.ap++});
-    var L=Object.keys(v).map(function(k){return v[k]}).sort(function(a,b){return b.p-a.p}),mx=1,T={p:0,rc:0,ap:0};L.forEach(function(o){mx=Math.max(mx,o.p);T.p+=o.p;T.rc+=o.rc;T.ap+=o.ap});
+    var oi=ASY.o==='rc'?'rc':ASY.o==='ap'?'ap':'p',L=Object.keys(v).map(function(k){return v[k]}).sort(function(a,b){return (b[oi]-a[oi])||(b.p-a.p)}),mx=1,T={p:0,rc:0,ap:0};L.forEach(function(o){mx=Math.max(mx,o.p);T.p+=o.p;T.rc+=o.rc;T.ap+=o.ap});
     var pc=function(a,b){return b?Math.round(a/b*100):0},bar=function(n,c){return '<div class="rk-b"><i style="width:'+Math.max(2,Math.round(n/mx*120))+'px;background:'+c+'"></i><b>'+n+'</b></div>'};
     tot.textContent='Año '+rkY+' · '+T.p+' contratos de Protect Motos · '+T.rc+' con RC ('+pc(T.rc,T.p)+' %) · '+T.ap+' con AP ('+pc(T.ap,T.p)+' %) · '+L.length+' asesores.';
     tb.innerHTML=L.map(function(o,i){return '<tr><td>'+(i+1)+'</td><td class="nm">'+o.a+'</td><td>'+bar(o.p,'#4a8fe0')+'</td><td>'+bar(o.rc,'#fdc33e')+'</td><td>'+bar(o.ap,'#5b78c7')+'</td><td class="n">'+pc(o.rc,o.p)+' %</td><td class="n">'+pc(o.ap,o.p)+' %</td></tr>'}).join('');
     pie.innerHTML='<tr><td></td><td>Total</td><td class="n" style="text-align:left">'+T.p+'</td><td style="text-align:left">'+T.rc+'</td><td style="text-align:left">'+T.ap+'</td><td class="n">'+pc(T.rc,T.p)+' %</td><td class="n">'+pc(T.ap,T.p)+' %</td></tr>';
   }
   window.pintarRanking=pintarRanking;
-  var asyRecs=null,asyOk=false,ASY={y:'',m:'',a:'',q:'total'};
+  var asyRecs=null,asyOk=false,ASY={y:'',m:'',a:'',q:'total',o:'p'};   // o = orden del ranking: p (Protect Motos), rc o ap
   [['asyAnios','y'],['asyMes','m'],['asyAses','a']].forEach(function(x){document.getElementById(x[0]).addEventListener('change',function(){ASY[x[1]]=this.value;pintarAsesAnio(asyRecs,asyOk)})});
   function pintarAsesAnio(recs,ok){
     asyRecs=recs;asyOk=ok;var tot=document.getElementById('asyTot'),g=document.getElementById('asyG'),lg=document.getElementById('asyL');
@@ -790,10 +791,10 @@
     var F=base.filter(function(r){return(!ASY.y||r.y===+ASY.y)&&(!ASY.m||r.m===+ASY.m)&&(!ASY.a||r.a===ASY.a)});
     var porMes=!!ASY.a,grupos=[],i,suma=function(G,r){G.c[0]++;if(r.rc)G.c[1]++;if(r.ap)G.c[2]++;G.t++};
     if(porMes){for(i=1;i<=12;i++){if(!ASY.m||+ASY.m===i)grupos.push({k:i,n:MESN[i-1],c:[0,0,0],t:0})}F.forEach(function(r){var G=grupos.filter(function(x){return x.k===r.m})[0];if(G)suma(G,r)})}
-    else{var v={};F.forEach(function(r){suma(v[r.a]=v[r.a]||{n:r.a,c:[0,0,0],t:0},r)});grupos=Object.keys(v).map(function(k){return v[k]}).sort(function(a,b){return b.t-a.t}).slice(0,14)}
+    else{var v={};F.forEach(function(r){suma(v[r.a]=v[r.a]||{n:r.a,c:[0,0,0],t:0},r)});var oi=ASY.o==='rc'?1:ASY.o==='ap'?2:0;grupos=Object.keys(v).map(function(k){return v[k]}).sort(function(a,b){return (b.c[oi]-a.c[oi])||(b.c[0]-a.c[0])}).slice(0,14)}
     var mx=1,T=[0,0,0];grupos.forEach(function(x){for(var q=0;q<3;q++){mx=Math.max(mx,x.c[q]);T[q]+=x.c[q]}});
     var per=(ASY.y?ASY.y:'todos los años')+(ASY.m?' · '+MESL[ASY.m-1]:'')+(ASY.a?' · '+ASY.a:'');
-    tot.textContent=per.charAt(0).toUpperCase()+per.slice(1)+' · Protect Motos '+T[0]+' · con RC '+T[1]+' · con AP '+T[2]+(porMes?' (mes por mes)':' (los '+grupos.length+' asesores con más ventas)')+'.';
+    tot.textContent=per.charAt(0).toUpperCase()+per.slice(1)+' · Protect Motos '+T[0]+' · con RC '+T[1]+' · con AP '+T[2]+(porMes?' (mes por mes)':' (los '+grupos.length+' asesores con más ventas'+(ASY.o==='rc'?' con RC':ASY.o==='ap'?' con AP':'')+', de mayor a menor)')+'.';
     if(!T[0]){g.innerHTML='<p class="tot">No hay ventas con ese filtro.</p>';lg.innerHTML='';return}
     g.innerHTML=grupos.map(function(x){return '<div class="asy-a" title="'+x.n+': '+x.c[0]+' Protect · '+x.c[1]+' RC · '+x.c[2]+' AP"><div class="asy-b">'+CAT.map(function(c,ci){var n=x.c[ci],h=n?Math.max(4,Math.round(n/mx*200)):0;return '<div class="asy-c" title="'+x.n+' · '+c[0]+': '+n+'"><b>'+(n||'')+'</b><i class="asy-r" style="height:'+h+'px;background:'+c[1]+(ci===2?';color:#fff':'')+'">'+(h>=44?'<em>'+c[0]+'</em>':'')+'</i></div>'}).join('')+'</div><div class="asy-n">'+x.n+'</div></div>'}).join('');
     lg.innerHTML=CAT.map(function(c,ci){return '<span><i style="background:'+c[1]+'"></i>'+(ci===0?'Ventas Protect Motos (todas)':ci===1?'Ventas con RC':'Ventas con AP')+'</span>'}).join('');
