@@ -71,3 +71,6 @@ tbody tr:hover td{background-color:rgba(120,145,210,.07)}
 body.tema-inicio #v-inicio,body.tema-inicio #v-inicio .pagina{--suave:#b4c3e6}
 body.inicio-claro #v-inicio,body.inicio-claro #v-inicio .pagina{--suave:#55648a}
 small,.sub,.tot,.nota,.seg-nota,.ay-sub,.od-ayuda{font-size:max(.8rem,12px)}
+
+.asy-pos{display:inline-block;min-width:1.4em;font-weight:700;color:#fdc33e}
+body.inicio-claro .asy-pos{color:#b7860b}
