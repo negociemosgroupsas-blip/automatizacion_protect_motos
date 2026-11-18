@@ -582,15 +582,21 @@
   #v-inicio .seg{grid-column:span 4!important;order:21!important} #v-inicio .rcm{grid-column:span 8!important;order:22!important}
   #v-inicio .edc{grid-column:span 4!important;order:23!important} #v-inicio .anu{grid-column:span 8!important;order:24!important}
   /* 3 · Cobros y retención */
-  #v-inicio .fnx{grid-column:1/-1!important;order:31!important} #v-inicio .rtx{grid-column:1/-1!important;order:32!important}
-  #v-inicio .rnc:not(.rnx){grid-column:span 6!important;order:33!important}
+  #v-inicio .fnx{grid-column:span 6!important;order:31!important;align-self:start} #v-inicio .rtx{grid-column:span 6!important;order:32!important}
+  #v-inicio .rnc:not(.rnx){grid-column:1/-1!important;order:33!important}
   /* 4 · Valor cobrado a Dugo Motos */
   #v-inicio .alertas{grid-column:1/-1!important;order:41!important} #v-inicio .cnc{grid-column:1/-1!important;order:42!important} #v-inicio .bkx{grid-column:1/-1!important;order:43!important}
   /* 5 · SOAT · 6 · Clientes OMS · 7 · Comisiones */
-  #v-inicio .svc{grid-column:1/-1!important;order:51!important} #v-inicio .rns{grid-column:span 6!important;order:52!important}
-  #v-inicio .oms-wrap{grid-column:1/-1!important;order:61!important} #v-inicio .rno{grid-column:span 6!important;order:62!important}
+  #v-inicio .svc{grid-column:span 6!important;order:51!important;max-width:none;align-self:start} #v-inicio .rns{grid-column:span 6!important;order:52!important}
+  #v-inicio .oms-wrap{grid-column:1/-1!important;order:61!important} #v-inicio .rno{grid-column:1/-1!important;order:62!important}
   #v-inicio .cmc{grid-column:1/-1!important;order:71!important}
-  @media(max-width:1000px){#v-inicio .rnc:not(.rnx),#v-inicio .rns,#v-inicio .rno{grid-column:1/-1!important}}
+  @media(max-width:1000px){#v-inicio .fnx,#v-inicio .rtx,#v-inicio .svc,#v-inicio .rns{grid-column:1/-1!important}}
+  #v-inicio .anu{align-self:start}
+  /* ===== Explicación de cada gráfica: oculta; se despliega con la flecha junto al título ===== */
+  #v-inicio .ay-sub,#v-inicio .od-ayuda,#v-inicio .ay-exp{display:none}
+  #v-inicio .ay-abierta>.ay-sub,#v-inicio .ay-abierta .od-ayuda,#v-inicio .ay-abierta .ay-exp{display:block}
+  .ay-flecha{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin-left:10px;border:0;border-radius:50%;background:rgba(150,170,220,.22);color:inherit;cursor:pointer;font-size:.7rem;line-height:1;vertical-align:middle;transition:transform .15s,background .15s;padding:0}
+  .ay-flecha:hover{background:rgba(150,170,220,.4)} .ay-abierta .ay-flecha{transform:rotate(90deg)}
 </style>
 <script src="assets/dash_oms.js"></script>
 <script src="assets/logo_data.js"></script><script src="assets/informe_diario.js"></script>
@@ -628,12 +634,12 @@
     </div>
     <div class="in-kpis" id="inKpis"></div>
     <section class="card gxc" id="gxWrap" data-sec="gerencia" hidden><h3>📋 Resumen gerencial</h3><p class="tot" id="gxSub"></p><div class="gx-grid" id="gxGrid"></div><h4 class="gx-h">⚠️ Atención requerida</h4><div class="gx-at" id="gxAt"></div></section>
-    <section class="card fnx" id="fnWrap" data-sec="cob" hidden><h3>🏁 Contratos terminados: finalizados vs cancelados</h3><p class="tot" id="fnSub"></p><div class="ed-per"><label>Año en que terminó <select id="fnAnio"></select></label> <label>Tipo de venta <select id="fnForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="fnAses"></select></label></div><div class="fn-w"><div class="fn-d" id="fnDon"></div><div class="fn-y" id="fnCols"></div></div><div class="fn-l"><span><i style="background:#5b78c7"></i>Finalizados (siempre pagó)</span><span><i style="background:#d64545"></i>Cancelados (dejó de pagar)</span><span>% sobre cada columna = finalizados ÷ terminados · columnas por año en que terminó el contrato</span></div></section>
-    <section class="card rpd" id="rpdWrap" hidden><h3>📝 Informe diario para Don Camilo</h3><p class="tot" id="rpdSub">Se arma solo con los datos del sistema. Revise, corrija lo que quiera y copie.</p>
+    <section class="card fnx" id="fnWrap" data-sec="cob" hidden><h3>🏁 Contratos terminados: finalizados vs cancelados</h3><p class="tot" id="fnSub"></p><div class="ed-per"><label>Año en que terminó <select id="fnAnio"></select></label> <label>Tipo de venta <select id="fnForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="fnAses"></select></label></div><div class="fn-w"><div class="fn-d" id="fnDon"></div><div class="fn-y" id="fnCols"></div></div><div class="fn-l"><span><i style="background:#5b78c7"></i>Finalizados (siempre pagó)</span><span><i style="background:#d64545"></i>Cancelados (dejó de pagar)</span><span class="ay-exp">% sobre cada columna = finalizados ÷ terminados · columnas por año en que terminó el contrato</span></div></section>
+    <section class="card rpd" id="rpdWrap" hidden><h3>📝 Informe diario para Don Camilo</h3><p class="tot ay-exp" id="rpdSub">Se arma solo con los datos del sistema. Revise, corrija lo que quiera y copie.</p>
       <div class="ed-per"><label>Fecha de corte <input type="date" id="rpdFecha"></label> <label>Dinero en banco (saldo) <input type="text" id="rpdSaldo" placeholder="escríbalo a mano" inputmode="numeric"></label> <button type="button" class="btn-i" id="rpdAct">🔄 Rehacer informe</button> <button type="button" class="btn-i dest" id="rpdCopia">📋 Copiar texto</button> <button type="button" class="btn-i" id="rpdImg">🖼️ Descargar imagen</button> <button type="button" class="btn-i" id="rpdPdf">📄 Descargar PDF</button> <span id="rpdEst" class="tot" style="margin:0"></span></div>
       <textarea id="rpdTxt" rows="18" spellcheck="false"></textarea></section>
-    <section class="card bkx" id="bkWrap" data-sec="conc" hidden><h3>🏦 Dinero que entra al banco por consignaciones</h3><p class="tot" id="bkSub"></p><div class="ed-per"><label>Año <select id="bkAnio"></select></label> <label>Mes <select id="bkMes"><option value="">Todos los meses</option><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></label></div><div class="bk-k" id="bkK"></div><div class="bk-g" id="bkG"></div><p class="tot" style="margin:8px 0 0">Suma de todo lo que entró a la hoja del banco (incluye consignaciones sin comprobante). No cuenta intereses, valores menores a $1.000 ni las descripciones que usted excluyó en «Verificación bancaria».</p></section>
-    <section class="card rtx" id="rtWrap" data-sec="cob" hidden><h3>🤝 Retención de clientes</h3><p class="tot" id="rtSub"></p><div class="ed-per"><label>Tipo de venta <select id="rtForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="rtAses"></select></label></div><div class="rt-k" id="rtK"></div><div class="rt-g" id="rtG"></div><div class="fn-l"><span><i style="background:#38bdf8"></i>Clientes activos al inicio del mes</span><span><i style="background:#d64545"></i>Cancelaron en el mes</span><span>% = retención del mes · 100 % menos los que cancelaron</span></div></section>
+    <section class="card bkx" id="bkWrap" data-sec="conc" hidden><h3>🏦 Dinero que entra al banco por consignaciones</h3><p class="tot" id="bkSub"></p><div class="ed-per"><label>Año <select id="bkAnio"></select></label> <label>Mes <select id="bkMes"><option value="">Todos los meses</option><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></label></div><div class="bk-k" id="bkK"></div><div class="bk-g" id="bkG"></div><p class="tot ay-exp" style="margin:8px 0 0">Suma de todo lo que entró a la hoja del banco (incluye consignaciones sin comprobante). No cuenta intereses, valores menores a $1.000 ni las descripciones que usted excluyó en «Verificación bancaria».</p></section>
+    <section class="card rtx" id="rtWrap" data-sec="cob" hidden><h3>🤝 Retención de clientes</h3><p class="tot ay-exp" id="rtSub"></p><div class="ed-per"><label>Tipo de venta <select id="rtForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="rtAses"></select></label></div><div class="rt-k" id="rtK"></div><div class="rt-g" id="rtG"></div><div class="fn-l"><span><i style="background:#38bdf8"></i>Clientes activos al inicio del mes</span><span><i style="background:#d64545"></i>Cancelaron en el mes</span><span>% = retención del mes · 100 % menos los que cancelaron</span></div></section>
     <div class="in-sec" id="sec-ventas" data-sec="ventas" style="order:10"><i></i>Ventas y contratos<small>¿cuánto vendemos y quién vende?</small><em>▾</em></div>
     <div class="in-sec" id="sec-clientes" data-sec="clientes" style="order:20"><i></i>Clientes y seguros<small>¿qué protección llevan y quiénes son?</small><em>▾</em></div>
     <div class="in-sec" id="sec-cob" data-sec="cob" style="order:30"><i></i>Cobros y retención<small>¿los clientes terminan, renuevan y se quedan?</small><em>▾</em></div>
@@ -2104,6 +2110,23 @@
     var om=$('omsDash');if(om)om.setAttribute('data-sec','oms');
   }
   aclarar();
+  /* flecha para desplegar la explicación de cada gráfica (por defecto oculta) */
+  (function(){
+    var v=document.getElementById('v-inicio');if(!v)return;
+    function poner(){
+      [].forEach.call(v.querySelectorAll('.card,.od-card'),function(c){
+        var h=c.querySelector('h3');if(!h||h.querySelector('.ay-flecha'))return;
+        if(!c.querySelector('.ay-sub,.od-ayuda,.ay-exp'))return;
+        var b=document.createElement('button');b.type='button';b.className='ay-flecha';b.setAttribute('aria-expanded','false');b.title='Ver qué muestra esta gráfica';b.textContent='▸';h.appendChild(b);
+      });
+    }
+    v.addEventListener('click',function(ev){
+      var b=ev.target.closest('.ay-flecha');if(!b)return;ev.preventDefault();ev.stopPropagation();
+      var c=b.closest('.card,.od-card');if(!c)return;var ab=c.classList.toggle('ay-abierta');b.setAttribute('aria-expanded',ab?'true':'false');
+    });
+    var t=null;new MutationObserver(function(){clearTimeout(t);t=setTimeout(poner,250)}).observe(v,{childList:true,subtree:true});
+    poner();setTimeout(poner,1500);
+  })();
   /* accesos rápidos */
   var chips=$('inChips');
   if(chips)chips.addEventListener('click',function(ev){var a=ev.target.closest('a');if(!a)return;ev.preventDefault();var d=document.getElementById(a.dataset.to);if(!d)return;
