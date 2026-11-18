@@ -766,6 +766,7 @@ function leerContratos(hoja) {
       rc: String(fila[COL.RC - 1] || '').trim().toUpperCase(),
       ap: String(fila[COL.AP - 1] || '').trim().toUpperCase(),
       estado: String(fila[COL.ESTADO_CLIENTE - 1] || '').trim().toUpperCase(),
+      valorCaja: numeroErp_(fila[15]),   // columna P: valor pagado a Dugo Motos (lo que se cobró en caja)
       fechaCancelacionISO: colFC ? formatoISO(fila[colFC - 1]) : '',
       motivoCancelacion: colMC ? String(fila[colMC - 1] || '').trim() : ''
     });

@@ -483,6 +483,9 @@
   #v-inicio .vmc{grid-column:1/-1!important;order:3!important}
   #v-inicio .gxc{grid-column:1/-1!important;order:3!important;--acc:#fdc33e} .gxc{cursor:default;max-width:none} .gxc:hover{box-shadow:none;transform:none} .gxc[hidden]{display:none!important}
   .gxc .tot{font-size:.85rem;color:var(--suave);margin:0 0 12px}
+  #v-inicio .rpd{grid-column:1/-1!important;order:2} .rpd:hover{box-shadow:none;transform:none} .rpd[hidden]{display:none!important} .rpd .tot{font-size:.85rem;color:var(--suave);margin:0 0 10px}
+  .rpd textarea{width:100%;box-sizing:border-box;border:1px solid var(--borde,#2a3a6a);border-radius:10px;padding:12px 14px;font:inherit;font-size:.95rem;line-height:1.5;background:rgba(255,255,255,.04);color:inherit;resize:vertical;margin-top:10px}
+  .rpd input[type=date],.rpd input[type=text]{border:1px solid var(--borde,#2a3a6a);border-radius:8px;padding:7px 10px;background:transparent;color:inherit;font:inherit;font-size:.88rem} .rpd .btn-i{border:0;border-radius:8px;padding:8px 14px;cursor:pointer;font:inherit;font-size:.88rem;background:#5b78c7;color:#fff} .rpd .btn-i.dest{background:#fdc33e;color:#021346}
   #v-inicio .rtx{grid-column:1/-1!important;order:3!important;--acc:#fdc33e} .rtx:hover{box-shadow:none;transform:none} .rtx[hidden]{display:none!important} .rtx .tot{font-size:.85rem;color:var(--suave);margin:0 0 12px}
   .rt-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:10px 0 14px} .rt-k div{border-radius:12px;padding:12px 14px;background:linear-gradient(135deg,#e0a21c,#fdc33e);color:#04202e} .rt-k div:nth-child(2){background:linear-gradient(135deg,#0ea5e9,#38bdf8)} .rt-k div:nth-child(3){background:linear-gradient(135deg,#4a64b0,#5b78c7);color:#fff} .rt-k div:nth-child(4){background:linear-gradient(135deg,#c23a3a,#d64545);color:#fff}
   .rt-k span{display:block;font-size:.74rem;font-weight:600;text-transform:uppercase;opacity:.9} .rt-k b{font-size:1.6rem;display:block} .rt-k small{font-size:.74rem;opacity:.9}
@@ -587,6 +590,7 @@
         <label>Mes <select id="gMes"><option value="">Cada tarjeta</option></select></label>
         <button type="button" id="gReset" title="Devuelve cada tarjeta a su filtro de siempre">Restablecer</button>
         <div class="in-rep"><button type="button" id="gRep" title="Descarga de reportes">⬇ Reportes</button><div class="in-repm" id="gRepM" hidden></div></div>
+        <button type="button" id="gInf" class="in-tema" title="Texto del informe diario para su jefe">📝 Informe diario</button>
         <button type="button" id="gTema" class="in-tema" title="Cambiar entre fondo oscuro y fondo claro">☀️ Fondo claro</button>
         <span id="gUlt"></span>
       </div>
@@ -600,6 +604,9 @@
     <div class="in-kpis" id="inKpis"></div>
     <section class="card gxc" id="gxWrap" data-sec="gerencia" hidden><h3>📋 Resumen gerencial</h3><p class="tot" id="gxSub"></p><div class="gx-grid" id="gxGrid"></div><h4 class="gx-h">⚠️ Atención requerida</h4><div class="gx-at" id="gxAt"></div></section>
     <section class="card fnx" id="fnWrap" data-sec="gerencia" hidden><h3>🏁 Contratos terminados: finalizados vs cancelados</h3><p class="tot" id="fnSub"></p><div class="ed-per"><label>Año en que terminó <select id="fnAnio"></select></label> <label>Tipo de venta <select id="fnForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="fnAses"></select></label></div><div class="fn-w"><div class="fn-d" id="fnDon"></div><div class="fn-y" id="fnCols"></div></div><div class="fn-l"><span><i style="background:#5b78c7"></i>Finalizados (siempre pagó)</span><span><i style="background:#d64545"></i>Cancelados (dejó de pagar)</span><span>% sobre cada columna = finalizados ÷ terminados · columnas por año en que terminó el contrato</span></div></section>
+    <section class="card rpd" id="rpdWrap" hidden><h3>📝 Informe diario para Don Camilo</h3><p class="tot" id="rpdSub">Se arma solo con los datos del sistema. Revise, corrija lo que quiera y copie.</p>
+      <div class="ed-per"><label>Fecha de corte <input type="date" id="rpdFecha"></label> <label>Saldo en banco <input type="text" id="rpdSaldo" placeholder="escríbalo a mano" inputmode="numeric"></label> <button type="button" class="btn-i" id="rpdAct">🔄 Rehacer informe</button> <button type="button" class="btn-i dest" id="rpdCopia">📋 Copiar informe</button> <span id="rpdEst" class="tot" style="margin:0"></span></div>
+      <textarea id="rpdTxt" rows="18" spellcheck="false"></textarea></section>
     <section class="card bkx" id="bkWrap" data-sec="gerencia" hidden><h3>🏦 Dinero que entra al banco por consignaciones</h3><p class="tot" id="bkSub"></p><div class="ed-per"><label>Año <select id="bkAnio"></select></label> <label>Mes <select id="bkMes"><option value="">Todos los meses</option><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></label></div><div class="bk-k" id="bkK"></div><div class="bk-g" id="bkG"></div><p class="tot" style="margin:8px 0 0">Suma de todo lo que entró a la hoja del banco (incluye consignaciones sin comprobante). No cuenta intereses, valores menores a $1.000 ni las descripciones que usted excluyó en «Verificación bancaria».</p></section>
     <section class="card rtx" id="rtWrap" data-sec="gerencia" hidden><h3>🤝 Retención de clientes</h3><p class="tot" id="rtSub"></p><div class="ed-per"><label>Tipo de venta <select id="rtForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="rtAses"></select></label></div><div class="rt-k" id="rtK"></div><div class="rt-g" id="rtG"></div><div class="fn-l"><span><i style="background:#38bdf8"></i>Clientes activos al inicio del mes</span><span><i style="background:#d64545"></i>Cancelaron en el mes</span><span>% = retención del mes · 100 % menos los que cancelaron</span></div></section>
     <div class="in-sec" id="sec-ventas" data-sec="ventas" style="order:4"><i></i>Ventas y contratos<em>▾</em></div>
@@ -1467,10 +1474,10 @@
   function bkNum(v){if(typeof v==='number')return v;var t=String(v==null?'':v).replace(/[$\s]/g,'');if(!t)return null;if(/,\d{1,2}$/.test(t))t=t.replace(/\./g,'').replace(',','.');else t=t.replace(/[.,](?=\d{3}(\D|$))/g,'');var n=parseFloat(t);return isNaN(n)?null:n}
   function bkFecha(v){var t=String(v==null?'':v).trim(),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(t);if(m)return{y:+m[1],m:+m[2],d:+m[3]};m=/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/.exec(t);return m?{y:+m[3],m:+m[2],d:+m[1]}:null}
   function bkMovs(A){
-    var hi=-1,fc=-1,vc=-1,dc=-1;
-    for(var i=0;i<Math.min(A.length,60)&&hi<0;i++){var H=(A[i]||[]).map(bkNorm),f=-1,v=-1;H.forEach(function(h,j){if(f<0&&/^fecha|date/.test(h))f=j;if(v<0&&/^valor|^monto|^importe|^cr[eé]dito|^abono|^ingres|^deposito/.test(h))v=j});if(f>=0&&v>=0){hi=i;fc=f;vc=v;H.forEach(function(h,j){if(dc<0&&/descrip|detalle|concepto|transacci|movimiento|observ/.test(h)&&j!==f)dc=j})}}
+    var hi=-1,fc=-1,vc=-1,dc=-1,sc=-1;
+    for(var i=0;i<Math.min(A.length,60)&&hi<0;i++){var H=(A[i]||[]).map(bkNorm),f=-1,v=-1;H.forEach(function(h,j){if(sc<0&&/^saldo/.test(h))sc=j;if(f<0&&/^fecha|date/.test(h))f=j;if(v<0&&/^valor|^monto|^importe|^cr[eé]dito|^abono|^ingres|^deposito/.test(h))v=j});if(f>=0&&v>=0){hi=i;fc=f;vc=v;H.forEach(function(h,j){if(dc<0&&/descrip|detalle|concepto|transacci|movimiento|observ/.test(h)&&j!==f)dc=j})}}
     if(hi<0)return null;var ex={};try{(JSON.parse(localStorage.getItem('pm_banco_excl')||'[]')).forEach(function(k){ex[k]=1})}catch(e){}
-    var out=[];for(var k=hi+1;k<A.length;k++){var w=A[k]||[],f=bkFecha(w[fc]),v=bkNum(w[vc]);if(!f||v===null||v<1000)continue;
+    var out=[];BK.saldo=null;var mejor='';for(var k=hi+1;k<A.length;k++){var w=A[k]||[],f=bkFecha(w[fc]),sv=sc>=0?bkNum(w[sc]):null;if(f&&sv!==null){var fk=f.y*10000+f.m*100+f.d;if(fk>=mejor){mejor=fk;BK.saldo=Math.round(sv);BK.saldoFecha=f}}var v=bkNum(w[vc]);if(!f||v===null||v<1000)continue;
       var d=dc>=0?String(w[dc]||''):'',kk=bkNorm(d).replace(/[0-9]+/g,' ').replace(/\s+/g,' ').trim()||'(sin descripcion)';if(/interes/.test(bkNorm(d))||ex[kk])continue;out.push({y:f.y,m:f.m,d:f.d,v:Math.round(v)})}
     return out;
   }
@@ -1528,6 +1535,47 @@
   }
   window.pintarRetencion=pintarRetencion;
   document.getElementById('rtForma').addEventListener('change',function(){RT.f=this.value;pintarRetencion()});document.getElementById('rtAses').addEventListener('change',function(){RT.a=this.value;pintarRetencion()});
+  /* ===== Informe diario para el jefe: arma el texto con los datos del sistema ===== */
+  var RP={manualSaldo:false};
+  function rpCop(n){return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
+  function rpDatos(K){
+    var y=+K.slice(0,4),m=+K.slice(5,7),R=window.PM_COBROS,d={ok:!!(R&&R.contratos),nf:0,vf:0,nc:0,vc:0,soat:null,gan:0,oms:null,cxc:null,dugo:null,mes:m,anio:y};
+    if(R&&R.contratos)R.contratos.forEach(function(x){if(!String(x.cliente||'').trim()||String(x.estado||'').toUpperCase()==='ANULADO')return;var r=mesAnio(x);if(r.m!==m||r.a!==y)return;if(x.fechaFirmaISO&&x.fechaFirmaISO>K)return;
+      var v=Number(x.valorCaja)||0;if(x.forma==='FINANCIADO'){d.nf++;d.vf+=v}else if(x.forma==='CONTADO'){d.nc++;d.vc+=v}});
+    d.n=d.nf+d.nc;
+    if(typeof soatRecs!=='undefined'&&soatRecs.length){d.soat=0;soatRecs.forEach(function(x){if(x.y===y&&x.m===m){d.soat++;d.gan+=x.g}})}
+    if(window.PM_OMS&&PM_OMS.contratos){d.oms=0;PM_OMS.contratos.forEach(function(c){var f=c.fechaFirmaISO||'';if(f.slice(0,4)==String(y)&&+f.slice(5,7)===m&&f<=K&&String(c.cliente||'').trim())d.oms++})}
+    if(window.PM_CONFILAS){d.cxc=0;PM_CONFILAS.forEach(function(f){if(f.estado==='Falta por consolidar')d.cxc+=Number(f.pagado)||0})}
+    if(BK&&BK.filas){d.banco=0;BK.filas.forEach(function(o){if(o.y===y&&o.m===m&&o.d<=+K.slice(8,10))d.banco+=o.v})}
+    if(window.PM_CONS&&PM_CONS.meses){PM_CONS.meses.forEach(function(o){if(o.anio===y&&o.mes===m)d.dugo=(o.auto!=null?o.auto:(o.c||o.d||0))});if(d.dugo===null)d.dugo=0}
+    return d;
+  }
+  function rpArmar(){
+    var K=document.getElementById('rpdFecha').value;if(!K)return;var d=rpDatos(K),MESL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    var saldoEl=document.getElementById('rpdSaldo');
+    var sn=Number(String(saldoEl.value).replace(/\D/g,''))||0,fa=K.split('-').reverse().join('/'),pend='[falta]';
+    var T=['Buenas tardes, Don Camilo.','Le comparto el cierre de Protect Motos con corte al '+fa+':','',
+      '* Saldo en cuenta bancaria Protect Motos: '+(saldoEl.value?rpCop(sn):'[escriba el saldo]'),
+      '* Ingresos a la cuenta bancaria en '+MESL[d.mes-1]+' (todas las consignaciones): '+(d.banco===null?pend:rpCop(d.banco)),
+      '* Cuentas por cobrar a Dugo Motos: '+(d.cxc===null?pend:(d.cxc?rpCop(d.cxc):'0')),
+      '* Protect Motos vendidos: '+(d.ok?d.n:pend),
+      'Financiados: '+(d.ok?d.nf:pend)+' — recibido: '+(d.ok?rpCop(d.vf):pend),
+      'De contado: '+(d.ok?d.nc:pend)+' — recibido: '+(d.ok?rpCop(d.vc):pend),
+      '* Total de dinero ingresado a la cuenta bancaria por concepto de cuentas por cobrar de Dugo Motos – '+MESL[d.mes-1].charAt(0).toUpperCase()+MESL[d.mes-1].slice(1),
+      '* '+(d.dugo===null?pend:rpCop(d.dugo)),
+      '* SOAT: '+(d.soat===null?pend:d.soat)+'  Ganancia '+(d.soat===null?pend:rpCop(d.gan)),
+      '* VENTAS SURA: '+(d.oms===null?pend:d.oms),'',
+      'Nota: Los valores y totales pueden presentar variaciones, debido a que algunos clientes desisten de adquirir Protect Motos directamente en caja.','Feliz noche.'];
+    document.getElementById('rpdTxt').value=T.join('\n');
+    var falt=[];if(!d.ok)falt.push('Protect');if(d.cxc===null||d.dugo===null)falt.push('Valor cobrado a Dugo Motos');if(d.soat===null)falt.push('SOAT');if(d.oms===null)falt.push('Clientes OMS');if(d.banco===null)falt.push('Verificación bancaria (hoja del banco)');if(!saldoEl.value)falt.push('el saldo (escríbalo en la casilla)');
+    document.getElementById('rpdEst').textContent=falt.length?'⚠️ Faltan datos de: '+falt.join(', ')+'. Donde dice [falta] complételo a mano.':'✔ Datos completos de '+MESL[d.mes-1]+' hasta el '+fa+'.';
+  }
+  (function(){var f=document.getElementById('rpdFecha'),h=new Date();f.value=rtIso(h);
+    document.getElementById('gInf').addEventListener('click',function(){var w=document.getElementById('rpdWrap');w.hidden=!w.hidden;if(!w.hidden){rpArmar();w.scrollIntoView({behavior:'smooth',block:'start'})}});
+    f.addEventListener('change',function(){rpArmar()});document.getElementById('rpdAct').addEventListener('click',function(){rpArmar()});
+    document.getElementById('rpdSaldo').addEventListener('input',function(){var el=this,n=el.value.replace(/\D/g,'');el.value=n?n.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'';rpArmar()});
+    document.getElementById('rpdCopia').addEventListener('click',function(){var t=document.getElementById('rpdTxt');t.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t.value).then(function(){document.getElementById('rpdEst').textContent='✔ Informe copiado. Péguelo en WhatsApp.'},function(){document.getElementById('rpdEst').textContent=ok?'✔ Informe copiado.':'No se pudo copiar: seleccione el texto y use Ctrl+C.'})}else document.getElementById('rpdEst').textContent=ok?'✔ Informe copiado. Péguelo en WhatsApp.':'No se pudo copiar: seleccione el texto y use Ctrl+C.'});
+  })();
   function pintarGerencia(){
     var PK=window.PMK||{};
     var W=document.getElementById('gxWrap'),R=window.PM_COBROS;if(!W)return;
@@ -1707,7 +1755,7 @@
       else if(esCons(f)){ok++;
         if(!f.revisado&&f.valor==='Pagó de menos')menos++;
         else if(!f.revisado&&f.valor==='Pagó de más (revisar valor)')revisar++}});
-    PMK.faltaConc=falta;PMK.menos=menos;pintarKpis();
+    PMK.faltaConc=falta;PMK.menos=menos;window.PM_CONFILAS=CON;pintarKpis();
     function c(cl,n,t){return '<a class="al '+cl+'" href="#conciliacion"><b>'+n+'</b><span>'+t+'</span></a>'}
     $('alertas').innerHTML=c(falta?'rojo':'verde',falta,'Faltan por consolidar')+c(menos?'rojo':'verde',menos,'Pagaron de menos')+c(revisar?'nar':'verde',revisar,'Pagaron de más · revisar valor')+c('verde',ok,'Ya consolidados');
   }
