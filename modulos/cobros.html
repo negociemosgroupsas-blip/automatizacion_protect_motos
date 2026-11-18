@@ -436,6 +436,20 @@
     </div>
   </section>
 
+  <section class="panel" id="panelRetencion">
+    <div class="cabecera">
+      <h2>Retención de clientes</h2>
+      <span class="sub">De los contratos que ya terminaron, cuántos clientes volvieron a contratar con nosotros</span>
+    </div>
+    <div class="contenido-panel">
+      <div class="seg-fil"><label>Año en que terminó <select id="retAnio"></select></label><label>Mes en que terminó <select id="retMes"></select></label></div>
+      <div class="seg-tiles" id="retTiles"></div>
+      <div class="seg-tabla-w"><table id="tablaRet"><thead><tr><th>Mes en que terminó</th><th>Contratos que terminaron</th><th>Renovaron</th><th>No renovaron</th><th>% de retención</th></tr></thead><tbody id="cuerpoRet"></tbody></table></div>
+      <div class="vacio" id="vacioRet" style="display:none;">Todavía no hay contratos terminados en este período.</div>
+      <p class="seg-nota" id="retNota"></p>
+    </div>
+  </section>
+
   <section class="panel" id="panelSeguimiento">
     <div class="cabecera">
       <h2>Seguimiento de renovaciones</h2>
@@ -1090,6 +1104,57 @@
   document.getElementById('segAnio').addEventListener('change', function(){ segAnio = this.value; renderizarSeguimiento(); });
   document.getElementById('segMes').addEventListener('change', function(){ segMes = this.value; renderizarSeguimiento(); });
 
+  // ==================== RETENCIÓN DE CLIENTES ====================
+  var retAnio = 'todos', retMes = '0';
+  function sumarDiasISO(iso, d){ var p = parsearISO(iso); p.setDate(p.getDate()+d); return p.getFullYear()+'-'+('0'+(p.getMonth()+1)).slice(-2)+'-'+('0'+p.getDate()).slice(-2); }
+  function calcularRetencion(){
+    var hoyISO = (function(h){ return h.getFullYear()+'-'+('0'+(h.getMonth()+1)).slice(-2)+'-'+('0'+h.getDate()).slice(-2); })(hoy());
+    var limite = sumarDiasISO(hoyISO, -30);              // los que terminaron hace menos de 30 días aún están a tiempo de renovar
+    var acept = {}; (estado.gestiones||[]).forEach(function(g){ if(g.accion===ACCION_ACEPTADA && g.contrato) acept[g.contrato] = 1; });
+    var porCed = {}; estado.contratos.forEach(function(c){ if(c.cedula && String(c.cliente||'').trim()) (porCed[c.cedula] = porCed[c.cedula] || []).push(c); });
+    var lista = [], enPlazo = 0;
+    estado.contratos.forEach(function(b){
+      if(!b.finISO || !String(b.cliente||'').trim() || b.estado==='ANULADO' || b.finISO>=hoyISO) return;
+      if(b.finISO>limite){ enPlazo++; return; }
+      var ini = sumarDiasISO(b.finISO, -60);
+      var renovo = !!acept[b.contrato] || (porCed[b.cedula]||[]).some(function(o){
+        return o.contrato!==b.contrato && o.fechaFirmaISO && o.fechaFirmaISO>(b.fechaFirmaISO||'') && o.fechaFirmaISO>=ini;
+      });
+      lista.push({c:b, fin:b.finISO, renovo:renovo, fin_ok:b.estado==='FINALIZADO'});
+    });
+    return {lista:lista, enPlazo:enPlazo};
+  }
+  function renderizarRetencion(){
+    var cuerpo = document.getElementById('cuerpoRet'); if(!cuerpo) return;
+    var R = calcularRetencion(), L = R.lista, ys = {};
+    L.forEach(function(o){ ys[o.fin.slice(0,4)] = 1; });
+    var sa = document.getElementById('retAnio'), sm = document.getElementById('retMes');
+    sa.innerHTML = '<option value="todos">Todos los años</option>' + Object.keys(ys).sort().reverse().map(function(y){return '<option value="'+y+'">'+y+'</option>';}).join('');
+    sm.innerHTML = '<option value="0">Todos los meses</option>' + MESES_SEG.map(function(m,i){return '<option value="'+(i+1)+'">'+m+'</option>';}).join('');
+    if(retAnio!=='todos' && !ys[retAnio]) retAnio = 'todos';
+    sa.value = retAnio; sm.value = retMes;
+    var F = L.filter(function(o){ return (retAnio==='todos' || o.fin.slice(0,4)===retAnio) && (retMes==='0' || +o.fin.slice(5,7)===+retMes); });
+    var pct = function(a,b){ return b ? Math.round(a/b*1000)/10 : 0; };
+    var n = F.length, r = F.filter(function(o){return o.renovo;}).length;
+    var nf = F.filter(function(o){return o.fin_ok;}).length, rf = F.filter(function(o){return o.fin_ok && o.renovo;}).length;
+    document.getElementById('retTiles').innerHTML =
+      '<div class="seg-t" style="--c:#fdc33e"><span>Retención de clientes</span><b>'+pct(r,n)+' %</b><small>'+r+' de '+n+' contratos terminados</small></div>'+
+      '<div class="seg-t" style="--c:#38bdf8"><span>Contratos que terminaron</span><b>'+n+'</b><small>ya cumplieron su fecha final</small></div>'+
+      '<div class="seg-t" style="--c:#1f9d55"><span>Renovaron</span><b>'+r+'</b><small>volvieron a contratar</small></div>'+
+      '<div class="seg-t" style="--c:#dc2626"><span>No renovaron</span><b>'+(n-r)+'</b><small>'+pct(n-r,n)+' % de los terminados</small></div>'+
+      '<div class="seg-t" style="--c:#5b78c7"><span>Retención de los que siempre pagaron</span><b>'+pct(rf,nf)+' %</b><small>'+rf+' de '+nf+' finalizados</small></div>';
+    var meses = {};
+    F.forEach(function(o){ var k = o.fin.slice(0,7), m = meses[k] = meses[k] || {n:0,r:0}; m.n++; if(o.renovo) m.r++; });
+    var ks = Object.keys(meses).sort().reverse();
+    cuerpo.innerHTML = ks.map(function(k){ var m = meses[k], p = k.split('-');
+      return '<tr><td data-etiqueta="Mes">'+MESES_SEG[+p[1]-1]+' '+p[0]+'</td><td data-etiqueta="Terminaron"><strong>'+m.n+'</strong></td><td data-etiqueta="Renovaron">'+m.r+'</td><td data-etiqueta="No renovaron">'+(m.n-m.r)+'</td><td data-etiqueta="% de retención"><strong>'+pct(m.r,m.n)+' %</strong></td></tr>'; }).join('');
+    document.getElementById('vacioRet').style.display = n ? 'none' : 'block';
+    document.getElementById('tablaRet').style.display = n ? '' : 'none';
+    document.getElementById('retNota').textContent = 'Un contrato cuenta como «renovó» si el cliente (misma cédula) firmó otro contrato desde 60 días antes de que terminara el anterior, o si se marcó «Acepto renovación». No se cuentan los anulados ni los que terminaron hace menos de 30 días' + (R.enPlazo ? ' ('+R.enPlazo+' contratos aún están a tiempo de renovar)' : '') + '. Cada contrato terminado cuenta una vez.';
+  }
+  document.getElementById('retAnio').addEventListener('change', function(){ retAnio = this.value; renderizarRetencion(); });
+  document.getElementById('retMes').addEventListener('change', function(){ retMes = this.value; renderizarRetencion(); });
+
   // ==================== SEGUIMIENTO A CLIENTES DE RENOVACIÓN (3 mensajes) ====================
   var SEG_ACC = ['Seguimiento 1 de renovación enviado','Seguimiento 2 de renovación enviado','Seguimiento 3 de renovación enviado'];
   var scFiltro = 'pend', scTexto = '';
@@ -1133,7 +1198,7 @@
       var h = hoy(); if(!Array.isArray(estado.gestiones)) estado.gestiones = [];
       estado.gestiones.push({fechaGestion:formatoFechaCO(h), fechaGestionISO:formatoFechaInput(h), contrato:c.contrato, cedula:c.cedula, cliente:c.cliente, accion:accion, registradoPor:registradoPor});
       mostrarEstado('ok', '✓ '+textoOk);
-      renderizarSegCli(); renderizarSeguimiento();
+      renderizarSegCli(); renderizarSeguimiento(); renderizarRetencion();
     }).catch(function(err){
       if(boton){ boton.disabled = false; boton.textContent = t0; }
       mostrarEstado('error', err.message); window.alert('No se pudo guardar:\n\n'+err.message);
@@ -1199,7 +1264,7 @@
     renderizarCobros(mapaPagos);
     renderizarRenovaciones();
     renderizarRenovacionesEnviadas();
-    renderizarSeguimiento();
+    renderizarSeguimiento(); renderizarRetencion();
     renderizarSegCli();
     renderizarFiltro(mapaPagos);
   }
