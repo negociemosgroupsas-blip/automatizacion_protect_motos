@@ -444,7 +444,7 @@
     <div class="contenido-panel">
       <div class="seg-fil"><label>Año en que terminó <select id="retAnio"></select></label><label>Mes en que terminó <select id="retMes"></select></label></div>
       <div class="seg-tiles" id="retTiles"></div>
-      <div class="seg-tabla-w"><table id="tablaRet"><thead><tr><th>Mes en que terminó</th><th>Contratos que terminaron</th><th>Renovaron</th><th>No renovaron</th><th>% de retención</th></tr></thead><tbody id="cuerpoRet"></tbody></table></div>
+      <div class="seg-tabla-w"><table id="tablaRet"><thead><tr><th>Mes en que terminó o canceló</th><th>Contratos que terminaron o cancelaron</th><th>Renovaron</th><th>No renovaron</th><th>% de retención</th></tr></thead><tbody id="cuerpoRet"></tbody></table></div>
       <div class="vacio" id="vacioRet" style="display:none;">Todavía no hay contratos terminados en este período.</div>
       <p class="seg-nota" id="retNota"></p>
     </div>
@@ -545,6 +545,10 @@
     <h3>Cancelar cliente</h3>
     <div class="sub" id="cancelarContexto"></div>
     <p style="font-size:.85rem;">Esto marcará el estado del cliente como <strong>CANCELADO</strong> y dejará de aparecer en cobros. Esta acción se puede revertir manualmente desde la hoja si te equivocas.</p>
+    <div class="seg-fil" style="margin:10px 0">
+      <label>Motivo <select id="cancelarMotivo"><option value="Solicitud del cliente">El cliente solicitó cancelar (voluntaria)</option><option value="Dejó de pagar">Dejó de pagar</option><option value="Otro">Otro motivo</option></select></label>
+      <label>Fecha de cancelación <input type="date" id="cancelarFecha"></label>
+    </div>
     <input type="hidden" id="cancelarContrato">
     <div class="msg-modal" id="msgCancelar"></div>
     <div class="modal-acciones">
@@ -1006,9 +1010,12 @@
       // Si siempre pagó → FINALIZADO; si dejó de pagar → CANCELADO
       var destino = destinoAlTerminar(c, mapaPagos || construirMapaPagos());
       var accionGestion = destino==='FINALIZADO' ? ACCION_RENOVACION_VENCIDA_FIN : ACCION_RENOVACION_VENCIDA;
-      return llamarConector({action:'estado', contrato:c.contrato, nuevoEstado:destino}).then(function(resp){
+      var pEst = {action:'estado', contrato:c.contrato, nuevoEstado:destino};
+      if(destino==='CANCELADO'){ pEst.motivo = 'Dejó de pagar'; pEst.fechaCancelacion = c.finISO; }
+      return llamarConector(pEst).then(function(resp){
         if(!resp.ok) return;
         c.estado = destino;
+        if(destino==='CANCELADO'){ c.motivoCancelacion = 'Dejó de pagar'; c.fechaCancelacionISO = c.finISO; }
         estadosLocalesPendientes[c.contrato] = destino;
         return llamarConector({
           action:'registrarGestion', contrato:c.contrato, cedula:c.cedula, cliente:c.cliente,
@@ -1104,23 +1111,31 @@
   document.getElementById('segAnio').addEventListener('change', function(){ segAnio = this.value; renderizarSeguimiento(); });
   document.getElementById('segMes').addEventListener('change', function(){ segMes = this.value; renderizarSeguimiento(); });
 
+  function isoLocalHoy(){ var h = new Date(); return h.getFullYear()+'-'+('0'+(h.getMonth()+1)).slice(-2)+'-'+('0'+h.getDate()).slice(-2); }
   // ==================== RETENCIÓN DE CLIENTES ====================
   var retAnio = 'todos', retMes = '0';
   function sumarDiasISO(iso, d){ var p = parsearISO(iso); p.setDate(p.getDate()+d); return p.getFullYear()+'-'+('0'+(p.getMonth()+1)).slice(-2)+'-'+('0'+p.getDate()).slice(-2); }
   function calcularRetencion(){
-    var hoyISO = (function(h){ return h.getFullYear()+'-'+('0'+(h.getMonth()+1)).slice(-2)+'-'+('0'+h.getDate()).slice(-2); })(hoy());
-    var limite = sumarDiasISO(hoyISO, -30);              // los que terminaron hace menos de 30 días aún están a tiempo de renovar
+    var hoyISO = isoLocalHoy();
+    var limite = sumarDiasISO(hoyISO, -30);              // los que salieron hace menos de 30 días aún están a tiempo de renovar
     var acept = {}; (estado.gestiones||[]).forEach(function(g){ if(g.accion===ACCION_ACEPTADA && g.contrato) acept[g.contrato] = 1; });
     var porCed = {}; estado.contratos.forEach(function(c){ if(c.cedula && String(c.cliente||'').trim()) (porCed[c.cedula] = porCed[c.cedula] || []).push(c); });
     var lista = [], enPlazo = 0;
     estado.contratos.forEach(function(b){
-      if(!b.finISO || !String(b.cliente||'').trim() || b.estado==='ANULADO' || b.finISO>=hoyISO) return;
-      if(b.finISO>limite){ enPlazo++; return; }
-      var ini = sumarDiasISO(b.finISO, -60);
-      var renovo = !!acept[b.contrato] || (porCed[b.cedula]||[]).some(function(o){
+      if(!String(b.cliente||'').trim() || b.estado==='ANULADO') return;
+      var voluntaria = b.estado==='CANCELADO' && b.motivoCancelacion==='Solicitud del cliente' && !!b.fechaCancelacionISO;
+      // fecha en la que el cliente «salió»: la de la cancelación voluntaria, o la fecha final del contrato
+      var salida = voluntaria ? b.fechaCancelacionISO : b.finISO;
+      if(!salida || (!voluntaria && b.finISO>=hoyISO)) return;
+      if(salida>limite){ enPlazo++; return; }
+      var ini = sumarDiasISO(salida, -60);
+      var renovo = !voluntaria && (!!acept[b.contrato] || (porCed[b.cedula]||[]).some(function(o){
         return o.contrato!==b.contrato && o.fechaFirmaISO && o.fechaFirmaISO>(b.fechaFirmaISO||'') && o.fechaFirmaISO>=ini;
-      });
-      lista.push({c:b, fin:b.finISO, renovo:renovo, fin_ok:b.estado==='FINALIZADO'});
+      }));
+      if(voluntaria){   // si después de cancelar volvió a contratar, cuenta como recuperado
+        renovo = (porCed[b.cedula]||[]).some(function(o){ return o.contrato!==b.contrato && o.fechaFirmaISO && o.fechaFirmaISO>salida; });
+      }
+      lista.push({c:b, fin:salida, renovo:renovo, fin_ok:b.estado==='FINALIZADO', volun:voluntaria});
     });
     return {lista:lista, enPlazo:enPlazo};
   }
@@ -1142,6 +1157,7 @@
       '<div class="seg-t" style="--c:#38bdf8"><span>Contratos que terminaron</span><b>'+n+'</b><small>ya cumplieron su fecha final</small></div>'+
       '<div class="seg-t" style="--c:#1f9d55"><span>Renovaron</span><b>'+r+'</b><small>volvieron a contratar</small></div>'+
       '<div class="seg-t" style="--c:#dc2626"><span>No renovaron</span><b>'+(n-r)+'</b><small>'+pct(n-r,n)+' % de los terminados</small></div>'+
+      '<div class="seg-t" style="--c:#e08a00"><span>Cancelaron antes de terminar</span><b>'+F.filter(function(o){return o.volun;}).length+'</b><small>solicitaron cancelar (voluntaria)</small></div>'+
       '<div class="seg-t" style="--c:#5b78c7"><span>Retención de los que siempre pagaron</span><b>'+pct(rf,nf)+' %</b><small>'+rf+' de '+nf+' finalizados</small></div>';
     var meses = {};
     F.forEach(function(o){ var k = o.fin.slice(0,7), m = meses[k] = meses[k] || {n:0,r:0}; m.n++; if(o.renovo) m.r++; });
@@ -1150,7 +1166,7 @@
       return '<tr><td data-etiqueta="Mes">'+MESES_SEG[+p[1]-1]+' '+p[0]+'</td><td data-etiqueta="Terminaron"><strong>'+m.n+'</strong></td><td data-etiqueta="Renovaron">'+m.r+'</td><td data-etiqueta="No renovaron">'+(m.n-m.r)+'</td><td data-etiqueta="% de retención"><strong>'+pct(m.r,m.n)+' %</strong></td></tr>'; }).join('');
     document.getElementById('vacioRet').style.display = n ? 'none' : 'block';
     document.getElementById('tablaRet').style.display = n ? '' : 'none';
-    document.getElementById('retNota').textContent = 'Un contrato cuenta como «renovó» si el cliente (misma cédula) firmó otro contrato desde 60 días antes de que terminara el anterior, o si se marcó «Acepto renovación». No se cuentan los anulados ni los que terminaron hace menos de 30 días' + (R.enPlazo ? ' ('+R.enPlazo+' contratos aún están a tiempo de renovar)' : '') + '. Cada contrato terminado cuenta una vez.';
+    document.getElementById('retNota').textContent = 'Un contrato cuenta como «renovó» si el cliente (misma cédula) firmó otro contrato desde 60 días antes de que terminara el anterior, o si se marcó «Acepto renovación». Los clientes que pidieron cancelar antes de terminar (cancelación voluntaria) entran en el mes en que cancelaron y cuentan como «no renovaron», salvo que después hayan vuelto a contratar. No se cuentan los anulados ni los que salieron hace menos de 30 días' + (R.enPlazo ? ' ('+R.enPlazo+' contratos aún están a tiempo de renovar)' : '') + '. Cada contrato terminado cuenta una vez.';
   }
   document.getElementById('retAnio').addEventListener('change', function(){ retAnio = this.value; renderizarRetencion(); });
   document.getElementById('retMes').addEventListener('change', function(){ retMes = this.value; renderizarRetencion(); });
@@ -2165,6 +2181,8 @@
   function abrirModalCancelar(c){
     document.getElementById('cancelarContexto').textContent = c.cliente+' · Contrato '+c.contrato+' · Placa '+c.placa;
     document.getElementById('cancelarContrato').value = c.contrato;
+    document.getElementById('cancelarMotivo').value = 'Solicitud del cliente';
+    document.getElementById('cancelarFecha').value = isoLocalHoy();
     document.getElementById('msgCancelar').className='msg-modal';
     document.getElementById('msgCancelar').textContent='';
     modalCancelar.classList.add('abierto');
@@ -2183,7 +2201,8 @@
     boton.disabled = true;
     boton.textContent = 'Cancelando...';
 
-    llamarConector({action:'estado', contrato:contrato, nuevoEstado:'CANCELADO'}).then(function(resp){
+    var motivoC = document.getElementById('cancelarMotivo').value, fechaC = document.getElementById('cancelarFecha').value || isoLocalHoy();
+    llamarConector({action:'estado', contrato:contrato, nuevoEstado:'CANCELADO', motivo:motivoC, fechaCancelacion:fechaC}).then(function(resp){
       boton.disabled=false; boton.textContent='Sí, cancelar cliente';
       if(resp.ok){
         msg.className='msg-modal ok';
@@ -2191,7 +2210,7 @@
         // Actualización al instante: que salga de "Cobros de hoy" sin
         // esperar a que termine de recargar todo.
         var contratoCancelado = estado.contratos.find(function(x){ return x.contrato===contrato; });
-        if(contratoCancelado) contratoCancelado.estado = 'CANCELADO';
+        if(contratoCancelado){ contratoCancelado.estado = 'CANCELADO'; contratoCancelado.fechaCancelacionISO = fechaC; contratoCancelado.motivoCancelacion = motivoC; }
         estadosLocalesPendientes[contrato] = 'CANCELADO';
         renderizarVistas(construirMapaPagos());
         setTimeout(function(){
@@ -2349,7 +2368,9 @@
     var textoOriginal = boton ? boton.textContent : null;
     if(boton){ boton.disabled = true; boton.textContent = 'Guardando...'; }
 
-    llamarConector({action:'estado', contrato:c.contrato, nuevoEstado:destino}).then(function(resp){
+    var pEst2 = {action:'estado', contrato:c.contrato, nuevoEstado:destino};
+    if(destino==='CANCELADO'){ pEst2.motivo = 'Dejó de pagar'; pEst2.fechaCancelacion = isoLocalHoy(); }
+    llamarConector(pEst2).then(function(resp){
       if(!resp.ok){
         if(boton){ boton.disabled = false; boton.textContent = textoOriginal; }
         var mensajeError = resp.error || 'No se pudo actualizar el estado.';
@@ -2358,6 +2379,7 @@
         return;
       }
       c.estado = destino;
+      if(destino==='CANCELADO'){ c.motivoCancelacion = 'Dejó de pagar'; c.fechaCancelacionISO = isoLocalHoy(); }
       estadosLocalesPendientes[c.contrato] = destino;
       mostrarEstado('ok', '✓ '+textoAccion+' — '+c.cliente+'. Contrato '+c.contrato+' marcado como '+destino+'.');
       renderizarVistas(construirMapaPagos());

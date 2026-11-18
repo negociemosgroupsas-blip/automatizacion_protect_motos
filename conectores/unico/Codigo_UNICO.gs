@@ -49,6 +49,24 @@ var COL = {
 
 var FILA_INICIO_DATOS = 2; // fila 1 = encabezados
 
+// Columnas que se agregan solas al final de la hoja Protect la primera vez que se cancela un cliente
+var ENC_FECHA_CANCELACION = 'Fecha de cancelación';
+var ENC_MOTIVO_CANCELACION = 'Motivo de cancelación';   // Solicitud del cliente | Dejó de pagar | Venció sin renovar
+
+// Devuelve el número de columna (1, 2, 3…) que tiene ese título en la fila 1; si no existe y crear=true, la crea al final.
+function columnaPorEncabezado(hoja, titulo, crear) {
+  var ult = Math.max(hoja.getLastColumn(), 1);
+  var enc = hoja.getRange(1, 1, 1, ult).getValues()[0];
+  var buscado = String(titulo).trim().toLowerCase();
+  for (var i = 0; i < enc.length; i++) {
+    if (String(enc[i] || '').trim().toLowerCase() === buscado) return i + 1;
+  }
+  if (!crear) return 0;
+  var col = ult + 1;
+  hoja.getRange(1, col).setValue(titulo);
+  return col;
+}
+
 // Encabezados exactos de la hoja "Pagos" (columnas A-H)
 var ENCABEZADOS_PAGOS = [
   'Fecha de pago', 'N° contrato', 'Cédula', 'Cliente',
@@ -146,6 +164,8 @@ function leerContratos(hoja) {
 
   var ultimaCol = hoja.getLastColumn();
   var datos = hoja.getRange(FILA_INICIO_DATOS, 1, ultimaFila - FILA_INICIO_DATOS + 1, ultimaCol).getValues();
+  var colFC = columnaPorEncabezado(hoja, ENC_FECHA_CANCELACION, false);
+  var colMC = columnaPorEncabezado(hoja, ENC_MOTIVO_CANCELACION, false);
 
   var resultado = [];
   for (var i = 0; i < datos.length; i++) {
@@ -171,7 +191,10 @@ function leerContratos(hoja) {
       celular: String(fila[COL.CELULAR - 1] || ''),
       correo: String(fila[COL.CORREO - 1] || ''),
       direccion: String(fila[COL.DIRECCION - 1] || ''),
-      estado: String(fila[COL.ESTADO_CLIENTE - 1] || '').trim().toUpperCase()
+      estado: String(fila[COL.ESTADO_CLIENTE - 1] || '').trim().toUpperCase(),
+      fechaCancelacion: colFC ? formatoFecha(fila[colFC - 1]) : '',
+      fechaCancelacionISO: colFC ? formatoISO(fila[colFC - 1]) : '',
+      motivoCancelacion: colMC ? String(fila[colMC - 1] || '').trim() : ''
     });
   }
   return resultado;
@@ -478,6 +501,22 @@ function accionCambiarEstado(params) {
       return { ok: false, error: 'No se encontró el contrato ' + contrato };
     }
     hojaSeg.getRange(info.numeroFila, COL.ESTADO_CLIENTE).setValue(nuevoEstado);
+    // Fecha y motivo de la cancelación (columnas nuevas al final de la hoja Protect)
+    if (nuevoEstado === 'CANCELADO') {
+      var fISO = String(params.fechaCancelacion || '').trim();
+      var fecha = /^\d{4}-\d{2}-\d{2}$/.test(fISO)
+        ? new Date(Number(fISO.slice(0, 4)), Number(fISO.slice(5, 7)) - 1, Number(fISO.slice(8, 10)))
+        : new Date();
+      var cF = columnaPorEncabezado(hojaSeg, ENC_FECHA_CANCELACION, true);
+      var cM = columnaPorEncabezado(hojaSeg, ENC_MOTIVO_CANCELACION, true);
+      hojaSeg.getRange(info.numeroFila, cF).setValue(fecha).setNumberFormat('dd/mm/yyyy');
+      hojaSeg.getRange(info.numeroFila, cM).setValue(String(params.motivo || '').trim());
+    } else {
+      var cF0 = columnaPorEncabezado(hojaSeg, ENC_FECHA_CANCELACION, false);
+      var cM0 = columnaPorEncabezado(hojaSeg, ENC_MOTIVO_CANCELACION, false);
+      if (cF0) hojaSeg.getRange(info.numeroFila, cF0).clearContent();
+      if (cM0) hojaSeg.getRange(info.numeroFila, cM0).clearContent();
+    }
     return { ok: true, mensaje: 'Estado actualizado a ' + nuevoEstado + '.' };
   } catch (err) {
     return { ok: false, error: 'No se pudo cambiar el estado: ' + err.message };
