@@ -147,7 +147,7 @@
   }
   function regaloHtml(d){
     var L = d.salud || [];
-    return '<div class="rg"><div class="rt"><span class="ic">🎁</span><div><b>¡DE REGALO POR LLEVAR LA OPCIÓN 2! · PLAN DE SALUD</b><small>'+(L.length?'Incluye:':'Pregunta a tu asesor por todos sus beneficios.')+'</small></div></div>'+
+    return '<div class="rg"><div class="rt"><span class="ic">🎁</span><div><b>¡DE REGALO POR LLEVAR LA OPCIÓN 2! · PLAN DE SALUD</b><small>'+(L.length?'Para el titular y 2 beneficiarios más · Incluye:':'Para el titular y 2 beneficiarios más. Pregunta a tu asesor por todos sus beneficios.')+'</small></div></div>'+
       (L.length?'<div class="ri">'+L.map(function(t){ return '<div><i>✓</i><span>'+esc(t)+'</span></div>'; }).join('')+'</div>':'')+'</div>';
   }
   function pagina(d){

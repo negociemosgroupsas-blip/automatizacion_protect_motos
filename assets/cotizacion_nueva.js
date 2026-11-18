@@ -68,7 +68,7 @@
     return '¡Hola, '+q.nombre+'! 😊\nTe escribimos de Protect Motos.\n\n'+
       'Te compartimos la cotización de la garantía para tu moto'+(q.moto?' '+q.moto:'')+(q.placa?' de placa '+q.placa:'')+(q.aseguradora!=='Protect Motos'?' con '+q.aseguradora:'')+'.\n\n'+
       '💛 *Opción 1 · Hurto o pérdida total'+(q.propia?' (cubre el 80 %)':'')+'*\n• De contado: '+cop(q.op1.contado)+'\n• Financiado a '+q.plazo+' meses: '+lineaFin(q.op1,q.plazo)+'\n\n'+
-      '💙 *Opción 2 · Hurto / pérdida total + responsabilidad civil + asistencias*\n• De contado: '+cop(q.op2.contado)+'\n• Financiado a '+q.plazo+' meses: '+lineaFin(q.op2,q.plazo)+'\n🎁 *¡De regalo!* Plan de salud por llevar la Opción 2: '+planTxt()+'\n\n'+
+      '💙 *Opción 2 · Hurto / pérdida total + responsabilidad civil + asistencias*\n• De contado: '+cop(q.op2.contado)+'\n• Financiado a '+q.plazo+' meses: '+lineaFin(q.op2,q.plazo)+'\n🎁 *¡De regalo!* Plan de salud por llevar la Opción 2, para el titular y 2 beneficiarios más: '+planTxt()+'\n\n'+
       'Te adjuntamos la cotización con todas las coberturas. ¿Te gustaría que avancemos? Respóndenos y lo dejamos listo 💙';
   }
   function resumenOp(o, plz){ return 'contado <b>'+cop(o.contado)+'</b> · '+plz+' cuotas'+(o.primera!==o.resto?' (1ª de <b>'+cop(o.primera)+'</b>, luego <b>'+cop(o.resto)+'</b>)':' de <b>'+cop(o.cuota)+'</b>')+' · total <b>'+cop(o.total)+'</b>'; }

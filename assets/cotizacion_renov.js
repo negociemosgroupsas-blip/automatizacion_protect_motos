@@ -87,7 +87,7 @@
       '💙 *Opción 2 · Hurto / pérdida total + responsabilidad civil + asistencias*\n'+
       '• De contado: '+cop(q.op2.contado)+'\n'+
       '• Financiado a '+q.plazo+' meses: '+lineaFin(q.op2,q.plazo)+'\n'+
-      '🎁 *¡De regalo!* Plan de salud por llevar la Opción 2: '+planTxt()+'\n\n'+
+      '🎁 *¡De regalo!* Plan de salud por llevar la Opción 2, para el titular y 2 beneficiarios más: '+planTxt()+'\n\n'+
       'Te adjuntamos la cotización con todas las coberturas. ¿Quieres que renovemos tu garantía? Respóndenos y lo dejamos listo hoy mismo 💙';
     return m;
   }
