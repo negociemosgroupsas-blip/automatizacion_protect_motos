@@ -140,9 +140,11 @@
 
   .asr{grid-column:1/-1;max-width:1000px}
   #v-inicio .asy{grid-column:1/-1!important;order:7} .asy{cursor:default;border-top-color:var(--dorado)} .asy:hover{box-shadow:none;transform:none} .asy .tot{font-size:.85rem;color:var(--suave);margin:0 0 12px}
-  .asy-g{display:flex;align-items:flex-end;gap:18px;height:250px;overflow-x:auto;padding:0 4px 54px} .asy-a{flex:1;min-width:64px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
-  .asy-b{display:flex;align-items:flex-end;gap:4px;height:100%;width:100%;justify-content:center} .asy-c{flex:1;max-width:30px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%} .asy-c i{display:block;width:100%;border-radius:5px 5px 0 0} .asy-c b{font-size:.72rem;margin-bottom:2px}
-  .asy-n{position:absolute;bottom:-46px;font-size:.8rem;text-align:center;width:100%;line-height:1.15;overflow:hidden;text-overflow:ellipsis} .asy-n small{display:block;color:var(--suave);font-size:.7rem}
+  .asy-g{display:flex;align-items:flex-end;gap:20px;height:290px;overflow-x:auto;padding:0 4px 66px} .asy-a{flex:1;min-width:70px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
+  .asy-b{display:flex;align-items:flex-end;gap:5px;height:100%;width:100%;justify-content:center} .asy-c{flex:1;max-width:50px;min-width:30px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;position:relative}
+  .asy-st{display:flex;flex-direction:column-reverse;width:100%;border-radius:5px 5px 0 0;overflow:hidden} .asy-st i{display:flex;align-items:center;justify-content:center;font-style:normal;font-size:.6rem;font-weight:700!important;color:#04202e;line-height:1;overflow:hidden;white-space:nowrap}
+  .asy-c b{font-size:.72rem;margin-bottom:2px} .asy-y{position:absolute;bottom:-17px;font-size:.68rem;color:var(--suave)}
+  .asy-n{position:absolute;bottom:-52px;font-size:.8rem;text-align:center;width:100%;line-height:1.15;overflow:hidden;text-overflow:ellipsis} .asy-n small{display:block;color:var(--suave);font-size:.7rem}
   .asy-l{display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--suave);margin-top:4px} .asy-l i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
   .asr-l{display:grid;grid-auto-flow:column;column-gap:28px;grid-template-rows:repeat(var(--f,10),auto)}
   .asr .fila-a{grid-template-columns:22px minmax(80px,170px) 1fr 34px 44px;gap:8px;margin:3px 0;font-size:.85rem}
@@ -693,14 +695,14 @@
 
   document.getElementById('subInicio').textContent='Mes en curso: '+MES_TXT+' · usa el buscador de arriba para consultar un cliente';
   var asr=document.createElement('div');asr.className='card asr';asr.innerHTML='<h3>Ventas por asesor</h3><p class="tot" id="asrTot">Se muestra al conectar Cobros (contratos por asesor).</p><div class="ed-per" id="asFil"><label>Año <select id="asAnio"></select></label><label>Mes <select id="asMes"></select></label></div><div id="asrBarras"></div>';tarjetas.appendChild(asr);
-  var asy=document.createElement('div');asy.className='card asy';asy.innerHTML='<h3>Ventas por asesor, año por año</h3><p class="tot" id="asyTot">Se muestra al conectar Cobros (contratos por asesor).</p><div class="ed-per" id="asyFil"><label>Año <select id="asyAnios"></select></label> <label>Mes <select id="asyMes"></select></label> <label>Asesor <select id="asyAses"></select></label> <label>Contar <select id="asyQue"><option value="total">Total de contratos Protect</option><option value="rc">Solo ventas con RC</option><option value="ap">Solo ventas con AP</option></select></label></div><div class="asy-g" id="asyG"></div><div class="asy-l" id="asyL"></div>';tarjetas.appendChild(asy);
+  var asy=document.createElement('div');asy.className='card asy';asy.innerHTML='<h3>Ventas por asesor, año por año</h3><p class="tot" id="asyTot">Se muestra al conectar Cobros (contratos por asesor).</p><div class="ed-per" id="asyFil"><label>Año <select id="asyAnios"></select></label> <label>Mes <select id="asyMes"></select></label> <label>Asesor <select id="asyAses"></select></label> <label>Contar <select id="asyQue"><option value="total">Todas las ventas</option><option value="p">Solo Protect Motos (sin RC ni AP)</option><option value="rc">Ventas con RC</option><option value="ap">Ventas con AP</option><option value="rcap">Ventas con RC y AP</option></select></label></div><div class="asy-g" id="asyG"></div><div class="asy-l" id="asyL"></div>';tarjetas.appendChild(asy);
   var asyRecs=null,asyOk=false,ASY={y:'',m:'',a:'',q:'total'};
   [['asyAnios','y'],['asyMes','m'],['asyAses','a'],['asyQue','q']].forEach(function(x){document.getElementById(x[0]).addEventListener('change',function(){ASY[x[1]]=this.value;pintarAsesAnio(asyRecs,asyOk)})});
   function pintarAsesAnio(recs,ok){
     asyRecs=recs;asyOk=ok;var tot=document.getElementById('asyTot'),g=document.getElementById('asyG'),lg=document.getElementById('asyL');
     if(!ok||!recs||!recs.length){tot.textContent='Para ver las ventas por asesor, configura el conector del CRM en «Conexiones».';g.innerHTML='';lg.innerHTML='';return}
     var COL=['#9fb8e8','#fdc33e','#38bdf8','#5b78c7','#e08a00','#d5dcf0'],MESN=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],MESL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-    var base=recs.filter(function(r){return !(ASY.q==='rc'&&!r.rc)&&!(ASY.q==='ap'&&!r.ap)}).map(function(r){return{y:Math.floor((r.k-1)/12),m:((r.k-1)%12)+1,a:r.a}}).filter(function(r){return r.y>0});
+    var base=recs.filter(function(r){var q=ASY.q;return q==='total'||(q==='p'&&!r.rc&&!r.ap)||(q==='rc'&&r.rc)||(q==='ap'&&r.ap)||(q==='rcap'&&r.rc&&r.ap)}).map(function(r){return{y:Math.floor((r.k-1)/12),m:((r.k-1)%12)+1,a:r.a,c:(r.rc&&r.ap)?3:r.rc?1:r.ap?2:0}}).filter(function(r){return r.y>0});
     var ys={},as={};base.forEach(function(r){ys[r.y]=1;as[r.a]=1});var yl=Object.keys(ys).map(Number).sort(),al=Object.keys(as).sort();
     var sy=document.getElementById('asyAnios'),sm=document.getElementById('asyMes'),sa=document.getElementById('asyAses');
     sy.innerHTML='<option value="">Todos los años</option>'+yl.slice().reverse().map(function(y){return '<option>'+y+'</option>'}).join('');if(!ys[ASY.y])ASY.y='';sy.value=ASY.y;
@@ -709,15 +711,18 @@
     document.getElementById('asyQue').value=ASY.q;
     var F=base.filter(function(r){return(!ASY.y||r.y===+ASY.y)&&(!ASY.m||r.m===+ASY.m)&&(!ASY.a||r.a===ASY.a)});
     var series=ASY.y?[+ASY.y]:yl,porMes=!!ASY.a,grupos=[],i;
-    if(porMes){for(i=1;i<=12;i++){if(!ASY.m||+ASY.m===i)grupos.push({k:i,n:MESN[i-1],y:{},t:0})}F.forEach(function(r){var G=grupos.filter(function(x){return x.k===r.m})[0];if(G){G.y[r.y]=(G.y[r.y]||0)+1;G.t++}})}
-    else{var v={};F.forEach(function(r){var o=v[r.a]=v[r.a]||{k:r.a,n:r.a,y:{},t:0};o.y[r.y]=(o.y[r.y]||0)+1;o.t++});grupos=Object.keys(v).map(function(k){return v[k]}).sort(function(a,b){return b.t-a.t}).slice(0,14)}
-    var mx=1,T=0;grupos.forEach(function(x){T+=x.t;series.forEach(function(y){mx=Math.max(mx,x.y[y]||0)})});
-    var QN={total:'contratos de Protect',rc:'ventas con RC',ap:'ventas con AP'}[ASY.q];
+    if(porMes){for(i=1;i<=12;i++){if(!ASY.m||+ASY.m===i)grupos.push({k:i,n:MESN[i-1],y:{},t:0})}F.forEach(function(r){var G=grupos.filter(function(x){return x.k===r.m})[0];if(G){var q=G.y[r.y]=G.y[r.y]||[0,0,0,0];q[r.c]++;G.t++}})}
+    else{var v={};F.forEach(function(r){var o=v[r.a]=v[r.a]||{k:r.a,n:r.a,y:{},t:0};var q=o.y[r.y]=o.y[r.y]||[0,0,0,0];q[r.c]++;o.t++});grupos=Object.keys(v).map(function(k){return v[k]}).sort(function(a,b){return b.t-a.t}).slice(0,14)}
+    var mx=1,T=0;grupos.forEach(function(x){T+=x.t;series.forEach(function(y){var q=x.y[y];if(q)mx=Math.max(mx,q[0]+q[1]+q[2]+q[3])})});
+    var QN={total:'todas las ventas',p:'ventas solo Protect Motos',rc:'ventas con RC',ap:'ventas con AP',rcap:'ventas con RC y AP'}[ASY.q];
     var per=(ASY.y?ASY.y:'todos los años')+(ASY.m?' · '+MESL[ASY.m-1]:'')+(ASY.a?' · '+ASY.a:'');
     tot.textContent=QN.charAt(0).toUpperCase()+QN.slice(1)+' · '+per+' · '+T+' en total'+(porMes?' (mes por mes)':' (los '+grupos.length+' asesores con más)')+'.';
     if(!T){g.innerHTML='<p class="tot">No hay ventas con ese filtro.</p>';lg.innerHTML='';return}
-    g.innerHTML=grupos.map(function(x){return '<div class="asy-a" title="'+x.n+': '+x.t+'"><div class="asy-b">'+series.map(function(y,i){var n=x.y[y]||0,h=n?Math.max(4,Math.round(n/mx*170)):0;return '<div class="asy-c" title="'+x.n+' · '+y+': '+n+'"><b>'+(n||'')+'</b><i style="height:'+h+'px;background:'+COL[yl.indexOf(y)%COL.length]+'"></i></div>'}).join('')+'</div><div class="asy-n">'+x.n+'<small>'+x.t+' en total</small></div></div>'}).join('');
-    lg.innerHTML=series.map(function(y){return '<span><i style="background:'+COL[yl.indexOf(y)%COL.length]+'"></i>'+y+'</span>'}).join('');
+    var CAT=[['Protect','#38bdf8'],['RC','#fdc33e'],['AP','#5b78c7'],['RC+AP','#1f9d55']];
+    g.innerHTML=grupos.map(function(x){return '<div class="asy-a" title="'+x.n+': '+x.t+'"><div class="asy-b">'+series.map(function(y){var q=x.y[y]||[0,0,0,0],n=q[0]+q[1]+q[2]+q[3],H=n?Math.max(6,Math.round(n/mx*190)):0;
+      var seg=CAT.map(function(c,ci){var v=q[ci];if(!v)return '';var h=Math.max(2,Math.round(v/n*H));return '<i style="height:'+h+'px;background:'+c[1]+(ci===2||ci===3?';color:#fff':'')+'" title="'+x.n+' · '+y+' · '+c[0]+': '+v+'">'+(h>=14?(h>=26?c[0]+' '+v:c[0]):'')+'</i>'}).join('');
+      return '<div class="asy-c" title="'+x.n+' · '+y+': '+n+' ventas"><b>'+(n||'')+'</b><div class="asy-st">'+seg+'</div><span class="asy-y">'+y+'</span></div>'}).join('')+'</div><div class="asy-n">'+x.n+'<small>'+x.t+' en total</small></div></div>'}).join('');
+    lg.innerHTML=CAT.map(function(c){return '<span><i style="background:'+c[1]+'"></i>'+(c[0]==='Protect'?'Solo Protect Motos':c[0]==='RC'?'Protect + RC':c[0]==='AP'?'Protect + AP':'Protect + RC + AP')+'</span>'}).join('')+'<span>Debajo de cada columna va el año</span>';
   }
   window.pintarAsesAnio=pintarAsesAnio;
   var meta=document.createElement('div');meta.className='card meta';meta.id='metaCard';meta.innerHTML='<h3>Meta de contratos · '+MES_TXT+'</h3><p class="tot" id="metaTot">Se muestra al conectar Cobros.</p><div id="metaCuerpo"></div>';var pg=tarjetas.parentNode;pg.insertBefore(meta,pg.querySelector('.sec-t'));
@@ -1930,7 +1935,7 @@
   var TARJETAS=[
     ['.ruta:not(.ruta-hito)','¿Cómo vamos con la meta del mes?','🏍️','','La moto avanza según los contratos del mes contra la meta (105). La línea punteada con «hoy» marca el ritmo que deberíamos llevar a esta fecha. Toca la moto para ver el detalle.','ventas',1],
     ['.card.meta','Avance de la meta de contratos','🎯','Cuántos contratos llevamos este mes y cuántos faltan para la meta.','Cuenta los contratos de Protect con cliente en el mes actual (columnas I y J de la hoja). No cuenta los anulados. La marca del medidor es el ritmo esperado a hoy. Puedes cambiar la meta con «Cambiar meta».','ventas',1],
-    ['.asy','Ventas por asesor, año por año','📊','Cuántos contratos firmó cada asesor en cada año, lado a lado.','Cada grupo de columnas es un asesor (columna B de Protect). Cada color es un año y el número encima es cuántas ventas hizo ese año. Con «Contar» elige: todos los contratos de Protect, solo los que llevan RC o solo los que llevan AP. Debajo va el total de sus años.','ventas',1],
+    ['.asy','Ventas por asesor, año por año','📊','Cuántos contratos firmó cada asesor en cada año, lado a lado.','Cada grupo de columnas es un asesor (columna B de Protect). Cada color es un año y el número encima es cuántas ventas hizo ese año. Cada columna se divide por dentro en Protect, RC, AP y RC+AP (con su cantidad). Con «Contar» elige ver todas las ventas, solo Protect Motos, o las que llevan RC, AP o ambas. Debajo va el total de sus años.','ventas',1],
     ['.asr','¿Quién vende más?','🏆','Contratos firmados por cada asesor en el período elegido.','Cada barra es un asesor (columna B de Protect) y el número es cuántos contratos firmó. El porcentaje es su parte del total. El primero va en dorado.','ventas',1],
     ['.cfc','¿Contado o financiado? Año por año','📊','Todos los años juntos: cuántos contratos fueron de contado y cuántos financiados.','Dorado = de contado, azul = financiados; cada pareja de columnas es un año. Con «Mes» ves un mes específico. En «Ver» también están: una gráfica por año, comparar años y contado y financiados mes a mes. Sale de las columnas I, J y T de Protect; no cuenta anulados.','ventas',1],
     ['.seg','¿Qué protección llevan los contratos?','🛡️','Reparte los contratos según lleven solo Protect, RC, AP o varias.','Todos los contratos llevan Protect Motos. RC sale de la columna U y AP de la columna W de la hoja (SI = lo lleva). Cambia el año y el mes con los filtros.','clientes',1],
