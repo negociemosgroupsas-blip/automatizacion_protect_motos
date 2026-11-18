@@ -15,7 +15,8 @@ assets/
   dash_oms.js                 Tablero de Clientes OMS
   tema_modulo.js              Modo oscuro / día de los módulos
   informe_diario.js           Informe diario para el jefe: hoja visual, imagen PNG y PDF (botón «Informe diario» del Inicio)
-  tipografia.css + fonts/     Tipografía única (Lato, incluida: funciona sin internet) y jerarquía de pesos: negrilla solo en títulos y cifras
+  tipografia.css + fonts/     Tipografía única (Lato, incluida: funciona sin internet) para TODO: menú, botones, campos, tablas, gráficas y documentos; negrilla solo en títulos y cifras
+  lato_b64.js                 Lato incrustada para los documentos que se dibujan como imagen o PDF (cotización, informe diario)
   xlsx.mini.min.js, pptxgen.bundle.js, zip_simple.js, logo*.png
 modulos/                      Un archivo por botón del menú
   contratos.html              OPERACIÓN · cotiza, genera e imprime el contrato y lo guarda en la hoja

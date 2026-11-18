@@ -47,11 +47,11 @@
   function guardarPlanSalud(lista){ try{ localStorage.setItem(CLAVE_PLAN, JSON.stringify((lista||[]).filter(Boolean))); }catch(e){} }
 
   /* ---- Estilos del documento (limpio: lo esencial arriba, el detalle de coberturas en la segunda hoja) ---- */
-  var CSS = [
+  var CSS = (w.PM_LATO_FF || '') + [
     '@page{size:letter;margin:6mm}',
-    '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
-    'body{margin:0;background:#fff;color:#13223f;font-family:Arial,Helvetica,sans-serif}',
-    '.doc{font-family:Arial,Helvetica,sans-serif;width:794px;margin:0 auto;padding:16px 22px 14px;font-size:12px;line-height:1.3;color:#fff;border-radius:22px;position:relative;overflow:hidden;',
+    '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-family:inherit}',
+    'body{margin:0;background:#fff;color:#13223f;font-family:\'LatoInf\',\'Lato\',Arial,Helvetica,sans-serif}',
+    '.doc{font-family:\'LatoInf\',\'Lato\',Arial,Helvetica,sans-serif;width:794px;margin:0 auto;padding:16px 22px 14px;font-size:12px;line-height:1.3;color:#fff;border-radius:22px;position:relative;overflow:hidden;',
       'background:radial-gradient(circle at 92% 3%,rgba(255,255,255,.26),rgba(255,255,255,0) 32%),radial-gradient(circle at 3% 60%,rgba(255,255,255,.14),rgba(255,255,255,0) 30%),linear-gradient(165deg,#0b63c9 0%,#1596e0 52%,#0a4fae 100%)}',
     '.sup{display:flex;justify-content:space-between;align-items:center;gap:12px}',
     '.logo{background:#fff;border-radius:999px;padding:5px 16px;display:flex;align-items:center;box-shadow:0 3px 10px rgba(0,0,0,.18)} .logo img{height:44px;width:auto;display:block}',
