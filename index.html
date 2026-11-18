@@ -607,6 +607,7 @@
 <script src="assets/pptxgen.bundle.js"></script>
 <script src="assets/zip_simple.js"></script>
 <link rel="stylesheet" href="assets/tipografia.css">
+<link rel="stylesheet" href="assets/corporativo.css">
 </head>
 <body>
 <nav>
@@ -2324,9 +2325,10 @@
     P.defineSlideMaster({title:'M',background:{color:'F5F7FB'},objects:[
       {rect:{x:0,y:0,w:13.33,h:0.12,fill:{color:ORO}}},
       {rect:{x:0,y:7.2,w:13.33,h:0.3,fill:{color:NAVY}}},
+      (window.PM_LOGO?{image:{x:11.75,y:0.22,w:1.2,h:0.66,data:String(window.PM_LOGO).replace(/^data:/,'')}}:{rect:{x:0,y:0,w:0,h:0,fill:{color:'F5F7FB'}}}),
       {text:{text:'Protect Motos · Negociemos Group S.A.S. · Reporte del '+fechaTxt,options:{x:0.4,y:7.2,w:10,h:0.3,fontSize:9,color:'DBE3F2',fontFace:'Calibri'}}}
     ],slideNumber:{x:12.5,y:7.2,w:0.6,h:0.3,fontSize:9,color:'DBE3F2'}});
-    function lamina(titulo,sub){var s=P.addSlide({masterName:'M'});s.addText(titulo,{x:0.5,y:0.3,w:12.3,h:0.6,fontSize:26,bold:true,color:NAVY,fontFace:'Calibri'});if(sub)s.addText(sub,{x:0.5,y:0.9,w:12.3,h:0.4,fontSize:13,color:GRIS,fontFace:'Calibri'});return s}
+    function lamina(titulo,sub){var s=P.addSlide({masterName:'M'});s.addText(titulo,{x:0.5,y:0.3,w:11.0,h:0.6,fontSize:26,bold:true,color:NAVY,fontFace:'Calibri'});if(sub)s.addText(sub,{x:0.5,y:0.9,w:11.0,h:0.4,fontSize:13,color:GRIS,fontFace:'Calibri'});return s}
     var okChart=function(){return {showLegend:true,legendPos:'b',legendFontSize:11,catAxisLabelFontSize:11,valAxisLabelFontSize:10,valGridLine:{color:'E3E6EB',size:0.5},valAxisMinVal:0,showValue:true,dataLabelFontSize:9,dataLabelColor:NAVY}};
     var Y=Object.keys(R.cf).map(function(k){return Math.floor((+k-1)/12)}).filter(function(y,i,a){return a.indexOf(y)===i}).sort();
     if(!HIST)Y=Y.filter(function(y){return y===yA});
@@ -2519,5 +2521,6 @@
   /* El módulo Contratos nombra sus PDF con el título de la página: lo recibimos y lo ponemos mientras se imprime */
   (function(){var base=null;window.addEventListener('message',function(ev){var d=ev.data;if(!d||typeof d!=='object'||!('pmTitulo' in d))return;if(typeof d.pmTitulo==='string'&&d.pmTitulo){if(base===null)base=document.title;document.title=d.pmTitulo}else if(base!==null){document.title=base;base=null}})})();
 </script>
+<script src="assets/corporativo.js"></script>
 </body>
 </html>

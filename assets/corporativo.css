@@ -1,0 +1,38 @@
+/* PROTECT MOTOS — Imagen corporativa: paleta sobria (azul marino, azul, dorado, gris) y un solo acento.
+   Rojo y verde quedan solo para estados (cancelado, activo, alerta). */
+
+/* íconos de línea en lugar de emojis */
+.pmi-w{display:inline-flex;vertical-align:-.17em;margin-right:.4em;line-height:1}
+.pmi{display:block;width:1.15em;height:1.15em}
+h3 .pmi-w,h4 .pmi-w,.in-sec .pmi-w{color:#fdc33e} body.inicio-claro h3 .pmi-w,body.inicio-claro h4 .pmi-w{color:#b7860b}
+.in-ki .pmi-w,.ico .pmi-w{margin:0;color:inherit} .ico .pmi{width:18px;height:18px} nav li a .ico .pmi-w{color:#c9d6f6} nav li a.activo .ico .pmi-w{color:#fdc33e}
+button .pmi-w{margin-right:.35em}
+.pm-hlogo{height:42px;width:auto;background:#fff;border-radius:10px;padding:4px 8px;margin-right:14px;flex:none;align-self:center}
+
+/* tarjetas de indicadores: azules corporativos en todo el sistema */
+.k-oro{background:linear-gradient(135deg,#1e3a8a,#2f5fb8)!important;color:#fff!important} .k-oro .in-kp{background:rgba(255,255,255,.28)!important} .k-oro .in-kp i{background:#fff!important} .k-oro .in-ki{background:rgba(255,255,255,.16)!important}
+.k-cian{background:linear-gradient(135deg,#1d4f91,#3b82c4)!important} .k-vio{background:linear-gradient(135deg,#17406f,#2d6fa8)!important}
+.k-azu{background:linear-gradient(135deg,#27407f,#4a64b0)!important} .k-nar{background:linear-gradient(135deg,#7a4a12,#c58a1b)!important}
+.k-ros{background:linear-gradient(135deg,#8f2d45,#b84a62)!important}
+
+/* un solo color de acento (dorado) en el borde de todas las tarjetas del Inicio */
+#v-inicio .card,#v-inicio .al,#v-inicio .od-card,#v-inicio .ruta{--acc:#fdc33e!important;border-top-color:#fdc33e!important}
+body.inicio-claro #v-inicio .card,body.inicio-claro #v-inicio .al{--acc:#d6a417!important;border-top-color:#d6a417!important}
+
+/* botones del Inicio: uno principal (dorado) y los demás sobrios */
+#v-inicio .in-fil button,#v-inicio .in-fil #gRep,#v-inicio .in-fil .in-tema,#v-inicio #gTema{background:transparent!important;color:#dbe5ff!important;border:1px solid #3d5198!important;box-shadow:none}
+#v-inicio .in-fil button:hover{background:#1b2a5e!important;filter:none}
+#v-inicio #gInf{background:#fdc33e!important;color:#14224f!important;border-color:#fdc33e!important}
+body.inicio-claro #v-inicio .in-fil button,body.inicio-claro #v-inicio .in-fil #gRep,body.inicio-claro #v-inicio .in-fil .in-tema,body.inicio-claro #v-inicio #gTema{color:#13223f!important;border-color:#b9c6e4!important} body.inicio-claro #v-inicio .in-fil button:hover{background:#eef2fb!important}
+body.inicio-claro #v-inicio #gInf{color:#14224f!important;border-color:#d6a417!important;background:#fdc33e!important}
+#v-inicio .in-fil .in-tema{background:transparent!important}
+
+/* módulos: encabezado azul marino con línea dorada, igual en todos */
+body>header:not(.app),header.app{background:linear-gradient(135deg,#0f1d45,#18295f)!important;color:#fff!important;border-bottom:4px solid #fdc33e!important}
+body>header h1,body>header p{color:#fff} body>header p{opacity:.8}
+body>header:not(.app){display:flex;align-items:center;flex-wrap:wrap;gap:6px 0}
+body>header:not(.app)>div{flex:1 1 auto}
+
+/* botones de los módulos: la acción principal en dorado, el resto en azul */
+.btn-verde,.btn.v,.cn-b.v,.pmcr-b.v,.bt.v{background:#1e3a8a!important;color:#fff!important}
+.btn-oro,.btn.o,.cn-b.o,.pmcr-b.o{background:#fdc33e!important;color:#14224f!important}
