@@ -333,7 +333,8 @@
     <div class="tarjeta-contador destacado" data-filtro="totalPendiente" title="Ver clientes con saldo pendiente"><div class="valor" id="cTotalPendiente">–</div><div class="etiqueta">Total pendiente por cobrar</div></div>
     <div class="tarjeta-contador alerta" data-filtro="renovar" title="Ver pólizas por renovar"><div class="valor" id="cRenovar">–</div><div class="etiqueta">Pólizas por renovar (≤8 días)</div></div>
     <div class="tarjeta-contador" data-filtro="renovacionesEnviadas" title="Ver renovaciones con mensaje ya enviado, esperando respuesta"><div class="valor" id="cRenovarEnviadas">–</div><div class="etiqueta">Renovaciones enviadas</div></div>
-    <div class="tarjeta-contador alerta" id="tVig" title="Ir al panel de vigencias de RC y AP" style="cursor:pointer"><div class="valor" id="cVig">–</div><div class="etiqueta">Vigencias RC/AP vencidas o por vencer</div></div>
+    <div class="tarjeta-contador alerta" id="tVig" title="RC y AP por renovar (falta enviar el mensaje)" style="cursor:pointer"><div class="valor" id="cVig">–</div><div class="etiqueta">RC/AP por renovar</div></div>
+    <div class="tarjeta-contador" id="tVigEnv" title="RC y AP con mensaje enviado, esperando respuesta" style="cursor:pointer"><div class="valor" id="cVigEnv">–</div><div class="etiqueta">RC/AP renovaciones enviadas</div></div>
   </div>
 
   <section class="panel" id="panelHistorial">
@@ -451,17 +452,23 @@
 
   <section class="panel" id="panelVigencias">
     <div class="cabecera">
-      <h2>Vigencias de RC y AP</h2>
-      <span class="sub" id="vigSub">Pólizas de Responsabilidad Civil y Accidentes Personales vencidas o por vencer</span>
+      <h2>RC y AP por renovar</h2>
+      <span class="sub" id="vigSub">Vigencias de Responsabilidad Civil y Accidentes Personales: avisar, hacer seguimiento y registrar la respuesta</span>
     </div>
     <div class="contenido-panel">
-      <div class="seg-fil"><label>Mostrar <select id="vigVer"><option value="aviso">Vencidas y por vencer</option><option value="venc">Solo vencidas</option><option value="todas">Todas</option></select></label>
+      <div class="seg-fil"><label>Mostrar <select id="vigVer"><option value="aviso">Vencidas y por vencer</option><option value="venc">Solo vencidas</option></select></label>
         <label>Por vencer en <select id="vigDias"><option value="15">15 días</option><option value="30" selected>30 días</option><option value="60">60 días</option></select></label>
         <label>Tipo <select id="vigTipo"><option value="">RC y AP</option><option value="RC">Solo RC</option><option value="AP">Solo AP</option></select></label>
         <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="vigAct" checked> Solo clientes activos</label></div>
       <div class="seg-tiles" id="vigTiles"></div>
-      <div class="seg-tabla-w" style="max-height:460px;overflow:auto"><table id="tablaVig"><thead><tr><th>Cliente</th><th>Cédula</th><th>Contrato</th><th>Tipo</th><th>N.º póliza</th><th>Fin de vigencia</th><th>Días</th><th>Estado</th><th>Avisar</th></tr></thead><tbody id="cuerpoVig"></tbody></table></div>
-      <div class="vacio" id="vacioVig" style="display:none;">No hay pólizas para mostrar con este filtro.</div>
+      <h3 style="margin:14px 0 6px;font-size:1rem">1. Por renovar · falta enviarles el mensaje</h3>
+      <div class="seg-tabla-w" style="max-height:420px;overflow:auto"><table id="tablaVig"><thead><tr><th>Cliente</th><th>Celular</th><th>Contrato</th><th>Tipo</th><th>N.º póliza</th><th>Fin de vigencia</th><th>Días</th><th>Acciones</th></tr></thead><tbody id="cuerpoVig"></tbody></table></div>
+      <div class="vacio" id="vacioVig" style="display:none;">No hay pólizas por renovar con este filtro.</div>
+      <h3 style="margin:18px 0 6px;font-size:1rem">2. Mensaje enviado · esperando respuesta</h3>
+      <div class="seg-tabla-w" style="max-height:420px;overflow:auto"><table id="tablaVigEnv"><thead><tr><th>Cliente</th><th>Celular</th><th>Tipo</th><th>N.º póliza</th><th>Fin de vigencia</th><th>Mensaje enviado</th><th>Seguimientos</th><th>Acciones</th></tr></thead><tbody id="cuerpoVigEnv"></tbody></table></div>
+      <div class="vacio" id="vacioVigEnv" style="display:none;">No hay renovaciones esperando respuesta.</div>
+      <h3 style="margin:18px 0 6px;font-size:1rem">Resultado de los mensajes de RC y AP</h3>
+      <div class="seg-tiles" id="vigSeg"></div>
       <p class="seg-nota" id="vigNota"></p>
     </div>
   </section>
@@ -1194,10 +1201,14 @@
     document.getElementById('perNota').textContent = 'Retención del mes = 1 − (clientes que cancelaron en el mes ÷ clientes activos al inicio del mes). Los contratos que terminaron completos no cuentan como cancelación. Solo cuentan las cancelaciones registradas desde el '+fmt(D)+' (las anteriores no tienen fecha). La permanencia se irá llenando a medida que se registren cancelaciones.';
   }
 
-  // ==================== VIGENCIAS DE RC Y AP ====================
-  // Fechas de fin de vigencia leídas de las hojas de RC (columna J «Fecha_Fin») y AP (columna L «Fecha Fin Vigencia»).
+  // ==================== VIGENCIAS DE RC Y AP: aviso, seguimiento y respuesta ====================
+  // Fechas de fin leídas de las hojas de RC (columna J «Fecha_Fin») y AP (columna L «Fecha Fin Vigencia»).
+  // Cada póliza se identifica por tipo + cédula + fecha de fin; los mensajes y respuestas se guardan en la hoja Gestiones con esa clave.
   var VIGS = null, VIG_AVISOS = [], VIG_ENC = {}, vigCargando = false;
   function normCed(v){ return String(v==null?'':v).replace(/\.0+$/,'').replace(/\D/g,'').replace(/^0+/,''); }
+  function vigClave(v){ return 'VIG-'+v.tipo+'-'+v.cedula+'-'+v.finISO; }
+  function vigAccion(tipo, que){ return 'Vigencia '+tipo+' · '+que; }
+  var VIG_QUE = {env:'mensaje de renovación enviado', ok:'renovación aceptada', no:'renovación no aceptada', seg:['seguimiento 1 enviado','seguimiento 2 enviado','seguimiento 3 enviado']};
   function cargarVigencias(){
     if(vigCargando) return; vigCargando = true;
     llamarConector({action:'vigencias'}).then(function(r){
@@ -1206,57 +1217,114 @@
     }).catch(function(e){ VIGS = null; VIG_AVISOS = [(/Acción desconocida/.test(e.message)?'El conector todavía no lee las vigencias: pegue el código nuevo (Codigo_UNICO.gs) y publique «Nueva versión».':e.message)]; })
       .then(function(){ vigCargando = false; renderizarVigencias(); });
   }
+  // lo que dice la hoja Gestiones de cada póliza: mensaje enviado, seguimientos y respuesta
+  function vigGestiones(){
+    var M = {};
+    (estado.gestiones||[]).forEach(function(g){
+      var k = g.contrato; if(!k || k.indexOf('VIG-')!==0) return;
+      var p = k.split('-'); if(p.length<6) return;
+      var o = M[k] = M[k] || {clave:k, tipo:p[1], cedula:p[2], finISO:p.slice(3).join('-'), env:'', seg:[], resp:'', respISO:'', cliente:g.cliente};
+      var f = g.fechaGestionISO||'', a = String(g.accion||'');
+      if(a.indexOf(VIG_QUE.env)>=0){ if(!o.env || f<o.env) o.env = f; }
+      else if(a.indexOf(VIG_QUE.ok)>=0){ if(!o.respISO || f>=o.respISO){ o.resp='acepto'; o.respISO=f; } }
+      else if(a.indexOf(VIG_QUE.no)>=0){ if(!o.respISO || f>=o.respISO){ o.resp='no'; o.respISO=f; } }
+      else VIG_QUE.seg.forEach(function(q,i){ if(a.indexOf(q)>=0 && (!o.seg[i] || f<o.seg[i])) o.seg[i] = f; });
+      if(g.cliente) o.cliente = g.cliente;
+    });
+    return M;
+  }
   function vigLista(){
-    var N = Number(document.getElementById('vigDias').value)||30, porCed = {};
+    var N = Number(document.getElementById('vigDias').value)||30, porCed = {}, G = vigGestiones();
     estado.contratos.forEach(function(c){ var k = normCed(c.cedula); if(!k) return; var o = porCed[k] = porCed[k] || {act:null, ult:null}; if(c.estado==='ACTIVO' && (!o.act || (c.fechaFirmaISO||'')>(o.act.fechaFirmaISO||''))) o.act = c; if(!o.ult || (c.fechaFirmaISO||'')>(o.ult.fechaFirmaISO||'')) o.ult = c; });
     var hoyD = hoy(), out = [];
     (VIGS||[]).forEach(function(v){
       var fin = parsearISO(v.finISO); if(!fin) return;
-      var m = porCed[normCed(v.cedula)], c = m ? (m.act||m.ult) : null, dias = diferenciaDias(fin, hoyD);
-      out.push({v:v, c:c, activo:!!(m && m.act), sinContrato:!m, dias:dias, venc:dias<0, porVenc:dias>=0 && dias<=N});
+      var m = porCed[normCed(v.cedula)], c = m ? (m.act||m.ult) : null, dias = diferenciaDias(fin, hoyD), g = G[vigClave(v)] || null;
+      out.push({v:v, c:c, activo:!!(m && m.act), sinContrato:!m, dias:dias, venc:dias<0, porVenc:dias>=0 && dias<=N, g:g});
     });
     return out;
   }
+  function vigMensaje(o, n){
+    var v = o.v, c = o.c, nombre = (c&&c.cliente) || v.nombre || '', que = v.tipo==='RC' ? 'responsabilidad civil' : 'seguro de accidentes personales';
+    var cuando = (o.venc ? 'venció el ' : 'vence el ')+v.fin, pol = v.numero ? ' (póliza '+v.numero+')' : '';
+    if(n===1) return 'Hola, '+nombre+' 😊 Te escribimos de Protect Motos. La vigencia de tu '+que+pol+' '+cuando+'. ¿Te ayudamos a renovarla? Respóndenos y lo dejamos listo.';
+    if(n===2) return 'Hola, '+nombre+', ¿cómo estás? Te recordamos que tu '+que+pol+' '+cuando+'. Renovarla te mantiene protegido. ¿Quieres que la renovemos hoy?';
+    return 'Hola, '+nombre+'. Último recordatorio: tu '+que+pol+' '+cuando+'. Si deseas continuar con la cobertura, respóndenos y lo gestionamos de inmediato. ¡Gracias!';
+  }
+  function vigPseudo(o){ return {contrato:vigClave(o.v), cedula:o.v.cedula, cliente:(o.c&&o.c.cliente)||o.v.nombre||''}; }
   function renderizarVigencias(){
     var cuerpo = document.getElementById('cuerpoVig'); if(!cuerpo) return;
-    var nota = document.getElementById('vigNota'), tiles = document.getElementById('vigTiles');
+    var tiles = document.getElementById('vigTiles'), nota = document.getElementById('vigNota');
     if(VIGS===null){
-      tiles.innerHTML=''; cuerpo.innerHTML=''; document.getElementById('tablaVig').style.display='none';
+      tiles.innerHTML=''; cuerpo.innerHTML=''; document.getElementById('cuerpoVigEnv').innerHTML=''; document.getElementById('vigSeg').innerHTML='';
+      document.getElementById('tablaVig').style.display='none'; document.getElementById('tablaVigEnv').style.display='none'; document.getElementById('vacioVigEnv').style.display='none';
       var ve = document.getElementById('vacioVig'); ve.style.display = ''; ve.textContent = VIG_AVISOS.length ? VIG_AVISOS.join(' ') : 'Cargando las vigencias de RC y AP…';
-      document.getElementById('cVig').textContent = '–'; nota.textContent = ''; return;
+      document.getElementById('cVig').textContent = '–'; document.getElementById('cVigEnv').textContent = '–'; nota.textContent = ''; return;
     }
     var N = Number(document.getElementById('vigDias').value)||30, ver = document.getElementById('vigVer').value, tipo = document.getElementById('vigTipo').value, soloAct = document.getElementById('vigAct').checked;
     var base = vigLista().filter(function(o){ return !soloAct || o.activo || o.sinContrato; });
+    var resuelto = function(o){ return o.g && o.g.resp; };
+    var enviado = function(o){ return o.g && o.g.env && !o.g.resp; };
+    var pend = base.filter(function(o){ return (o.venc||o.porVenc) && !resuelto(o) && !enviado(o); });
+    var envs = base.filter(function(o){ return enviado(o); });
+    document.getElementById('cVig').textContent = pend.length; document.getElementById('cVigEnv').textContent = envs.length;
     var cuenta = function(t, f){ return base.filter(function(o){ return (!t || o.v.tipo===t) && f(o); }).length; };
-    var avisoTot = base.filter(function(o){ return o.venc || o.porVenc; }).length;
-    document.getElementById('cVig').textContent = avisoTot;
-    var F = base.filter(function(o){ return (!tipo || o.v.tipo===tipo) && (ver==='todas' || (ver==='venc' ? o.venc : (o.venc || o.porVenc))); })
-      .sort(function(a,b){ return a.dias-b.dias; });
     tiles.innerHTML =
-      '<div class="seg-t" style="--c:#dc2626"><span>RC vencidas</span><b>'+cuenta('RC',function(o){return o.venc;})+'</b><small>la vigencia ya terminó</small></div>'+
-      '<div class="seg-t" style="--c:#dc2626"><span>AP vencidas</span><b>'+cuenta('AP',function(o){return o.venc;})+'</b><small>la vigencia ya terminó</small></div>'+
-      '<div class="seg-t" style="--c:#e08a00"><span>RC por vencer</span><b>'+cuenta('RC',function(o){return o.porVenc;})+'</b><small>en los próximos '+N+' días</small></div>'+
-      '<div class="seg-t" style="--c:#e08a00"><span>AP por vencer</span><b>'+cuenta('AP',function(o){return o.porVenc;})+'</b><small>en los próximos '+N+' días</small></div>'+
+      '<div class="seg-t" style="--c:#dc2626"><span>RC vencidas</span><b>'+cuenta('RC',function(o){return o.venc && !resuelto(o);})+'</b><small>la vigencia ya terminó</small></div>'+
+      '<div class="seg-t" style="--c:#dc2626"><span>AP vencidas</span><b>'+cuenta('AP',function(o){return o.venc && !resuelto(o);})+'</b><small>la vigencia ya terminó</small></div>'+
+      '<div class="seg-t" style="--c:#e08a00"><span>RC por vencer</span><b>'+cuenta('RC',function(o){return o.porVenc && !resuelto(o);})+'</b><small>en los próximos '+N+' días</small></div>'+
+      '<div class="seg-t" style="--c:#e08a00"><span>AP por vencer</span><b>'+cuenta('AP',function(o){return o.porVenc && !resuelto(o);})+'</b><small>en los próximos '+N+' días</small></div>'+
       '<div class="seg-t" style="--c:#1f9d55"><span>Vigentes</span><b>'+cuenta('',function(o){return !o.venc && !o.porVenc;})+'</b><small>RC y AP al día</small></div>';
+    // 1) por renovar (falta enviar el mensaje)
+    var F = pend.filter(function(o){ return (!tipo || o.v.tipo===tipo) && (ver==='venc' ? o.venc : true); }).sort(function(a,b){ return a.dias-b.dias; });
     cuerpo.innerHTML = F.map(function(o,i){
-      var v = o.v, c = o.c, nombre = (c&&c.cliente) || v.nombre || '(sin nombre)', cls = o.venc ? 'color:#dc2626;font-weight:700' : o.porVenc ? 'color:#e08a00;font-weight:700' : 'color:#1f9d55';
-      var est = o.venc ? 'Vencida' : o.porVenc ? 'Por vencer' : 'Vigente', cel = c && c.celular;
-      var msg = 'Hola, '+nombre+' 😊 Te escribimos de Protect Motos. La vigencia de tu '+(v.tipo==='RC'?'responsabilidad civil':'seguro de accidentes personales')+(v.numero?' (póliza '+v.numero+')':'')+' '+(o.venc?'venció el ':'vence el ')+v.fin+'. ¿Te ayudamos a renovarla?';
-      var btn = cel ? '<button class="btn btn-sm btn-verde" data-vig-wa="'+i+'">WhatsApp</button>' : '<span class="sub">sin celular</span>';
-      o._msg = msg;
-      return '<tr><td data-etiqueta="Cliente"><strong>'+escapeHtml(nombre)+'</strong>'+(o.sinContrato?'<br><small class="sub">no está en Protect</small>':'')+'</td><td data-etiqueta="Cédula">'+escapeHtml(v.cedula)+'</td><td data-etiqueta="Contrato">'+escapeHtml((c&&c.contrato)||'—')+'</td><td data-etiqueta="Tipo"><strong>'+v.tipo+'</strong></td><td data-etiqueta="Póliza">'+escapeHtml(v.numero||'—')+'</td><td data-etiqueta="Fin de vigencia">'+escapeHtml(v.fin)+'</td><td data-etiqueta="Días" style="'+cls+'">'+o.dias+'</td><td data-etiqueta="Estado" style="'+cls+'">'+est+'</td><td data-etiqueta="Avisar">'+btn+'</td></tr>'; }).join('');
-    document.getElementById('vacioVig').style.display = F.length ? 'none' : ''; document.getElementById('vacioVig').textContent = 'No hay pólizas para mostrar con este filtro.';
+      var v = o.v, c = o.c, nombre = (c&&c.cliente) || v.nombre || '(sin nombre)', cls = o.venc ? 'color:#dc2626;font-weight:700' : 'color:#e08a00;font-weight:700', cel = c && c.celular;
+      var btn = cel ? '<button class="btn btn-sm btn-verde" data-vig-env="'+i+'">Enviar mensaje</button>' : '<span class="sub">sin celular</span>';
+      return '<tr><td data-etiqueta="Cliente"><strong>'+escapeHtml(nombre)+'</strong>'+(o.sinContrato?'<br><small class="sub">no está en Protect</small>':'')+'</td><td data-etiqueta="Celular">'+escapeHtml(cel||'—')+'</td><td data-etiqueta="Contrato">'+escapeHtml((c&&c.contrato)||'—')+'</td><td data-etiqueta="Tipo"><strong>'+v.tipo+'</strong></td><td data-etiqueta="Póliza">'+escapeHtml(v.numero||'—')+'</td><td data-etiqueta="Fin de vigencia">'+escapeHtml(v.fin)+'</td><td data-etiqueta="Días" style="'+cls+'">'+o.dias+(o.venc?' (vencida)':'')+'</td><td data-etiqueta="Acciones">'+btn+'</td></tr>'; }).join('');
+    document.getElementById('vacioVig').style.display = F.length ? 'none' : ''; document.getElementById('vacioVig').textContent = 'No hay pólizas por renovar con este filtro.';
     document.getElementById('tablaVig').style.display = F.length ? '' : 'none';
-    window.__vigF = F;
+    window.__vigPend = F;
+    // 2) mensaje enviado, esperando respuesta
+    var E = envs.filter(function(o){ return !tipo || o.v.tipo===tipo; }).sort(function(a,b){ return (a.g.env||'').localeCompare(b.g.env||''); });
+    document.getElementById('cuerpoVigEnv').innerHTML = E.map(function(o,i){
+      var v = o.v, c = o.c, nombre = (c&&c.cliente) || v.nombre || '(sin nombre)', cel = c && c.celular, nSeg = o.g.seg.filter(Boolean).length, sig = nSeg<3 ? nSeg+1 : 0;
+      var diasEnv = diferenciaDias(parsearISO(o.g.env), hoy());
+      var segB = (cel && sig) ? '<button class="btn btn-sm btn-gris" data-vig-seg="'+i+'">Seguimiento '+sig+'</button> ' : '';
+      var bt = segB+'<button class="btn btn-sm btn-verde" data-vig-ok="'+i+'">Acepto renovación</button> <button class="btn btn-sm btn-rojo" data-vig-no="'+i+'">No acepto</button>';
+      return '<tr><td data-etiqueta="Cliente"><strong>'+escapeHtml(nombre)+'</strong></td><td data-etiqueta="Celular">'+escapeHtml(cel||'—')+'</td><td data-etiqueta="Tipo"><strong>'+v.tipo+'</strong></td><td data-etiqueta="Póliza">'+escapeHtml(v.numero||'—')+'</td><td data-etiqueta="Fin de vigencia">'+escapeHtml(v.fin)+(o.venc?' <small style="color:#dc2626">(vencida)</small>':'')+'</td><td data-etiqueta="Mensaje enviado">'+escapeHtml(formatoFechaCO(parsearISO(o.g.env)))+' <small class="sub">(hace '+(-diasEnv)+' días)</small></td><td data-etiqueta="Seguimientos">'+nSeg+' de 3</td><td data-etiqueta="Acciones">'+bt+'</td></tr>'; }).join('');
+    document.getElementById('vacioVigEnv').style.display = E.length ? 'none' : ''; document.getElementById('tablaVigEnv').style.display = E.length ? '' : 'none';
+    window.__vigEnv = E;
+    // 3) resultado: enviados contra aceptaron (la respuesta del botón, o que la hoja ya trae una vigencia nueva)
+    var G = vigGestiones(), vigNuevas = {}; (VIGS||[]).forEach(function(v){ vigNuevas[v.tipo+'|'+normCed(v.cedula)] = v.finISO; });
+    var L = Object.keys(G).map(function(k){ return G[k]; }).filter(function(o){ return o.env && (!tipo || o.tipo===tipo); });
+    var acept = 0, no = 0, esp = 0;
+    L.forEach(function(o){ var nueva = vigNuevas[o.tipo+'|'+normCed(o.cedula)]; if(o.resp==='acepto') acept++; else if(o.resp==='no') no++; else if(nueva && nueva>o.finISO) acept++; else esp++; });
+    var pc = function(a,b){ return b ? Math.round(a/b*100) : 0 };
+    document.getElementById('vigSeg').innerHTML =
+      '<div class="seg-t" style="--c:#38bdf8"><span>Mensajes enviados</span><b>'+L.length+'</b><small>pólizas distintas</small></div>'+
+      '<div class="seg-t" style="--c:#1f9d55"><span>Renovaron</span><b>'+acept+'</b><small>'+pc(acept,L.length)+' % de los enviados</small></div>'+
+      '<div class="seg-t" style="--c:#e08a00"><span>No aceptaron</span><b>'+no+'</b><small>'+pc(no,L.length)+' % de los enviados</small></div>'+
+      '<div class="seg-t" style="--c:#5b78c7"><span>Esperando respuesta</span><b>'+esp+'</b><small>'+pc(esp,L.length)+' % de los enviados</small></div>';
     document.getElementById('vigSub').textContent = 'RC: columna J «'+(VIG_ENC.RC||'Fecha_Fin')+'» · AP: columna L «'+(VIG_ENC.AP||'Fecha Fin Vigencia')+'» · se actualiza solo';
-    nota.textContent = 'Días: negativo = ya venció hace esos días. Si una cédula tiene varias pólizas del mismo tipo se usa la más reciente. «Solo clientes activos» oculta a quien ya no tiene contrato activo en Protect.'+(VIG_AVISOS.length?' ⚠️ '+VIG_AVISOS.join(' '):'');
+    nota.textContent = 'Días negativos = la vigencia ya venció. «Enviar mensaje» abre WhatsApp y deja constancia en la hoja Gestiones. Si en la hoja de RC o AP se escribe una fecha de fin nueva, el sistema lo toma como renovado y la póliza sale de las listas. «Solo clientes activos» oculta a quien ya no tiene contrato activo en Protect.'+(VIG_AVISOS.length?' ⚠️ '+VIG_AVISOS.join(' '):'');
   }
   ['vigVer','vigDias','vigTipo','vigAct'].forEach(function(id){ document.getElementById(id).addEventListener('change', renderizarVigencias); });
-  document.getElementById('cuerpoVig').addEventListener('click', function(ev){
-    var b = ev.target.closest('[data-vig-wa]'); if(!b) return; var o = (window.__vigF||[])[+b.getAttribute('data-vig-wa')]; if(!o || !o.c) return;
-    window.open('https://wa.me/'+numeroWhatsApp(o.c.celular)+'?text='+encodeURIComponent(o._msg), '_blank');
+  document.getElementById('panelVigencias').addEventListener('click', function(ev){
+    var b = ev.target.closest('button'); if(!b) return;
+    var a = function(n){ var v = b.getAttribute(n); return v===null ? null : +v; };
+    var iEnv = a('data-vig-env'), iSeg = a('data-vig-seg'), iOk = a('data-vig-ok'), iNo = a('data-vig-no'), o;
+    if(iEnv!==null){ o = (window.__vigPend||[])[iEnv]; if(!o||!o.c) return;
+      window.open('https://wa.me/'+numeroWhatsApp(o.c.celular)+'?text='+encodeURIComponent(vigMensaje(o,1)), '_blank');
+      registrarSegGestion(vigPseudo(o), vigAccion(o.v.tipo, VIG_QUE.env), b, 'Mensaje de renovación de '+o.v.tipo+' registrado — '+vigPseudo(o).cliente+'.'); return; }
+    if(iSeg!==null){ o = (window.__vigEnv||[])[iSeg]; if(!o||!o.c) return; var n = o.g.seg.filter(Boolean).length+1; if(n>3) return;
+      window.open('https://wa.me/'+numeroWhatsApp(o.c.celular)+'?text='+encodeURIComponent(vigMensaje(o,n)), '_blank');
+      registrarSegGestion(vigPseudo(o), vigAccion(o.v.tipo, VIG_QUE.seg[n-1]), b, 'Seguimiento '+n+' de '+o.v.tipo+' registrado — '+vigPseudo(o).cliente+'.'); return; }
+    if(iOk!==null || iNo!==null){ var acepto = iOk!==null; o = (window.__vigEnv||[])[acepto?iOk:iNo]; if(!o) return;
+      if(!window.confirm('¿Confirmas que '+vigPseudo(o).cliente+(acepto?' ACEPTÓ':' NO aceptó')+' renovar su '+o.v.tipo+'?')) return;
+      registrarSegGestion(vigPseudo(o), vigAccion(o.v.tipo, acepto?VIG_QUE.ok:VIG_QUE.no), b, (acepto?'Renovación aceptada':'Renovación no aceptada')+' de '+o.v.tipo+' — '+vigPseudo(o).cliente+'.'); }
   });
   document.getElementById('tVig').addEventListener('click', function(){ document.getElementById('panelVigencias').scrollIntoView({behavior:'smooth',block:'start'}); });
+  document.getElementById('tVigEnv').addEventListener('click', function(){ document.getElementById('tablaVigEnv').scrollIntoView({behavior:'smooth',block:'center'}); });
 
   // ==================== RETENCIÓN DE CLIENTES ====================
   var retAnio = 'todos', retMes = '0';
@@ -1360,7 +1428,7 @@
       var h = hoy(); if(!Array.isArray(estado.gestiones)) estado.gestiones = [];
       estado.gestiones.push({fechaGestion:formatoFechaCO(h), fechaGestionISO:formatoFechaInput(h), contrato:c.contrato, cedula:c.cedula, cliente:c.cliente, accion:accion, registradoPor:registradoPor});
       mostrarEstado('ok', '✓ '+textoOk);
-      renderizarSegCli(); renderizarSeguimiento(); renderizarRetencion(); renderizarPermanencia();
+      renderizarSegCli(); renderizarSeguimiento(); renderizarRetencion(); renderizarPermanencia(); renderizarVigencias();
     }).catch(function(err){
       if(boton){ boton.disabled = false; boton.textContent = t0; }
       mostrarEstado('error', err.message); window.alert('No se pudo guardar:\n\n'+err.message);
