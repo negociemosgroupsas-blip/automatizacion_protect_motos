@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Verificación bancaria</title>
+<title>Protect Motos · Verificación bancaria</title>
+<link rel="icon" type="image/png" href="../assets/logo_menu.png">
 <style>
   :root{--azul:#13223f;--azul2:#1f4e79;--dorado:#d6a417;--fondo:#f4f5f7;--tarjeta:#fff;--texto:#1f2430;--suave:#6b7280;--borde:#e3e6eb;--verde:#1f9d55;--naranja:#d97706;--rojo:#dc2626}
   *{box-sizing:border-box}
@@ -132,7 +133,7 @@
     return llamar().then(function(r){
       PAGOS=(r.pagos||[]).filter(function(p){return p.fechaPagoISO&&Number(p.valorPagado)>0}).map(function(p,i){return {i:i,fecha:p.fechaPagoISO,valor:Math.round(Number(p.valorPagado)),cliente:p.cliente||'',contrato:p.contrato||'',cuota:p.cuota||'',nota:p.nota||'',usado:false}});
       var f=PAGOS.map(function(p){return p.fecha}).sort();
-      est('Conectado ✔ · '+PAGOS.length+' pagos registrados'+(f.length?' (del '+bonita(f[0])+' al '+bonita(f[f.length-1])+')':''),'ok');
+      est('Conectado · '+PAGOS.length+' pagos registrados'+(f.length?' (del '+bonita(f[0])+' al '+bonita(f[f.length-1])+')':''),'ok');
       if(ARCH)cruzar();else leerHojaBanco();
     }).catch(function(e){PAGOS=null;est(e.message,'er')}).then(function(){$('bRec').disabled=false});
   }
@@ -162,7 +163,7 @@
     estB('Leyendo la hoja del banco…');$('bLeer').disabled=true;
     return llamarBanco(id,$('bkTab').value.trim()).then(function(r){
       ARCH=leerMatrices([[r.hoja,r.filas]],r.nombre+' · '+r.hoja);ARCH.origen='hoja';ARCH.recortado=r.recortado;ARCH.desdeCola=r.desdeCola||0;ARCH.hojaNom=r.hoja;filtro='';
-      estB('Conectado ✔ · «'+r.nombre+'» · pestaña «'+r.hoja+'» · '+ARCH.movs.length+' movimientos leídos'+(r.pestanas&&r.pestanas.length>1?' (otras pestañas: '+r.pestanas.filter(function(x){return x!==r.hoja}).join(', ')+')':''),'ok');
+      estB('Conectado · «'+r.nombre+'» · pestaña «'+r.hoja+'» · '+ARCH.movs.length+' movimientos leídos'+(r.pestanas&&r.pestanas.length>1?' (otras pestañas: '+r.pestanas.filter(function(x){return x!==r.hoja}).join(', ')+')':''),'ok');
       if(!PAGOS){est('Esperando la hoja Pagos…','er');return}cruzar();
     }).catch(function(e){estB(e.message,'er')}).then(function(){$('bLeer').disabled=false});
   }
@@ -190,7 +191,7 @@
     }).then(function(r){
       if(!r||r.ok===false){var m=(r&&r.error)||'Respuesta inválida.';if(/Acción no disponible/.test(m))m='El conector todavía no puede escribir en la hoja (versión crm-10): pegue el código nuevo (Codigo_UNICO.gs) y publique «Nueva versión».';throw new Error(m)}
       L.forEach(function(m){m.anot=m.cli;m.est='ya';m.obs=['Nombre escrito en la hoja del banco.']});
-      $('estAnotar').textContent='Listo ✔ · '+r.escritas+' nombre(s) escritos en la hoja'+(r.omitidas?' · '+r.omitidas+' omitidos (ya tenían algo escrito)':'')+'. Ábrala en Google Sheets para verlos.';
+      $('estAnotar').textContent='Listo · '+r.escritas+' nombre(s) escritos en la hoja'+(r.omitidas?' · '+r.omitidas+' omitidos (ya tenían algo escrito)':'')+'. Ábrala en Google Sheets para verlos.';
       cruzar();
     }).catch(function(e){$('estAnotar').textContent=e.message;$('bAnotar').disabled=false});
   });
@@ -248,7 +249,7 @@
     else{th='Año';filas=ys.slice().reverse().map(function(y){return[y,G(D.filter(function(d){return d.f.slice(0,4)===y}))]})}
     var sel=RS.anio?G(D.filter(function(d){return d.f.slice(0,4)===RS.anio})):all;
     var pc=function(g){return g.t?Math.round(g.s*100/g.t*10)/10+' %':'—'};
-    $('rsTiles').innerHTML=[['Total que entró'+(RS.anio?' en '+RS.anio:' (todo el historial)'),sel.t,sel.n+' consignaciones','#38bdf8'],['Con pago registrado',sel.r,'Aparecen en la hoja Pagos','#5b78c7'],['Sin comprobante',sel.s,pc(sel)+' del total','#fdc33e']].map(function(x){return'<div class="t" style="--c:'+x[3]+'"><span>'+x[0]+'</span><b>'+cop(x[1])+'</b><small>'+x[2]+'</small></div>'}).join('');
+    $('rsTiles').innerHTML=[['Total que entró'+(RS.anio?' en '+RS.anio:' (todo el historial)'),sel.t,sel.n+' consignaciones','#4a8fe0'],['Con pago registrado',sel.r,'Aparecen en la hoja Pagos','#5b78c7'],['Sin comprobante',sel.s,pc(sel)+' del total','#fdc33e']].map(function(x){return'<div class="t" style="--c:'+x[3]+'"><span>'+x[0]+'</span><b>'+cop(x[1])+'</b><small>'+x[2]+'</small></div>'}).join('');
     $('rsTh').textContent=th;
     $('rsCuerpo').innerHTML=filas.map(function(f){var g=f[1];return'<tr><td><b>'+f[0]+'</b></td><td class="num"><b>'+cop(g.t)+'</b></td><td class="num">'+cop(g.r)+'</td><td class="num">'+cop(g.s)+'</td><td class="num">'+pc(g)+'</td><td class="num">'+g.n+'</td></tr>'}).join('')+'<tr><td><b>Total</b></td><td class="num"><b>'+cop(sel.t)+'</b></td><td class="num">'+cop(sel.r)+'</td><td class="num">'+cop(sel.s)+'</td><td class="num">'+pc(sel)+'</td><td class="num">'+sel.n+'</td></tr>';
   }
@@ -362,7 +363,7 @@
   }
 
   /* ---------- pantalla ---------- */
-  function etq(e){return {ok:'<span class="tag si">✔ Identificado</span>',cer:'<span class="tag sd">≈ Fecha cercana</span>',dud:'<span class="tag sd">? Dudoso</span>',sin:'<span class="tag sn">✖ Sin identificar</span>',sal:'<span class="tag sg">Salida / sin valor de entrada</span>',ya:'<span class="tag sp">📝 Ya anotado</span>',ign:'<span class="tag sg">Ignorado</span>',pen:'<span class="tag sp">⏳ Pendiente de banco</span>',nof:'<span class="tag sn">✖ No aparece en el banco</span>'}[e]||''}
+  function etq(e){return {ok:'<span class="tag si">Identificado</span>',cer:'<span class="tag sd">≈ Fecha cercana</span>',dud:'<span class="tag sd">? Dudoso</span>',sin:'<span class="tag sn">✖ Sin identificar</span>',sal:'<span class="tag sg">Salida / sin valor de entrada</span>',ya:'<span class="tag sp">📝 Ya anotado</span>',ign:'<span class="tag sg">Ignorado</span>',pen:'<span class="tag sp">⏳ Pendiente de banco</span>',nof:'<span class="tag sn">✖ No aparece en el banco</span>'}[e]||''}
   function visible(m){
     if(filtro==='ok'&&m.est!=='ok')return false;
     if(filtro==='dud'&&m.est!=='dud'&&m.est!=='cer')return false;
@@ -380,11 +381,11 @@
     $('meta').innerHTML=(ARCH.origen==='hoja'?'Hoja del banco: ':'Archivo: ')+'<b>'+esc(ARCH.nombre)+'</b>'+(ARCH.recortado?' (hoja muy larga: se leyeron las filas más recientes y las primeras)':'')+' · '+ARCH.movs.length+' movimientos ('+mi.length+' de entrada) del '+bonita(fe[0])+' al '+bonita(fe[fe.length-1])+' · se comparó con '+PAGOS.length+' pagos registrados.';
     var ns=SIN.filter(function(r){return r.est==='nof'}).length,pe=SIN.filter(function(r){return r.est==='pen'}).length,dc=n('dud')+n('cer'),av='';
     if(dc)av+='<div class="aviso">🔎 <b>'+dc+'</b> movimiento(s) piden que usted confirme el cliente (fecha cercana o varios pagos iguales). Use el cuadro «Por confirmar».</div>';
-    if(ns)av+='<div class="aviso">⚠️ <b>'+ns+'</b> pago(s) registrado(s) hace varios días <b>no aparecen en el banco</b>. Están al final de la página.</div>';
-    var nig=ARCH.movs.filter(function(m){return m.est==='ign'}).length;if(nig)av+='<div class="aviso" style="background:#eef6ff;border-color:#bcd7f5;border-left-color:#38bdf8">ℹ️ Se ignoraron <b>'+nig+'</b> movimiento(s) de intereses o menores a $1.000 (puede cambiarlo arriba).</div>';
+    if(ns)av+='<div class="aviso"><b>'+ns+'</b> pago(s) registrado(s) hace varios días <b>no aparecen en el banco</b>. Están al final de la página.</div>';
+    var nig=ARCH.movs.filter(function(m){return m.est==='ign'}).length;if(nig)av+='<div class="aviso" style="background:#eef6ff;border-color:#bcd7f5;border-left-color:#4a8fe0">ℹ️ Se ignoraron <b>'+nig+'</b> movimiento(s) de intereses o menores a $1.000 (puede cambiarlo arriba).</div>';
     $('avisos').innerHTML=av;
     var T=function(e,c,l,b,s){return '<div class="t'+(filtro===e&&e!==''?' on':'')+'" data-e="'+e+'" style="--c:'+c+'"><span>'+l+'</span><b>'+b+'</b><small>'+s+'</small></div>'};
-    $('tiles').innerHTML=T('','#38bdf8','Movimientos de entrada',mi.length,cop(mi.reduce(function(s,m){return s+m.valor},0))+' en total')+
+    $('tiles').innerHTML=T('','#4a8fe0','Movimientos de entrada',mi.length,cop(mi.reduce(function(s,m){return s+m.valor},0))+' en total')+
       T('ok','#1f9d55','Identificados ahora',n('ok'),cop(sm('ok')))+T('dud','#fdc33e','Por confirmar',dc,'fecha cercana o varios iguales')+T('sin','#dc2626','Sin identificar',n('sin'),cop(sm('sin'))+' sin cliente')+T('ya','#5b78c7','Ya anotados',n('ya'),'ya tienen el nombre en su hoja');
     Array.prototype.forEach.call($('tiles').querySelectorAll('.t'),function(t){t.addEventListener('click',function(){filtro=(filtro===t.dataset.e?'':t.dataset.e);pintar()})});
     var L=ARCH.movs.filter(function(m){return m.entra&&m.est!=='ign'&&visible(m)}).sort(function(a,b){return a.fecha<b.fecha?1:a.fecha>b.fecha?-1:b.n-a.n});
@@ -417,7 +418,7 @@
   function procesar(file){
     if(!file)return;var rd=new FileReader();
     rd.onload=function(){try{ARCH=leerBanco(new Uint8Array(rd.result),file.name);ARCH.origen='archivo';filtro='';$('dropTxt').textContent='Archivo cargado: '+file.name+' ('+ARCH.movs.length+' movimientos). Puede subir otro cuando quiera.';
-      if(!PAGOS){est('Esperando la hoja Pagos… pulse «Volver a leer la hoja Pagos» si no carga.','er');return}cruzar()}catch(e){ARCH=null;$('resultado').style.display='none';$('dropTxt').textContent='⚠ '+e.message}};
+      if(!PAGOS){est('Esperando la hoja Pagos… pulse «Volver a leer la hoja Pagos» si no carga.','er');return}cruzar()}catch(e){ARCH=null;$('resultado').style.display='none';$('dropTxt').textContent=''+e.message}};
     rd.readAsArrayBuffer(file);
   }
   $('bElegir').addEventListener('click',function(e){e.stopPropagation();$('archivo').click()});

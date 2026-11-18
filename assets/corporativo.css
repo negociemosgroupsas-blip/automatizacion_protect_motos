@@ -36,3 +36,38 @@ body>header:not(.app)>div{flex:1 1 auto}
 /* botones de los módulos: la acción principal en dorado, el resto en azul */
 .btn-verde,.btn.v,.cn-b.v,.pmcr-b.v,.bt.v{background:#1e3a8a!important;color:#fff!important}
 .btn-oro,.btn.o,.cn-b.o,.pmcr-b.o{background:#fdc33e!important;color:#14224f!important}
+
+/* Meta del mes: barra de avance limpia (sin la moto animada) */
+.ruta{padding:14px 20px 8px!important;border-top-width:3px!important}
+.ruta .moto,.ruta .globo,.ruta .confeti,.ruta .ruta-via::before,.ruta .ruta-via::after{display:none!important}
+.ruta-pista{height:84px!important;margin-top:2px!important}
+.ruta-via{bottom:auto!important;top:34px!important;height:14px!important;border:0!important;border-radius:8px!important;background:#27407f!important;background-image:none!important}
+.ruta-rec{bottom:auto!important;top:34px!important;height:14px!important;border-radius:8px!important;background:#fdc33e!important;box-shadow:none!important}
+.ruta-hito{bottom:auto!important;top:30px!important;height:22px!important;width:2px!important;background:#7f93d0!important}
+.ruta-hito.meta{height:22px!important;background:#fdc33e!important}
+.ruta-hito span{top:26px!important;font-size:.78rem!important;color:#aab9e3!important;font-weight:400!important}
+.ruta-hito.pasado{background:#fdc33e!important} .ruta-hito.pasado span{color:#fdc33e!important;font-weight:700!important}
+.ruta-hito.meta span{color:#fdc33e!important;font-weight:700!important;top:26px!important}
+.ruta-ritmo{bottom:auto!important;top:22px!important;height:38px!important;border-left:2px dashed #ffffffcc!important}
+.ruta-ritmo span{bottom:auto!important;top:42px!important;font-size:.78rem!important;left:-23px!important;width:46px!important;color:#fff!important}
+.moto-tag{bottom:auto!important;top:0!important;background:#fdc33e!important;color:#14224f!important;font-size:.82rem!important;padding:3px 12px!important;border-radius:6px!important;box-shadow:none!important}
+.moto-tag small{margin-left:6px;opacity:.8}
+
+/* Mensajes de «sin datos» y avisos: tarjeta tranquila, no texto suelto */
+#v-inicio .nota,#v-inicio .tot:empty+.nota{background:rgba(120,145,210,.08);border:1px dashed rgba(150,170,220,.35);border-radius:10px;padding:10px 14px;color:#b4c3e6;font-size:.85rem}
+body.inicio-claro #v-inicio .nota{background:#f3f6fc;border-color:#c5d0ea;color:#4b5a7c}
+
+/* tablas, botones y etiquetas con un solo estilo en todos los módulos */
+table{border-collapse:collapse}
+thead th,table th{font-size:.74rem!important;text-transform:uppercase;letter-spacing:.04em}
+tbody tr:hover td{background-color:rgba(120,145,210,.07)}
+.btn,.btn-sm,.cn-b,.pmcr-b,.bt{border-radius:8px!important;letter-spacing:.1px}
+.btn-sm{padding:5px 11px!important;font-size:.8rem!important}
+.btn-rojo,.btn.r{background:#9b2c3f!important;color:#fff!important}
+.btn-gris,.btn.g{background:#e3e8f2!important;color:#13223f!important}
+.bd{border-radius:6px!important;font-size:.74rem!important;letter-spacing:.03em}
+
+/* contraste y tamaño mínimo del texto secundario */
+body.tema-inicio #v-inicio,body.tema-inicio #v-inicio .pagina{--suave:#b4c3e6}
+body.inicio-claro #v-inicio,body.inicio-claro #v-inicio .pagina{--suave:#55648a}
+small,.sub,.tot,.nota,.seg-nota,.ay-sub,.od-ayuda{font-size:max(.8rem,12px)}

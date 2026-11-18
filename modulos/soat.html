@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SOAT</title>
+<title>Protect Motos · SOAT</title>
+<link rel="icon" type="image/png" href="../assets/logo_menu.png">
 <style>
   :root{
     --azul:#13223f;
@@ -377,8 +378,8 @@
   <div class="dash-top"><h2>Tablero de SOAT</h2><label>Año <select id="dashAnio"></select></label></div>
   <div class="dash">
     <div class="dcard c8"><h3>Vendidos y ganancia mes a mes</h3><p class="d-sub" id="dSub1"></p>
-      <div class="d-leg"><span><i style="background:#38bdf8"></i>Columnas: SOAT vendidos</span><span><i style="background:#1f9d55"></i>Línea: ganancia</span></div><div id="dCombo"></div></div>
-    <div class="dcard c4"><h3>¿Cómo pagan?</h3><p class="d-sub" id="dSub2"></p>
+      <div class="d-leg"><span><i style="background:#4a8fe0"></i>Columnas: SOAT vendidos</span><span><i style="background:#1f9d55"></i>Línea: ganancia</span></div><div id="dCombo"></div></div>
+    <div class="dcard c4"><h3>Forma de pago</h3><p class="d-sub" id="dSub2"></p>
       <div id="dDona"></div></div>
     <div class="dcard c8"><h3>Ganancia acumulada del año</h3><p class="d-sub" id="dSub3"></p>
       <div class="d-leg"><span><i style="background:#1f9d55"></i>Este año</span><span><i style="background:#b8c0d4"></i>Año anterior</span></div><div id="dAcum"></div></div>
@@ -474,7 +475,7 @@
 
   function hoy(){ var d = new Date(); d.setHours(0,0,0,0); return d; }
   function parsearISO(iso){ if(!iso) return null; var p = iso.split('-'); if(p.length!==3) return null; var d = new Date(+p[0], +p[1]-1, +p[2]); d.setHours(0,0,0,0); return d; }
-  function fechaCO(d){ return d ? d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear() : '—'; }
+  function fechaCO(d){ return d ? ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear() : '—'; }
   function dinero(v){ v = Math.round(Number(v)||0); return '$'+String(v).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
   function esc(t){ var d = document.createElement('div'); d.textContent = t==null?'':String(t); return d.innerHTML; }
   function numeroWA(c){ var d = String(c||'').replace(/\D/g,''); if(d.indexOf('57')===0 && d.length>10) return d; return '57'+d; }
@@ -538,7 +539,7 @@
       if(!r || !r.ok){ mostrar('error', (r && r.error) ? r.error : 'Respuesta inválida del conector.'); return; }
       estado.soat = r.soat || []; estado.gestiones = r.gestiones || [];
       pintar();
-      if(!silencioso) mostrar('ok','Datos al día ✔ ('+estado.soat.length+' SOAT)');
+      if(!silencioso) mostrar('ok','Datos al día ('+estado.soat.length+' SOAT)');
     }).catch(function(e){ enCarga = false; mostrar('error', e.message); });
   }
 
@@ -627,7 +628,7 @@
     llamar({action:'registrarGestion', clave:g.clave, cedula:s.cedula, cliente:s.cliente, placa:s.placa, accion:accion, registradoPor:por}).then(function(r){
       if(!r || !r.ok){ mostrar('error', (r && r.error) ? r.error : 'No se pudo registrar.'); if(btn) btn.disabled = false; return; }
       estado.gestiones.push(g); pintar();
-      mostrar('ok', accion===ACC_ENVIADO ? 'Anotado ✔ Pasó a «Mensajes enviados».' : 'Anotado ✔');
+      mostrar('ok', accion===ACC_ENVIADO ? 'Anotado Pasó a «Mensajes enviados».' : 'Anotado');
     }).catch(function(e){ mostrar('error', e.message); if(btn) btn.disabled = false; });
   }
 
@@ -671,7 +672,7 @@
       var k = dashPor==='forma' ? (String(s.forma||'').trim() || 'Sin dato') : (/carro|camioneta|auto/i.test(s.tipo||'') ? 'Carro' : (/moto/i.test(s.tipo||'') ? 'Moto' : (s.tipo||'Otro')));
       if(dashPor==='forma') k = k.charAt(0).toUpperCase()+k.slice(1).toLowerCase();
       cuenta[k] = (cuenta[k]||0)+1; nTot++; });
-    var pal = ['#38bdf8','#fdc33e','#5b78c7','#1f9d55','#9fb8e8','#e08a00'];
+    var pal = ['#4a8fe0','#fdc33e','#5b78c7','#1f9d55','#9fb8e8','#c58a1b'];
     var items = Object.keys(cuenta).sort(function(a,b){ return cuenta[b]-cuenta[a]; }).map(function(k,ix){ return {l:k,n:cuenta[k],c:pal[ix%pal.length]}; });
     document.getElementById('dSub2').textContent = nTot ? nTot+' SOAT vendidos' : 'Sin ventas en el período';
     dibujarDona(document.getElementById('dDona'), items, nTot);
@@ -691,7 +692,7 @@
     document.getElementById('dSub4').textContent = base ? 'De '+base+' SOAT que ya vencieron' : 'Aún no hay SOAT vencidos';
     dibujarMedidor(document.getElementById('dGauge'), ren, nor, pen);
     // ---- 5) Motos contra carros ----
-    var tp = {Moto:{n:0,g:0,c:'#38bdf8',e:'🏍️'},Carro:{n:0,g:0,c:'#fdc33e',e:'🚗'}}, otros = 0, tt = 0;
+    var tp = {Moto:{n:0,g:0,c:'#4a8fe0',e:'🏍️'},Carro:{n:0,g:0,c:'#fdc33e',e:'🚗'}}, otros = 0, tt = 0;
     estado.soat.forEach(function(s){ var d = parsearISO(s.fechaISO); if(!d) return; if(dashY!=='todos' && d.getFullYear()!==+dashY) return;
       var k = /carro|camioneta|auto/i.test(s.tipo||'') ? 'Carro' : (/moto/i.test(s.tipo||'') ? 'Moto' : null);
       if(!k){ otros++; return; } tp[k].n++; tp[k].g += Number(s.ganancia)||0; tt++; });
@@ -709,7 +710,7 @@
     [0,.5,1].forEach(function(f){ var y = pt+ih-f*ih; v.appendChild(E('line',{x1:pl,x2:W-pr,y1:y,y2:y,'class':'grid'})); v.appendChild(E('text',{x:W-pr+6,y:y+4,'class':'t-ge'},money(maxG*f))); });
     var pts = [];
     datos.forEach(function(d,j){ if(!d) return; var hh = d.n/maxN*ih;
-      v.appendChild(E('rect',{x:xs(j)-bw/2,y:pt+ih-hh,width:bw,height:Math.max(hh,d.n?2:0),rx:5,fill:d.cur?'#fdc33e':'#38bdf8',stroke:d.cur?'#e08a00':'none','stroke-width':d.cur?1.5:0}));
+      v.appendChild(E('rect',{x:xs(j)-bw/2,y:pt+ih-hh,width:bw,height:Math.max(hh,d.n?2:0),rx:5,fill:d.cur?'#fdc33e':'#4a8fe0',stroke:d.cur?'#c58a1b':'none','stroke-width':d.cur?1.5:0}));
       if(d.n){ if(hh>=20) v.appendChild(E('text',{x:xs(j),y:pt+ih-hh+15,'text-anchor':'middle','class':d.cur?'t-v':'t-w'},d.n)); else v.appendChild(E('text',{x:xs(j),y:pt+ih-hh-6,'text-anchor':'middle','class':'t-v'},d.n)); }
       pts.push({x:xs(j),y:yG(d.g),g:d.g}); });
     for(var j=0;j<n;j++) v.appendChild(E('text',{x:xs(j),y:H-8,'text-anchor':'middle','class':'t-s'},String(etq[j]).charAt(0).toUpperCase()+String(etq[j]).slice(1)));
@@ -767,7 +768,7 @@
   document.getElementById('btnGuardarUrl').addEventListener('click', function(){
     var u = inUrl.value.trim();
     if(!/^https:\/\/script\.google\.com\//.test(u)){ mostrar('error','La URL debe empezar con https://script.google.com/ y terminar en /exec.'); return; }
-    estado.url = u; localStorage.setItem(CLAVE_URL, u); mostrar('ok','URL guardada ✔'); cargar(false);
+    estado.url = u; localStorage.setItem(CLAVE_URL, u); mostrar('ok','URL guardada'); cargar(false);
   });
   document.getElementById('btnRecargar').addEventListener('click', function(){ cargar(false); });
   document.getElementById('inputBusqueda').addEventListener('input', function(){ estado.q = this.value; pintarTodos(); });
@@ -819,7 +820,7 @@
         guardando=false;$('nvGuardar').disabled=false;
         if(r&&r.duplicado){msg('nvMsg','aviso',r.error);if(confirm(r.error+'\n\n¿Guardarlo de todas formas?'))enviar(true);return}
         if(!r||!r.ok){msg('nvMsg','error',(r&&r.error)||'No se pudo guardar. Revisa la conexión.');return}
-        cerrar();mostrar('ok','SOAT guardado ✔ '+d.cliente+' · '+d.placa+(r.omitidos&&r.omitidos.length?' (no se pudo llenar en la hoja: '+r.omitidos.join(', ')+')':''));
+        cerrar();mostrar('ok','SOAT guardado '+d.cliente+' · '+d.placa+(r.omitidos&&r.omitidos.length?' (no se pudo llenar en la hoja: '+r.omitidos.join(', ')+')':''));
         setTimeout(function(){cargar(false)},600);
       }).catch(function(e){guardando=false;$('nvGuardar').disabled=false;msg('nvMsg','error',e.message)});
     }
@@ -867,10 +868,10 @@
       if(b.dataset.modo!==undefined){modo=b.dataset.modo==='1';try{localStorage.setItem('pm_rep_texto_mod',b.dataset.modo)}catch(e){}pintaModo();return}
       m.hidden=true;
       if(b.dataset.all){var it=todos();if(!it.length){aviso('Todavía no hay datos. Pulsa «Actualizar datos» y vuelve a intentar.');return}
-        var f=new Date(),z=function(n){return ('0'+n).slice(-2)},a=document.createElement('a');a.href=URL.createObjectURL(ZipSimple.crear(it.map(function(x){return {nombre:x[0]+'.csv',datos:txt(x[1])}})));a.download='Reportes_SOAT_'+(per||'historico')+'_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.zip';document.body.appendChild(a);a.click();a.remove();aviso('Descargado ✔ '+it.length+' reportes en un ZIP');return}
+        var f=new Date(),z=function(n){return ('0'+n).slice(-2)},a=document.createElement('a');a.href=URL.createObjectURL(ZipSimple.crear(it.map(function(x){return {nombre:x[0]+'.csv',datos:txt(x[1])}})));a.download='Reportes_SOAT_'+(per||'historico')+'_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.zip';document.body.appendChild(a);a.click();a.remove();aviso('Descargado '+it.length+' reportes en un ZIP');return}
       var res=null;try{res=REP[+b.dataset.i][1]()}catch(e){aviso('No se pudo armar el reporte: '+e.message);return}
       if(!res||res[1].length<2){aviso('Todavía no hay datos para ese reporte. Pulsa «Actualizar datos» y vuelve a intentar.');return}
-      var fl=filt(res[1],+b.dataset.i,per);if(fl.length<2){aviso('No hay datos de '+perTxt(per)+' en ese reporte.');return}csv(res[0]+(per?'_'+per:'_historico'),cab(fl,+b.dataset.i,modo,per));aviso('Descargado ✔ '+res[0]+'.csv ('+perTxt(per)+(modo?', con explicación':'')+')')});
+      var fl=filt(res[1],+b.dataset.i,per);if(fl.length<2){aviso('No hay datos de '+perTxt(per)+' en ese reporte.');return}csv(res[0]+(per?'_'+per:'_historico'),cab(fl,+b.dataset.i,modo,per));aviso('Descargado '+res[0]+'.csv ('+perTxt(per)+(modo?', con explicación':'')+')')});
   })();
 
   document.getElementById('anioActual').textContent = new Date().getFullYear();

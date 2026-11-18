@@ -70,6 +70,7 @@
     '.chips{padding:0 12px 9px;display:flex;flex-wrap:wrap;gap:4px 6px}',
     '.chips div{display:flex;gap:6px;align-items:center;font-size:11px;background:#eef6ff;border-radius:999px;padding:2px 10px 2px 4px;color:#0b2a6b} .chips i{flex:0 0 15px;height:15px;border-radius:50%;background:#0b63c9;color:#fff;font-style:normal;font-size:10px;text-align:center;line-height:15px}',
     /* coberturas dentro de la opción 2 (en la misma hoja) */
+    '.pie2{margin-top:8px;text-align:center;font-size:10.5px;opacity:.85;letter-spacing:.3px}',
     '.rg{margin-top:9px;background:linear-gradient(135deg,#fff3c4,#ffd04d);color:#0b2a6b;border-radius:18px;padding:9px 16px 10px;box-shadow:0 4px 12px rgba(0,0,0,.2)}',
     '.rg .rt{display:flex;align-items:center;gap:10px} .rg .ic{font-size:24px;line-height:1} .rg b{font-size:14.5px;letter-spacing:.3px} .rg small{display:block;font-size:11.5px;font-weight:700;opacity:.8}',
     '.rg .ri{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:6px} .rg .ri div{display:flex;gap:6px;align-items:center;font-size:11.5px;background:rgba(255,255,255,.75);border-radius:999px;padding:2px 11px 2px 5px} .rg .ri i{flex:0 0 15px;height:15px;border-radius:50%;background:#0b2a6b;color:#ffd04d;font-style:normal;font-size:10px;text-align:center;line-height:15px}',
@@ -143,6 +144,7 @@
       op(1,'Hurto o pérdida total',(d.aseguradora==='Protect Motos'?'cubre el 80 %':''),d.op1,p1,false)+
       op(2,'Hurto o pérdida total + RC + Asistencias','',d.op2,p2,true)+
       regaloHtml(d)+
+      '<div class="pie2">Protect Motos · Negociemos Group S.A.S.</div>'+
       '</div>';
   }
   function regaloHtml(d){

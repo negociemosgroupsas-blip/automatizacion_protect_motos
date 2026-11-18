@@ -214,7 +214,7 @@ function formatoFecha(valor) {
   if (!valor) return '';
   var fecha = (valor instanceof Date) ? valor : new Date(valor);
   if (isNaN(fecha.getTime())) return '';
-  return fecha.getDate() + '/' + (fecha.getMonth() + 1) + '/' + fecha.getFullYear();
+  return ('0' + fecha.getDate()).slice(-2) + '/' + ('0' + (fecha.getMonth() + 1)).slice(-2) + '/' + fecha.getFullYear();
 }
 
 // Mes/año tal como están en la hoja; si la celda es una fecha, se devuelve su mes (1-12) o su año.

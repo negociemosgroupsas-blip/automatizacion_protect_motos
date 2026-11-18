@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Protect Motos — Sistema de Cobros</title>
+<link rel="icon" type="image/png" href="../assets/logo_menu.png">
 <style>
   :root{
     --azul:#13223f;
@@ -513,7 +514,7 @@
       <div class="seg-fil"><label>Ver <select id="scFiltro"><option value="pend">Pendientes de respuesta</option><option value="acepto">Aceptaron</option><option value="no">No aceptaron</option><option value="todos">Todos</option></select></label><label>Buscar <input id="scBusca" type="search" placeholder="nombre, placa o contrato" style="border:1px solid var(--borde);border-radius:8px;padding:5px 9px;font-size:.85rem"></label></div>
       <div class="seg-tabla-w"><table id="tablaSC"><thead><tr><th>Cliente</th><th>Celular</th><th>Placa</th><th>Contrato</th><th>Vence</th><th>Mensajes enviados</th><th>Resultado</th><th>Acciones</th></tr></thead><tbody id="cuerpoSC"></tbody></table></div>
       <div class="vacio" id="vacioSC" style="display:none;">No hay clientes en esta lista.</div>
-      <h3 style="margin:18px 0 8px;color:var(--azul);font-size:.95rem;">¿Con qué mensaje aceptaron?</h3>
+      <h3 style="margin:18px 0 8px;color:var(--azul);font-size:.95rem;">Mensaje con el que aceptaron</h3>
       <div class="seg-tabla-w"><table><thead><tr><th>Mensaje</th><th>Aceptaron</th><th>% de los que aceptaron</th></tr></thead><tbody id="cuerpoSCef"></tbody></table></div>
       <p class="seg-nota">Cada cliente que ya recibió el mensaje de renovación entra aquí. El botón de WhatsApp abre el mensaje de seguimiento que toca (1, 2 o 3, cada uno distinto) y, al confirmar, queda anotado en la hoja Gestiones. Si el cliente ya había vencido y luego acepta, pasa a «Aceptó». Para quien no acepta se guarda el registro y no se le escribe más.</p>
     </div>
@@ -644,7 +645,7 @@
 
   function formatoFechaCO(d){
     if(!d) return '—';
-    return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
+    return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
   }
 
   function formatoFechaInput(d){
@@ -1132,9 +1133,9 @@
     var n = F.length, ac = cnt(F,'Aceptó'), no = cnt(F,'No aceptó'), ve = cnt(F,'Venció sin responder'), es = cnt(F,'Esperando respuesta');
     var pct = function(a,b){ return b ? Math.round(a/b*100) : 0; };
     document.getElementById('segTiles').innerHTML =
-      '<div class="seg-t" style="--c:#38bdf8"><span>Mensajes enviados</span><b>'+n+'</b><small>clientes distintos</small></div>'+
+      '<div class="seg-t" style="--c:#4a8fe0"><span>Mensajes enviados</span><b>'+n+'</b><small>clientes distintos</small></div>'+
       '<div class="seg-t" style="--c:#1f9d55"><span>Aceptaron</span><b>'+ac+'</b><small>'+pct(ac,n)+' % de los enviados</small></div>'+
-      '<div class="seg-t" style="--c:#e08a00"><span>No aceptaron</span><b>'+no+'</b><small>'+pct(no,n)+' % de los enviados</small></div>'+
+      '<div class="seg-t" style="--c:#c58a1b"><span>No aceptaron</span><b>'+no+'</b><small>'+pct(no,n)+' % de los enviados</small></div>'+
       '<div class="seg-t" style="--c:#5b78c7"><span>Esperando respuesta</span><b>'+es+'</b><small>'+pct(es,n)+' % de los enviados</small></div>'+
       '<div class="seg-t" style="--c:#dc2626"><span>Vencieron sin responder</span><b>'+ve+'</b><small>'+pct(ve,n)+' % de los enviados</small></div>';
     // tabla por mes del envío
@@ -1193,11 +1194,11 @@
     document.getElementById('perSub').textContent = 'Medición desde el '+fmt(D)+' · cuánto tiempo se quedan los clientes y cuántos cancelan cada mes';
     document.getElementById('perTiles').innerHTML =
       '<div class="seg-t" style="--c:#fdc33e"><span>Retención del mes actual</span><b>'+(mesAct && mesAct.r!==null ? mesAct.r+' %' : '—')+'</b><small>'+(mesAct ? mesAct.c+' cancelaron de '+mesAct.a0+' activos al inicio' : '')+'</small></div>'+
-      '<div class="seg-t" style="--c:#38bdf8"><span>Clientes en seguimiento</span><b>'+U.length+'</b><small>'+A0+' activos al empezar + los que firmaron después</small></div>'+
+      '<div class="seg-t" style="--c:#4a8fe0"><span>Clientes en seguimiento</span><b>'+U.length+'</b><small>'+A0+' activos al empezar + los que firmaron después</small></div>'+
       '<div class="seg-t" style="--c:#1f9d55"><span>Siguen activos</span><b>'+act+'</b><small>'+pct(act,U.length)+' % de los que seguimos</small></div>'+
       '<div class="seg-t" style="--c:#dc2626"><span>Cancelaron</span><b>'+cancel.length+'</b><small>'+vol+' voluntarias · '+(cancel.length-vol)+' por no pago u otro</small></div>'+
       '<div class="seg-t" style="--c:#5b78c7"><span>Terminaron su contrato completo</span><b>'+fin+'</b><small>finalizados desde que empezamos a medir</small></div>'+
-      '<div class="seg-t" style="--c:#e08a00"><span>Permanencia de los que cancelaron</span><b>'+(prom!==null ? prom+' meses' : '—')+'</b><small>promedio desde la firma hasta cancelar</small></div>';
+      '<div class="seg-t" style="--c:#c58a1b"><span>Permanencia de los que cancelaron</span><b>'+(prom!==null ? prom+' meses' : '—')+'</b><small>promedio desde la firma hasta cancelar</small></div>';
     cuerpo.innerHTML = filas.slice().reverse().map(function(f){
       return '<tr><td data-etiqueta="Mes">'+MESES_SEG[f.m-1]+' '+f.y+'</td><td data-etiqueta="Activos al inicio"><strong>'+f.a0+'</strong></td><td data-etiqueta="Cancelaron">'+f.c+'</td><td data-etiqueta="Voluntarias">'+f.v+'</td><td data-etiqueta="Por no pago / otro">'+(f.c-f.v)+'</td><td data-etiqueta="% de retención del mes"><strong>'+(f.r!==null ? f.r+' %' : '—')+'</strong></td></tr>'; }).join('');
     document.getElementById('perNota').textContent = 'Retención del mes = 1 − (clientes que cancelaron en el mes ÷ clientes activos al inicio del mes). Los contratos que terminaron completos no cuentan como cancelación. Solo cuentan las cancelaciones registradas desde el '+fmt(D)+' (las anteriores no tienen fecha). La permanencia se irá llenando a medida que se registren cancelaciones.';
@@ -1274,13 +1275,13 @@
     tiles.innerHTML =
       '<div class="seg-t" style="--c:#dc2626"><span>RC vencidas</span><b>'+cuenta('RC',function(o){return o.venc && !resuelto(o);})+'</b><small>la vigencia ya terminó</small></div>'+
       '<div class="seg-t" style="--c:#dc2626"><span>AP vencidas</span><b>'+cuenta('AP',function(o){return o.venc && !resuelto(o);})+'</b><small>la vigencia ya terminó</small></div>'+
-      '<div class="seg-t" style="--c:#e08a00"><span>RC por vencer</span><b>'+cuenta('RC',function(o){return o.porVenc && !resuelto(o);})+'</b><small>en los próximos '+N+' días</small></div>'+
-      '<div class="seg-t" style="--c:#e08a00"><span>AP por vencer</span><b>'+cuenta('AP',function(o){return o.porVenc && !resuelto(o);})+'</b><small>en los próximos '+N+' días</small></div>'+
+      '<div class="seg-t" style="--c:#c58a1b"><span>RC por vencer</span><b>'+cuenta('RC',function(o){return o.porVenc && !resuelto(o);})+'</b><small>en los próximos '+N+' días</small></div>'+
+      '<div class="seg-t" style="--c:#c58a1b"><span>AP por vencer</span><b>'+cuenta('AP',function(o){return o.porVenc && !resuelto(o);})+'</b><small>en los próximos '+N+' días</small></div>'+
       '<div class="seg-t" style="--c:#1f9d55"><span>Vigentes</span><b>'+cuenta('',function(o){return !o.venc && !o.porVenc;})+'</b><small>RC y AP al día</small></div>';
     // 1) por renovar (falta enviar el mensaje)
     var F = pend.filter(function(o){ return (!tipo || o.v.tipo===tipo) && (ver==='venc' ? o.venc : true); }).sort(function(a,b){ return a.dias-b.dias; });
     cuerpo.innerHTML = F.map(function(o,i){
-      var v = o.v, c = o.c, nombre = (c&&c.cliente) || v.nombre || '(sin nombre)', cls = o.venc ? 'color:#dc2626;font-weight:700' : 'color:#e08a00;font-weight:700', cel = c && c.celular;
+      var v = o.v, c = o.c, nombre = (c&&c.cliente) || v.nombre || '(sin nombre)', cls = o.venc ? 'color:#dc2626;font-weight:700' : 'color:#c58a1b;font-weight:700', cel = c && c.celular;
       var btn = cel ? '<button class="btn btn-sm btn-verde" data-vig-env="'+i+'">Enviar mensaje</button>' : '<span class="sub">sin celular</span>';
       return '<tr><td data-etiqueta="Cliente"><strong>'+escapeHtml(nombre)+'</strong>'+(o.sinContrato?'<br><small class="sub">no está en Protect</small>':'')+'</td><td data-etiqueta="Celular">'+escapeHtml(cel||'—')+'</td><td data-etiqueta="Contrato">'+escapeHtml((c&&c.contrato)||'—')+'</td><td data-etiqueta="Tipo"><strong>'+v.tipo+'</strong></td><td data-etiqueta="Póliza">'+escapeHtml(v.numero||'—')+'</td><td data-etiqueta="Fin de vigencia">'+escapeHtml(v.fin)+'</td><td data-etiqueta="Días" style="'+cls+'">'+o.dias+(o.venc?' (vencida)':'')+'</td><td data-etiqueta="Acciones">'+btn+'</td></tr>'; }).join('');
     document.getElementById('vacioVig').style.display = F.length ? 'none' : ''; document.getElementById('vacioVig').textContent = 'No hay pólizas por renovar con este filtro.';
@@ -1303,12 +1304,12 @@
     L.forEach(function(o){ var nueva = vigNuevas[o.tipo+'|'+normCed(o.cedula)]; if(o.resp==='acepto') acept++; else if(o.resp==='no') no++; else if(nueva && nueva>o.finISO) acept++; else esp++; });
     var pc = function(a,b){ return b ? Math.round(a/b*100) : 0 };
     document.getElementById('vigSeg').innerHTML =
-      '<div class="seg-t" style="--c:#38bdf8"><span>Mensajes enviados</span><b>'+L.length+'</b><small>pólizas distintas</small></div>'+
+      '<div class="seg-t" style="--c:#4a8fe0"><span>Mensajes enviados</span><b>'+L.length+'</b><small>pólizas distintas</small></div>'+
       '<div class="seg-t" style="--c:#1f9d55"><span>Renovaron</span><b>'+acept+'</b><small>'+pc(acept,L.length)+' % de los enviados</small></div>'+
-      '<div class="seg-t" style="--c:#e08a00"><span>No aceptaron</span><b>'+no+'</b><small>'+pc(no,L.length)+' % de los enviados</small></div>'+
+      '<div class="seg-t" style="--c:#c58a1b"><span>No aceptaron</span><b>'+no+'</b><small>'+pc(no,L.length)+' % de los enviados</small></div>'+
       '<div class="seg-t" style="--c:#5b78c7"><span>Esperando respuesta</span><b>'+esp+'</b><small>'+pc(esp,L.length)+' % de los enviados</small></div>';
     document.getElementById('vigSub').textContent = 'RC: columna J «'+(VIG_ENC.RC||'Fecha_Fin')+'» · AP: columna L «'+(VIG_ENC.AP||'Fecha Fin Vigencia')+'» · se actualiza solo';
-    nota.textContent = 'Días negativos = la vigencia ya venció. «Enviar mensaje» abre WhatsApp y deja constancia en la hoja Gestiones. Si en la hoja de RC o AP se escribe una fecha de fin nueva, el sistema lo toma como renovado y la póliza sale de las listas. «Solo clientes activos» oculta a quien ya no tiene contrato activo en Protect.'+(VIG_AVISOS.length?' ⚠️ '+VIG_AVISOS.join(' '):'');
+    nota.textContent = 'Días negativos = la vigencia ya venció. «Enviar mensaje» abre WhatsApp y deja constancia en la hoja Gestiones. Si en la hoja de RC o AP se escribe una fecha de fin nueva, el sistema lo toma como renovado y la póliza sale de las listas. «Solo clientes activos» oculta a quien ya no tiene contrato activo en Protect.'+(VIG_AVISOS.length?' '+VIG_AVISOS.join(' '):'');
   }
   ['vigVer','vigDias','vigTipo','vigAct'].forEach(function(id){ document.getElementById(id).addEventListener('change', renderizarVigencias); });
   document.getElementById('panelVigencias').addEventListener('click', function(ev){
@@ -1370,10 +1371,10 @@
     var nf = F.filter(function(o){return o.fin_ok;}).length, rf = F.filter(function(o){return o.fin_ok && o.renovo;}).length;
     document.getElementById('retTiles').innerHTML =
       '<div class="seg-t" style="--c:#fdc33e"><span>Retención de clientes</span><b>'+pct(r,n)+' %</b><small>'+r+' de '+n+' contratos terminados</small></div>'+
-      '<div class="seg-t" style="--c:#38bdf8"><span>Contratos que terminaron</span><b>'+n+'</b><small>ya cumplieron su fecha final</small></div>'+
+      '<div class="seg-t" style="--c:#4a8fe0"><span>Contratos que terminaron</span><b>'+n+'</b><small>ya cumplieron su fecha final</small></div>'+
       '<div class="seg-t" style="--c:#1f9d55"><span>Renovaron</span><b>'+r+'</b><small>volvieron a contratar</small></div>'+
       '<div class="seg-t" style="--c:#dc2626"><span>No renovaron</span><b>'+(n-r)+'</b><small>'+pct(n-r,n)+' % de los terminados</small></div>'+
-      '<div class="seg-t" style="--c:#e08a00"><span>Cancelaron antes de terminar</span><b>'+F.filter(function(o){return o.volun;}).length+'</b><small>solicitaron cancelar (voluntaria)</small></div>'+
+      '<div class="seg-t" style="--c:#c58a1b"><span>Cancelaron antes de terminar</span><b>'+F.filter(function(o){return o.volun;}).length+'</b><small>solicitaron cancelar (voluntaria)</small></div>'+
       '<div class="seg-t" style="--c:#5b78c7"><span>Retención de los que siempre pagaron</span><b>'+pct(rf,nf)+' %</b><small>'+rf+' de '+nf+' finalizados</small></div>';
     var meses = {};
     F.forEach(function(o){ var k = o.fin.slice(0,7), m = meses[k] = meses[k] || {n:0,r:0}; m.n++; if(o.renovo) m.r++; });
@@ -1429,7 +1430,7 @@
       if(!r.ok) throw new Error(r.error || 'No se pudo guardar.');
       var h = hoy(); if(!Array.isArray(estado.gestiones)) estado.gestiones = [];
       estado.gestiones.push({fechaGestion:formatoFechaCO(h), fechaGestionISO:formatoFechaInput(h), contrato:c.contrato, cedula:c.cedula, cliente:c.cliente, accion:accion, registradoPor:registradoPor});
-      mostrarEstado('ok', '✓ '+textoOk);
+      mostrarEstado('ok', ''+textoOk);
       renderizarSegCli(); renderizarSeguimiento(); renderizarRetencion(); renderizarPermanencia(); renderizarVigencias();
     }).catch(function(err){
       if(boton){ boton.disabled = false; boton.textContent = t0; }
@@ -1443,10 +1444,10 @@
     var pct = function(a,b){ return b ? Math.round(a/b*100) : 0; };
     var totMsgs = L.reduce(function(t,o){return t+o.msgs;},0), totSeg = totMsgs-n;
     document.getElementById('scTiles').innerHTML =
-      '<div class="seg-t" style="--c:#38bdf8"><span>Clientes en seguimiento</span><b>'+n+'</b><small>'+totMsgs+' mensajes en total ('+totSeg+' de seguimiento)</small></div>'+
+      '<div class="seg-t" style="--c:#4a8fe0"><span>Clientes en seguimiento</span><b>'+n+'</b><small>'+totMsgs+' mensajes en total ('+totSeg+' de seguimiento)</small></div>'+
       '<div class="seg-t" style="--c:#5b78c7"><span>Pendientes de respuesta</span><b>'+pe+'</b><small>'+pct(pe,n)+' %</small></div>'+
       '<div class="seg-t" style="--c:#1f9d55"><span>Aceptaron</span><b>'+ac.length+'</b><small>'+pct(ac.length,n)+' % de los contactados</small></div>'+
-      '<div class="seg-t" style="--c:#e08a00"><span>No aceptaron</span><b>'+no.length+'</b><small>'+pct(no.length,n)+' %</small></div>'+
+      '<div class="seg-t" style="--c:#c58a1b"><span>No aceptaron</span><b>'+no.length+'</b><small>'+pct(no.length,n)+' %</small></div>'+
       '<div class="seg-t" style="--c:#6d28d9"><span>Mensajes por cliente que aceptó</span><b>'+(ac.length ? (ac.reduce(function(t,o){return t+o.msgs;},0)/ac.length).toFixed(1) : '0')+'</b><small>promedio</small></div>';
     var rot = ['Mensaje inicial de renovación','Después del seguimiento 1','Después del seguimiento 2','Después del seguimiento 3'];
     document.getElementById('cuerpoSCef').innerHTML = rot.map(function(t,i){ var k = ac.filter(function(o){return o.conCual===i;}).length;
@@ -1570,7 +1571,7 @@
       if(!estado.contratos.length){
         vacio.textContent = 'No hay datos cargados todavía.';
       } else if(huboGestionados){
-        vacio.textContent = '✓ Ya gestionaste a todos los pendientes de hoy. ¡Buen trabajo!';
+        vacio.textContent = 'Ya gestionaste a todos los pendientes de hoy. ¡Buen trabajo!';
       } else {
         vacio.textContent = 'No hay cobros pendientes en este momento. ¡Vas al día!';
       }
@@ -1957,7 +1958,7 @@
     // Recordatorio corto y amable (no de cobro): invita a no dejar vencer la cuota y avisa de la cláusula de los 5 días de mora.
     var mensaje;
     var cuenta = DATOS_PAGO.banco+' · '+DATOS_PAGO.tipoCuenta+' N° '+DATOS_PAGO.numeroCuenta+'\n'+'Titular: '+DATOS_PAGO.titular;
-    var clausula = '⚠️ Recuerda: si pasan 5 días de mora, la póliza se cancela.';
+    var clausula = 'Recuerda: si pasan 5 días de mora, la póliza se cancela.';
     if(info && info.cuotaPendiente){
       mensaje =
         'Hola, '+c.cliente+' 😊\n'+
@@ -2040,7 +2041,7 @@
     var pagoExistente = pagoDeEsteMes(c.contrato);
     if(pagoExistente){
       msg.className = 'msg-modal aviso';
-      msg.textContent = '⚠ Este cliente ya tiene un pago registrado este mes: cuota '+pagoExistente.cuota+' por '+formatoDinero(pagoExistente.valorPagado)+' el '+pagoExistente.fechaPago+'. Revisa antes de registrar otro.';
+      msg.textContent = 'Este cliente ya tiene un pago registrado este mes: cuota '+pagoExistente.cuota+' por '+formatoDinero(pagoExistente.valorPagado)+' el '+pagoExistente.fechaPago+'. Revisa antes de registrar otro.';
     } else {
       msg.className = 'msg-modal';
       msg.textContent = '';
@@ -2118,9 +2119,9 @@
     } else if(Math.abs(pagado-esperado) <= TOLERANCIA_PAGO){
       bg='#e3f6ea'; color='#0b6b2b'; msg='✅ Pagó bien: '+formatoDinero(pagado)+' = lo que debía pagar ('+cuotaTxt+').';
     } else if(pagado < esperado){
-      bg='#fad4d4'; color='#9b1c1c'; msg='⚠️ Pagó de menos: consignó '+formatoDinero(pagado)+' y debía pagar '+cuotaTxt+'. Le faltan '+formatoDinero(esperado-pagado)+'.';
+      bg='#fad4d4'; color='#9b1c1c'; msg='Pagó de menos: consignó '+formatoDinero(pagado)+' y debía pagar '+cuotaTxt+'. Le faltan '+formatoDinero(esperado-pagado)+'.';
     } else {
-      bg='#fff3c4'; color='#7a5b00'; msg='⚠️ Pagó de más: consignó '+formatoDinero(pagado)+' y debía pagar '+cuotaTxt+'. Sobran '+formatoDinero(pagado-esperado)+'.';
+      bg='#fff3c4'; color='#7a5b00'; msg='Pagó de más: consignó '+formatoDinero(pagado)+' y debía pagar '+cuotaTxt+'. Sobran '+formatoDinero(pagado-esperado)+'.';
     }
     caja.style.display='block'; caja.style.background=bg; caja.style.color=color; caja.textContent=msg;
   }
@@ -2462,7 +2463,7 @@
       }
       c.estado = 'ACTIVO';
       estadosLocalesPendientes[c.contrato] = 'ACTIVO';
-      mostrarEstado('ok', '✓ '+c.cliente+' reactivado — contrato '+c.contrato+' vuelve a estar ACTIVO.');
+      mostrarEstado('ok', ''+c.cliente+' reactivado — contrato '+c.contrato+' vuelve a estar ACTIVO.');
       renderizarVistas(construirMapaPagos());
       if(document.getElementById('inputBusqueda').value.trim()){
         buscarCliente();
@@ -2505,7 +2506,7 @@
         accion: 'Cobro realizado',
         registradoPor: registradoPor
       });
-      mostrarEstado('ok', '✓ Gestión registrada para '+c.cliente+'. No volverá a salir en la lista de hoy.');
+      mostrarEstado('ok', 'Gestión registrada para '+c.cliente+'. No volverá a salir en la lista de hoy.');
       renderizarVistas(construirMapaPagos());
       if(document.getElementById('inputBusqueda').value.trim()){
         buscarCliente();
@@ -2550,7 +2551,7 @@
         accion: ACCION_RENOVACION_ENVIADA,
         registradoPor: registradoPor
       });
-      mostrarEstado('ok', '✓ Mensaje de renovación registrado para '+c.cliente+'. Pasó a "Renovaciones enviadas".');
+      mostrarEstado('ok', 'Mensaje de renovación registrado para '+c.cliente+'. Pasó a "Renovaciones enviadas".');
       renderizarVistas(construirMapaPagos());
       if(document.getElementById('inputBusqueda').value.trim()){
         buscarCliente();
@@ -2597,7 +2598,7 @@
       c.estado = destino;
       if(destino==='CANCELADO'){ c.motivoCancelacion = 'Dejó de pagar'; c.fechaCancelacionISO = isoLocalHoy(); }
       estadosLocalesPendientes[c.contrato] = destino;
-      mostrarEstado('ok', '✓ '+textoAccion+' — '+c.cliente+'. Contrato '+c.contrato+' marcado como '+destino+'.');
+      mostrarEstado('ok', ''+textoAccion+' — '+c.cliente+'. Contrato '+c.contrato+' marcado como '+destino+'.');
       renderizarVistas(construirMapaPagos());
       if(document.getElementById('inputBusqueda').value.trim()){
         buscarCliente();
@@ -2975,10 +2976,10 @@
       if(b.dataset.modo!==undefined){modo=b.dataset.modo==='1';try{localStorage.setItem('pm_rep_texto_mod',b.dataset.modo)}catch(e){}pintaModo();return}
       m.hidden=true;
       if(b.dataset.all){var it=todos();if(!it.length){aviso('Todavía no hay datos. Pulsa «Actualizar datos» y vuelve a intentar.');return}
-        var f=new Date(),z=function(n){return ('0'+n).slice(-2)},a=document.createElement('a');a.href=URL.createObjectURL(ZipSimple.crear(it.map(function(x){return {nombre:x[0]+'.csv',datos:txt(x[1])}})));a.download='Reportes_Cobros_'+(per||'historico')+'_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.zip';document.body.appendChild(a);a.click();a.remove();aviso('Descargado ✔ '+it.length+' reportes en un ZIP');return}
+        var f=new Date(),z=function(n){return ('0'+n).slice(-2)},a=document.createElement('a');a.href=URL.createObjectURL(ZipSimple.crear(it.map(function(x){return {nombre:x[0]+'.csv',datos:txt(x[1])}})));a.download='Reportes_Cobros_'+(per||'historico')+'_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.zip';document.body.appendChild(a);a.click();a.remove();aviso('Descargado '+it.length+' reportes en un ZIP');return}
       var res=null;try{res=REP[+b.dataset.i][1]()}catch(e){aviso('No se pudo armar el reporte: '+e.message);return}
       if(!res||res[1].length<2){aviso('Todavía no hay datos para ese reporte. Pulsa «Actualizar datos» y vuelve a intentar.');return}
-      var fl=filt(res[1],+b.dataset.i,per);if(fl.length<2){aviso('No hay datos de '+perTxt(per)+' en ese reporte.');return}csv(res[0]+(per?'_'+per:'_historico'),cab(fl,+b.dataset.i,modo,per));aviso('Descargado ✔ '+res[0]+'.csv ('+perTxt(per)+(modo?', con explicación':'')+')')});
+      var fl=filt(res[1],+b.dataset.i,per);if(fl.length<2){aviso('No hay datos de '+perTxt(per)+' en ese reporte.');return}csv(res[0]+(per?'_'+per:'_historico'),cab(fl,+b.dataset.i,modo,per));aviso('Descargado '+res[0]+'.csv ('+perTxt(per)+(modo?', con explicación':'')+')')});
   })();
 
   document.getElementById('anioActual').textContent = new Date().getFullYear();

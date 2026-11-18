@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cruce semanal ERP</title>
+<title>Protect Motos · Cruce semanal ERP</title>
+<link rel="icon" type="image/png" href="../assets/logo_menu.png">
 <style>
   :root{--azul:#13223f;--azul2:#1f4e79;--dorado:#d6a417;--fondo:#f4f5f7;--tarjeta:#fff;--texto:#1f2430;--suave:#6b7280;--borde:#e3e6eb;--verde:#1f9d55;--naranja:#d97706;--rojo:#dc2626}
   *{box-sizing:border-box}
@@ -108,7 +109,7 @@
     est('Leyendo la hoja Protect…');$('bRec').disabled=true;
     return llamar('erp_protect').then(function(r){
       PROT=(r.filas||[]).map(function(x){x.ced=cedula(x.cedula);x.pl=placa(x.placa);return x});ENC_P=r.encabezadoP||'';
-      est('Conectado ✔ · '+PROT.length+' filas de Protect leídas · la columna P de Protect dice: «'+(ENC_P||'sin título')+'»','ok');
+      est('Conectado · '+PROT.length+' filas de Protect leídas · la columna P de Protect dice: «'+(ENC_P||'sin título')+'»','ok');
       if(ARCH)cruzar();
     }).catch(function(e){PROT=null;est(e.message,'er')}).then(function(){$('bRec').disabled=false});
   }
@@ -183,7 +184,7 @@
   }
 
   /* ---------- pantalla ---------- */
-  function etiqueta(e){return e===ST.C?'<span class="tag sc">✔ CONSOLIDADO</span>':e===ST.P?'<span class="tag sp">⏳ PENDIENTE POR CONSOLIDAR</span>':'<span class="tag sv">⚠ VALOR POR VERIFICAR</span>'}
+  function etiqueta(e){return e===ST.C?'<span class="tag sc">CONSOLIDADO</span>':e===ST.P?'<span class="tag sp">⏳ PENDIENTE POR CONSOLIDAR</span>':'<span class="tag sv">VALOR POR VERIFICAR</span>'}
   function celdaDif(r){if(r.dif===null||r.dif===undefined)return '—';if(r.dif===0)return '<span class="dok">$0</span>';return '<span class="'+(r.dif>0?'dpos':'dneg')+'">'+(r.dif>0?'+':'')+cop(r.dif)+'</span>'}
   function fila(r){return '<tr><td class="num">'+r.n+'</td><td>'+esc(r.cedTxt||r.ced||'—')+'</td><td><b>'+esc(r.nombre)+'</b>'+(r.revisar?'<span class="rev">🔎 revisar</span>':'')+'<div style="font-size:.85rem;color:#6b7280">'+esc([r.negocio,r.placa,r.asesor].filter(Boolean).join(' · '))+'</div></td><td class="num">'+cop(r.total)+'</td><td class="num">'+(r.p?cop(r.pVal):'—')+'</td><td class="num">'+celdaDif(r)+'</td><td class="num">'+(r.prow?r.prow:'—')+'</td><td>'+etiqueta(r.estado)+'</td><td class="obs">'+(r.obs.length?r.obs.map(function(o){return '<div>• '+esc(o)+'</div>'}).join(''):'<span style="color:#9ca3af">—</span>')+'</td></tr>'}
   function visible(r){
@@ -241,7 +242,7 @@
   function procesar(file){
     if(!file)return;var rd=new FileReader();
     rd.onload=function(){try{ARCH=leerArchivo(new Uint8Array(rd.result),file.name);$('dropTxt').textContent='Archivo cargado: '+file.name+' ('+ARCH.filas.length+' filas). Puede subir otro cuando quiera.';filtroEstado='';
-        if(!PROT){est('Esperando la hoja Protect… pulse «Volver a leer la hoja Protect» si no carga.','er');return}cruzar()}catch(e){ARCH=null;RES=null;$('resultado').style.display='none';$('dropTxt').textContent='⚠ '+e.message}};
+        if(!PROT){est('Esperando la hoja Protect… pulse «Volver a leer la hoja Protect» si no carga.','er');return}cruzar()}catch(e){ARCH=null;RES=null;$('resultado').style.display='none';$('dropTxt').textContent=''+e.message}};
     rd.readAsArrayBuffer(file);
   }
   $('bElegir').addEventListener('click',function(e){e.stopPropagation();$('archivo').click()});

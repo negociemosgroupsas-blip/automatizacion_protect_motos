@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cobros y precobros</title>
+<title>Protect Motos · Cobros y precobros</title>
+<link rel="icon" type="image/png" href="../assets/logo_menu.png">
 <style>
   :root{--azul:#13223f;--azul2:#1f4e79;--dorado:#d6a417;--fondo:#f4f5f7;--tarjeta:#fff;--texto:#1f2430;--suave:#6b7280;--borde:#e3e6eb;--verde:#1f9d55;--naranja:#d97706;--rojo:#dc2626}
   *{box-sizing:border-box}
@@ -131,7 +132,7 @@
     est('Leyendo los contratos de la hoja Protect… puede tardar hasta 30 segundos');
     llamar('crm',{action:'datos'},function(r){
       if(!r||!r.ok){CRM=null;est((r&&r.error)||'No se pudo leer.','er');return}
-      CRM=r.contratos||[];est('Conectado ✔ · '+CRM.length+' contratos de Protect leídos','ok');
+      CRM=r.contratos||[];est('Conectado · '+CRM.length+' contratos de Protect leídos','ok');
       llamar('oms',{action:'datos'},function(o){if(o&&o.ok){OMS=o.contratos||[];est($('est').textContent+' · '+OMS.length+' clientes OMS','ok')}else OMS=[];if(ARCH)procesar()});
       if(ARCH)procesar();
     });
@@ -218,7 +219,7 @@
     return '<b>'+esc(v)+'</b>'+(k==='contrato'&&f.manual?' <span class="tag tb nop">a mano</span>':'')+' <button class="lapiz nop" type="button" data-c="'+esc(f.ced)+'" data-a="ed" title="Cambiar a mano">✎</button>'+(f.manual&&k==='contrato'?' <button class="lapiz nop" type="button" data-c="'+esc(f.ced)+'" data-a="rest" title="Volver a lo que dice Protect">↺</button>':'')}
   function nomAsesor(f){return f.asesor?f.asesor.toUpperCase():'SIN ASESOR'}
   function miniTxt(){var F=ARCH?ARCH.filas:[],ok=F.filter(function(f){return f.asesor&&f.contrato}).length,falta=F.length-ok,man=F.filter(function(f){return f.manual}).length;
-    $('mini').innerHTML='<b>'+ok+' de '+F.length+'</b> clientes con asesor y contrato'+(falta?' · <span style="color:#b42318"><b>'+falta+' faltan</b>: escríbalos a mano en la tabla (casillas rojas)</span>':' ✔')+(man?' · '+man+' escrito(s) a mano':'')+' · <b>'+F.filter(function(f){return f.rc==='SI'}).length+'</b> llevan RC · <b>'+F.filter(function(f){return f.ap==='SI'}).length+'</b> llevan AP'}
+    $('mini').innerHTML='<b>'+ok+' de '+F.length+'</b> clientes con asesor y contrato'+(falta?' · <span style="color:#b42318"><b>'+falta+' faltan</b>: escríbalos a mano en la tabla (casillas rojas)</span>':'')+(man?' · '+man+' escrito(s) a mano':'')+' · <b>'+F.filter(function(f){return f.rc==='SI'}).length+'</b> llevan RC · <b>'+F.filter(function(f){return f.ap==='SI'}).length+'</b> llevan AP'}
   function pintar(){
     var D=ARCH,F=D.filas,tot=F.reduce(function(a,f){return a+f.prima},0),conAs=F.filter(function(f){return f.asesor}).length,noEnc=F.filter(function(f){return !f.fuente}).length,rev=F.filter(function(f){return f.rev.some(function(r){return r[0]==='tr'||r[0]==='ta'})}).length,pag=D.pagador?D.pagador.total||D.pagador.prima:0,dif=pag?Math.round(tot-pag):0;
     $('resultado').style.display='block';var simple=$('fSimple').checked;$('pTiles').style.display=simple?'none':'';
@@ -227,7 +228,7 @@
     if(noEnc)av.push('<div class="alr"><b>'+noEnc+' asegurado(s) no están ni en Protect ni en Clientes OMS.</b> Salen marcados en rojo en la lista: revise la cédula o si falta registrarlos.</div>');
     if(F.some(function(f){return f.fuente==='Protect'&&f.rev.some(function(r){return r[1]==='Sin AP en Protect'})}))av.push('<div class="aviso">Hay clientes que el proveedor cobra, pero que en Protect <b>no figuran con AP</b>. Puede ser un error de la hoja o un cobro que no corresponde.</div>');
     if(pag&&Math.abs(dif)>1)av.push('<div class="aviso">La suma de las primas de la lista ('+pesosC(tot)+') no coincide con el total del proveedor ('+pesosC(pag)+'): diferencia de '+pesosC(Math.abs(dif))+'.</div>');
-    else if(pag)av.push('<div class="okb">La suma de las primas ('+pesosC(tot)+') coincide con el total del proveedor ✔</div>');
+    else if(pag)av.push('<div class="okb">La suma de las primas ('+pesosC(tot)+') coincide con el total del proveedor</div>');
     $('avisos').innerHTML=av.join('');
     $('tiles').innerHTML='<div class="t" style="--c:#13223f"><span>Asegurados</span><b>'+F.length+'</b><small>en el archivo</small></div><div class="t" style="--c:#1f9d55"><span>Con asesor y contrato</span><b>'+conAs+'</b><small>'+Math.round(conAs/F.length*100)+' % encontrados</small></div><div class="t" style="--c:#dc2626"><span>No encontrados</span><b>'+noEnc+'</b><small>sin coincidir cédula</small></div><div class="t" style="--c:#d97706"><span>Para revisar</span><b>'+rev+'</b><small>sin asesor, sin AP o anulados</small></div><div class="t" style="--c:#d6a417"><span>Total a pagar al proveedor</span><b>'+pesosC(pag||tot)+'</b><small>suma de primas: '+pesosC(tot)+'</small></div>';
     hoja()}
@@ -269,7 +270,7 @@
     if(!ARCH)return;var A=ARCH,t=tipoArch(A),k=claveArch(A),g=jget('pm_pre_num')[k]||{};if(A.num===undefined)A.num=g.num||'';if(!A.escr&&g.escr)A.escr=g.escr;if(!A.nc)A.nc=g.nc||{};if(!A.conf)A.conf=g.conf||{};
     $('numPre').value=A.num||'';$('lTipoSel').style.display=t?'none':'';$('numTipo').value=t||'';
     $('numTxt').innerHTML=t?('La póliza <b>'+esc(A.meta.poliza||'')+'</b> es de <b>'+(t==='AP'?'Accidentes Personales (AP)':'Responsabilidad Civil (RC)')+'</b>: el número se escribe en la <b>columna '+colTxt(t)+'</b>, en la fila de cada cliente (se busca por cédula). Un solo número para todos los clientes de este archivo.'):('No reconozco la póliza <b>'+esc(A.meta.poliza||'—')+'</b>. Elija si este precobro es de AP o de RC.');
-    $('numRes').innerHTML=A.escr?('<div class="okb">✔ Ya se escribió el número <b>'+esc(A.escr.numero)+'</b> en la hoja el '+esc(A.escr.fecha)+' ('+A.escr.escritos+' cliente(s)).'+(A.escr.noEnc&&A.escr.noEnc.length?' No estaban en la hoja: '+esc(A.escr.noEnc.join(', '))+'.':'')+' Lo que ya escribió no se borra al subir otro precobro.</div>'):''}
+    $('numRes').innerHTML=A.escr?('<div class="okb">Ya se escribió el número <b>'+esc(A.escr.numero)+'</b> en la hoja el '+esc(A.escr.fecha)+' ('+A.escr.escritos+' cliente(s)).'+(A.escr.noEnc&&A.escr.noEnc.length?' No estaban en la hoja: '+esc(A.escr.noEnc.join(', '))+'.':'')+' Lo que ya escribió no se borra al subir otro precobro.</div>'):''}
   function guardarNum(){var A=ARCH;if(!A)return;var g=jget('pm_pre_num');g[claveArch(A)]={num:A.num||'',escr:A.escr||null,nc:A.nc||{},conf:A.conf||{}};jset('pm_pre_num',g)}
   $('numTipo').addEventListener('change',function(){if(!ARCH||!this.value)return;var m=jget('pm_pre_pol');m[String(ARCH.meta.poliza||'').trim()]=this.value;jset('pm_pre_pol',m);pintarNum();hoja()});
   $('numPre').addEventListener('input',function(){if(!ARCH)return;ARCH.num=this.value.trim();guardarNum();hoja()});
@@ -288,7 +289,7 @@
         res.hoja=r.hoja;res.columna=r.columna;['encontrados','escritos','yaTenian'].forEach(function(k){res[k]+=r[k]});res.reemplazados+=(r.reemplazados||0);res.conflictos=res.conflictos.concat(r.conflictos);res.noEncontrados=res.noEncontrados.concat(r.noEncontrados);sig()})})()}
   function numDe(f){return (ARCH&&ARCH.nc&&ARCH.nc[f.ced])?ARCH.nc[f.ced]:(ARCH?ARCH.num:'')}
   function celdaNum(f){var nc=ARCH.nc&&ARCH.nc[f.ced],cf=ARCH.conf&&ARCH.conf[f.ced];
-    return '<td class="numc">'+esc(numDe(f))+(nc?'<span class="nop" style="display:block;font-weight:600;font-size:.85rem;color:#b45309">ya tenía este número; no se cambió</span>':(cf?'<span class="nop" style="display:block;font-weight:600;font-size:.85rem;color:#b45309">⚠ ya tiene número ('+esc(cf)+'): revise</span>':''))+'</td>'}
+    return '<td class="numc">'+esc(numDe(f))+(nc?'<span class="nop" style="display:block;font-weight:600;font-size:.85rem;color:#b45309">ya tenía este número; no se cambió</span>':(cf?'<span class="nop" style="display:block;font-weight:600;font-size:.85rem;color:#b45309">ya tiene número ('+esc(cf)+'): revise</span>':''))+'</td>'}
   function colNumExcel(A,filas,hdr,F,first){if(!A.num)return;var hay=A.nc&&Object.keys(A.nc).length;filas[hdr].push(numLabel(A));if(hay)filas[hdr].push('OBSERVACIÓN DEL NÚMERO');
     F.forEach(function(x,i){var r=filas[first+i];if(!r)return;r.push((A.nc&&A.nc[x.ced])?A.nc[x.ced]:A.num);if(hay)r.push((A.nc&&A.nc[x.ced])?'Ya tenía el número '+A.nc[x.ced]+': no se cambió':'')})}
   function repetidosArchivo(){var c={};ARCH.filas.forEach(function(f){c[f.ced]=(c[f.ced]||0)+1});return ARCH.filas.filter(function(f,i,a){return c[f.ced]>1&&a.findIndex(function(g){return g.ced===f.ced})===i}).map(function(f){return f.nombre+' ('+f.ced+') sale '+c[f.ced]+' veces'})}
@@ -308,11 +309,11 @@
       v.conflictos.forEach(function(c){if(autSet[c.ced]){delete ARCH.nc[c.ced];delete ARCH.conf[c.ced]}else{ARCH.nc[c.ced]=c.actual;ARCH.conf[c.ced]=c.actual}});
       var h=new Date();ARCH.escr={numero:d.numero,fecha:h.toLocaleDateString('es-CO')+' '+h.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}),escritos:r.escritos,noEnc:r.noEncontrados.map(nombreDe)};guardarNum();hoja();
       var sinCambio=v.conflictos.filter(function(c){return !autSet[c.ced]});
-      $('numRes').innerHTML=resumenNum(r,d,'escribir')+(sinCambio.length?'<div class="aviso">⚠ <b>'+sinCambio.length+' cliente(s) ya tenían número y NO se cambió</b> (usted no lo autorizó): '+esc(sinCambio.map(function(c){return nombreDe(c.ced)+' tiene '+c.actual}).join('; '))+'. En la tabla y en el Excel sale el número que ya tenían.</div>':'')+'<div class="okb">✔ Listo. El número <b>'+esc(d.numero)+'</b> quedó en la hoja de Google al frente de cada cliente'+(r.reemplazados?' ('+r.reemplazados+' reemplazado(s) con su autorización)':'')+'. Descargue o imprima cuando quiera.</div>'},aut)}
+      $('numRes').innerHTML=resumenNum(r,d,'escribir')+(sinCambio.length?'<div class="aviso"><b>'+sinCambio.length+' cliente(s) ya tenían número y NO se cambió</b> (usted no lo autorizó): '+esc(sinCambio.map(function(c){return nombreDe(c.ced)+' tiene '+c.actual}).join('; '))+'. En la tabla y en el Excel sale el número que ya tenían.</div>':'')+'<div class="okb">Listo. El número <b>'+esc(d.numero)+'</b> quedó en la hoja de Google al frente de cada cliente'+(r.reemplazados?' ('+r.reemplazados+' reemplazado(s) con su autorización)':'')+'. Descargue o imprima cuando quiera.</div>'},aut)}
   function revisarConflictos(d,v){
     ARCH.conf=ARCH.conf||{};v.conflictos.forEach(function(c){ARCH.conf[c.ced]=c.actual});guardarNum();hoja();
     var filas=v.conflictos.map(function(c,i){var f=ARCH.filas.filter(function(x){return x.ced===c.ced})[0];return '<tr><td><b>'+esc(f?f.nombre:(c.nombre||c.ced))+'</b><br><small style="color:#6b7280">'+esc(c.ced)+(c.nombre&&f&&c.nombre.toLowerCase()!==f.nombre.toLowerCase()?' · en la hoja: '+esc(c.nombre):'')+'</small></td><td style="text-align:center"><b>'+esc(c.actual)+'</b><br><small style="color:#6b7280">fila '+c.fila+'</small></td><td style="text-align:center">'+esc(d.numero)+'</td><td style="text-align:center"><label style="flex-direction:row;align-items:center;gap:6px;justify-content:center"><input type="checkbox" class="aut" data-c="'+esc(c.ced)+'"> Reemplazar</label></td></tr>'}).join('');
-    $('numRes').innerHTML=resumenNum(v,d,'vista')+'<div class="alr"><b>⚠ '+v.conflictos.length+' cliente(s) ya tienen número en la hoja.</b> Revíselos para evitar duplicados. <b>Si no marca «Reemplazar», se queda el número que ya tienen</b> y no se les cambia.</div><div class="scroll"><table><thead><tr><th>Cliente</th><th>Número que ya tiene</th><th>Número de este precobro</th><th>¿Autoriza cambiarlo?</th></tr></thead><tbody>'+filas+'</tbody></table></div><div class="fil" style="margin-top:10px"><button class="btn g" id="bAutTodos" type="button">Marcar todos</button><button class="btn g" id="bAutNinguno" type="button">Quitar todos</button><button class="btn v" id="bNumSeguir" type="button">✔ Continuar y escribir</button><button class="btn g" id="bNumCancel" type="button">Cancelar</button></div>';
+    $('numRes').innerHTML=resumenNum(v,d,'vista')+'<div class="alr"><b>'+v.conflictos.length+' cliente(s) ya tienen número en la hoja.</b> Revíselos para evitar duplicados. <b>Si no marca «Reemplazar», se queda el número que ya tienen</b> y no se les cambia.</div><div class="scroll"><table><thead><tr><th>Cliente</th><th>Número que ya tiene</th><th>Número de este precobro</th><th>¿Autoriza cambiarlo?</th></tr></thead><tbody>'+filas+'</tbody></table></div><div class="fil" style="margin-top:10px"><button class="btn g" id="bAutTodos" type="button">Marcar todos</button><button class="btn g" id="bAutNinguno" type="button">Quitar todos</button><button class="btn v" id="bNumSeguir" type="button">Continuar y escribir</button><button class="btn g" id="bNumCancel" type="button">Cancelar</button></div>';
     $('bAutTodos').onclick=function(){[].forEach.call(document.querySelectorAll('.aut'),function(c){c.checked=true})};$('bAutNinguno').onclick=function(){[].forEach.call(document.querySelectorAll('.aut'),function(c){c.checked=false})};
     $('bNumCancel').onclick=function(){$('numRes').innerHTML='<div class="aviso">Cancelado: no se escribió nada.</div>';$('bNumPon').disabled=false};
     $('bNumSeguir').onclick=function(){var aut=[].filter.call(document.querySelectorAll('.aut'),function(c){return c.checked}).map(function(c){return c.dataset.c});
@@ -321,7 +322,7 @@
   $('bNumPon').addEventListener('click',function(){var d=datosNum();if(!d)return;var b=this;b.disabled=true;$('numRes').innerHTML='<p class="estado">Revisando la hoja antes de escribir…</p>';
     enLotes(d.tipo,d.numero,d.ceds,'vista',false,function(v){
       if(!v.ok){b.disabled=false;$('numRes').innerHTML='<div class="alr">'+esc(v.error)+'</div>';return}
-      var rep=repetidosArchivo(),avRep=rep.length?'<div class="aviso">⚠ Hay cédulas repetidas dentro de este mismo archivo: '+esc(rep.join('; '))+'.</div>':'';
+      var rep=repetidosArchivo(),avRep=rep.length?'<div class="aviso">Hay cédulas repetidas dentro de este mismo archivo: '+esc(rep.join('; '))+'.</div>':'';
       if(v.conflictos.length){revisarConflictos(d,v);if(avRep)$('numRes').insertAdjacentHTML('afterbegin',avRep);return}
       $('numRes').innerHTML=resumenNum(v,d,'vista')+avRep;
       if(!v.escritos){b.disabled=false;window.alert('No hay nada que escribir: '+(v.yaTenian?'todos esos clientes ya tienen el número '+d.numero+'.':'ningún cliente de este precobro está en la hoja de '+v.hoja+'.'));return}
@@ -333,7 +334,7 @@
     files.forEach(function(file,ix){var r=new FileReader();
       function listo(){pend--;if(pend>0)return;
         leidos.forEach(function(D){if(!D)return;ARCHS=ARCHS.filter(function(a){return a.nombreArchivo!==D.nombreArchivo});ARCHS.push(D)});
-        if(ARCHS.length){ARCH=ARCHS[ARCHS.length-1];$('dropTxt').textContent='✔ '+ARCHS.length+' archivo(s) leídos · '+ARCHS.reduce(function(a,x){return a+x.filas.length},0)+' asegurados en total. Haga clic para agregar o cambiar archivos.';procesar()}
+        if(ARCHS.length){ARCH=ARCHS[ARCHS.length-1];$('dropTxt').textContent=''+ARCHS.length+' archivo(s) leídos · '+ARCHS.reduce(function(a,x){return a+x.filas.length},0)+' asegurados en total. Haga clic para agregar o cambiar archivos.';procesar()}
         else{$('resultado').style.display='none';$('dropTxt').textContent='✖ '+(fallos[0]||'No se pudo leer el archivo.')}
         if(fallos.length)window.alert('No se pudo leer:\n\n'+fallos.join('\n'))}
       r.onerror=function(){fallos.push(file.name+': no se pudo abrir');listo()};

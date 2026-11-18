@@ -50,8 +50,11 @@ conectores/
    · **Valor cobrado a Dugo Motos**: alertas, consolidado y dinero que entra al banco.
    · **SOAT** (ventas, ganancia y renovaciones) · **Clientes OMS** (tablero y renovaciones) · **Comisiones**.
 
+## Imagen corporativa
+Fondo claro por defecto (el oscuro es una opción con el botón «Fondo oscuro» / «Modo oscuro»). Títulos en nombre (no en pregunta), íconos de línea en vez de emojis, un solo acento dorado, azules corporativos en los indicadores, cifras en millones con coma («1,2 M») y fechas dd/mm/aaaa.
+
 ## Paleta de gráficas (igual en todo el sistema)
-Cian `#38bdf8` (series y barras) · Oro `#fdc33e` (destacado, mes actual, contado) · Azul `#5b78c7` (financiado) · Azul claro `#9fb8e8` · Naranja `#e08a00` · Verde `#1f9d55` (activo, positivo) · Rojo `#dc2626` (cancelado, alerta). Es la misma del Inicio y se aplica en Clientes OMS, SOAT, Conciliación, Comisiones y Cobros.
+Azul `#4a8fe0` (series y barras) · Oro `#fdc33e` (destacado, mes actual, contado) · Azul `#5b78c7` (financiado) · Azul claro `#9fb8e8` · Dorado oscuro `#c58a1b` · Verde `#1f9d55` (activo, positivo) · Rojo `#dc2626` (cancelado, alerta). Es la misma del Inicio y se aplica en Clientes OMS, SOAT, Conciliación, Comisiones y Cobros.
 
 ## Conexión con Google (un solo conector)
 1. Nuevo proyecto en script.google.com → pegar `conectores/unico/Codigo_UNICO.gs` → ejecutar **AUTORIZAR_TODO** una vez.

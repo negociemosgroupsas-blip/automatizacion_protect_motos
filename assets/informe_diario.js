@@ -49,7 +49,7 @@
       '<div class="mini"><span>SOAT vendidos</span><b>'+num(d.soat)+'</b><small>Ganancia '+cop(d.gan)+'</small></div>'+
       '<div class="mini"><span>Pólizas OMS vendidas</span><b>'+num(d.oms)+'</b><small>Ventas SURA del mes</small></div></div>'+
       '<div class="saldo"><span>Dinero en banco · saldo del día</span><b>'+(d.saldo?cop(d.saldo):'—')+'</b></div></div>'+
-      '<div class="nota">Los valores y totales pueden presentar variaciones, debido a que algunos clientes desisten de adquirir Protect Motos directamente en caja.</div></div>';
+      '<div class="nota">Los valores y totales pueden presentar variaciones, debido a que algunos clientes desisten de adquirir Protect Motos directamente en caja.<br>Protect Motos · Negociemos Group S.A.S. · Documento de uso interno</div></div>';
   }
   function pagina(d){ return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Cierre diario Protect Motos - '+esc(d.corte)+'</title><style>@page{size:A4;margin:12mm}body{margin:0;display:flex;justify-content:center;background:#fff}'+CSS+'</style></head><body>'+html(d)+'</body></html>'; }
   function imprimir(d){

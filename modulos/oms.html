@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Clientes OMS</title>
+<title>Protect Motos · Clientes OMS</title>
+<link rel="icon" type="image/png" href="../assets/logo_menu.png">
 <style>
   :root{
     --azul:#13223f;
@@ -394,7 +395,7 @@
       <div class="seg-fil"><label>Ver <select id="scFiltro"><option value="pend">Pendientes de respuesta</option><option value="renovo">Renovaron</option><option value="no">No renovarán</option><option value="todos">Todos</option></select></label><label>Buscar <input id="scBusca" type="search" placeholder="nombre, placa o referencia"></label></div>
       <div class="seg-tabla-w"><table id="tablaSC"><thead><tr><th>Cliente</th><th>Celular</th><th>Vehículo</th><th>Cumple su año</th><th>Mensajes enviados</th><th>Resultado</th><th>Acciones</th></tr></thead><tbody id="cuerpoSC"></tbody></table></div>
       <div class="vacio" id="vacioSC" style="display:none;">No hay clientes en esta lista.</div>
-      <h3 style="margin:18px 0 8px;color:var(--azul);font-size:.95rem;">¿Con qué mensaje renovaron?</h3>
+      <h3 style="margin:18px 0 8px;color:var(--azul);font-size:.95rem;">Mensaje con el que renovaron</h3>
       <div class="seg-tabla-w"><table><thead><tr><th>Mensaje</th><th>Renovaron</th><th>% de los que renovaron</th></tr></thead><tbody id="cuerpoSCef"></tbody></table></div>
       <p class="seg-nota">Entra aquí todo cliente al que ya se le envió el mensaje de renovación. El botón de WhatsApp abre el mensaje de seguimiento que toca (1, 2 o 3, cada uno distinto) y, al confirmar, queda anotado. Si el cliente ya había vencido y luego renueva, pasa a «Renovaron».</p>
     </div>
@@ -525,8 +526,8 @@
       estado.clientes = r.contratos || []; estado.gestiones = r.gestiones || []; estado.pagos = r.pagos || [];
       pintar();
       var viejo = estado.clientes.length && estado.clientes.every(function(c){ return c.aseguradora===undefined; });
-      if(viejo) mostrar('error','⚠️ El conector de Clientes OMS todavía es la versión vieja (no envía Aseguradora, Asesor ni Pagos). Pegue el código nuevo en Apps Script y publique «Nueva versión»: la URL …'+estado.url.replace(/\/exec.*$/,'').slice(-8)+'/exec debe responder oms-5 al probar ?action=ping&token=PM-OMS-2026.');
-      else if(!silencioso) mostrar('ok','Datos al día ✔ ('+estado.clientes.length+' clientes)');
+      if(viejo) mostrar('error','El conector de Clientes OMS todavía es la versión vieja (no envía Aseguradora, Asesor ni Pagos). Pegue el código nuevo en Apps Script y publique «Nueva versión»: la URL …'+estado.url.replace(/\/exec.*$/,'').slice(-8)+'/exec debe responder oms-5 al probar ?action=ping&token=PM-OMS-2026.');
+      else if(!silencioso) mostrar('ok','Datos al día ('+estado.clientes.length+' clientes)');
     }).catch(function(e){ enCarga = false; mostrar('error', e.message); });
   }
 
@@ -595,10 +596,10 @@
   function gestionar(c, accion, btn){
     var por = quienRegistra(); if(btn) btn.disabled = true;
     var d = new Date(), z = function(x){ return ('0'+x).slice(-2); };
-    var g = { fechaGestion: d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear(), fechaGestionISO: d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate()), contrato: c.contrato, cedula: c.cedula, cliente: c.cliente, accion: accion, registradoPor: por };
+    var g = { fechaGestion: ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear(), fechaGestionISO: d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate()), contrato: c.contrato, cedula: c.cedula, cliente: c.cliente, accion: accion, registradoPor: por };
     llamar({action:'registrarGestion', contrato:c.contrato, cedula:c.cedula, cliente:c.cliente, accion:accion, registradoPor:por}).then(function(r){
       if(!r || !r.ok){ mostrar('error', (r && r.error) ? r.error : 'No se pudo registrar.'); if(btn) btn.disabled = false; return; }
-      estado.gestiones.push(g); pintar(); mostrar('ok', accion===ACC_ENV ? 'Anotado ✔ Pasó a «Mensajes enviados».' : 'Anotado ✔');
+      estado.gestiones.push(g); pintar(); mostrar('ok', accion===ACC_ENV ? 'Anotado Pasó a «Mensajes enviados».' : 'Anotado');
     }).catch(function(e){ mostrar('error', e.message); if(btn) btn.disabled = false; });
   }
 
@@ -607,7 +608,7 @@
   document.getElementById('btnGuardarUrl').addEventListener('click', function(){
     var u = inUrl.value.trim();
     if(!/^https:\/\/script\.google\.com\//.test(u)){ mostrar('error','La URL debe empezar con https://script.google.com/ y terminar en /exec.'); return; }
-    estado.url = u; localStorage.setItem(CLAVE_URL, u); mostrar('ok','URL guardada ✔'); cargar(false);
+    estado.url = u; localStorage.setItem(CLAVE_URL, u); mostrar('ok','URL guardada'); cargar(false);
   });
   document.getElementById('btnRecargar').addEventListener('click', function(){ cargar(false); });
   document.getElementById('inputBusqueda').addEventListener('input', function(){ estado.q = this.value; pintarTodos(); });
@@ -662,7 +663,7 @@
         guardando=false;$('nvGuardar').disabled=false;
         if(r&&r.duplicado){msg('nvMsg','aviso',r.error);if(confirm(r.error+'\n\n¿Guardarlo de todas formas?'))enviar(true);return}
         if(!r||!r.ok){msg('nvMsg','error',(r&&r.error)||'No se pudo guardar. Revisa la conexión.');return}
-        cerrar();mostrar('ok','Cliente guardado ✔ '+d.cliente+' · '+d.vehiculo+(r.omitidos&&r.omitidos.length?' (no se pudo llenar en la hoja: '+r.omitidos.join(', ')+')':''));
+        cerrar();mostrar('ok','Cliente guardado '+d.cliente+' · '+d.vehiculo+(r.omitidos&&r.omitidos.length?' (no se pudo llenar en la hoja: '+r.omitidos.join(', ')+')':''));
         setTimeout(function(){cargar(false)},600);
       }).catch(function(e){guardando=false;$('nvGuardar').disabled=false;msg('nvMsg','error',e.message)});
     }
@@ -710,7 +711,7 @@
     var modal=$('modalPago'),guardandoP=false,mapaCli={};
     function pmsg(t,tipo){var e=$('pgMsg');e.className='msg-modal'+(tipo?' '+tipo:'');e.textContent=t||''}
     function clienteElegido(){return mapaCli[$('pgBusca').value.trim()]||null}
-    function ctx(){var c=clienteElegido(),x=c?primerPago(c):null;$('pgCtx').textContent=c?('Cédula '+c.cedula+' · '+(c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma)+(c.valorCuota?' · cuota '+cop(c.valorCuota):'')+(x&&x.est==='pago'?' · ⚠️ ya tiene primer pago registrado ('+cop(x.p.valorPagado)+')':'')):'';if(c&&!$('pgValor').value)$('pgValor').value=(c.forma==='FINANCIADO'&&c.valorCuota)?c.valorCuota:(c.valorProtect||'')}
+    function ctx(){var c=clienteElegido(),x=c?primerPago(c):null;$('pgCtx').textContent=c?('Cédula '+c.cedula+' · '+(c.forma==='FINANCIADO'?'Financiado':c.forma==='CONTADO'?'Contado':c.forma)+(c.valorCuota?' · cuota '+cop(c.valorCuota):'')+(x&&x.est==='pago'?' · ya tiene primer pago registrado ('+cop(x.p.valorPagado)+')':'')):'';if(c&&!$('pgValor').value)$('pgValor').value=(c.forma==='FINANCIADO'&&c.valorCuota)?c.valorCuota:(c.valorProtect||'')}
     function abrirPago(c){
       mapaCli={};$('pgLista').innerHTML=estado.clientes.map(function(x){var l=etqCli(x);mapaCli[l]=x;return '<option value="'+esc(l)+'">'}).join('');
       $('pgBusca').value=c?etqCli(c):'';$('pgConcepto').value='Primer pago';$('pgValor').value='';$('pgFecha').value=isoD(new Date());$('pgNota').value='';$('pgArchivo').value='';$('pgPrev').style.display='none';$('pgAyuda').textContent='';
@@ -737,7 +738,7 @@
       function guardar(sub){var url=sub&&sub.url||'',carp=sub&&sub.carpeta||'';pmsg('Guardando el pago…'+(sub&&sub.ruta?' Comprobante guardado en: '+sub.ruta:''));llamar({action:'registrarPago',contrato:c.contrato,cedula:c.cedula,cliente:c.cliente,concepto:concepto,valor:valor,nota:nota,fecha:fecha,registradoPor:por,comprobante:url||'',carpeta:carp}).then(function(r){
         if(!r||!r.ok){guardandoP=false;$('pgGuardar').disabled=false;pmsg((r&&r.error)||'No se pudo guardar el pago.','error');return}
         estado.pagos.push({fechaPago:fechaCO(fecha),fechaPagoISO:fecha,contrato:c.contrato,cedula:c.cedula,cliente:c.cliente,concepto:concepto,valorPagado:valor,nota:nota,registradoPor:por,comprobante:url||'',carpeta:carp});
-        pmsg('✓ Pago guardado'+(url?' con comprobante. Quedó en Drive: '+(sub.ruta||'carpeta del cliente'):''),'ok');pintarPagos();mostrar('ok','Pago de '+c.cliente+' guardado ✔ '+cop(valor));setTimeout(function(){modal.classList.remove('abierto');cargar(true)},url?4500:700)
+        pmsg('Pago guardado'+(url?' con comprobante. Quedó en Drive: '+(sub.ruta||'carpeta del cliente'):''),'ok');pintarPagos();mostrar('ok','Pago de '+c.cliente+' guardado '+cop(valor));setTimeout(function(){modal.classList.remove('abierto');cargar(true)},url?4500:700)
       }).catch(function(e){guardandoP=false;$('pgGuardar').disabled=false;pmsg(e.message,'error')})}
       if(f){pmsg('Subiendo el comprobante…');subir(f,c,concepto,fecha).then(guardar).catch(function(e){guardandoP=false;$('pgGuardar').disabled=false;pmsg('No se pudo subir el comprobante: '+e.message+'. Puede quitar el archivo y guardar el pago sin comprobante, o intentar de nuevo.','error')})}else guardar('');
     });
@@ -854,10 +855,10 @@
       if(b.dataset.modo!==undefined){modo=b.dataset.modo==='1';try{localStorage.setItem('pm_rep_texto_mod',b.dataset.modo)}catch(e){}pintaModo();return}
       m.hidden=true;
       if(b.dataset.all){var it=todos();if(!it.length){aviso('Todavía no hay datos. Pulsa «Actualizar datos» y vuelve a intentar.');return}
-        var f=new Date(),z=function(n){return ('0'+n).slice(-2)},a=document.createElement('a');a.href=URL.createObjectURL(ZipSimple.crear(it.map(function(x){return {nombre:x[0]+'.csv',datos:txt(x[1])}})));a.download='Reportes_Clientes_OMS_'+(per||'historico')+'_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.zip';document.body.appendChild(a);a.click();a.remove();aviso('Descargado ✔ '+it.length+' reportes en un ZIP');return}
+        var f=new Date(),z=function(n){return ('0'+n).slice(-2)},a=document.createElement('a');a.href=URL.createObjectURL(ZipSimple.crear(it.map(function(x){return {nombre:x[0]+'.csv',datos:txt(x[1])}})));a.download='Reportes_Clientes_OMS_'+(per||'historico')+'_'+f.getFullYear()+'-'+z(f.getMonth()+1)+'-'+z(f.getDate())+'.zip';document.body.appendChild(a);a.click();a.remove();aviso('Descargado '+it.length+' reportes en un ZIP');return}
       var res=null;try{res=REP[+b.dataset.i][1]()}catch(e){aviso('No se pudo armar el reporte: '+e.message);return}
       if(!res||res[1].length<2){aviso('Todavía no hay datos para ese reporte. Pulsa «Actualizar datos» y vuelve a intentar.');return}
-      var fl=filt(res[1],+b.dataset.i,per);if(fl.length<2){aviso('No hay datos de '+perTxt(per)+' en ese reporte.');return}csv(res[0]+(per?'_'+per:'_historico'),cab(fl,+b.dataset.i,modo,per));aviso('Descargado ✔ '+res[0]+'.csv ('+perTxt(per)+(modo?', con explicación':'')+')')});
+      var fl=filt(res[1],+b.dataset.i,per);if(fl.length<2){aviso('No hay datos de '+perTxt(per)+' en ese reporte.');return}csv(res[0]+(per?'_'+per:'_historico'),cab(fl,+b.dataset.i,modo,per));aviso('Descargado '+res[0]+'.csv ('+perTxt(per)+(modo?', con explicación':'')+')')});
   })();
 
   document.getElementById('anioActual').textContent = new Date().getFullYear();

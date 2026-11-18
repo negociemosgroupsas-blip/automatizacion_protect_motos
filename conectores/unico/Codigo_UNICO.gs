@@ -597,7 +597,7 @@ function formatoFecha(valor) {
   if (!valor) return '';
   var fecha = (valor instanceof Date) ? valor : new Date(valor);
   if (isNaN(fecha.getTime())) return '';
-  return fecha.getDate() + '/' + (fecha.getMonth() + 1) + '/' + fecha.getFullYear();
+  return ('0' + fecha.getDate()).slice(-2) + '/' + ('0' + (fecha.getMonth() + 1)).slice(-2) + '/' + fecha.getFullYear();
 }
 
 function formatoISO(valor) {
@@ -857,7 +857,7 @@ function formatoFecha(valor) {
   if (!valor) return '';
   var fecha = (valor instanceof Date) ? valor : new Date(valor);
   if (isNaN(fecha.getTime())) return '';
-  return fecha.getDate() + '/' + (fecha.getMonth() + 1) + '/' + fecha.getFullYear();
+  return ('0' + fecha.getDate()).slice(-2) + '/' + ('0' + (fecha.getMonth() + 1)).slice(-2) + '/' + fecha.getFullYear();
 }
 
 // Mes/año tal como están en la hoja; si la celda es una fecha, se devuelve su mes (1-12) o su año.
@@ -1598,7 +1598,7 @@ function aFecha(v) {
   m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
   return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
 }
-function fmt(d) { return d ? d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear() : ''; }
+function fmt(d) { return d ? ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear() : ''; }
 function iso(d) { return d ? d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2) : ''; }
 function parsearFecha(t) { return aFecha(t) || (function () { var f = new Date(t); return isNaN(f.getTime()) ? null : f; })(); }
 function fechaParaNombre(t) { var f = parsearFecha(t); return f ? ('0' + f.getDate()).slice(-2) + '-' + ('0' + (f.getMonth() + 1)).slice(-2) + '-' + f.getFullYear() : ''; }
@@ -1985,7 +1985,7 @@ function aFecha(v) {
   if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
   return null;
 }
-function fmt(d) { return d ? d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear() : ''; }
+function fmt(d) { return d ? ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear() : ''; }
 function iso(d) { return d ? d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2) : ''; }
 
   return { doGet:doGet };

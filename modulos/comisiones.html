@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Comisiones</title>
+<title>Protect Motos · Comisiones</title>
+<link rel="icon" type="image/png" href="../assets/logo_menu.png">
 <style>
   :root{--azul:#13223f;--azul2:#1f4e79;--dorado:#d6a417;--fondo:#f4f5f7;--tarjeta:#fff;--texto:#1f2430;--suave:#6b7280;--borde:#e3e6eb;--verde:#1f9d55;--naranja:#d97706;--rojo:#dc2626}
   *{box-sizing:border-box}
@@ -48,7 +49,7 @@
   .infk{background:#fff;border:2px solid var(--azul2);border-radius:4px;padding:0 0 14px} .infk .tt{background:#eaf1fb;color:var(--azul2);text-align:center;font-size:1.45rem;font-weight:800;padding:14px 10px;border-bottom:2px solid var(--azul2)} .infk .st{text-align:center;color:#555;padding:6px 10px 2px} .infk .ln{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:2px 14px;font-size:.85rem;color:#444} .infk table th{background:#1f4e79;color:#fff;text-align:center;font-size:.85rem;border:1px solid #fff} .infk table td{border:1px solid #333;padding:6px 8px} .infk .sec td{background:#dfe9f6;font-weight:800;color:#1f4e79} .infk .tot td{background:#bdd7ee;color:#1f4e79;font-weight:800} .infk .tar{text-align:center;font-size:.85rem;color:#555;padding:4px 10px 10px}
   .rk{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:4px 0 16px} .rk .k{border-radius:16px;padding:14px 16px;color:#fff;position:relative;overflow:hidden;box-shadow:0 6px 16px rgba(19,34,63,.18)} .rk .k::after{content:"";position:absolute;right:-26px;top:-26px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.14)}
   .rk .k span{display:block;font-size:.85rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;opacity:.92;position:relative;z-index:1} .rk .k b{display:block;font-size:1.6rem;margin:5px 0 2px;position:relative;z-index:1} .rk .k small{display:block;font-size:.85rem;opacity:.95;position:relative;z-index:1}
-  .k-oro{background:linear-gradient(135deg,#fdc33e,#e08a00);color:#1b1300!important} .k-cian{background:linear-gradient(135deg,#0e7490,#22d3ee)} .k-vio{background:linear-gradient(135deg,#6d28d9,#a78bfa)} .k-azu{background:linear-gradient(135deg,#1d4ed8,#60a5fa)}
+  .k-oro{background:linear-gradient(135deg,#fdc33e,#c58a1b);color:#1b1300!important} .k-cian{background:linear-gradient(135deg,#0e7490,#6aa5ea)} .k-vio{background:linear-gradient(135deg,#6d28d9,#7d94d8)} .k-azu{background:linear-gradient(135deg,#1d4ed8,#6aa5ea)}
   .rley{display:flex;flex-wrap:wrap;gap:14px;font-size:.85rem;color:var(--suave);margin:0 0 6px} .rley i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
   .rch{display:flex;align-items:flex-end;gap:8px;height:270px;padding-top:26px;overflow-x:auto} .rg{flex:1;min-width:34px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%} .rbs{display:flex;align-items:flex-end;justify-content:center;gap:3px;flex:1;width:100%;border-bottom:2px solid var(--borde)} .rb{width:clamp(10px,2.2vw,30px);border-radius:5px 5px 0 0;position:relative} .rb i{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:.85rem;font-style:normal;font-weight:700;color:var(--azul);white-space:nowrap}
   .rl{font-size:.85rem;color:var(--suave);margin-top:4px;height:18px}
@@ -87,7 +88,7 @@
   <div class="tabs nop"><button type="button" class="tab on" data-t="r">📊 Resumen</button><button type="button" class="tab" data-t="g">📋 Informe general</button><button type="button" class="tab" data-t="k">👩‍💼 Informe de Kelli (aparte)</button><button type="button" class="tab" data-t="a">📅 Anual / varios años</button><button type="button" class="tab" data-t="h">📚 Histórico guardado</button></div>
 
   <section class="panel" id="pRes">
-    <h2>📊 ¿Cuánto pagamos en comisiones?</h2>
+    <h2>📊 Comisiones pagadas</h2>
     <p class="sub" id="rTot">Cargando…</p><p class="sub" style="margin-top:-8px">Todos los valores están en <b>pesos colombianos (COP)</b>. Los filtros aplican a todas las gráficas de esta pestaña.</p>
     <div class="fil" style="margin-bottom:12px">
       <label>Ver <select id="rVista"><option value="mes">Mes a mes</option><option value="asesor">Por asesor</option><option value="anios">Año a año</option></select></label>
@@ -101,13 +102,13 @@
     <div class="rgrid">
       <div class="rcard"><h3>Comisión por tipo de póliza</h3><p class="sub" id="rTipoS"></p><div id="rTipo"></div></div>
       <div class="rcard"><h3>Contado frente a financiado</h3><p class="sub" id="rCFS"></p><div id="rCF"></div></div>
-      <div class="rcard rc12"><h3>¿Cuánto nos cuesta vender? Comisión frente a lo vendido</h3><p class="sub" id="rApiS"></p><div class="rley" id="rApiL"></div><div id="rApi"></div></div>
+      <div class="rcard rc12"><h3>Costo de venta: comisión frente a lo vendido</h3><p class="sub" id="rApiS"></p><div class="rley" id="rApiL"></div><div id="rApi"></div></div>
       <div class="rcard rc12"><h3>Rendimiento de cada asesor</h3><p class="sub" id="rAcuS"></p><div id="rAcu"></div></div>
     </div>
   </section>
 
   <section class="panel" id="pCasos" style="display:none">
-    <h2>2. ⚠️ Casos especiales: revise y decida</h2>
+    <h2>2. Casos especiales: revise y decida</h2>
     <p class="sub">Normalmente esto no debería pasar. Los de solo RC o solo AP ya traen el valor de su regla (puede cambiarlo); los demás casos usted debe decidir si se paga comisión (y cuánto) o si no se paga. Queda guardado en la hoja de Google y no vuelve a preguntar.</p>
     <div id="casos"></div>
   </section>
@@ -283,10 +284,10 @@ function normAses(a){return String(a==null?'':a).normalize('NFD').replace(/[\u03
       datos=r;cfg=r.comisionesCfg||{};
       var tieneCom=(r.contratos||[]).some(function(x){return x.comision!==undefined});
       var u0=lsg('pm_crm_url'),fin0='…'+u0.replace(/\/exec.*$/,'').slice(-8)+'/exec';
-      est('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos'+(tieneCom?'':' — ⚠️ este conector (URL guardada en «Conexiones» que termina en '+fin0+') todavía es la versión vieja.'),tieneCom?'ok':'er');
+      est('Conectado · '+(r.contratos||[]).length+' contratos leídos'+(tieneCom?'':' — este conector (URL guardada en «Conexiones» que termina en '+fin0+') todavía es la versión vieja.'),tieneCom?'ok':'er');
       llamar({action:'ping'},function(pg){var v=pg&&pg.version?pg.version:'sin versión (muy vieja)',bien=(/^crm-(\d+)$/.exec(v)&&+/^crm-(\d+)$/.exec(v)[1]>=3);
-        if(bien&&tieneCom)est($('est').textContent+' · Conector: '+v+' ✔ (URL …'+u0.replace(/\/exec.*$/,'').slice(-8)+')','ok');
-        else est('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos — ⚠️ el conector que responde es «'+v+'» y se necesita «crm-3». URL guardada en Conexiones: termina en …'+u0.replace(/\/exec.*$/,'').slice(-8)+'/exec. Abra esa MISMA URL en el navegador con ?action=ping&token=PM-CRM-2026 al final: si dice crm-3 y aquí sigue igual, está abriendo una carpeta vieja del sistema (use la del zip más nuevo); si dice crm-1, esa URL es de una implementación sin actualizar.','er')});
+        if(bien&&tieneCom)est($('est').textContent+' · Conector: '+v+' (URL …'+u0.replace(/\/exec.*$/,'').slice(-8)+')','ok');
+        else est('Conectado · '+(r.contratos||[]).length+' contratos leídos — el conector que responde es «'+v+'» y se necesita «crm-3». URL guardada en Conexiones: termina en …'+u0.replace(/\/exec.*$/,'').slice(-8)+'/exec. Abra esa MISMA URL en el navegador con ?action=ping&token=PM-CRM-2026 al final: si dice crm-3 y aquí sigue igual, está abriendo una carpeta vieja del sistema (use la del zip más nuevo); si dice crm-1, esa URL es de una implementación sin actualizar.','er')});
       cargarExtra('oms');
       llenarFiltros();pintar()});
   }
@@ -296,7 +297,7 @@ function normAses(a){return String(a==null?'':a).normalize('NFD').replace(/[\u03
       var E=EXTRA[src];
       if(!r||!r.ok){E.ok=false;E.lista=[];E.txt=r&&r.sinUrl?'sin conector (se cuenta 0)':(r&&r.error)||'sin respuesta';if(datos)pintarKelli();return}
       E.ok=true;E.lista=r.contratos||[];E.lista.forEach(function(c){c.asesor=normAses(c.asesor)});E.txt=E.lista.length+' registros leídos';
-      var falta=E.lista.length&&E.lista.every(function(x){return x.asesor===undefined});if(falta)E.txt+=' — ⚠️ la hoja o el conector no traen la columna «Asesor»';
+      var falta=E.lista.length&&E.lista.every(function(x){return x.asesor===undefined});if(falta)E.txt+=' — la hoja o el conector no traen la columna «Asesor»';
       if(datos){pintarKelli();pintarRes();if(tabA)pintarAnual()}},src);
   }
 
@@ -339,7 +340,7 @@ function normAses(a){return String(a==null?'':a).normalize('NFD').replace(/[\u03
     var cuerpo=calc.lista.map(function(o,i){T.CRC+=o.CRC;T.C+=o.C;T.FRC+=o.FRC;T.F+=o.F;T.tot+=o.tot;
       var ob=cfg['obs:'+mk+':'+o.n]||'';
       return '<tr data-as="'+esc(o.n)+'"><td style="text-align:center">'+(i+1)+'</td><td><b>'+esc(o.n)+'</b></td><td class="c1" style="text-align:center">'+o.CRC+'</td><td class="c2" style="text-align:center">'+o.C+'</td><td class="c3" style="text-align:center">'+o.FRC+'</td><td class="c4" style="text-align:center">'+o.F+'</td><td class="num"><b>'+pesos(o.tot)+'</b></td><td class="obs"><textarea class="ot" placeholder="Observaciones">'+esc(ob)+'</textarea><div class="obsp">'+esc(ob)+'</div>'+(o.auto.length?'<div class="auto">'+o.auto.map(esc).join('<br>')+'</div>':'')+'</td></tr>'}).join('');
-    var pend=calc.pend.length?'<tr><td></td><td colspan="7" style="color:#dc2626"><b>⚠️ '+calc.pend.length+' caso(s) especial(es) sin decidir: no incluidos en el total.</b></td></tr>':'';
+    var pend=calc.pend.length?'<tr><td></td><td colspan="7" style="color:#dc2626"><b>'+calc.pend.length+' caso(s) especial(es) sin decidir: no incluidos en el total.</b></td></tr>':'';
     $('informe').innerHTML='<div class="tt">INFORME DE BONIFICACIONES – '+MESES[mes-1]+' '+anio+'</div>'+
       '<div class="st">PROTECT MOTOS &nbsp;–&nbsp; Pago de Comisiones a Asesores</div>'+
       '<div class="ln"><span><b>Mes:</b> '+MESES[mes-1]+' / '+anio+'</span><span>Elaborado por: <u>&nbsp;&nbsp;'+esc($('elab').value)+'&nbsp;&nbsp;</u></span></div>'+
@@ -391,10 +392,10 @@ function normAses(a){return String(a==null?'':a).normalize('NFD').replace(/[\u03
     var v=+c.querySelector('.cv').value||0;if(d==='pagar'&&v<=0){window.alert('Escriba el valor que se va a pagar.');return}
     var obj={d:d,valor:d==='pagar'?v:0,nota:c.querySelector('.cn').value.trim(),mes:mk(),cliente:f.x.cliente};
     e.target.disabled=true;e.target.textContent='Guardando...';
-    guardar('caso:'+f.k,JSON.stringify(obj),function(){cfg['caso:'+f.k]=JSON.stringify(obj);est('✓ Decisión guardada para '+f.x.cliente+'.','ok');pintar()});
+    guardar('caso:'+f.k,JSON.stringify(obj),function(){cfg['caso:'+f.k]=JSON.stringify(obj);est('Decisión guardada para '+f.x.cliente+'.','ok');pintar()});
     setTimeout(function(){e.target.disabled=false;e.target.textContent='Guardar decisión'},4000)});
   $('informe').addEventListener('change',function(e){if(!e.target.classList.contains('ot'))return;var as=e.target.closest('tr').dataset.as,k='obs:'+mk()+':'+as,v=e.target.value.trim();
-    guardar(k,v,function(){cfg[k]=v;est('✓ Observación guardada.','ok');var p=e.target.parentNode.querySelector('.obsp');if(p)p.textContent=v})});
+    guardar(k,v,function(){cfg[k]=v;est('Observación guardada.','ok');var p=e.target.parentNode.querySelector('.obsp');if(p)p.textContent=v})});
   // ---------- INFORME DE KELLI (Protect normal + Clientes OMS) ----------
   var T_OMS={CONTADO:40000,FINANCIADO:15000};
   function ventasKelli(){
@@ -450,7 +451,7 @@ function normAses(a){return String(a==null?'':a).normalize('NFD').replace(/[\u03
     fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:tok,action:'guardarReporte',tipo:tipo,mes:mes,anio:anio,total:total,por:lsg('pm_cobros_registrado_por')||$('elab').value,datos:datosTxt})})
       .then(function(r){return r.json()}).then(function(r){btn.disabled=false;btn.textContent=t0;
         if(!r.ok){var m=r.error||'sin respuesta';if(/desconocida|no disponible/i.test(m))m='El conector del CRM es una versión vieja: pegue el código nuevo y publique «Nueva versión» (LEEME_COMISIONES.md).';est('No se pudo guardar: '+m,'er');window.alert('No se pudo guardar:\n\n'+m);return}
-        est('✓ Informe guardado en el histórico (versión '+r.version+').','ok');listarHist()})
+        est('Informe guardado en el histórico (versión '+r.version+').','ok');listarHist()})
       .catch(function(e){btn.disabled=false;btn.textContent=t0;est('No se pudo guardar: '+e.message,'er');window.alert('No se pudo guardar:\n\n'+e.message)});
   }
   $('bGuarda').addEventListener('click',function(){guardarInforme('general',this)});
@@ -546,7 +547,7 @@ function normAses(a){return String(a==null?'':a).normalize('NFD').replace(/[\u03
     var f=detG().filter(function(r,i){return i===0||r[0]===a});bajar('comisiones_'+mk()+'_'+a.toLowerCase().replace(/\W+/g,'_')+'_detalle.csv',csv(f))});
 
   // ---------- RESUMEN (tarjetas + gráfica, igual a la del Inicio) ----------
-  var rV='mes',rY=String(new Date().getFullYear()),rM='0',rA='',RCOL=['#9fb8e8','#fdc33e','#38bdf8','#5b78c7','#e08a00','#d5dcf0'];
+  var rV='mes',rY=String(new Date().getFullYear()),rM='0',rA='',RCOL=['#9fb8e8','#fdc33e','#4a8fe0','#5b78c7','#c58a1b','#d5dcf0'];
   function dr0(cl,k){var d=decision(k);return !!(d&&d.d!=='regla')}
   function pesosC(n){return pesos(n)+' COP'}
   function kC(n){return pesos(n)+'<em style="font-size:.5em;font-style:normal;opacity:.85"> COP</em>'}
@@ -571,7 +572,7 @@ function normAses(a){return String(a==null?'':a).normalize('NFD').replace(/[\u03
     $('rTipo').innerHTML=lt.map(function(x,i){return '<div class="rfa'+(i===0?' top':'')+'" style="grid-template-columns:20px minmax(110px,160px) 1fr 130px"><span class="n">'+(i+1)+'</span><span>'+NOMT[x[0]]+'</span><div class="p"><div class="br" style="width:'+Math.round(x[1].v/mx*100)+'%"></div></div><b title="'+x[1].n+' póliza(s)">'+pesosC(x[1].v)+'</b></div>'}).join('');
     var C=0,Fi=0,nC=0,nF=0;Fs.forEach(function(r){if(r.t==='CRC'||r.t==='C'||r.t==='OMSC'){C+=r.pay;nC++}else if(r.t==='FRC'||r.t==='F'||r.t==='OMSF'){Fi+=r.pay;nF++}});var tt=C+Fi||1;
     $('rCFS').textContent=(C+Fi)?'De cada $100 pagados en comisiones, cuánto viene de ventas de contado y cuánto de financiadas.':'Sin datos en el período.';
-    $('rCF').innerHTML=(C+Fi)?'<div class="rsb"><div style="width:'+(C/tt*100)+'%;background:#fdc33e;color:#13223f">'+Math.round(C/tt*100)+' %</div><div style="width:'+(Fi/tt*100)+'%;background:#5b78c7">'+Math.round(Fi/tt*100)+' %</div></div><div class="rley"><span><i style="background:#e08a00"></i><b>De contado</b> · '+pesosC(C)+' · '+nC+' póliza(s)</span><span><i style="background:#5b78c7"></i><b>Financiadas</b> · '+pesosC(Fi)+' · '+nF+' póliza(s)</span></div>':'';
+    $('rCF').innerHTML=(C+Fi)?'<div class="rsb"><div style="width:'+(C/tt*100)+'%;background:#fdc33e;color:#13223f">'+Math.round(C/tt*100)+' %</div><div style="width:'+(Fi/tt*100)+'%;background:#5b78c7">'+Math.round(Fi/tt*100)+' %</div></div><div class="rley"><span><i style="background:#c58a1b"></i><b>De contado</b> · '+pesosC(C)+' · '+nC+' póliza(s)</span><span><i style="background:#5b78c7"></i><b>Financiadas</b> · '+pesosC(Fi)+' · '+nF+' póliza(s)</span></div>':'';
     // ---- columnas de tiempo: mes a mes (todos los años = línea de tiempo continua) ----
     var MM=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],cols=[],keyOf;
     if(rM!=='0'&&rY==='todos'){var yy={};Fs.forEach(function(r){yy[r.y]=1});cols=Object.keys(yy).map(Number).sort().map(function(y){return {k:y,lab:String(y)}});keyOf=function(r){return r.y}}
@@ -579,7 +580,7 @@ function normAses(a){return String(a==null?'':a).normalize('NFD').replace(/[\u03
     else if(rM!=='0'){cols=[{k:+rM,lab:MESES[+rM-1]}];keyOf=function(r){return r.m}}
     else{for(var q=1;q<=12;q++)cols.push({k:q,lab:MM[q-1]});keyOf=function(r){return r.m}}
     var cortoC=function(v){v=Math.round(v||0);if(v>=1e6)return '$'+(v/1e6).toFixed(1).replace('.',',').replace(',0','')+' M';if(v>=1e3)return '$'+Math.round(v/1e3)+' mil';return '$'+v};
-    var tas={};Fs.forEach(function(r){tas[r.as]=(tas[r.as]||0)+r.pay});var ord=Object.keys(tas).sort(function(a,b){return tas[b]-tas[a]}),top=ord.slice(0,8),hasO=ord.length>8,PAL=['#38bdf8','#fdc33e','#5b78c7','#9fb8e8','#e08a00','#d5dcf0','#1f9d55','#8b5cf6'],seg=top.concat(hasO?['OTROS']:[]);
+    var tas={};Fs.forEach(function(r){tas[r.as]=(tas[r.as]||0)+r.pay});var ord=Object.keys(tas).sort(function(a,b){return tas[b]-tas[a]}),top=ord.slice(0,8),hasO=ord.length>8,PAL=['#4a8fe0','#fdc33e','#5b78c7','#9fb8e8','#c58a1b','#d5dcf0','#1f9d55','#7d94d8'],seg=top.concat(hasO?['OTROS']:[]);
     var G=cols.map(function(c){var o={};Fs.forEach(function(r){if(keyOf(r)!==c.k)return;var k=top.indexOf(r.as)>=0?r.as:'OTROS';o[k]=(o[k]||0)+r.pay});return o});
     var totC=G.map(function(o){return Object.keys(o).reduce(function(a,k){return a+o[k]},0)});
     var W=920,H=330,pl=70,pr=16,pt=34,pb=cols.some(function(c){return c.sub})?52:36,iw=W-pl-pr,ih=H-pt-pb,n=Math.max(cols.length,1),slot=iw/n;
@@ -611,7 +612,7 @@ function normAses(a){return String(a==null?'':a).normalize('NFD').replace(/[\u03
     var Fs=recs.filter(function(r){return (rY==='todos'||r.y===+rY)&&(rM==='0'||r.m===+rM)&&(!rA||r.as===rA)});
     var F=rV==='anios'?recs.filter(function(r){return (rM==='0'||r.m===+rM)&&(!rA||r.as===rA)}):Fs;
     var T=F.reduce(function(a,r){return a+r.pay},0),per=(rV==='anios'||rY==='todos'?'todos los años':'año '+rY)+(rM!=='0'?' · '+MESES[+rM-1]:'');
-    var av=(R.pend?' ⚠️ '+R.pend+' caso(s) especial(es) sin decidir no están sumados (decídalos en «Informe general»).':'')+(EXTRA.oms.ok?'':' Las pólizas OMS de Kelli no se han cargado.');
+    var av=(R.pend?' '+R.pend+' caso(s) especial(es) sin decidir no están sumados (decídalos en «Informe general»).':'')+(EXTRA.oms.ok?'':' Las pólizas OMS de Kelli no se han cargado.');
     $('rTot').textContent=(T?'Comisiones pagadas · '+per+(rA?' · '+(rA==='KELLI'?'Kelli':rA):''):'No hay comisiones en el período elegido.')+av;
     var mm={},aa={};F.forEach(function(r){var k=r.y*12+r.m;mm[k]=(mm[k]||0)+r.pay;aa[r.as]=(aa[r.as]||0)+r.pay});
     var ks=Object.keys(mm).filter(function(k){return mm[k]>0}).sort(function(a,b){return mm[b]-mm[a]}),top=Object.keys(aa).sort(function(a,b){return aa[b]-aa[a]})[0],kb=ks[0]?+ks[0]:0,ky=kb?Math.floor((kb-1)/12):0,km=kb-ky*12;
