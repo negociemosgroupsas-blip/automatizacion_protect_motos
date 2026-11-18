@@ -693,22 +693,31 @@
 
   document.getElementById('subInicio').textContent='Mes en curso: '+MES_TXT+' · usa el buscador de arriba para consultar un cliente';
   var asr=document.createElement('div');asr.className='card asr';asr.innerHTML='<h3>Ventas por asesor</h3><p class="tot" id="asrTot">Se muestra al conectar Cobros (contratos por asesor).</p><div class="ed-per" id="asFil"><label>Año <select id="asAnio"></select></label><label>Mes <select id="asMes"></select></label></div><div id="asrBarras"></div>';tarjetas.appendChild(asr);
-  var asy=document.createElement('div');asy.className='card asy';asy.innerHTML='<h3>Ventas por asesor, año por año</h3><p class="tot" id="asyTot">Se muestra al conectar Cobros (contratos por asesor).</p><div class="ed-per" id="asyFil"><label>Años <select id="asyAnios"><option value="todos">Todos los años</option><option value="3">Últimos 3 años</option></select></label> <label>Contar <select id="asyQue"><option value="total">Total de contratos Protect</option><option value="rc">Solo ventas con RC</option><option value="ap">Solo ventas con AP</option></select></label></div><div class="asy-g" id="asyG"></div><div class="asy-l" id="asyL"></div>';tarjetas.appendChild(asy);
-  var asyRecs=null,asyOk=false,asyModo='todos',asyQue='total';
-  document.getElementById('asyQue').addEventListener('change',function(){asyQue=this.value;pintarAsesAnio(asyRecs,asyOk)});
-  document.getElementById('asyAnios').addEventListener('change',function(){asyModo=this.value;pintarAsesAnio(asyRecs,asyOk)});
+  var asy=document.createElement('div');asy.className='card asy';asy.innerHTML='<h3>Ventas por asesor, año por año</h3><p class="tot" id="asyTot">Se muestra al conectar Cobros (contratos por asesor).</p><div class="ed-per" id="asyFil"><label>Año <select id="asyAnios"></select></label> <label>Mes <select id="asyMes"></select></label> <label>Asesor <select id="asyAses"></select></label> <label>Contar <select id="asyQue"><option value="total">Total de contratos Protect</option><option value="rc">Solo ventas con RC</option><option value="ap">Solo ventas con AP</option></select></label></div><div class="asy-g" id="asyG"></div><div class="asy-l" id="asyL"></div>';tarjetas.appendChild(asy);
+  var asyRecs=null,asyOk=false,ASY={y:'',m:'',a:'',q:'total'};
+  [['asyAnios','y'],['asyMes','m'],['asyAses','a'],['asyQue','q']].forEach(function(x){document.getElementById(x[0]).addEventListener('change',function(){ASY[x[1]]=this.value;pintarAsesAnio(asyRecs,asyOk)})});
   function pintarAsesAnio(recs,ok){
     asyRecs=recs;asyOk=ok;var tot=document.getElementById('asyTot'),g=document.getElementById('asyG'),lg=document.getElementById('asyL');
     if(!ok||!recs||!recs.length){tot.textContent='Para ver las ventas por asesor, configura el conector del CRM en «Conexiones».';g.innerHTML='';lg.innerHTML='';return}
-    var COL=['#9fb8e8','#fdc33e','#38bdf8','#5b78c7','#e08a00','#d5dcf0'],ys={},v={};
-    recs.forEach(function(r){if(asyQue==='rc'&&!r.rc)return;if(asyQue==='ap'&&!r.ap)return;var y=Math.floor((r.k-1)/12);if(!y)return;ys[y]=1;var o=v[r.a]=v[r.a]||{t:0,y:{}};o.t++;o.y[y]=(o.y[y]||0)+1});
-    var yl=Object.keys(ys).map(Number).sort();if(asyModo==='3')yl=yl.slice(-3);
-    var L=Object.keys(v).map(function(a){var t=0;yl.forEach(function(y){t+=v[a].y[y]||0});return{a:a,t:t,y:v[a].y}}).filter(function(x){return x.t>0}).sort(function(a,b){return b.t-a.t}).slice(0,14);
-    var mx=1;L.forEach(function(x){yl.forEach(function(y){mx=Math.max(mx,x.y[y]||0)})});
-    var T=0;L.forEach(function(x){T+=x.t});
-    var QN={total:'contratos de Protect (todos)',rc:'ventas con RC',ap:'ventas con AP'};tot.textContent=QN[asyQue].charAt(0).toUpperCase()+QN[asyQue].slice(1)+' por asesor en cada año · '+T+' en total (los '+L.length+' asesores con más).';
-    g.innerHTML=L.map(function(x){return '<div class="asy-a" title="'+x.a+': '+x.t+'"><div class="asy-b">'+yl.map(function(y,i){var n=x.y[y]||0,h=n?Math.max(4,Math.round(n/mx*170)):0;return '<div class="asy-c" title="'+x.a+' · '+y+': '+n+'"><b>'+(n||'')+'</b><i style="height:'+h+'px;background:'+COL[i%COL.length]+'"></i></div>'}).join('')+'</div><div class="asy-n">'+x.a+'<small>'+x.t+' en total</small></div></div>'}).join('');
-    lg.innerHTML=yl.map(function(y,i){return '<span><i style="background:'+COL[i%COL.length]+'"></i>'+y+'</span>'}).join('');
+    var COL=['#9fb8e8','#fdc33e','#38bdf8','#5b78c7','#e08a00','#d5dcf0'],MESN=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],MESL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    var base=recs.filter(function(r){return !(ASY.q==='rc'&&!r.rc)&&!(ASY.q==='ap'&&!r.ap)}).map(function(r){return{y:Math.floor((r.k-1)/12),m:((r.k-1)%12)+1,a:r.a}}).filter(function(r){return r.y>0});
+    var ys={},as={};base.forEach(function(r){ys[r.y]=1;as[r.a]=1});var yl=Object.keys(ys).map(Number).sort(),al=Object.keys(as).sort();
+    var sy=document.getElementById('asyAnios'),sm=document.getElementById('asyMes'),sa=document.getElementById('asyAses');
+    sy.innerHTML='<option value="">Todos los años</option>'+yl.slice().reverse().map(function(y){return '<option>'+y+'</option>'}).join('');if(!ys[ASY.y])ASY.y='';sy.value=ASY.y;
+    sm.innerHTML='<option value="">Todos los meses</option>'+MESL.map(function(n,i){return '<option value="'+(i+1)+'">'+n.charAt(0).toUpperCase()+n.slice(1)+'</option>'}).join('');sm.value=ASY.m;
+    sa.innerHTML='<option value="">Todos los asesores</option>'+al.map(function(n){return '<option>'+n+'</option>'}).join('');if(!as[ASY.a])ASY.a='';sa.value=ASY.a;
+    document.getElementById('asyQue').value=ASY.q;
+    var F=base.filter(function(r){return(!ASY.y||r.y===+ASY.y)&&(!ASY.m||r.m===+ASY.m)&&(!ASY.a||r.a===ASY.a)});
+    var series=ASY.y?[+ASY.y]:yl,porMes=!!ASY.a,grupos=[],i;
+    if(porMes){for(i=1;i<=12;i++){if(!ASY.m||+ASY.m===i)grupos.push({k:i,n:MESN[i-1],y:{},t:0})}F.forEach(function(r){var G=grupos.filter(function(x){return x.k===r.m})[0];if(G){G.y[r.y]=(G.y[r.y]||0)+1;G.t++}})}
+    else{var v={};F.forEach(function(r){var o=v[r.a]=v[r.a]||{k:r.a,n:r.a,y:{},t:0};o.y[r.y]=(o.y[r.y]||0)+1;o.t++});grupos=Object.keys(v).map(function(k){return v[k]}).sort(function(a,b){return b.t-a.t}).slice(0,14)}
+    var mx=1,T=0;grupos.forEach(function(x){T+=x.t;series.forEach(function(y){mx=Math.max(mx,x.y[y]||0)})});
+    var QN={total:'contratos de Protect',rc:'ventas con RC',ap:'ventas con AP'}[ASY.q];
+    var per=(ASY.y?ASY.y:'todos los años')+(ASY.m?' · '+MESL[ASY.m-1]:'')+(ASY.a?' · '+ASY.a:'');
+    tot.textContent=QN.charAt(0).toUpperCase()+QN.slice(1)+' · '+per+' · '+T+' en total'+(porMes?' (mes por mes)':' (los '+grupos.length+' asesores con más)')+'.';
+    if(!T){g.innerHTML='<p class="tot">No hay ventas con ese filtro.</p>';lg.innerHTML='';return}
+    g.innerHTML=grupos.map(function(x){return '<div class="asy-a" title="'+x.n+': '+x.t+'"><div class="asy-b">'+series.map(function(y,i){var n=x.y[y]||0,h=n?Math.max(4,Math.round(n/mx*170)):0;return '<div class="asy-c" title="'+x.n+' · '+y+': '+n+'"><b>'+(n||'')+'</b><i style="height:'+h+'px;background:'+COL[yl.indexOf(y)%COL.length]+'"></i></div>'}).join('')+'</div><div class="asy-n">'+x.n+'<small>'+x.t+' en total</small></div></div>'}).join('');
+    lg.innerHTML=series.map(function(y){return '<span><i style="background:'+COL[yl.indexOf(y)%COL.length]+'"></i>'+y+'</span>'}).join('');
   }
   window.pintarAsesAnio=pintarAsesAnio;
   var meta=document.createElement('div');meta.className='card meta';meta.id='metaCard';meta.innerHTML='<h3>Meta de contratos · '+MES_TXT+'</h3><p class="tot" id="metaTot">Se muestra al conectar Cobros.</p><div id="metaCuerpo"></div>';var pg=tarjetas.parentNode;pg.insertBefore(meta,pg.querySelector('.sec-t'));
