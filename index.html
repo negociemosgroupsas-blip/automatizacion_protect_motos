@@ -605,7 +605,7 @@
     <section class="card gxc" id="gxWrap" data-sec="gerencia" hidden><h3>📋 Resumen gerencial</h3><p class="tot" id="gxSub"></p><div class="gx-grid" id="gxGrid"></div><h4 class="gx-h">⚠️ Atención requerida</h4><div class="gx-at" id="gxAt"></div></section>
     <section class="card fnx" id="fnWrap" data-sec="gerencia" hidden><h3>🏁 Contratos terminados: finalizados vs cancelados</h3><p class="tot" id="fnSub"></p><div class="ed-per"><label>Año en que terminó <select id="fnAnio"></select></label> <label>Tipo de venta <select id="fnForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="fnAses"></select></label></div><div class="fn-w"><div class="fn-d" id="fnDon"></div><div class="fn-y" id="fnCols"></div></div><div class="fn-l"><span><i style="background:#5b78c7"></i>Finalizados (siempre pagó)</span><span><i style="background:#d64545"></i>Cancelados (dejó de pagar)</span><span>% sobre cada columna = finalizados ÷ terminados · columnas por año en que terminó el contrato</span></div></section>
     <section class="card rpd" id="rpdWrap" hidden><h3>📝 Informe diario para Don Camilo</h3><p class="tot" id="rpdSub">Se arma solo con los datos del sistema. Revise, corrija lo que quiera y copie.</p>
-      <div class="ed-per"><label>Fecha de corte <input type="date" id="rpdFecha"></label> <label>Saldo en banco <input type="text" id="rpdSaldo" placeholder="escríbalo a mano" inputmode="numeric"></label> <button type="button" class="btn-i" id="rpdAct">🔄 Rehacer informe</button> <button type="button" class="btn-i dest" id="rpdCopia">📋 Copiar informe</button> <span id="rpdEst" class="tot" style="margin:0"></span></div>
+      <div class="ed-per"><label>Fecha de corte <input type="date" id="rpdFecha"></label> <label>Dinero en banco (saldo) <input type="text" id="rpdSaldo" placeholder="escríbalo a mano" inputmode="numeric"></label> <button type="button" class="btn-i" id="rpdAct">🔄 Rehacer informe</button> <button type="button" class="btn-i dest" id="rpdCopia">📋 Copiar informe</button> <span id="rpdEst" class="tot" style="margin:0"></span></div>
       <textarea id="rpdTxt" rows="18" spellcheck="false"></textarea></section>
     <section class="card bkx" id="bkWrap" data-sec="gerencia" hidden><h3>🏦 Dinero que entra al banco por consignaciones</h3><p class="tot" id="bkSub"></p><div class="ed-per"><label>Año <select id="bkAnio"></select></label> <label>Mes <select id="bkMes"><option value="">Todos los meses</option><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></label></div><div class="bk-k" id="bkK"></div><div class="bk-g" id="bkG"></div><p class="tot" style="margin:8px 0 0">Suma de todo lo que entró a la hoja del banco (incluye consignaciones sin comprobante). No cuenta intereses, valores menores a $1.000 ni las descripciones que usted excluyó en «Verificación bancaria».</p></section>
     <section class="card rtx" id="rtWrap" data-sec="gerencia" hidden><h3>🤝 Retención de clientes</h3><p class="tot" id="rtSub"></p><div class="ed-per"><label>Tipo de venta <select id="rtForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="rtAses"></select></label></div><div class="rt-k" id="rtK"></div><div class="rt-g" id="rtG"></div><div class="fn-l"><span><i style="background:#38bdf8"></i>Clientes activos al inicio del mes</span><span><i style="background:#d64545"></i>Cancelaron en el mes</span><span>% = retención del mes · 100 % menos los que cancelaron</span></div></section>
@@ -1554,20 +1554,19 @@
     var K=document.getElementById('rpdFecha').value;if(!K)return;var d=rpDatos(K),MESL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
     var saldoEl=document.getElementById('rpdSaldo');
     var sn=Number(String(saldoEl.value).replace(/\D/g,''))||0,fa=K.split('-').reverse().join('/'),pend='[falta]';
-    var T=['Buenas tardes, Don Camilo.','Le comparto el cierre de Protect Motos con corte al '+fa+':','',
-      '* Saldo en cuenta bancaria Protect Motos: '+(saldoEl.value?rpCop(sn):'[escriba el saldo]'),
-      '* Ingresos a la cuenta bancaria en '+MESL[d.mes-1]+' (todas las consignaciones): '+(d.banco===null?pend:rpCop(d.banco)),
-      '* Cuentas por cobrar a Dugo Motos: '+(d.cxc===null?pend:(d.cxc?rpCop(d.cxc):'0')),
+    var MS=MESL[d.mes-1].charAt(0).toUpperCase()+MESL[d.mes-1].slice(1);
+    var T=['Buenas tardes, Don Camilo.','Le comparto el cierre de Protect Motos con corte al '+fa+' (mes en curso: '+MESL[d.mes-1]+'):','',
       '* Protect Motos vendidos: '+(d.ok?d.n:pend),
-      'Financiados: '+(d.ok?d.nf:pend)+' — recibido: '+(d.ok?rpCop(d.vf):pend),
-      'De contado: '+(d.ok?d.nc:pend)+' — recibido: '+(d.ok?rpCop(d.vc):pend),
-      '* Total de dinero ingresado a la cuenta bancaria por concepto de cuentas por cobrar de Dugo Motos – '+MESL[d.mes-1].charAt(0).toUpperCase()+MESL[d.mes-1].slice(1),
-      '* '+(d.dugo===null?pend:rpCop(d.dugo)),
-      '* SOAT: '+(d.soat===null?pend:d.soat)+'  Ganancia '+(d.soat===null?pend:rpCop(d.gan)),
-      '* VENTAS SURA: '+(d.oms===null?pend:d.oms),'',
+      '   - De contado: '+(d.ok?d.nc:pend)+' — recibido: '+(d.ok?rpCop(d.vc):pend),
+      '   - Financiados: '+(d.ok?d.nf:pend)+' — recibido: '+(d.ok?rpCop(d.vf):pend),
+      '* Valor cobrado a Dugo Motos – '+MS+': '+(d.dugo===null?pend:rpCop(d.dugo)),
+      '* SOAT vendidos: '+(d.soat===null?pend:d.soat)+' — Ganancia: '+(d.soat===null?pend:rpCop(d.gan)),
+      '* Pólizas OMS vendidas: '+(d.oms===null?pend:d.oms),
+      '* Dinero que entró al banco por consignaciones – '+MS+': '+(d.banco===null?pend:rpCop(d.banco)),
+      '* Dinero en banco (saldo del día): '+(saldoEl.value?rpCop(sn):'[escriba el saldo]'),'',
       'Nota: Los valores y totales pueden presentar variaciones, debido a que algunos clientes desisten de adquirir Protect Motos directamente en caja.','Feliz noche.'];
     document.getElementById('rpdTxt').value=T.join('\n');
-    var falt=[];if(!d.ok)falt.push('Protect');if(d.cxc===null||d.dugo===null)falt.push('Valor cobrado a Dugo Motos');if(d.soat===null)falt.push('SOAT');if(d.oms===null)falt.push('Clientes OMS');if(d.banco===null)falt.push('Verificación bancaria (hoja del banco)');if(!saldoEl.value)falt.push('el saldo (escríbalo en la casilla)');
+    var falt=[];if(!d.ok)falt.push('Protect');if(d.dugo===null)falt.push('Valor cobrado a Dugo Motos');if(d.soat===null)falt.push('SOAT');if(d.oms===null)falt.push('Clientes OMS');if(d.banco===null)falt.push('Verificación bancaria (hoja del banco)');if(!saldoEl.value)falt.push('el saldo (escríbalo en la casilla)');
     document.getElementById('rpdEst').textContent=falt.length?'⚠️ Faltan datos de: '+falt.join(', ')+'. Donde dice [falta] complételo a mano.':'✔ Datos completos de '+MESL[d.mes-1]+' hasta el '+fa+'.';
   }
   (function(){var f=document.getElementById('rpdFecha'),h=new Date();f.value=rtIso(h);
