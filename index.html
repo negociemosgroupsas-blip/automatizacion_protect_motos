@@ -2107,7 +2107,7 @@
     for(var i=1;i<filas.length;i++){var v=filas[i][col],m=String(v==null?'':v).match(/(?:^|\D)(20\d{2})(?:\D|$)/);if(m){if(m[1]===y)out.push(filas[i])}else if(titulos)out.push(filas[i])}
     return out;
   }
-  var YC_INI=[0,0,0,0,0,0,null],TIT_INI=[0,0,0,0,0,1,0];
+  var YC_INI=[0,0,0,0,0,0,0,null],TIT_INI=[0,0,0,0,0,1,0,0];
   function llenaAnios(){
     var sel=$('gRepAnio');if(!sel)return;var ys={};ys[new Date().getFullYear()]=1;
     var R=window.PM_REP;if(R&&R.cf)Object.keys(R.cf).forEach(function(k){ys[Math.floor((+k-1)/12)]=1});
@@ -2123,6 +2123,7 @@
     ['Estado de los clientes','Cuántos contratos hay en cada estado (activo, finalizado, cancelado, anulado), según el año y mes de la firma.','El estado sale de la columna AR de la hoja Protect. Los anulados no cuentan como vendidos. «Sin año» o «sin mes» son filas a las que les falta esa fecha en la hoja.'],
     ['SOAT por mes','Cuántos SOAT se vendieron cada mes y cuánto se ganó.','Cada SOAT cuenta en el mes de su fecha de venta (hoja Soat). La ganancia es la suma de la columna Ganancia.'],
     ['Clientes OMS','Cuántas pólizas OMS se vendieron cada mes y a qué motos.','Cada cliente de la hoja OMS es una póliza y cuenta en el mes de su fecha de inicio. La segunda tabla cuenta las pólizas por moto en cada año.'],
+    ['Ranking anual de asesores','Cuántos contratos vendió cada asesor en cada año: total de Protect Motos, con RC y con AP.','Una fila por asesor y año. «Contratos Protect» es el total de contratos firmados (sin anulados). «Con RC» y «Con AP» son los que llevan esa cobertura; un contrato con las dos cuenta en ambas. Los porcentajes son sobre sus contratos de ese año. Sale de la columna B (asesor) de la hoja Protect.'],
     ['Resumen ejecutivo','Los números principales del negocio a la fecha del reporte.','Son los mismos números de las tarjetas de arriba del Inicio. El mes en curso aún no termina.']
   ];
   function conCabecera(filas,d){
@@ -2150,6 +2151,9 @@
     ['🏍️ Clientes OMS: pólizas por mes y por moto',function(){if(!OMS||!OMS.contratos.length)return null;var m={},v={};OMS.contratos.forEach(function(c){var d=(c.fechaFirmaISO||'').split('-');if(d.length<3)return;var k=d[0]+'|'+(+d[1]);m[k]=(m[k]||0)+1;var vk=d[0]+'|'+String(c.placa||'(sin dato)').toUpperCase().trim();v[vk]=(v[vk]||0)+1});
       var f=[['PÓLIZAS VENDIDAS POR MES'],['Año','Mes','Pólizas']];Object.keys(m).sort(function(a,b){var x=a.split('|'),y=b.split('|');return (+x[0]-+y[0])||(+x[1]-+y[1])}).forEach(function(k){var p=k.split('|');f.push([p[0],MESN[p[1]-1],m[k]])});
       f.push([]);f.push(['PÓLIZAS POR MOTO']);f.push(['Año','Moto','Pólizas']);Object.keys(v).sort(function(a,b){var x=a.split('|'),y=b.split('|');return (+x[0]-+y[0])||(v[b]-v[a])}).forEach(function(k){var p=k.split('|');f.push([p[0],p[1],v[k]])});return ['clientes_OMS',f]}],
+    ['🏅 Ranking anual de asesores (Protect, RC y AP)',function(){var R=window.PM_REP;if(!R||!R.rcs)return null;var c={};R.rcs.forEach(function(x){var y=Math.floor((x.k-1)/12);if(!y)return;var k=y+'|'+x.a,o=c[k]=c[k]||{p:0,rc:0,ap:0};o.p++;if(x.rc)o.rc++;if(x.ap)o.ap++});
+      var pc=function(a,b){return b?Math.round(a/b*100):0},f=[['Año','Asesor','Contratos Protect','Con RC','Con AP','% con RC','% con AP']];
+      Object.keys(c).sort(function(a,b){var x=a.split('|'),y=b.split('|');return (+y[0]-+x[0])||(c[b].p-c[a].p)}).forEach(function(k){var p=k.split('|'),o=c[k];f.push([p[0],p[1],o.p,o.rc,o.ap,pc(o.rc,o.p),pc(o.ap,o.p)])});return ['ranking_anual_asesores',f]}],
     ['📋 Resumen ejecutivo (tarjetas de arriba)',function(){var K=window.PMK||{};if(K.contratos==null&&K.activos==null)return null;var h=new Date(),meta=(window.PMG&&PMG.getMeta)?PMG.getMeta():105;
       return ['resumen_ejecutivo',[['Indicador','Valor'],['Fecha del reporte',h.toLocaleDateString('es-CO')],['Contratos del mes',K.contratos==null?'':K.contratos],['Meta de contratos',meta],['Contratos del mes con RC',K.rc==null?'':K.rc],['SOAT vendidos del mes',K.soatMes==null?'':K.soatMes],['Ganancia SOAT del mes',K.soatGan==null?'':Math.round(K.soatGan)],['Clientes activos',K.activos==null?'':K.activos],['Clientes finalizados',K.finalizados==null?'':K.finalizados],['Clientes cancelados',K.cancelados==null?'':K.cancelados],['Faltan por consolidar',K.faltaConc==null?'':K.faltaConc],['Clientes OMS',K.omsTotal==null?'':K.omsTotal]]]}]
   ];
@@ -2209,6 +2213,9 @@
     if(R.rcs&&R.rcs.length){var ca={},cm={};R.rcs.forEach(function(r){var y=Math.floor((r.k-1)/12);if(yok(y)){ca[r.a]=(ca[r.a]||0)+1;if(r.k===yC*12+mC)cm[r.a]=(cm[r.a]||0)+1}});
       var ta=Object.keys(ca).sort(function(a,b){return ca[b]-ca[a]}),tm=Object.keys(cm).sort(function(a,b){return cm[b]-cm[a]});
       if(ta.length)B.push(['Ventas por asesor','Los asesores con más contratos '+per+' son '+ta.slice(0,3).map(function(a){return a+' ('+ca[a]+')'}).join(', ')+'. En total vendieron '+ta.length+' asesores.'+(esAct&&tm.length?' En lo que va de '+mn(mC)+' lidera '+tm[0]+' con '+cm[tm[0]]+'.':'')]);
+      var rk={};R.rcs.forEach(function(r){if(!yok(Math.floor((r.k-1)/12)))return;var o=rk[r.a]=rk[r.a]||{p:0,rc:0,ap:0};o.p++;if(r.rc)o.rc++;if(r.ap)o.ap++});
+      var rl=Object.keys(rk).sort(function(a,b){return rk[b].p-rk[a].p});
+      if(rl.length)B.push(['Ranking de asesores: Protect, RC y AP','Contratos '+per+' por asesor (total de Protect Motos, con RC y con AP): '+rl.slice(0,8).map(function(a){return a+' '+rk[a].p+' ('+rk[a].rc+' con RC, '+rk[a].ap+' con AP)'}).join('; ')+(rl.length>8?'; y '+(rl.length-8)+' asesores más':'')+'.']);
       var tg=0,rc=0,ap=0,ambos=0;R.rcs.forEach(function(r){if(!yok(Math.floor((r.k-1)/12)))return;tg++;if(r.rc)rc++;if(r.ap)ap++;if(r.rc&&r.ap)ambos++});
       if(tg)B.push(['Seguros que llevan los contratos','Todos los contratos llevan Protect Motos. '+per.charAt(0).toUpperCase()+per.slice(1)+', de '+tg+' contratos, '+rc+' llevan RC ('+pc(rc,tg)+' %), '+ap+' llevan AP ('+pc(ap,tg)+' %) y '+ambos+' llevan ambos. '+(tg-rc-ap+ambos)+' llevan solo Protect Motos.'])}
     // 5) clientes
@@ -2294,6 +2301,10 @@
       var top=Object.keys(ca).sort(function(a,b){return ca[b]-ca[a]}).slice(0,15);
       if(top.length){s=lamina('¿Quién vende más?','Contratos firmados por cada asesor '+(HIST?'en todos los años (histórico)':'en '+yA)+' (los 15 primeros)');
         s.addChart(P.charts.BAR,[{name:'Contratos',labels:top.slice().reverse(),values:top.slice().reverse().map(function(a){return ca[a]})}],Object.assign(okChart(),{x:0.5,y:1.4,w:12.3,h:5.6,barDir:'bar',showLegend:false,chartColors:[NAVY],barGapWidthPct:40}))}
+      var rk2={};R.rcs.forEach(function(r){if(!HIST&&Math.floor((r.k-1)/12)!==yA)return;var o=rk2[r.a]=rk2[r.a]||{p:0,rc:0,ap:0};o.p++;if(r.rc)o.rc++;if(r.ap)o.ap++});
+      var rtop=Object.keys(rk2).sort(function(a,b){return rk2[b].p-rk2[a].p}).slice(0,12);
+      if(rtop.length){s=lamina('Ranking de asesores: Protect, RC y AP','Contratos '+(HIST?'en todos los años (histórico)':'en '+yA)+' por asesor · Protect Motos, con RC y con AP (los 12 primeros)');
+        s.addChart(P.charts.BAR,[{name:'Contratos Protect',labels:rtop,values:rtop.map(function(a){return rk2[a].p})},{name:'Con RC',labels:rtop,values:rtop.map(function(a){return rk2[a].rc})},{name:'Con AP',labels:rtop,values:rtop.map(function(a){return rk2[a].ap})}],Object.assign(okChart(),{x:0.5,y:1.4,w:12.3,h:5.6,barDir:'col',barGrouping:'clustered',chartColors:['38BDF8','FDC33E','5B78C7'],barGapWidthPct:50}))}
       // 6) seguros (año actual)
       var sg={solo:0,rc:0,ap:0,ambos:0};R.rcs.forEach(function(r){if(!HIST&&Math.floor((r.k-1)/12)!==yA)return;if(r.rc&&r.ap)sg.ambos++;else if(r.rc)sg.rc++;else if(r.ap)sg.ap++;else sg.solo++});
       var tg=sg.solo+sg.rc+sg.ap+sg.ambos;
