@@ -32,6 +32,7 @@
   }
   function setSt(t,k){ var e=$('cn_st'); if(e){ e.textContent=t; e.className='cn-st '+(k||''); } }
 
+  function planTxt(){ var e=$('cn_plan'), l=e ? lineasCob('cn_plan') : PMCotDoc.planSalud(); return l.length ? l.join(' · ') : 'consulta a tu asesor sus beneficios'; }
   function aseguradora(){ var a=$('cn_ase').value; return a==='Otra' ? ($('cn_otra').value.trim()||'Otra') : a; }
   function lineasCob(id){ return $(id).value.split('\n').map(function(t){return t.trim();}).filter(Boolean); }
   function cargarCob(){
@@ -67,7 +68,7 @@
     return '¡Hola, '+q.nombre+'! 😊\nTe escribimos de Protect Motos.\n\n'+
       'Te compartimos la cotización de la garantía para tu moto'+(q.moto?' '+q.moto:'')+(q.placa?' de placa '+q.placa:'')+(q.aseguradora!=='Protect Motos'?' con '+q.aseguradora:'')+'.\n\n'+
       '💛 *Opción 1 · Hurto o pérdida total'+(q.propia?' (cubre el 80 %)':'')+'*\n• De contado: '+cop(q.op1.contado)+'\n• Financiado a '+q.plazo+' meses: '+lineaFin(q.op1,q.plazo)+'\n\n'+
-      '💙 *Opción 2 · Hurto / pérdida total + responsabilidad civil + asistencias*\n• De contado: '+cop(q.op2.contado)+'\n• Financiado a '+q.plazo+' meses: '+lineaFin(q.op2,q.plazo)+'\n🎁 *¡De regalo!* Plan de salud por llevar la Opción 2\n\n'+
+      '💙 *Opción 2 · Hurto / pérdida total + responsabilidad civil + asistencias*\n• De contado: '+cop(q.op2.contado)+'\n• Financiado a '+q.plazo+' meses: '+lineaFin(q.op2,q.plazo)+'\n🎁 *¡De regalo!* Plan de salud por llevar la Opción 2: '+planTxt()+'\n\n'+
       'Te adjuntamos la cotización con todas las coberturas. ¿Te gustaría que avancemos? Respóndenos y lo dejamos listo 💙';
   }
   function resumenOp(o, plz){ return 'contado <b>'+cop(o.contado)+'</b> · '+plz+' cuotas'+(o.primera!==o.resto?' (1ª de <b>'+cop(o.primera)+'</b>, luego <b>'+cop(o.resto)+'</b>)':' de <b>'+cop(o.cuota)+'</b>')+' · total <b>'+cop(o.total)+'</b>'; }
@@ -150,7 +151,7 @@
       '<div class="cn-cuadro" id="cn_res">Escribe el valor de la moto (o elige una referencia con precio especial) para calcular.</div>'+
       '<details style="margin:6px 0 10px"><summary style="cursor:pointer;font-weight:700">Coberturas que salen en el PDF (puedes editarlas)</summary>'+
       '<div class="cn-g" style="margin-top:8px"><label>Opción 1 · una cobertura por línea<textarea id="cn_cb1" rows="6"></textarea></label><label>Opción 2 · una cobertura por línea<textarea id="cn_cb2" rows="6"></textarea></label></div>'+
-      '<label style="display:flex;flex-direction:column;font-size:.85rem;gap:3px;margin-top:8px;font-weight:700">🎁 Plan de salud que se regala con la Opción 2 (un beneficio por línea; sale en la franja de regalo)<textarea id="cn_plan" rows="4" style="border:1px solid #cfd6e4;border-radius:8px;padding:8px 10px;font:inherit;font-size:.85rem;font-weight:400" placeholder="Ej.: Consulta médica general\nTelemedicina 24 horas"></textarea></label>'+
+      '<label style="display:flex;flex-direction:column;font-size:.85rem;gap:3px;margin-top:8px;font-weight:700">🎁 Plan de salud que se regala con la Opción 2 (un beneficio por línea; sale en la franja de regalo)<textarea id="cn_plan" rows="4" style="border:1px solid #cfd6e4;border-radius:8px;padding:8px 10px;font:inherit;font-size:.85rem;font-weight:400" placeholder="Un beneficio por línea"></textarea></label>'+
       '<p class="cn-nota">Se guardan para la próxima cotización con esta aseguradora. <a href="#" id="cn_rest">Restaurar las originales</a></p></details>'+
       '<label class="cn-lbl">Mensaje de WhatsApp (puedes editarlo)</label><textarea class="cn-msg" id="cn_txt"></textarea>'+
       '<div class="cn-st" id="cn_st"></div>'+
@@ -166,7 +167,7 @@
     $('cn_pdf').onclick = function(){ hacerDoc('pdf'); }; $('cn_img').onclick = function(){ hacerDoc('img'); };
     $('cn_gua').onclick = function(){ guardar().catch(function(){}); }; $('cn_cop').onclick = copiar; $('cn_wa').onclick = abrirWA; $('cn_new').onclick = limpiar;
     try{ if(localStorage.getItem('pm_cot_met')==='fas') $('cn_met').value='fas'; }catch(e){}
-    $('cn_plan').value = PMCotDoc.planSalud().join('\n'); $('cn_plan').addEventListener('change', function(){ PMCotDoc.guardarPlanSalud(lineasCob('cn_plan')); });
+    $('cn_plan').value = PMCotDoc.planSalud().join('\n'); $('cn_plan').addEventListener('change', function(){ PMCotDoc.guardarPlanSalud(lineasCob('cn_plan')); }); $('cn_plan').addEventListener('input', recalcular);
     cargarCob();
   }
   w.PMCotNueva = { iniciar:iniciar, _mensaje:mensaje };

@@ -42,7 +42,8 @@
 
   /* ---- Plan de salud (regalo por llevar la Opción 2): una línea por beneficio; se guarda en el navegador ---- */
   var CLAVE_PLAN = 'pm_cot_plansalud';
-  function planSalud(){ try{ var g = JSON.parse(localStorage.getItem(CLAVE_PLAN)||'null'); if(g && g.length) return g; }catch(e){} return []; }
+  var PLAN_DEFECTO = ['Consultas médicas 24/7','Médico a domicilio','Atención pediátrica e interna virtual','Escaneo de signos vitales desde tu casa','Consejos de salud y autocuidado'];
+  function planSalud(){ try{ var g = JSON.parse(localStorage.getItem(CLAVE_PLAN)||'null'); if(g && g.length) return g; }catch(e){} return PLAN_DEFECTO.slice(); }
   function guardarPlanSalud(lista){ try{ localStorage.setItem(CLAVE_PLAN, JSON.stringify((lista||[]).filter(Boolean))); }catch(e){} }
 
   /* ---- Estilos del documento (limpio: lo esencial arriba, el detalle de coberturas en la segunda hoja) ---- */
