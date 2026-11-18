@@ -83,7 +83,7 @@
       '<b>Opción 1</b> (hurto o pérdida total): '+resumenOp(q.op1,q.plazo)+'<br><b>Opción 2</b> (+ RC + asistencias): '+resumenOp(q.op2,q.plazo)+(q.propia?'':'<br><i>Valores escritos a mano para '+esc(q.aseguradora)+'.</i>');
     if(!editado) $('cn_txt').value = mensaje(q);
   }
-  function datosDoc(q){ return { tipo:'nueva', id:guardada||'', nombre:q.nombre, placa:q.placa, moto:q.moto, aseguradora:q.aseguradora, plazo:q.plazo, op1:q.op1, op2:q.op2, cubre:q.cubre, rc:q.rc, ap:q.ap, cob1:lineasCob('cn_cb1'), cob2:lineasCob('cn_cb2') }; }
+  function datosDoc(q){ return { tipo:'nueva', id:guardada||'', nombre:q.nombre, placa:q.placa, moto:q.moto, aseguradora:q.aseguradora, plazo:q.plazo, op1:q.op1, op2:q.op2, cubre:q.cubre, rc:q.rc, ap:q.ap, cob1:lineasCob('cn_cb1'), cob2:lineasCob('cn_cb2'), salud:lineasCob('cn_plan') }; }
   function validar(q, conCel){
     if(!q.nombre){ setSt('Falta el nombre del cliente.','mal'); return false; }
     if(!q.listo){ setSt('Faltan los valores para calcular la cotización.','mal'); return false; }
@@ -150,6 +150,7 @@
       '<div class="cn-cuadro" id="cn_res">Escribe el valor de la moto (o elige una referencia con precio especial) para calcular.</div>'+
       '<details style="margin:6px 0 10px"><summary style="cursor:pointer;font-weight:700">Coberturas que salen en el PDF (puedes editarlas)</summary>'+
       '<div class="cn-g" style="margin-top:8px"><label>Opción 1 · una cobertura por línea<textarea id="cn_cb1" rows="6"></textarea></label><label>Opción 2 · una cobertura por línea<textarea id="cn_cb2" rows="6"></textarea></label></div>'+
+      '<label style="display:flex;flex-direction:column;font-size:.85rem;gap:3px;margin-top:8px;font-weight:700">🎁 Plan de salud que se regala con la Opción 2 (un beneficio por línea; sale en la franja de regalo)<textarea id="cn_plan" rows="4" style="border:1px solid #cfd6e4;border-radius:8px;padding:8px 10px;font:inherit;font-size:.85rem;font-weight:400" placeholder="Ej.: Consulta médica general\nTelemedicina 24 horas"></textarea></label>'+
       '<p class="cn-nota">Se guardan para la próxima cotización con esta aseguradora. <a href="#" id="cn_rest">Restaurar las originales</a></p></details>'+
       '<label class="cn-lbl">Mensaje de WhatsApp (puedes editarlo)</label><textarea class="cn-msg" id="cn_txt"></textarea>'+
       '<div class="cn-st" id="cn_st"></div>'+
@@ -165,6 +166,7 @@
     $('cn_pdf').onclick = function(){ hacerDoc('pdf'); }; $('cn_img').onclick = function(){ hacerDoc('img'); };
     $('cn_gua').onclick = function(){ guardar().catch(function(){}); }; $('cn_cop').onclick = copiar; $('cn_wa').onclick = abrirWA; $('cn_new').onclick = limpiar;
     try{ if(localStorage.getItem('pm_cot_met')==='fas') $('cn_met').value='fas'; }catch(e){}
+    $('cn_plan').value = PMCotDoc.planSalud().join('\n'); $('cn_plan').addEventListener('change', function(){ PMCotDoc.guardarPlanSalud(lineasCob('cn_plan')); });
     cargarCob();
   }
   w.PMCotNueva = { iniciar:iniciar, _mensaje:mensaje };

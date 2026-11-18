@@ -137,6 +137,7 @@
       '<label style="display:flex;flex-direction:column;font-size:.85rem;gap:3px;margin-top:8px">Una moto por línea: palabra | contado opción 1 | cuota opción 1 | contado opción 2 | primera cuota opción 2 | cuota restante opción 2<textarea id="pmcr_fij" rows="3" style="border:1px solid #cfd6e4;border-radius:8px;padding:8px 10px;font:inherit;font-size:.85rem"></textarea></label><p class="pmcr-sub" style="margin:4px 0 0">Si el nombre de la moto contiene esa palabra, la cotización usa estos valores (12 meses) y no hace falta escribir el Fasecolda. <a href="#" id="pmcr_fijrest">Restaurar</a></p></details>'+
       '<details style="margin:6px 0 10px"><summary style="cursor:pointer;font-weight:700;font-size:.85rem">Coberturas que salen en el PDF (puedes editarlas)</summary>'+
       '<div class="pmcr-g" style="margin-top:8px"><label>Opción 1 · una cobertura por línea<textarea id="pmcr_cb1" rows="6"></textarea></label><label>Opción 2 · una cobertura por línea<textarea id="pmcr_cb2" rows="6"></textarea></label></div>'+
+      '<label style="display:flex;flex-direction:column;font-size:.85rem;gap:3px;margin-top:8px;font-weight:700">🎁 Plan de salud que se regala con la Opción 2 (un beneficio por línea; sale en la franja de regalo)<textarea id="pmcr_plan" rows="4" style="border:1px solid #cfd6e4;border-radius:8px;padding:8px 10px;font:inherit;font-size:.85rem;font-weight:400" placeholder="Ej.: Consulta médica general\nTelemedicina 24 horas"></textarea></label>'+
       '<p class="pmcr-sub" style="margin:4px 0 0">Una línea entre guiones, como <code>— Asistencias —</code>, crea un título dentro de la lista. Se guardan para la próxima cotización con esta aseguradora. <a href="#" id="pmcr_rest">Restaurar las originales</a></p></details>'+
       '<label style="font-size:.85rem;font-weight:700">Mensaje de WhatsApp (puedes editarlo)</label>'+
       '<textarea class="pmcr-msg" id="pmcr_txt"></textarea>'+
@@ -152,6 +153,7 @@
     var fac=$('pmcr_fac'), fas=$('pmcr_fas');
     try{ if(localStorage.getItem('pm_cot_met')==='val') $('pmcr_met').value='val'; }catch(e){}
     ['pmcr_nom','pmcr_ced','pmcr_pla','pmcr_moto','pmcr_met','pmcr_val','pmcr_fac','pmcr_fas','pmcr_plz','pmcr_ase','pmcr_otra','pmcr_m1c','pmcr_m1q','pmcr_m2c','pmcr_m2q'].forEach(function(id){ $(id).addEventListener('input', recalcular); $(id).addEventListener('change', recalcular); });
+    $('pmcr_plan').value = PMCotDoc.planSalud().join('\n'); $('pmcr_plan').addEventListener('change', function(){ PMCotDoc.guardarPlanSalud(lineasCob('pmcr_plan')); });
     $('pmcr_fij').value = leerFijos().join('\n');
     $('pmcr_fij').addEventListener('change', function(){ var L=$('pmcr_fij').value.split('\n').map(function(x){return x.trim();}).filter(Boolean); LSset('pm_ren_fijos', JSON.stringify(L)); recalcular(); });
     $('pmcr_fijrest').onclick = function(e){ e.preventDefault(); try{ localStorage.removeItem('pm_ren_fijos'); }catch(x){} $('pmcr_fij').value = FIJOS_DEF.join('\n'); recalcular(); };
@@ -236,7 +238,7 @@
   }
   function datosDoc(q){
     return { id:cur.guardada||'', nombre:q.nombre, placa:q.placa, moto:q.moto, aseguradora:q.aseguradora, plazo:q.plazo, garantizar:q.garantizar,
-      op1:q.op1, op2:q.op2, cubre:q.cubre, rc:q.rc, ap:q.ap, cob1:lineasCob('pmcr_cb1'), cob2:lineasCob('pmcr_cb2') };
+      op1:q.op1, op2:q.op2, cubre:q.cubre, rc:q.rc, ap:q.ap, cob1:lineasCob('pmcr_cb1'), cob2:lineasCob('pmcr_cb2'), salud:lineasCob('pmcr_plan') };
   }
   function hacerDoc(tipo){
     var q = leer();

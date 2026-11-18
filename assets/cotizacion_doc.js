@@ -40,6 +40,11 @@
   function guardarCoberturas(aseg, op, lista){ var g = leerGuardadas(); g[aseg+'|'+op] = lista; try{ localStorage.setItem(CLAVE, JSON.stringify(g)); }catch(e){} }
   function restaurarCoberturas(aseg){ var g = leerGuardadas(); delete g[aseg+'|op1']; delete g[aseg+'|op2']; try{ localStorage.setItem(CLAVE, JSON.stringify(g)); }catch(e){} }
 
+  /* ---- Plan de salud (regalo por llevar la Opción 2): una línea por beneficio; se guarda en el navegador ---- */
+  var CLAVE_PLAN = 'pm_cot_plansalud';
+  function planSalud(){ try{ var g = JSON.parse(localStorage.getItem(CLAVE_PLAN)||'null'); if(g && g.length) return g; }catch(e){} return []; }
+  function guardarPlanSalud(lista){ try{ localStorage.setItem(CLAVE_PLAN, JSON.stringify((lista||[]).filter(Boolean))); }catch(e){} }
+
   /* ---- Estilos del documento (limpio: lo esencial arriba, el detalle de coberturas en la segunda hoja) ---- */
   var CSS = [
     '@page{size:letter;margin:6mm}',
@@ -64,7 +69,9 @@
     '.chips{padding:0 12px 9px;display:flex;flex-wrap:wrap;gap:4px 6px}',
     '.chips div{display:flex;gap:6px;align-items:center;font-size:11px;background:#eef6ff;border-radius:999px;padding:2px 10px 2px 4px;color:#0b2a6b} .chips i{flex:0 0 15px;height:15px;border-radius:50%;background:#0b63c9;color:#fff;font-style:normal;font-size:10px;text-align:center;line-height:15px}',
     /* coberturas dentro de la opción 2 (en la misma hoja) */
-    '.regalo{margin:0 12px 8px;display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,#ffe08a,#ffc928);color:#0b2a6b;border-radius:999px;padding:5px 16px;box-shadow:0 2px 6px rgba(0,0,0,.15)} .regalo .ic{font-size:20px;line-height:1} .regalo b{font-size:13px;letter-spacing:.3px} .regalo span{font-size:12px}',
+    '.rg{margin-top:9px;background:linear-gradient(135deg,#fff3c4,#ffd04d);color:#0b2a6b;border-radius:18px;padding:9px 16px 10px;box-shadow:0 4px 12px rgba(0,0,0,.2)}',
+    '.rg .rt{display:flex;align-items:center;gap:10px} .rg .ic{font-size:24px;line-height:1} .rg b{font-size:14.5px;letter-spacing:.3px} .rg small{display:block;font-size:11.5px;font-weight:700;opacity:.8}',
+    '.rg .ri{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:6px} .rg .ri div{display:flex;gap:6px;align-items:center;font-size:11.5px;background:rgba(255,255,255,.75);border-radius:999px;padding:2px 11px 2px 5px} .rg .ri i{flex:0 0 15px;height:15px;border-radius:50%;background:#0b2a6b;color:#ffd04d;font-style:normal;font-size:10px;text-align:center;line-height:15px}',
     '.cob{display:grid;grid-template-columns:1.55fr 1fr;gap:8px;padding:0 12px 10px;align-items:start}',
     '.cob .dc{background:#f5f9ff;color:#0b2a6b;border-radius:14px;overflow:hidden;padding-bottom:6px;border:1px solid #dbe8f8}',
     '.cob .dc h4{margin:0 0 4px;background:#0b63c9;color:#fff;padding:5px 12px;font-size:11px;letter-spacing:.4px;text-transform:uppercase}',
@@ -121,7 +128,7 @@
         cob = '<div class="cob"><div class="dc">'+rc.map(seccion).join('')+'</div>'+(ot.length?'<div class="dc">'+ot.map(seccion).join('')+'</div>':'')+'</div>';
         if(!ot.length) cob = cob.replace('grid-template-columns','grid-template-columns');
       }
-      var regalo = conCob ? '<div class="regalo"><span class="ic">🎁</span><div><b>¡DE REGALO!</b> <span>'+esc(d.regalo||'Plan de salud por llevar la Opción 2')+'</span></div></div>' : '';
+      var regalo = '';
       return '<div class="op"><h3>OPCIÓN '+n+' · '+esc(titulo)+(sub?'<small>'+esc(sub)+'</small>':'')+'</h3>'+
         '<div class="pre"><div><span>De contado</span><b>'+cop(o.contado)+'</b></div>'+
         '<div><span>Financiado a '+d.plazo+' meses</span>'+celdaFin(o, d.plazo)+'</div></div>'+chips(pp.chips)+regalo+cob+'</div>';
@@ -134,9 +141,15 @@
       '<p class="hola">Hola, '+esc(primer)+'. Estas son tus opciones'+(d.tipo==='nueva'?' de protección:':' para renovar:')+'</p>'+
       op(1,'Hurto o pérdida total',(d.aseguradora==='Protect Motos'?'cubre el 80 %':''),d.op1,p1,false)+
       op(2,'Hurto o pérdida total + RC + Asistencias','',d.op2,p2,true)+
+      regaloHtml(d)+
       '<div class="cta"><b>¡CONTÁCTANOS HOY!</b><div class="ph">📞 312 880 68 73</div></div>'+
       '<div class="pie">'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'<b>PROTECT MOTOS</b>')+'<div>protectmotos@gmail.com</div></div>'+
       '</div>';
+  }
+  function regaloHtml(d){
+    var L = d.salud || [];
+    return '<div class="rg"><div class="rt"><span class="ic">🎁</span><div><b>¡DE REGALO POR LLEVAR LA OPCIÓN 2! · PLAN DE SALUD</b><small>'+(L.length?'Incluye:':'Pregunta a tu asesor por todos sus beneficios.')+'</small></div></div>'+
+      (L.length?'<div class="ri">'+L.map(function(t){ return '<div><i>✓</i><span>'+esc(t)+'</span></div>'; }).join('')+'</div>':'')+'</div>';
   }
   function pagina(d){
     return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Cotización - '+esc(d.nombre)+(d.placa?' - '+esc(d.placa):'')+'</title><style>'+CSS+'</style></head><body>'+html(d)+'</body></html>';
@@ -179,5 +192,5 @@
     });
   }
 
-  w.PMCotDoc = { html:html, pagina:pagina, imprimir:imprimir, png:png, coberturas:coberturas, guardarCoberturas:guardarCoberturas, restaurarCoberturas:restaurarCoberturas, DEFECTO:DEFECTO };
+  w.PMCotDoc = { planSalud:planSalud, guardarPlanSalud:guardarPlanSalud, html:html, pagina:pagina, imprimir:imprimir, png:png, coberturas:coberturas, guardarCoberturas:guardarCoberturas, restaurarCoberturas:restaurarCoberturas, DEFECTO:DEFECTO };
 })(window);
