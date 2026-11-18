@@ -1685,6 +1685,8 @@
   }
   window.pintarGerencia=pintarGerencia;
   document.addEventListener('pm-cobros',function(){try{pintarGerencia()}catch(e){}});
+  function normAses(a){return String(a==null?'':a).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase()}
+  window.normAses=normAses;
   function mesAnio(x){
     var m=numMes(x.mes),a=numAnio(x.anio),r=false,tx=String(x.mes||''),q;
     if(!m){q=tx.match(/^\s*(\d{1,2})\s*[\/\-]\s*(\d{2,4})\s*$/);if(q&&+q[1]>=1&&+q[1]<=12){m=+q[1];if(!a)a=numAnio(q[2])}else{q=tx.match(/^\s*(\d{4})\s*[\/\-]\s*(\d{1,2})\s*$/);if(q&&+q[2]>=1&&+q[2]<=12){m=+q[2];if(!a)a=+q[1]}}}
@@ -1735,6 +1737,8 @@
     window[cb]=function(r){
       fin();
       if(!r||!r.ok){nota.textContent='No se pudo leer el resumen de Cobros.';estadoCrm('El conector respondió: '+(r&&r.error?r.error:'respuesta inválida'),'#dc2626');return}
+      /* el mismo asesor escrito con tilde, mayúsculas o espacios de más (Duvan / DUVÁN / Duván ) se cuenta como uno solo */
+      (r.contratos||[]).forEach(function(c){c.asesor=normAses(c.asesor)});
       estadoCrm('Conectado ✔ · '+(r.contratos||[]).length+' contratos leídos · '+new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}),'#1f9d55');
       window.PM_COBROS=r;document.dispatchEvent(new Event('pm-cobros'));
       var c={ACTIVO:0,CANCELADO:0,FINALIZADO:0},hist={},tk={},cf={},eds=[],diag={leidas:(r.contratos||[]).length,conContrato:0,mes:0,sinFecha:0,muestras:{},sinContrato:0,sc:{},formaRara:0,fr:{},rescatadas:0},nowE=new Date(),sg={ambos:0,rc:0,ap:0,ninguno:0},rc=0,cont=0,ventas={},hoy=new Date(),mesAct=hoy.getMonth()+1,anioAct=hoy.getFullYear(),nuevo=false;

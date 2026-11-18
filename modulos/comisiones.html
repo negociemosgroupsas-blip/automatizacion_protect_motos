@@ -181,6 +181,7 @@
 </main>
 
 <script>
+function normAses(a){return String(a==null?'':a).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase()}
 (function(){
   var TARIFAS={CRC:40000,C:25000,FRC:15000,F:10000};
   var NOM={CRC:'PM + RC contado',C:'PM contado',FRC:'PM + RC financiado',F:'PM financiado'};
@@ -277,6 +278,7 @@
     est('Leyendo la hoja Protect… puede tardar hasta 30 segundos');
     llamar({action:'datos'},function(r){
       if(!r||!r.ok){est((r&&r.error)||'No se pudo leer.','er');return}
+      (r.contratos||[]).forEach(function(c){c.asesor=normAses(c.asesor)});   // Duvan / DUVÁN / Duván  = un solo asesor
       datos=r;cfg=r.comisionesCfg||{};
       var tieneCom=(r.contratos||[]).some(function(x){return x.comision!==undefined});
       var u0=lsg('pm_crm_url'),fin0='…'+u0.replace(/\/exec.*$/,'').slice(-8)+'/exec';
@@ -292,7 +294,7 @@
     llamar({action:'datos'},function(r){
       var E=EXTRA[src];
       if(!r||!r.ok){E.ok=false;E.lista=[];E.txt=r&&r.sinUrl?'sin conector (se cuenta 0)':(r&&r.error)||'sin respuesta';if(datos)pintarKelli();return}
-      E.ok=true;E.lista=r.contratos||[];E.txt=E.lista.length+' registros leídos';
+      E.ok=true;E.lista=r.contratos||[];E.lista.forEach(function(c){c.asesor=normAses(c.asesor)});E.txt=E.lista.length+' registros leídos';
       var falta=E.lista.length&&E.lista.every(function(x){return x.asesor===undefined});if(falta)E.txt+=' — ⚠️ la hoja o el conector no traen la columna «Asesor»';
       if(datos){pintarKelli();pintarRes();if(tabA)pintarAnual()}},src);
   }
