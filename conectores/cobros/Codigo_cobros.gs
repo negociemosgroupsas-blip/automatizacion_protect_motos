@@ -32,6 +32,16 @@ var COL = {
 
 var FILA_INICIO_DATOS = 2; // fila 1 = encabezados
 
+// Hojas de Google de las pólizas: Responsabilidad Civil (RC) y Accidentes Personales (AP)
+var SHEET_RC_ID = '1x8yZENs-5gGhT64CPStTuBa_YHQtCM89W5o7t0hSNB8';
+var SHEET_AP_ID = '1RopIZryAegrNvSdLQK5KdLjDA_sqvme4SMG11g8b4ck';
+// RC: cédula G (7), número B (2), nombre E (5), fecha fin J (10) «Fecha_Fin»
+// AP: cédula J (10), número A (1), nombre D (4), fecha fin L (12) «Fecha Fin Vigencia»
+var VIG_CFG = {
+  RC: { id: SHEET_RC_ID, colCed: 7, colNum: 2, colNom: 5, nNom: 1, colFin: 10, nombre: 'Responsabilidad Civil' },
+  AP: { id: SHEET_AP_ID, colCed: 10, colNum: 1, colNom: 4, nNom: 3, colFin: 12, nombre: 'Accidentes Personales' }
+};
+
 // Columnas que se agregan solas al final de la hoja Protect la primera vez que se cancela un cliente
 var ENC_FECHA_CANCELACION = 'Fecha de cancelación';
 var ENC_MOTIVO_CANCELACION = 'Motivo de cancelación';   // Solicitud del cliente | Dejó de pagar | Venció sin renovar
@@ -84,6 +94,8 @@ function doGet(e) {
         salida = accionCambiarEstado(params);
       } else if (accion === 'registrarGestion') {
         salida = accionRegistrarGestion(params);
+      } else if (accion === 'vigencias') {
+        salida = accionVigencias();
       } else {
         salida = { ok: false, error: 'Acción desconocida: ' + accion };
       }
@@ -506,6 +518,39 @@ function accionCambiarEstado(params) {
   } finally {
     lock.releaseLock();
   }
+}
+
+// ==================== ACCIÓN: VIGENCIAS DE RC Y AP ====================
+// Lee la fecha de fin de vigencia de las hojas de RC (columna J «Fecha_Fin») y de AP (columna L «Fecha Fin Vigencia»).
+// Solo lee: no escribe nada. Si una cédula aparece varias veces (renovaciones) se queda con la vigencia más reciente.
+function accionVigencias() {
+  var salida = [], avisos = [], enc = {};
+  ['RC', 'AP'].forEach(function (tipo) {
+    var cfg = VIG_CFG[tipo];
+    try {
+      var sh = SpreadsheetApp.openById(cfg.id).getSheets()[0], ult = sh.getLastRow();
+      enc[tipo] = String(sh.getRange(1, cfg.colFin).getValue() || '').trim();
+      if (ult < 2) return;
+      var ancho = Math.max(cfg.colCed, cfg.colNum, cfg.colNom + cfg.nNom - 1, cfg.colFin);
+      var datos = sh.getRange(2, 1, ult - 1, ancho).getValues(), mejor = {};
+      for (var i = 0; i < datos.length; i++) {
+        var f = datos[i];
+        var ced = String(f[cfg.colCed - 1] == null ? '' : f[cfg.colCed - 1]).replace(/\.0+$/, '').replace(/\D/g, '').replace(/^0+/, '');
+        if (!ced) continue;
+        var v = f[cfg.colFin - 1], fecha = null;
+        if (v instanceof Date) fecha = v; else if (v) fecha = parsearFecha(String(v).trim());
+        if (!fecha || isNaN(fecha.getTime())) continue;
+        var iso = formatoISO(fecha);
+        if (mejor[ced] && mejor[ced].finISO >= iso) continue;
+        var nom = []; for (var k = 0; k < cfg.nNom; k++) nom.push(String(f[cfg.colNom - 1 + k] || '').trim());
+        mejor[ced] = { tipo: tipo, cedula: ced, numero: String(f[cfg.colNum - 1] == null ? '' : f[cfg.colNum - 1]).trim(), nombre: nom.join(' ').replace(/\s+/g, ' ').trim(), finISO: iso, fin: formatoFecha(fecha), fila: i + 2 };
+      }
+      Object.keys(mejor).forEach(function (c) { salida.push(mejor[c]); });
+    } catch (e) {
+      avisos.push('No pude leer la hoja de ' + cfg.nombre + ': ' + e.message);
+    }
+  });
+  return { ok: true, vigencias: salida, avisos: avisos, encabezados: enc };
 }
 
 // ==================== UTILIDADES ====================

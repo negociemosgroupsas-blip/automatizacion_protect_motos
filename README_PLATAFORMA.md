@@ -60,7 +60,7 @@ El conector único elige el módulo según la clave, por eso los módulos no cam
 ## Datos compartidos
 Sheet «Seguimiento Protec Motos 2026 ACTUAL»: **Protect** (contratos) · **Pagos** · **Gestiones** · **Consolidado**. Hojas que crea el sistema solo:
 `Comisiones_Config`, `Comisiones_Historico`, `Cotizaciones Renovación`, `Conciliacion_Dugo`, `Historial_Consolidacion`, `Asignaciones_Pagos`, `Ajustes_Manuales`.
-Separadas: «Historico polizas» (OMS), «Historico Soat» (SOAT), Responsabilidad Civil, Accidentes Personales.
+Separadas: «Historico polizas» (OMS), «Historico Soat» (SOAT), Responsabilidad Civil (RC: fecha fin en la columna J «Fecha_Fin») y Accidentes Personales (AP: fecha fin en la columna L «Fecha Fin Vigencia»). Cobros avisa cuando esas vigencias vencen.
 
 ## Reglas de negocio vigentes
 - **Cotizador** (Contratos y renovaciones): contado 7,5 % del valor de la moto; financiado 9 % (3 m), 10 % (6 m), 12 % (12 m); RC $152.857, AP $47.000.

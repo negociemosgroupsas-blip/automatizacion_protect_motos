@@ -333,6 +333,7 @@
     <div class="tarjeta-contador destacado" data-filtro="totalPendiente" title="Ver clientes con saldo pendiente"><div class="valor" id="cTotalPendiente">–</div><div class="etiqueta">Total pendiente por cobrar</div></div>
     <div class="tarjeta-contador alerta" data-filtro="renovar" title="Ver pólizas por renovar"><div class="valor" id="cRenovar">–</div><div class="etiqueta">Pólizas por renovar (≤8 días)</div></div>
     <div class="tarjeta-contador" data-filtro="renovacionesEnviadas" title="Ver renovaciones con mensaje ya enviado, esperando respuesta"><div class="valor" id="cRenovarEnviadas">–</div><div class="etiqueta">Renovaciones enviadas</div></div>
+    <div class="tarjeta-contador alerta" id="tVig" title="Ir al panel de vigencias de RC y AP" style="cursor:pointer"><div class="valor" id="cVig">–</div><div class="etiqueta">Vigencias RC/AP vencidas o por vencer</div></div>
   </div>
 
   <section class="panel" id="panelHistorial">
@@ -445,6 +446,23 @@
       <div class="seg-tiles" id="perTiles"></div>
       <div class="seg-tabla-w"><table id="tablaPer"><thead><tr><th>Mes</th><th>Clientes activos al inicio</th><th>Cancelaron</th><th>Voluntarias</th><th>Por no pago / otro</th><th>% de retención del mes</th></tr></thead><tbody id="cuerpoPer"></tbody></table></div>
       <p class="seg-nota" id="perNota"></p>
+    </div>
+  </section>
+
+  <section class="panel" id="panelVigencias">
+    <div class="cabecera">
+      <h2>Vigencias de RC y AP</h2>
+      <span class="sub" id="vigSub">Pólizas de Responsabilidad Civil y Accidentes Personales vencidas o por vencer</span>
+    </div>
+    <div class="contenido-panel">
+      <div class="seg-fil"><label>Mostrar <select id="vigVer"><option value="aviso">Vencidas y por vencer</option><option value="venc">Solo vencidas</option><option value="todas">Todas</option></select></label>
+        <label>Por vencer en <select id="vigDias"><option value="15">15 días</option><option value="30" selected>30 días</option><option value="60">60 días</option></select></label>
+        <label>Tipo <select id="vigTipo"><option value="">RC y AP</option><option value="RC">Solo RC</option><option value="AP">Solo AP</option></select></label>
+        <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="vigAct" checked> Solo clientes activos</label></div>
+      <div class="seg-tiles" id="vigTiles"></div>
+      <div class="seg-tabla-w" style="max-height:460px;overflow:auto"><table id="tablaVig"><thead><tr><th>Cliente</th><th>Cédula</th><th>Contrato</th><th>Tipo</th><th>N.º póliza</th><th>Fin de vigencia</th><th>Días</th><th>Estado</th><th>Avisar</th></tr></thead><tbody id="cuerpoVig"></tbody></table></div>
+      <div class="vacio" id="vacioVig" style="display:none;">No hay pólizas para mostrar con este filtro.</div>
+      <p class="seg-nota" id="vigNota"></p>
     </div>
   </section>
 
@@ -836,7 +854,7 @@
       estado.gestiones = fusionarGestionesDeHoy(resp.gestiones || []);
       var hora = new Date().toLocaleTimeString('es-CO');
       mostrarEstado('ok', 'Datos actualizados · '+estado.contratos.length+' contratos · '+estado.pagos.length+' pagos registrados · Última sincronización: '+hora+'.');
-      renderizarTodo();
+      renderizarTodo(); cargarVigencias();
       if(document.getElementById('inputBusqueda').value.trim()){
         buscarCliente();
       }
@@ -1176,6 +1194,70 @@
     document.getElementById('perNota').textContent = 'Retención del mes = 1 − (clientes que cancelaron en el mes ÷ clientes activos al inicio del mes). Los contratos que terminaron completos no cuentan como cancelación. Solo cuentan las cancelaciones registradas desde el '+fmt(D)+' (las anteriores no tienen fecha). La permanencia se irá llenando a medida que se registren cancelaciones.';
   }
 
+  // ==================== VIGENCIAS DE RC Y AP ====================
+  // Fechas de fin de vigencia leídas de las hojas de RC (columna J «Fecha_Fin») y AP (columna L «Fecha Fin Vigencia»).
+  var VIGS = null, VIG_AVISOS = [], VIG_ENC = {}, vigCargando = false;
+  function normCed(v){ return String(v==null?'':v).replace(/\.0+$/,'').replace(/\D/g,'').replace(/^0+/,''); }
+  function cargarVigencias(){
+    if(vigCargando) return; vigCargando = true;
+    llamarConector({action:'vigencias'}).then(function(r){
+      if(r.ok){ VIGS = r.vigencias||[]; VIG_AVISOS = r.avisos||[]; VIG_ENC = r.encabezados||{}; }
+      else { VIGS = null; VIG_AVISOS = [r.error||'No se pudieron leer las vigencias.']; }
+    }).catch(function(e){ VIGS = null; VIG_AVISOS = [(/Acción desconocida/.test(e.message)?'El conector todavía no lee las vigencias: pegue el código nuevo (Codigo_UNICO.gs) y publique «Nueva versión».':e.message)]; })
+      .then(function(){ vigCargando = false; renderizarVigencias(); });
+  }
+  function vigLista(){
+    var N = Number(document.getElementById('vigDias').value)||30, porCed = {};
+    estado.contratos.forEach(function(c){ var k = normCed(c.cedula); if(!k) return; var o = porCed[k] = porCed[k] || {act:null, ult:null}; if(c.estado==='ACTIVO' && (!o.act || (c.fechaFirmaISO||'')>(o.act.fechaFirmaISO||''))) o.act = c; if(!o.ult || (c.fechaFirmaISO||'')>(o.ult.fechaFirmaISO||'')) o.ult = c; });
+    var hoyD = hoy(), out = [];
+    (VIGS||[]).forEach(function(v){
+      var fin = parsearISO(v.finISO); if(!fin) return;
+      var m = porCed[normCed(v.cedula)], c = m ? (m.act||m.ult) : null, dias = diferenciaDias(fin, hoyD);
+      out.push({v:v, c:c, activo:!!(m && m.act), sinContrato:!m, dias:dias, venc:dias<0, porVenc:dias>=0 && dias<=N});
+    });
+    return out;
+  }
+  function renderizarVigencias(){
+    var cuerpo = document.getElementById('cuerpoVig'); if(!cuerpo) return;
+    var nota = document.getElementById('vigNota'), tiles = document.getElementById('vigTiles');
+    if(VIGS===null){
+      tiles.innerHTML=''; cuerpo.innerHTML=''; document.getElementById('tablaVig').style.display='none';
+      var ve = document.getElementById('vacioVig'); ve.style.display = ''; ve.textContent = VIG_AVISOS.length ? VIG_AVISOS.join(' ') : 'Cargando las vigencias de RC y AP…';
+      document.getElementById('cVig').textContent = '–'; nota.textContent = ''; return;
+    }
+    var N = Number(document.getElementById('vigDias').value)||30, ver = document.getElementById('vigVer').value, tipo = document.getElementById('vigTipo').value, soloAct = document.getElementById('vigAct').checked;
+    var base = vigLista().filter(function(o){ return !soloAct || o.activo || o.sinContrato; });
+    var cuenta = function(t, f){ return base.filter(function(o){ return (!t || o.v.tipo===t) && f(o); }).length; };
+    var avisoTot = base.filter(function(o){ return o.venc || o.porVenc; }).length;
+    document.getElementById('cVig').textContent = avisoTot;
+    var F = base.filter(function(o){ return (!tipo || o.v.tipo===tipo) && (ver==='todas' || (ver==='venc' ? o.venc : (o.venc || o.porVenc))); })
+      .sort(function(a,b){ return a.dias-b.dias; });
+    tiles.innerHTML =
+      '<div class="seg-t" style="--c:#dc2626"><span>RC vencidas</span><b>'+cuenta('RC',function(o){return o.venc;})+'</b><small>la vigencia ya terminó</small></div>'+
+      '<div class="seg-t" style="--c:#dc2626"><span>AP vencidas</span><b>'+cuenta('AP',function(o){return o.venc;})+'</b><small>la vigencia ya terminó</small></div>'+
+      '<div class="seg-t" style="--c:#e08a00"><span>RC por vencer</span><b>'+cuenta('RC',function(o){return o.porVenc;})+'</b><small>en los próximos '+N+' días</small></div>'+
+      '<div class="seg-t" style="--c:#e08a00"><span>AP por vencer</span><b>'+cuenta('AP',function(o){return o.porVenc;})+'</b><small>en los próximos '+N+' días</small></div>'+
+      '<div class="seg-t" style="--c:#1f9d55"><span>Vigentes</span><b>'+cuenta('',function(o){return !o.venc && !o.porVenc;})+'</b><small>RC y AP al día</small></div>';
+    cuerpo.innerHTML = F.map(function(o,i){
+      var v = o.v, c = o.c, nombre = (c&&c.cliente) || v.nombre || '(sin nombre)', cls = o.venc ? 'color:#dc2626;font-weight:700' : o.porVenc ? 'color:#e08a00;font-weight:700' : 'color:#1f9d55';
+      var est = o.venc ? 'Vencida' : o.porVenc ? 'Por vencer' : 'Vigente', cel = c && c.celular;
+      var msg = 'Hola, '+nombre+' 😊 Te escribimos de Protect Motos. La vigencia de tu '+(v.tipo==='RC'?'responsabilidad civil':'seguro de accidentes personales')+(v.numero?' (póliza '+v.numero+')':'')+' '+(o.venc?'venció el ':'vence el ')+v.fin+'. ¿Te ayudamos a renovarla?';
+      var btn = cel ? '<button class="btn btn-sm btn-verde" data-vig-wa="'+i+'">WhatsApp</button>' : '<span class="sub">sin celular</span>';
+      o._msg = msg;
+      return '<tr><td data-etiqueta="Cliente"><strong>'+escapeHtml(nombre)+'</strong>'+(o.sinContrato?'<br><small class="sub">no está en Protect</small>':'')+'</td><td data-etiqueta="Cédula">'+escapeHtml(v.cedula)+'</td><td data-etiqueta="Contrato">'+escapeHtml((c&&c.contrato)||'—')+'</td><td data-etiqueta="Tipo"><strong>'+v.tipo+'</strong></td><td data-etiqueta="Póliza">'+escapeHtml(v.numero||'—')+'</td><td data-etiqueta="Fin de vigencia">'+escapeHtml(v.fin)+'</td><td data-etiqueta="Días" style="'+cls+'">'+o.dias+'</td><td data-etiqueta="Estado" style="'+cls+'">'+est+'</td><td data-etiqueta="Avisar">'+btn+'</td></tr>'; }).join('');
+    document.getElementById('vacioVig').style.display = F.length ? 'none' : ''; document.getElementById('vacioVig').textContent = 'No hay pólizas para mostrar con este filtro.';
+    document.getElementById('tablaVig').style.display = F.length ? '' : 'none';
+    window.__vigF = F;
+    document.getElementById('vigSub').textContent = 'RC: columna J «'+(VIG_ENC.RC||'Fecha_Fin')+'» · AP: columna L «'+(VIG_ENC.AP||'Fecha Fin Vigencia')+'» · se actualiza solo';
+    nota.textContent = 'Días: negativo = ya venció hace esos días. Si una cédula tiene varias pólizas del mismo tipo se usa la más reciente. «Solo clientes activos» oculta a quien ya no tiene contrato activo en Protect.'+(VIG_AVISOS.length?' ⚠️ '+VIG_AVISOS.join(' '):'');
+  }
+  ['vigVer','vigDias','vigTipo','vigAct'].forEach(function(id){ document.getElementById(id).addEventListener('change', renderizarVigencias); });
+  document.getElementById('cuerpoVig').addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-vig-wa]'); if(!b) return; var o = (window.__vigF||[])[+b.getAttribute('data-vig-wa')]; if(!o || !o.c) return;
+    window.open('https://wa.me/'+numeroWhatsApp(o.c.celular)+'?text='+encodeURIComponent(o._msg), '_blank');
+  });
+  document.getElementById('tVig').addEventListener('click', function(){ document.getElementById('panelVigencias').scrollIntoView({behavior:'smooth',block:'start'}); });
+
   // ==================== RETENCIÓN DE CLIENTES ====================
   var retAnio = 'todos', retMes = '0';
   function sumarDiasISO(iso, d){ var p = parsearISO(iso); p.setDate(p.getDate()+d); return p.getFullYear()+'-'+('0'+(p.getMonth()+1)).slice(-2)+'-'+('0'+p.getDate()).slice(-2); }
@@ -1344,7 +1426,7 @@
     renderizarCobros(mapaPagos);
     renderizarRenovaciones();
     renderizarRenovacionesEnviadas();
-    renderizarSeguimiento(); renderizarRetencion(); renderizarPermanencia();
+    renderizarSeguimiento(); renderizarRetencion(); renderizarPermanencia(); renderizarVigencias();
     renderizarSegCli();
     renderizarFiltro(mapaPagos);
   }
