@@ -571,6 +571,26 @@
   .in-inf{display:none;grid-column:1/-1} .in-inf h2{margin:0 0 4px;font-size:1.2rem;color:#13223f} .in-inf h4{margin:8px 0 2px;color:#13223f;font-size:.95rem} .in-inf p{margin:0;font-size:.85rem;color:#374151;line-height:1.4}
   @media print{.in-inf{display:block!important;background:#fff;border:1px solid #e1e7f2;border-radius:10px;padding:10px 14px;margin-bottom:6px}}
   .rep-per{margin:2px 0 4px;padding:6px 8px;background:#0d1530;border-radius:10px} .rep-per label{display:flex;align-items:center;gap:8px;font-size:.85rem;color:#a3b4d8} .rep-per select{flex:1;background:#13223f;color:#eef2ff;border:1px solid #3b4f8f;border-radius:8px;padding:5px 8px;font-size:.85rem}
+  /* ===== Inicio ordenado por módulos (cada bloque se llama como su botón del menú) ===== */
+  .in-sec small{font-weight:400;letter-spacing:0;text-transform:none;font-size:.82rem;opacity:.75;margin-left:6px}
+  #v-inicio .pagina.cierra-cob [data-sec="cob"]:not(.in-sec){display:none!important} #v-inicio .pagina.cierra-cob #sec-cob em{transform:rotate(-90deg)}
+  /* 1 · Ventas y contratos */
+  #v-inicio .meta{grid-column:span 4!important;order:11!important} #v-inicio .asr{grid-column:span 8!important;order:12!important}
+  #v-inicio .vmc{grid-column:1/-1!important;order:13!important} #v-inicio .cfc{grid-column:1/-1!important;order:14!important}
+  #v-inicio .asy{grid-column:1/-1!important;order:15!important}
+  /* 2 · Clientes y seguros */
+  #v-inicio .seg{grid-column:span 4!important;order:21!important} #v-inicio .rcm{grid-column:span 8!important;order:22!important}
+  #v-inicio .edc{grid-column:span 4!important;order:23!important} #v-inicio .anu{grid-column:span 8!important;order:24!important}
+  /* 3 · Cobros y retención */
+  #v-inicio .fnx{grid-column:1/-1!important;order:31!important} #v-inicio .rtx{grid-column:1/-1!important;order:32!important}
+  #v-inicio .rnc:not(.rnx){grid-column:span 6!important;order:33!important}
+  /* 4 · Valor cobrado a Dugo Motos */
+  #v-inicio .alertas{grid-column:1/-1!important;order:41!important} #v-inicio .cnc{grid-column:1/-1!important;order:42!important} #v-inicio .bkx{grid-column:1/-1!important;order:43!important}
+  /* 5 · SOAT · 6 · Clientes OMS · 7 · Comisiones */
+  #v-inicio .svc{grid-column:1/-1!important;order:51!important} #v-inicio .rns{grid-column:span 6!important;order:52!important}
+  #v-inicio .oms-wrap{grid-column:1/-1!important;order:61!important} #v-inicio .rno{grid-column:span 6!important;order:62!important}
+  #v-inicio .cmc{grid-column:1/-1!important;order:71!important}
+  @media(max-width:1000px){#v-inicio .rnc:not(.rnx),#v-inicio .rns,#v-inicio .rno{grid-column:1/-1!important}}
 </style>
 <script src="assets/dash_oms.js"></script>
 <script src="assets/logo_data.js"></script><script src="assets/informe_diario.js"></script>
@@ -602,25 +622,25 @@
     </div>
     <div class="in-nav" id="inNav">
       <div class="in-chips" id="inChips">
-        <a href="#" data-to="inKpis">Resumen</a><a href="#" data-to="sec-ventas">Ventas y contratos</a><a href="#" data-to="sec-clientes">Clientes y seguros</a><a href="#" data-to="sec-conc">Valor cobrado a Dugo Motos</a><a href="#" data-to="sec-soat">SOAT</a><a href="#" data-to="sec-oms">Clientes OMS</a><a href="#" data-to="sec-com">Comisiones</a>
+        <a href="#" data-to="inKpis">Resumen</a><a href="#" data-to="sec-ventas">Ventas y contratos</a><a href="#" data-to="sec-clientes">Clientes y seguros</a><a href="#" data-to="sec-cob">Cobros y retención</a><a href="#" data-to="sec-conc">Valor cobrado a Dugo Motos</a><a href="#" data-to="sec-soat">SOAT</a><a href="#" data-to="sec-oms">Clientes OMS</a><a href="#" data-to="sec-com">Comisiones</a>
       </div>
       <input type="search" id="inBusca" placeholder="Buscar gráfica… (ej. asesor, RC, SOAT)" aria-label="Buscar gráfica">
     </div>
     <div class="in-kpis" id="inKpis"></div>
     <section class="card gxc" id="gxWrap" data-sec="gerencia" hidden><h3>📋 Resumen gerencial</h3><p class="tot" id="gxSub"></p><div class="gx-grid" id="gxGrid"></div><h4 class="gx-h">⚠️ Atención requerida</h4><div class="gx-at" id="gxAt"></div></section>
-    <section class="card fnx" id="fnWrap" data-sec="gerencia" hidden><h3>🏁 Contratos terminados: finalizados vs cancelados</h3><p class="tot" id="fnSub"></p><div class="ed-per"><label>Año en que terminó <select id="fnAnio"></select></label> <label>Tipo de venta <select id="fnForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="fnAses"></select></label></div><div class="fn-w"><div class="fn-d" id="fnDon"></div><div class="fn-y" id="fnCols"></div></div><div class="fn-l"><span><i style="background:#5b78c7"></i>Finalizados (siempre pagó)</span><span><i style="background:#d64545"></i>Cancelados (dejó de pagar)</span><span>% sobre cada columna = finalizados ÷ terminados · columnas por año en que terminó el contrato</span></div></section>
+    <section class="card fnx" id="fnWrap" data-sec="cob" hidden><h3>🏁 Contratos terminados: finalizados vs cancelados</h3><p class="tot" id="fnSub"></p><div class="ed-per"><label>Año en que terminó <select id="fnAnio"></select></label> <label>Tipo de venta <select id="fnForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="fnAses"></select></label></div><div class="fn-w"><div class="fn-d" id="fnDon"></div><div class="fn-y" id="fnCols"></div></div><div class="fn-l"><span><i style="background:#5b78c7"></i>Finalizados (siempre pagó)</span><span><i style="background:#d64545"></i>Cancelados (dejó de pagar)</span><span>% sobre cada columna = finalizados ÷ terminados · columnas por año en que terminó el contrato</span></div></section>
     <section class="card rpd" id="rpdWrap" hidden><h3>📝 Informe diario para Don Camilo</h3><p class="tot" id="rpdSub">Se arma solo con los datos del sistema. Revise, corrija lo que quiera y copie.</p>
       <div class="ed-per"><label>Fecha de corte <input type="date" id="rpdFecha"></label> <label>Dinero en banco (saldo) <input type="text" id="rpdSaldo" placeholder="escríbalo a mano" inputmode="numeric"></label> <button type="button" class="btn-i" id="rpdAct">🔄 Rehacer informe</button> <button type="button" class="btn-i dest" id="rpdCopia">📋 Copiar texto</button> <button type="button" class="btn-i" id="rpdImg">🖼️ Descargar imagen</button> <button type="button" class="btn-i" id="rpdPdf">📄 Descargar PDF</button> <span id="rpdEst" class="tot" style="margin:0"></span></div>
       <textarea id="rpdTxt" rows="18" spellcheck="false"></textarea></section>
-    <section class="card bkx" id="bkWrap" data-sec="gerencia" hidden><h3>🏦 Dinero que entra al banco por consignaciones</h3><p class="tot" id="bkSub"></p><div class="ed-per"><label>Año <select id="bkAnio"></select></label> <label>Mes <select id="bkMes"><option value="">Todos los meses</option><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></label></div><div class="bk-k" id="bkK"></div><div class="bk-g" id="bkG"></div><p class="tot" style="margin:8px 0 0">Suma de todo lo que entró a la hoja del banco (incluye consignaciones sin comprobante). No cuenta intereses, valores menores a $1.000 ni las descripciones que usted excluyó en «Verificación bancaria».</p></section>
-    <section class="card rtx" id="rtWrap" data-sec="gerencia" hidden><h3>🤝 Retención de clientes</h3><p class="tot" id="rtSub"></p><div class="ed-per"><label>Tipo de venta <select id="rtForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="rtAses"></select></label></div><div class="rt-k" id="rtK"></div><div class="rt-g" id="rtG"></div><div class="fn-l"><span><i style="background:#38bdf8"></i>Clientes activos al inicio del mes</span><span><i style="background:#d64545"></i>Cancelaron en el mes</span><span>% = retención del mes · 100 % menos los que cancelaron</span></div></section>
-    <div class="in-sec" id="sec-ventas" data-sec="ventas" style="order:4"><i></i>Ventas y contratos<em>▾</em></div>
-    <div class="in-sec" id="sec-clientes" data-sec="clientes" style="order:8"><i></i>Clientes y seguros<em>▾</em></div>
-    <div class="in-sec" id="sec-conc" data-sec="conc" style="order:13"><i></i>Valor cobrado a Dugo Motos<em>▾</em></div>
-    <div class="in-sec" id="sec-soat" data-sec="soat" style="order:15"><i></i>SOAT<em>▾</em></div>
-    <div class="in-sec" id="sec-oms" data-sec="oms" style="order:17"><i></i>Clientes OMS<em>▾</em></div>
-    <div class="in-sec" id="sec-com" data-sec="com" style="order:19"><i></i>Comisiones<em>▾</em></div>
-    <div class="in-sec" id="sec-ren" data-sec="ren" style="order:21"><i></i>Renovaciones y cotizaciones<em>▾</em></div>
+    <section class="card bkx" id="bkWrap" data-sec="conc" hidden><h3>🏦 Dinero que entra al banco por consignaciones</h3><p class="tot" id="bkSub"></p><div class="ed-per"><label>Año <select id="bkAnio"></select></label> <label>Mes <select id="bkMes"><option value="">Todos los meses</option><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></label></div><div class="bk-k" id="bkK"></div><div class="bk-g" id="bkG"></div><p class="tot" style="margin:8px 0 0">Suma de todo lo que entró a la hoja del banco (incluye consignaciones sin comprobante). No cuenta intereses, valores menores a $1.000 ni las descripciones que usted excluyó en «Verificación bancaria».</p></section>
+    <section class="card rtx" id="rtWrap" data-sec="cob" hidden><h3>🤝 Retención de clientes</h3><p class="tot" id="rtSub"></p><div class="ed-per"><label>Tipo de venta <select id="rtForma"><option value="">Todas</option><option value="CONTADO">Contado</option><option value="FINANCIADO">Financiado</option></select></label> <label>Asesor <select id="rtAses"></select></label></div><div class="rt-k" id="rtK"></div><div class="rt-g" id="rtG"></div><div class="fn-l"><span><i style="background:#38bdf8"></i>Clientes activos al inicio del mes</span><span><i style="background:#d64545"></i>Cancelaron en el mes</span><span>% = retención del mes · 100 % menos los que cancelaron</span></div></section>
+    <div class="in-sec" id="sec-ventas" data-sec="ventas" style="order:10"><i></i>Ventas y contratos<small>¿cuánto vendemos y quién vende?</small><em>▾</em></div>
+    <div class="in-sec" id="sec-clientes" data-sec="clientes" style="order:20"><i></i>Clientes y seguros<small>¿qué protección llevan y quiénes son?</small><em>▾</em></div>
+    <div class="in-sec" id="sec-cob" data-sec="cob" style="order:30"><i></i>Cobros y retención<small>¿los clientes terminan, renuevan y se quedan?</small><em>▾</em></div>
+    <div class="in-sec" id="sec-conc" data-sec="conc" style="order:40"><i></i>Valor cobrado a Dugo Motos<small>¿cuánto dinero entra y qué falta consolidar?</small><em>▾</em></div>
+    <div class="in-sec" id="sec-soat" data-sec="soat" style="order:50"><i></i>SOAT<small>ventas, ganancia y renovaciones</small><em>▾</em></div>
+    <div class="in-sec" id="sec-oms" data-sec="oms" style="order:60"><i></i>Clientes OMS<small>pólizas vendidas y renovaciones</small><em>▾</em></div>
+    <div class="in-sec" id="sec-com" data-sec="com" style="order:70"><i></i>Comisiones<small>¿cuánto pagamos a los asesores?</small><em>▾</em></div>
     <h1 style="display:none">Inicio</h1><p class="sub" id="subInicio">Resumen del mes · usa el buscador de arriba para consultar un cliente</p>
     <h2 class="sec-t">Alertas de Valor cobrado a Dugo Motos</h2>
     <div class="alertas" id="alertas"><div class="nota">Abre «Valor cobrado a Dugo Motos» y guarda su URL para ver aquí las alertas.</div></div>
@@ -713,8 +733,20 @@
 
   document.getElementById('subInicio').textContent='Mes en curso: '+MES_TXT+' · usa el buscador de arriba para consultar un cliente';
   var asr=document.createElement('div');asr.className='card asr';asr.innerHTML='<h3>Ventas por asesor</h3><p class="tot" id="asrTot">Se muestra al conectar Cobros (contratos por asesor).</p><div class="ed-per" id="asFil"><label>Año <select id="asAnio"></select></label><label>Mes <select id="asMes"></select></label></div><div id="asrBarras"></div>';tarjetas.appendChild(asr);
-  var asy=document.createElement('div');asy.className='card asy';asy.innerHTML='<h3>Ventas por asesor, año por año</h3><p class="tot" id="asyTot">Se muestra al conectar Cobros (contratos por asesor).</p><div class="ed-per" id="asyFil"><label>Año <select id="asyAnios"></select></label> <label>Mes <select id="asyMes"></select></label> <label>Asesor <select id="asyAses"></select></label></div><div class="asy-g" id="asyG"></div><div class="asy-l" id="asyL"></div>';tarjetas.appendChild(asy);
+  var asy=document.createElement('div');asy.className='card asy';asy.innerHTML='<h3>Ventas por asesor</h3><p class="tot" id="asyTot">Se muestra al conectar Cobros (contratos por asesor).</p><div class="ed-per" id="asyFil"><label>Año <select id="asyAnios"></select></label> <label>Mes <select id="asyMes"></select></label> <label>Asesor <select id="asyAses"></select></label></div><div class="asy-g" id="asyG"></div><div class="asy-l" id="asyL"></div>';tarjetas.appendChild(asy);
   var rka=document.createElement('div');rka.className='card rka';rka.innerHTML='<h3>Ranking anual de asesores: Protect, RC y AP</h3><p class="tot" id="rkTot">Se muestra al conectar Cobros (contratos por asesor).</p><div class="ed-per"><label>Año <select id="rkAnio"></select></label></div><div class="scroll" style="overflow-x:auto"><table class="rk-t"><thead><tr><th>#</th><th>Asesor</th><th>Contratos Protect</th><th>Con RC</th><th>Con AP</th><th class="n">% con RC</th><th class="n">% con AP</th></tr></thead><tbody id="rkCuerpo"></tbody><tfoot id="rkPie"></tfoot></table></div>';tarjetas.appendChild(rka);
+  /* Las dos gráficas de asesores en una sola tarjeta con selector de vista (ranking del año / año por año) */
+  (function(){
+    var asy=document.querySelector('.asy'),r=document.querySelector('.rka');if(!asy||!r)return;
+    var fil=asy.querySelector('#asyFil'),g=asy.querySelector('#asyG'),l=asy.querySelector('#asyL');
+    var colW=document.createElement('div');colW.id='asyColsWrap';fil.parentNode.insertBefore(colW,fil);colW.appendChild(fil);colW.appendChild(g);colW.appendChild(l);
+    var rkW=document.createElement('div');rkW.id='asyRankWrap';['#rkTot','.ed-per','.scroll'].forEach(function(q){var e=r.querySelector(q);if(e)rkW.appendChild(e)});
+    var v=document.createElement('div');v.className='ed-per';v.innerHTML='<label>Vista <select id="asyVista"><option value="rank">Ranking del año (tabla)</option><option value="anios">Año por año (columnas)</option></select></label>';
+    asy.insertBefore(v,colW);asy.insertBefore(rkW,colW);
+    var tt=asy.querySelector('#asyTot'),sel=v.querySelector('select');
+    function ver(){var x=sel.value;rkW.style.display=x==='rank'?'':'none';colW.style.display=x==='anios'?'':'none';if(tt)tt.style.display=x==='anios'?'':'none'}
+    sel.addEventListener('change',ver);ver();r.parentNode.removeChild(r);
+  })();
   var rkRecs=null,rkOk=false,rkY='';
   document.getElementById('rkAnio').addEventListener('change',function(){rkY=this.value;pintarRanking(rkRecs,rkOk)});
   function pintarRanking(recs,ok){
@@ -2037,21 +2069,20 @@
   pintarKpis();
   /* ===== Claridad de cada gráfica: título simple, qué responde, ⓘ cómo se lee, accesos y buscador ===== */
   var TARJETAS=[
-    ['.ruta:not(.ruta-hito)','¿Cómo vamos con la meta del mes?','🏍️','','La moto avanza según los contratos del mes contra la meta (105). La línea punteada con «hoy» marca el ritmo que deberíamos llevar a esta fecha. Toca la moto para ver el detalle.','ventas',1],
+    ['.ruta:not(.ruta-hito)','¿Cómo vamos con la meta del mes?','🏍️','','La moto avanza según los contratos del mes contra la meta (105). La línea punteada con «hoy» marca el ritmo que deberíamos llevar a esta fecha. Toca la moto para ver el detalle.','resumen',1],
     ['.card.meta','Avance de la meta de contratos','🎯','Cuántos contratos llevamos este mes y cuántos faltan para la meta.','Cuenta los contratos de Protect con cliente en el mes actual (columnas I y J de la hoja). No cuenta los anulados. La marca del medidor es el ritmo esperado a hoy. Puedes cambiar la meta con «Cambiar meta».','ventas',1],
-    ['.rka','Ranking anual de asesores: Protect, RC y AP','🏅','Tabla del año con el total de contratos de cada asesor, cuántos llevan RC y cuántos AP.','Una fila por asesor, ordenada de mayor a menor. Las barras comparan: cian = contratos de Protect Motos, dorado = con RC, azul = con AP. A la derecha va el % de sus contratos que llevan RC y AP.','ventas',1],
-    ['.asy','Ventas por asesor, año por año','📊','Cuántos contratos firmó cada asesor en cada año, lado a lado.','Cada grupo de columnas es un asesor (columna B de Protect). Cada color es un año y el número encima es cuántas ventas hizo ese año. Por cada asesor hay tres columnas: ventas de Protect Motos (todas), ventas con RC y ventas con AP. Filtre por año, mes y asesor. Debajo va el total de sus años.','ventas',1],
+        ['.asy','Ventas por asesor','🏅','Cuántos contratos vendió cada asesor, con RC y con AP: ranking del año o año por año.','Dos vistas con el selector «Vista». Ranking del año: una fila por asesor con los contratos de Protect Motos (cian), los que llevan RC (dorado) y los que llevan AP (azul), y el % de RC y AP. Año por año: grupos de columnas por asesor, con filtros de año, mes y asesor. Sale de la columna B (asesor) de Protect; no cuenta anulados.','ventas',1],
     ['.asr','¿Quién vende más?','🏆','Contratos firmados por cada asesor en el período elegido.','Cada barra es un asesor (columna B de Protect) y el número es cuántos contratos firmó. El porcentaje es su parte del total. El primero va en dorado.','ventas',1],
     ['.cfc','¿Contado o financiado? Año por año','📊','Todos los años juntos: cuántos contratos fueron de contado y cuántos financiados.','Dorado = de contado, azul = financiados; cada pareja de columnas es un año. Con «Mes» ves un mes específico. En «Ver» también están: una gráfica por año, comparar años y contado y financiados mes a mes. Sale de las columnas I, J y T de Protect; no cuenta anulados.','ventas',1],
     ['.seg','¿Qué protección llevan los contratos?','🛡️','Reparte los contratos según lleven solo Protect, RC, AP o varias.','Todos los contratos llevan Protect Motos. RC sale de la columna U y AP de la columna W de la hoja (SI = lo lleva). Cambia el año y el mes con los filtros.','clientes',1],
     ['.rcm','Contratos con RC y sin RC, mes a mes','🧾','Cuántos contratos de cada mes llevan RC y cuántos no.','Columna dorada = contratos con RC, celeste = sin RC. Con «Mostrar» puedes ver solo uno de los dos. Sale de la columna U de Protect.','clientes',1],
     ['.edc','¿Quién nos compra? Edad y ticket promedio','👥','Rango de edad que más compra y valor promedio de cada venta.','La edad sale de la columna G (o de la fecha de nacimiento). En financiados el ticket es la cuota mensual promedio; en contado, el valor de la venta.','clientes',1],
     ['.anu','¿Cuántos clientes están activos?','✅','Activos, finalizados, cancelados y anulados de Protect.','Cuenta el texto de la columna AR de la hoja, igual que el botón Cobros. Los anulados se muestran aparte y no cuentan como vendidos. Con «¿Cómo se cuenta?» ves el detalle por año.','clientes',1],
-    ['.vmc','Ventas mes a mes, por año','📈','Todas las ventas de cada mes, con un color por año.','Cada columna es el total de contratos de ese mes (contado y financiados juntos) y cada color es un año. Con «Año» ves uno solo y con «Tipo de venta» separas contado o financiadas. Sale de las columnas I, J y T de Protect; no cuenta anulados.','resumen',1],
+    ['.vmc','Ventas mes a mes, por año','📈','Todas las ventas de cada mes, con un color por año.','Cada columna es el total de contratos de ese mes (contado y financiados juntos) y cada color es un año. Con «Año» ves uno solo y con «Tipo de venta» separas contado o financiadas. Sale de las columnas I, J y T de Protect; no cuenta anulados.','ventas',1],
     ['.cmc','¿Cuánto pagamos en comisiones?','💵','Total de comisiones pagadas a los asesores, mes a mes, por asesor o año a año.','Se calcula igual que el botón Comisiones: contado con RC y AP $40.000, contado sin RC ni AP $25.000, financiado con RC y AP $15.000, financiado sin RC ni AP $10.000; solo RC o solo AP según su regla. Las pólizas OMS de Kelli pagan $40.000 contado y $15.000 financiado. No cuenta anulados ni cancelados ni los casos especiales sin decidir. Las columnas están en miles de pesos colombianos (385 = $385.000 COP).','com',1],
-    ['.rnc:not(.rnx)','Renovaciones Protect (Cobros): enviados vs aceptaron','🔁','A cuántos clientes les enviamos el mensaje de renovación y cuántos aceptaron, mes a mes.','Los mensajes y las respuestas salen de la hoja Gestiones (botones «Ya envié mensaje», «Acepto renovación» y «No acepto renovación» de Cobros). Cada cliente cuenta una vez, en el mes de su primer mensaje; el % de cada mes = aceptaron ÷ enviados. Las cotizaciones salen de la hoja «Cotizaciones Renovación» (botón ENVIAR COTIZACIÓN en Cobros). Los mensajes de renovación salen de la hoja Gestiones. «Aceptó» y «No aceptó» se marcan en el panel «Cotizaciones de renovación» de Cobros. % de conversión = aceptadas ÷ cotizaciones enviadas.','ren'],
-    ['.rno','Renovaciones OMS: enviados vs renovaron','🔁','A cuántos clientes OMS les enviamos el mensaje de renovación y cuántos renovaron, mes a mes.','Sale de la hoja de Clientes OMS y de sus gestiones (botones «Ya envié mensaje», «Renovó» y «No renovará»). Renovó también cuenta si el cliente ya tiene una póliza nueva del mismo vehículo. Cada cliente cuenta una vez, en el mes de su primer mensaje.','ren'],
-    ['.rns','Renovaciones SOAT: enviados vs renovaron','🔁','A cuántos clientes de SOAT les enviamos el mensaje de renovación y cuántos renovaron, mes a mes.','Sale de la hoja Soat y de sus gestiones (botones «Ya envié mensaje», «Renovó» y «No renovará»). Renovó también cuenta si ya hay un SOAT nuevo de la misma placa. Cada cliente cuenta una vez, en el mes de su primer mensaje.','ren'],
+    ['.rnc:not(.rnx)','Renovaciones Protect (Cobros): enviados vs aceptaron','🔁','A cuántos clientes les enviamos el mensaje de renovación y cuántos aceptaron, mes a mes.','Los mensajes y las respuestas salen de la hoja Gestiones (botones «Ya envié mensaje», «Acepto renovación» y «No acepto renovación» de Cobros). Cada cliente cuenta una vez, en el mes de su primer mensaje; el % de cada mes = aceptaron ÷ enviados. Las cotizaciones salen de la hoja «Cotizaciones Renovación» (botón ENVIAR COTIZACIÓN en Cobros). Los mensajes de renovación salen de la hoja Gestiones. «Aceptó» y «No aceptó» se marcan en el panel «Cotizaciones de renovación» de Cobros. % de conversión = aceptadas ÷ cotizaciones enviadas.','cob'],
+    ['.rno','Renovaciones OMS: enviados vs renovaron','🔁','A cuántos clientes OMS les enviamos el mensaje de renovación y cuántos renovaron, mes a mes.','Sale de la hoja de Clientes OMS y de sus gestiones (botones «Ya envié mensaje», «Renovó» y «No renovará»). Renovó también cuenta si el cliente ya tiene una póliza nueva del mismo vehículo. Cada cliente cuenta una vez, en el mes de su primer mensaje.','oms'],
+    ['.rns','Renovaciones SOAT: enviados vs renovaron','🔁','A cuántos clientes de SOAT les enviamos el mensaje de renovación y cuántos renovaron, mes a mes.','Sale de la hoja Soat y de sus gestiones (botones «Ya envié mensaje», «Renovó» y «No renovará»). Renovó también cuenta si ya hay un SOAT nuevo de la misma placa. Cada cliente cuenta una vez, en el mes de su primer mensaje.','soat'],
     ['.cnc','Valor cobrado a Dugo Motos','💰','Dinero que ya aparece en la hoja Consolidado, mes a mes o año a año.','De cada pago toma UN solo valor (nunca suma C con D): si solo viene la C o la D, esa; si vienen las dos, la que coincide con la columna H (valor pagado a Dugo Motos). Después suma los valores elegidos. Lo ubica según las columnas Mes (J) y Año (K) que usted escribe allí. Los pagos sin mes o sin año no entran a la gráfica y se avisan. Valores en pesos colombianos (COP).','conc'],
     ['.svc','SOAT: cuántos vendemos y cuánto ganamos','🛡️','SOAT vendidos por mes (columnas) y su ganancia (línea verde).','Sale de la hoja Soat: cada SOAT cuenta en el mes de su fecha de venta. La escala verde de la derecha es la ganancia.','soat',1]
   ];
@@ -2081,11 +2112,18 @@
   /* resalta el acceso de la sección que se está viendo */
   var vi=$('v-inicio');
   vi.addEventListener('scroll',function(){
-    var ids=['inKpis','sec-ventas','sec-clientes','sec-conc','sec-soat','sec-oms','sec-com'],act=ids[0],top=vi.getBoundingClientRect().top+90;
+    var ids=['inKpis','sec-ventas','sec-clientes','sec-cob','sec-conc','sec-soat','sec-oms','sec-com'],act=ids[0],top=vi.getBoundingClientRect().top+90;
     ids.forEach(function(i){var e=document.getElementById(i);if(e&&e.getBoundingClientRect().top<=top)act=i});
     [].forEach.call(chips.querySelectorAll('a'),function(a){a.classList.toggle('act',a.dataset.to===act)})});
-  /* secciones plegables */
-  [].forEach.call(document.querySelectorAll('#v-inicio .in-sec[data-sec]'),function(h){h.addEventListener('click',function(){$('v-inicio').querySelector('.pagina').classList.toggle('cierra-'+h.dataset.sec)})});
+  /* secciones plegables: por defecto solo el Resumen queda abierto; se recuerda lo que usted abre */
+  (function(){
+    var pg=$('v-inicio').querySelector('.pagina'),SECS=['ventas','clientes','cob','conc','soat','oms','com'],ab=[];
+    try{ab=JSON.parse(localStorage.getItem('pm_inicio_abiertas')||'[]')||[]}catch(e){}
+    SECS.forEach(function(k){if(ab.indexOf(k)<0)pg.classList.add('cierra-'+k)});
+    [].forEach.call(document.querySelectorAll('#v-inicio .in-sec[data-sec]'),function(h){h.addEventListener('click',function(){
+      pg.classList.toggle('cierra-'+h.dataset.sec);
+      try{localStorage.setItem('pm_inicio_abiertas',JSON.stringify(SECS.filter(function(k){return !pg.classList.contains('cierra-'+k)})))}catch(e){}})});
+  })();
   /* buscador de gráficas */
   var busca=$('inBusca');
   function filtrarGraficas(){

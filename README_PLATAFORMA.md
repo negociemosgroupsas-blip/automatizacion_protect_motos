@@ -41,8 +41,12 @@ conectores/
 2. **Resumen gerencial**: contratos del mes (con proyección al cierre), acumulado del año vs año anterior, valor contratado,
    mezcla financiada, cancelaciones y comisiones del mes — cada uno comparado con el período anterior.
 3. **Atención requerida**: contratos por vencer, SOAT y OMS por renovar, pendientes de consolidar, comisiones sin decidir.
-4. Secciones plegables: Ventas y contratos · Clientes y seguros · Valor cobrado a Dugo Motos · SOAT · Clientes OMS · Comisiones · Renovaciones
-   (tres gráficas: Protect/Cobros, pólizas OMS y SOAT — mensajes enviados vs renovaron).
+4. Gráficas ordenadas por módulo (secciones plegables; al abrir el Inicio solo queda abierto el Resumen y el sistema recuerda lo que usted abre):
+   · **Ventas y contratos**: avance de la meta, quién vende más, ventas mes a mes, contado o financiado, ventas por asesor (ranking del año o año por año).
+   · **Clientes y seguros**: qué protección llevan, contratos con y sin RC, estado de los clientes, edad y ticket.
+   · **Cobros y retención**: contratos terminados, retención de clientes y renovaciones de Protect.
+   · **Valor cobrado a Dugo Motos**: alertas, consolidado y dinero que entra al banco.
+   · **SOAT** (ventas, ganancia y renovaciones) · **Clientes OMS** (tablero y renovaciones) · **Comisiones**.
 
 ## Paleta de gráficas (igual en todo el sistema)
 Cian `#38bdf8` (series y barras) · Oro `#fdc33e` (destacado, mes actual, contado) · Azul `#5b78c7` (financiado) · Azul claro `#9fb8e8` · Naranja `#e08a00` · Verde `#1f9d55` (activo, positivo) · Rojo `#dc2626` (cancelado, alerta). Es la misma del Inicio y se aplica en Clientes OMS, SOAT, Conciliación, Comisiones y Cobros.
