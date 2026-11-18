@@ -142,8 +142,6 @@
       op(1,'Hurto o pérdida total',(d.aseguradora==='Protect Motos'?'cubre el 80 %':''),d.op1,p1,false)+
       op(2,'Hurto o pérdida total + RC + Asistencias','',d.op2,p2,true)+
       regaloHtml(d)+
-      '<div class="cta"><b>¡CONTÁCTANOS HOY!</b><div class="ph">📞 312 880 68 73</div></div>'+
-      '<div class="pie">'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'<b>PROTECT MOTOS</b>')+'<div>protectmotos@gmail.com</div></div>'+
       '</div>';
   }
   function regaloHtml(d){
