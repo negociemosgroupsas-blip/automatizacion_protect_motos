@@ -51,6 +51,15 @@
       '.pmcr-g label{display:flex;flex-direction:column;font-size:.85rem;font-weight:700;gap:3px}.pmcr-g .ancho{grid-column:1/-1}'+
       '.pmcr-g input,.pmcr-g select,.pmcr-g textarea{border:1px solid #cfd6e4;border-radius:8px;padding:8px 10px;font:inherit;font-weight:400;font-size:.9rem}'+
       '.pmcr-g input[readonly]{background:#f1f4f9}'+
+      /* la ventana es siempre blanca: sus campos también (aunque el módulo esté en modo oscuro) */
+      '.pmcr-caja input,.pmcr-caja select,.pmcr-caja textarea{background:#fff!important;color:#13223f!important;border:1px solid #cfd6e4!important}'+
+      '.pmcr-caja input::placeholder,.pmcr-caja textarea::placeholder{color:#8a94a8!important}'+
+      '.pmcr-caja input[readonly]{background:#f1f4f9!important}'+
+      '.pmcr-caja select option{background:#fff!important;color:#13223f!important}'+
+      '.pmcr-caja,.pmcr-caja label,.pmcr-caja h3,.pmcr-caja summary,.pmcr-caja p,.pmcr-caja b,.pmcr-caja span{color:#13223f}.pmcr-caja .pmcr-sub{color:#667!important}'+
+      '.pmcr-caja .pmcr-b{color:#fff}.pmcr-caja .pmcr-b.g,.pmcr-caja .pmcr-b.o{color:#13223f}'+
+      '.pmcr-caja .pmcr-st.mal{color:#b3261e!important}.pmcr-caja .pmcr-st.bien{color:#0b6b2b!important}'+
+      '.pmcr-caja .pmcr-cuadro,.pmcr-caja .pmcr-cuadro b,.pmcr-caja .pmcr-cuadro span{color:#13223f}'+
       '.pmcr-cuadro{background:#f4f7fc;border:1px solid #dbe3f1;border-radius:10px;padding:10px 12px;margin:12px 0;font-size:.86rem;line-height:1.5}'+
       '.pmcr-msg{width:100%;min-height:200px;border:1px solid #cfd6e4;border-radius:8px;padding:10px;font:inherit;font-size:.86rem;box-sizing:border-box}'+
       '.pmcr-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}'+
