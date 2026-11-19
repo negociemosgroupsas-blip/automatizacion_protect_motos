@@ -1302,6 +1302,11 @@ function accionMundialGuardar(p) {
     if (enc.indexOf('factura') < 0) return { ok: false, error: 'La celda A1 de la hoja no es «# Factura de pago»: no escribo para no dañar la hoja.' };
     var fecha = function (t) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(t || '')); return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : ''; };
     var nro = function (t) { if (t === '' || t == null) return ''; var n = Number(String(t).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? '' : n; };
+    // Regla de retorno NG sobre la prima base: RC 3,75 % · AP 10 %. Si falta el retorno o el %, se calculan.
+    var REGLA = { '2000722986': 3.75, '2000725842': 10 }, prima0 = nro(d.prima), ret0 = nro(d.retorno), pct0 = nro(d.pct);
+    if (REGLA[pol]) { if (pct0 === '') pct0 = REGLA[pol]; if (ret0 === '' && prima0 !== '') ret0 = Math.round(prima0 * pct0 / 100); }
+    else if (pct0 === '' && prima0 && ret0 !== '') pct0 = Math.round(ret0 / prima0 * 10000) / 100;
+    d.retorno = ret0; d.pct = pct0;
     var fila = [fac, fecha(d.desde), fecha(d.hasta), String(d.radHome || '').trim(), String(d.radCorreo || '').trim(), nro(d.cobro), Number(pol), MUNDIAL_POLIZAS[pol],
       nro(d.valor), nro(d.prima), nro(d.retorno), nro(d.pct), String(d.estado || '').trim(), fecha(d.limite), String(d.obs || '').trim()];
     var ult = hoja.getLastRow(), colA = ult > 1 ? hoja.getRange(1, 1, ult, 1).getValues() : [[enc]], colG = ult > 1 ? hoja.getRange(1, 7, ult, 1).getValues() : [[]];

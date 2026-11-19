@@ -64,8 +64,9 @@
       <label>N · Fecha límite de pago<input type="date" id="f_lim"></label>
       <label class="ancho">O · Observaciones<input type="text" id="f_obs" autocomplete="off"></label>
     </div>
+    <p class="nota" id="fRegla" style="font-weight:700;color:#1e3a8a"></p>
     <div class="barra"><button class="btn o" id="bGuardar" type="button">Guardar cobro nuevo</button><button class="btn g" id="bLimpiar" type="button">Limpiar el formulario</button><span class="estado" id="fEst" style="margin:0"></span></div>
-    <p class="nota">El % se calcula solo (retorno ÷ prima base) mientras no lo escriba usted. Las fechas se escriben en la hoja como día/mes/año. Nunca se borran filas desde aquí.</p>
+    <p class="nota">En RC el retorno es el 3,75 % de la prima base y en AP el 10 %: se calcula solo al escribir la prima base (puede cambiarlo a mano). Las fechas se escriben en la hoja como día/mes/año. Nunca se borran filas desde aquí.</p>
   </section>
 
   <section class="panel" id="pLista">
@@ -200,15 +201,31 @@
 
   /* ---------- registrar / corregir cobros ---------- */
   var POL={'2000725842':'AP','2000722986':'RC','2000743946':'VG'},EDIT=null;
+  /* Retorno NG sobre el valor prima base: RC (2000722986) 3,75 % · AP (2000725842) 10 %. VG todavía sin regla: se escribe a mano. */
+  var PCT_RETORNO={'2000722986':3.75,'2000725842':10};
+  function pctTxt(n){return String(n).replace('.',',')}
+  function retornoEsperado(pol,prima){var p=PCT_RETORNO[pol];return(p&&prima)?Math.round(prima*p/100):null}
   function fnum(t){var n=num(t);return n?String(n):''}
   function conMiles(el){var n=String(el.value).replace(/\D/g,'');el.value=n?n.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):''}
-  var pctManual=false;
-  function autoPct(){if(pctManual)return;var pr=num($('f_pri').value),rt=num($('f_ret').value);$('f_pct').value=(pr&&rt)?(Math.round(rt/pr*10000)/100).toString().replace('.',','):''}
-  ['f_val','f_pri','f_ret'].forEach(function(i){$(i).addEventListener('input',function(){conMiles(this);autoPct()})});
-  $('f_pct').addEventListener('input',function(){pctManual=true});
-  $('f_pol').addEventListener('change',function(){$('f_prod').value=POL[this.value]||''});
+  var pctManual=false,retManual=false;
+  function recalcular(){
+    var pol=$('f_pol').value,pr=num($('f_pri').value),rg=PCT_RETORNO[pol];
+    if(rg){
+      if(!pctManual)$('f_pct').value=pctTxt(rg);
+      var pc=pctManual?num($('f_pct').value):rg;
+      if(!retManual){var r=pr&&pc?Math.round(pr*pc/100):0;$('f_ret').value=r?String(r).replace(/\B(?=(\d{3})+(?!\d))/g,'.'):''}
+    }else if(!pctManual){
+      var rt=num($('f_ret').value);$('f_pct').value=(pr&&rt)?pctTxt(Math.round(rt/pr*10000)/100):''
+    }
+    var info=$('fRegla');if(info){info.textContent=rg?'Regla de esta póliza: retorno = '+pctTxt(rg)+' % del valor prima base'+(pr?' → '+cop(retornoEsperado(pol,pr)):'')+'.':(pol?'Esta póliza no tiene regla de retorno: escriba el valor de retorno y el % se calcula solo.':'')}
+  }
+  $('f_val').addEventListener('input',function(){conMiles(this)});
+  $('f_pri').addEventListener('input',function(){conMiles(this);recalcular()});
+  $('f_ret').addEventListener('input',function(){conMiles(this);retManual=true;recalcular()});
+  $('f_pct').addEventListener('input',function(){pctManual=true;if(!retManual)recalcular()});
+  $('f_pol').addEventListener('change',function(){$('f_prod').value=POL[this.value]||'';pctManual=false;retManual=false;recalcular()});
   function fest(t,c){var e=$('fEst');e.textContent=t;e.className='estado '+(c||'');e.style.margin='0'}
-  function limpiarForm(){EDIT=null;pctManual=false;['f_fac','f_des','f_has','f_rh','f_rc','f_cob','f_pol','f_prod','f_val','f_pri','f_ret','f_pct','f_est','f_lim','f_obs'].forEach(function(i){$(i).value=''});$('fModo').textContent='Cobro nuevo';$('bGuardar').textContent='Guardar cobro nuevo';fest('')}
+  function limpiarForm(){EDIT=null;pctManual=false;retManual=false;['f_fac','f_des','f_has','f_rh','f_rc','f_cob','f_pol','f_prod','f_val','f_pri','f_ret','f_pct','f_est','f_lim','f_obs'].forEach(function(i){$(i).value=''});$('fModo').textContent='Cobro nuevo';$('bGuardar').textContent='Guardar cobro nuevo';fest('');recalcular()}
   $('bLimpiar').addEventListener('click',limpiarForm);
   function datos(){return {factura:$('f_fac').value.trim(),desde:$('f_des').value,hasta:$('f_has').value,radHome:$('f_rh').value,radCorreo:$('f_rc').value,cobro:$('f_cob').value,poliza:$('f_pol').value,valor:num($('f_val').value)||'',prima:num($('f_pri').value)||'',retorno:num($('f_ret').value)||'',pct:$('f_pct').value.trim()===''?'':num($('f_pct').value),estado:$('f_est').value,limite:$('f_lim').value,obs:$('f_obs').value}}
   function guardarLlamar(params){
@@ -227,7 +244,8 @@
     var d=datos();
     if(!d.factura){fest('Falta el número de factura.','er');return}
     if(!d.poliza){fest('Elija la póliza: AP, RC o VG.','er');return}
-    var resumen=(EDIT?'Corregir la fila '+EDIT.fila+' de la hoja':'Agregar una fila nueva al final de la hoja')+':\n\nFactura '+d.factura+' · póliza '+d.poliza+' ('+POL[d.poliza]+')\nValor cobrado '+(d.valor?cop(d.valor):'—')+' · Retorno NG '+(d.retorno?cop(d.retorno):'—')+' · Estado '+(d.estado||'—')+'\n\n¿Guardar?';
+    var esp=retornoEsperado(d.poliza,d.prima),alerta=(esp!==null&&d.retorno!==''&&Math.abs(esp-d.retorno)>1)?'\n\nOJO: según la regla ('+pctTxt(PCT_RETORNO[d.poliza])+' % de la prima base) el retorno debería ser '+cop(esp)+' y usted escribió '+cop(d.retorno)+'.':'';
+    var resumen=(EDIT?'Corregir la fila '+EDIT.fila+' de la hoja':'Agregar una fila nueva al final de la hoja')+':\n\nFactura '+d.factura+' · póliza '+d.poliza+' ('+POL[d.poliza]+')\nValor cobrado '+(d.valor?cop(d.valor):'—')+' · Retorno NG '+(d.retorno?cop(d.retorno):'—')+' · Estado '+(d.estado||'—')+alerta+'\n\n¿Guardar?';
     if(!window.confirm(resumen))return;
     $('bGuardar').disabled=true;fest('Guardando en la hoja…');
     var par={datos:JSON.stringify(d),modo:EDIT?'editar':'nuevo'};if(EDIT){par.fila=EDIT.fila;par.esperada=EDIT.esperada}
@@ -235,18 +253,18 @@
       .catch(function(e){fest(e.message,'er')}).then(function(){$('bGuardar').disabled=false});
   });
   function editar(r){
-    EDIT={fila:r.fila,esperada:r.facRaw+'|'+r.pol.replace(/\D/g,'')};pctManual=true;
+    EDIT={fila:r.fila,esperada:r.facRaw+'|'+r.pol.replace(/\D/g,'')};pctManual=true;retManual=true;
     var set=function(i,v){$(i).value=v==null?'':v};
     set('f_fac',r.facRaw);set('f_des',r.des?r.des.iso:'');set('f_has',r.has?r.has.iso:'');set('f_rh',r.rh);set('f_rc',r.rc);set('f_cob',r.cob);set('f_pol',r.pol.replace(/\D/g,''));$('f_prod').value=POL[r.pol.replace(/\D/g,'')]||r.prod;
     set('f_val',r.val?String(Math.round(r.val)).replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'');set('f_pri',r.prima?String(Math.round(r.prima)).replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'');set('f_ret',r.ret?String(Math.round(r.ret)).replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'');
     set('f_pct',r.pct===''?'':String(r.pct).replace('.',','));set('f_est',r.est);set('f_lim',r.lim?r.lim.iso:'');set('f_obs',r.obs);
-    $('fModo').textContent='Corrigiendo la fila '+r.fila;$('bGuardar').textContent='Guardar cambios de la fila '+r.fila;fest('');
+    recalcular();$('fModo').textContent='Corrigiendo la fila '+r.fila;$('bGuardar').textContent='Guardar cambios de la fila '+r.fila;fest('');
     $('pForm').scrollIntoView({behavior:'smooth',block:'start'});
   }
   function pintarLista(){
     if(!FILAS)return;var q=norm($('lBus').value),pl=$('lPol').value;
     var L=FILAS.filter(function(r){return(!pl||r.pol.replace(/\D/g,'')===pl)&&(!q||norm([r.facRaw,r.pol,r.est,r.obs,r.prod].join(' ')).indexOf(q)>=0)}).slice().reverse();
-    $('lCuerpo').innerHTML=L.slice(0,300).map(function(r){return '<tr><td>'+r.fila+'</td><td><b>'+esc(r.facRaw)+'</b></td><td>'+fbonita(r.des)+' al '+fbonita(r.has)+'</td><td class="n">'+esc(r.cob)+'</td><td>'+esc(r.pol)+'</td><td>'+esc(r.prod)+'</td><td class="n">'+cop(r.val)+'</td><td class="n">'+cop(r.prima)+'</td><td class="n">'+cop(r.ret)+'</td><td class="n">'+esc(r.pct===''?'':String(r.pct).replace('.',','))+'</td><td>'+esc(r.est)+'</td><td>'+fbonita(r.lim)+'</td><td>'+esc(r.obs)+'</td><td><button class="btn s" data-f="'+r.fila+'" type="button">Editar</button></td></tr>'}).join('')||'<tr><td colspan="14" class="vacio">No hay cobros con ese filtro.</td></tr>';
+    $('lCuerpo').innerHTML=L.slice(0,300).map(function(r){return '<tr><td>'+r.fila+'</td><td><b>'+esc(r.facRaw)+'</b></td><td>'+fbonita(r.des)+' al '+fbonita(r.has)+'</td><td class="n">'+esc(r.cob)+'</td><td>'+esc(r.pol)+'</td><td>'+esc(r.prod)+'</td><td class="n">'+cop(r.val)+'</td><td class="n">'+cop(r.prima)+'</td><td class="n">'+cop(r.ret)+'</td><td class="n">'+esc(r.pct===''?'':String(r.pct).replace('.',','))+(function(){var e=retornoEsperado(r.pol.replace(/\D/g,''),r.prima);return(e!==null&&r.ret&&Math.abs(e-r.ret)>1)?' <span class="bd d" title="Según la regla el retorno debería ser '+cop(e)+'">revisar</span>':''})()+'</td><td>'+esc(r.est)+'</td><td>'+fbonita(r.lim)+'</td><td>'+esc(r.obs)+'</td><td><button class="btn s" data-f="'+r.fila+'" type="button">Editar</button></td></tr>'}).join('')||'<tr><td colspan="14" class="vacio">No hay cobros con ese filtro.</td></tr>';
     $('lNota').textContent=L.length+' cobro(s)'+(L.length>300?' · se muestran los 300 más recientes; use el buscador':'')+' · lo último de la hoja va arriba.';
     var fs={},es={};FILAS.forEach(function(r){if(r.facRaw)fs[r.facRaw]=1;if(r.est)es[r.est]=1});
     $('dlFac').innerHTML=Object.keys(fs).map(function(x){return '<option value="'+esc(x)+'">'}).join('');
