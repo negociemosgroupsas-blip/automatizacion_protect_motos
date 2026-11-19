@@ -221,6 +221,11 @@
   /* la franja de datos del cliente es siempre clara: sus letras deben ser oscuras también en modo oscuro */
   .ficha-cliente{color:#13223f} .ficha-cliente .campo .etiqueta{color:#5f6f93!important} .ficha-cliente .campo .valor{color:#13223f!important}
 
+  .alarma-vig{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:10px;margin:0 0 10px;font-size:.9rem;line-height:1.35;border:1px solid}
+  .alarma-vig b{font-weight:700} .alarma-vig small{display:block;opacity:.85;margin-top:2px}
+  .alarma-vig.rojo{background:#fde8ea;color:#7a1f2e;border-color:#f2b8c0} .alarma-vig.ambar{background:#fff4d6;color:#6b4a00;border-color:#f0cf6a}
+  .alarma-vig.verde{background:#e3f6ea;color:#14532d;border-color:#b6e2c6} .alarma-vig .ic{flex:none;font-size:1.1rem;line-height:1.2}
+  .alarma-vig a{color:inherit;text-decoration:underline;cursor:pointer;font-weight:700}
   .tarjeta-poliza + .tarjeta-poliza{margin-top:22px;padding-top:22px;border-top:2px dashed var(--borde);}
 
   .modal-fondo{
@@ -1220,7 +1225,7 @@
       if(r.ok){ VIGS = r.vigencias||[]; VIG_AVISOS = r.avisos||[]; VIG_ENC = r.encabezados||{}; }
       else { VIGS = null; VIG_AVISOS = [r.error||'No se pudieron leer las vigencias.']; }
     }).catch(function(e){ VIGS = null; VIG_AVISOS = [(/Acción desconocida/.test(e.message)?'El conector todavía no lee las vigencias: pegue el código nuevo (Codigo_UNICO.gs) y publique «Nueva versión».':e.message)]; })
-      .then(function(){ vigCargando = false; renderizarVigencias(); });
+      .then(function(){ vigCargando = false; renderizarVigencias(); if(document.getElementById('inputBusqueda').value.trim()) buscarCliente(); });
   }
   // lo que dice la hoja Gestiones de cada póliza: mensaje enviado, seguimientos y respuesta
   function vigGestiones(){
@@ -2657,6 +2662,9 @@
 
     var mapaPagos = construirMapaPagos();
 
+    var alarmas = alarmasVigenciaDe(encontrados);
+    if(alarmas) contenedor.insertAdjacentHTML('beforeend', alarmas);
+
     if(encontrados.length>1){
       var aviso = document.createElement('div');
       aviso.className = 'sub';
@@ -2668,6 +2676,31 @@
     encontrados.forEach(function(encontrado){
       renderizarFichaPoliza(contenedor, encontrado, mapaPagos, encontrados.length);
     });
+  }
+
+  // Alarma de vigencias de RC y AP del cliente buscado (de las hojas de RC y AP), aparte del flujo de renovaciones de Protect
+  function alarmasVigenciaDe(encontrados){
+    if(!VIGS) return '';
+    var N = Number(document.getElementById('vigDias').value)||30, G = vigGestiones(), hoyD = hoy(), vistos = {}, html = '';
+    encontrados.forEach(function(c){
+      var ced = normCed(c.cedula); if(!ced || vistos[ced]) return; vistos[ced] = true;
+      var lista = VIGS.filter(function(v){ return normCed(v.cedula)===ced; }).sort(function(a,b){ return a.tipo<b.tipo?-1:1; });
+      lista.forEach(function(v){
+        var fin = parsearISO(v.finISO); if(!fin) return;
+        var dias = diferenciaDias(fin, hoyD), g = G[vigClave(v)] || null;
+        var nom = v.tipo==='RC' ? 'Responsabilidad civil (RC)' : 'Accidentes personales (AP)';
+        var pol = v.numero ? ' · póliza '+escapeHtml(v.numero) : '';
+        var est = '';
+        if(g && g.resp==='acepto') est = 'Renovación aceptada el '+escapeHtml(formatoFechaCO(parsearISO(g.respISO)))+'.';
+        else if(g && g.resp==='no') est = 'El cliente indicó que no renueva.';
+        else if(g && g.env) est = 'Mensaje de renovación enviado el '+escapeHtml(formatoFechaCO(parsearISO(g.env)))+' · '+g.seg.filter(Boolean).length+' de 3 seguimientos.';
+        else if(dias<=N) est = 'Todavía no se le ha enviado el mensaje de renovación (panel «RC y AP por renovar»).';
+        if(dias<0) html += '<div class="alarma-vig rojo"><span class="ic">⛔</span><div><b>'+nom+' VENCIDA</b> el '+escapeHtml(v.fin)+' (hace '+(-dias)+' día'+(-dias===1?'':'s')+')'+pol+(est?'<small>'+est+'</small>':'')+'</div></div>';
+        else if(dias<=N) html += '<div class="alarma-vig ambar"><span class="ic">⚠</span><div><b>'+nom+' vence '+(dias===0?'HOY':'en '+dias+' día'+(dias===1?'':'s'))+'</b> ('+escapeHtml(v.fin)+')'+pol+(est?'<small>'+est+'</small>':'')+'</div></div>';
+        else html += '<div class="alarma-vig verde"><span class="ic">✔</span><div>'+nom+' vigente hasta el '+escapeHtml(v.fin)+pol+'</div></div>';
+      });
+    });
+    return html;
   }
 
   function renderizarFichaPoliza(contenedor, encontrado, mapaPagos, totalPolizas){

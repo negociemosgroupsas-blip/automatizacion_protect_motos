@@ -41,7 +41,7 @@
   };
   var MAP = {'🏠':'home','📄':'file','📑':'table','📋':'file','📝':'file','💬':'message','💰':'coins','💵':'wallet','💳':'wallet','🧾':'receipt','✅':'check','☑':'check','✔':'check',
     '🏦':'bank','🛡':'shield','🏍':'moto','🛵':'moto','⚙':'gear','📈':'trend','📉':'trend','📊':'bars','🏆':'trophy','🏅':'trophy','👥':'users','👤':'users','🏁':'flag','🤝':'heart',
-    '🎯':'target','📆':'calendar','📅':'calendar','🎁':'gift','📨':'send','📩':'send','✉':'send','⚠':'alert','🔁':'repeat','🔄':'refresh','⏰':'clock','🕒':'clock','⬇':'download',
+    '🎯':'target','📆':'calendar','📅':'calendar','🎁':'gift','📨':'send','📩':'send','✉':'send','⚠':'alert','⛔':'alert','🚫':'alert','🔁':'repeat','🔄':'refresh','⏰':'clock','🕒':'clock','⬇':'download',
     '☀':'sun','🌙':'moon','✍':'pen','🖼':'image','📂':'folder','📎':'folder','🔎':'search','🔍':'search','✨':'star','🧹':'broom','📦':'folder','💼':'bars','🔑':'gear','🔗':'send','📞':'message','🆕':'file','🚦':'flag','🛑':'alert','❌':'alert','✖':'alert','⭐':'star','📌':'flag'};
   var RE = /(?:\p{Extended_Pictographic}|⬇)️?(?:‍\p{Extended_Pictographic}️?)*/gu;
   function icono(emo){
