@@ -1304,7 +1304,8 @@ function accionMundialGuardar(p) {
     var nro = function (t) { if (t === '' || t == null) return ''; var n = Number(String(t).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? '' : n; };
     // Regla de retorno NG sobre la prima base: RC 3,75 % · AP 10 %. Si falta el retorno o el %, se calculan.
     var REGLA = { '2000722986': 3.75, '2000725842': 10 }, prima0 = nro(d.prima), ret0 = nro(d.retorno), pct0 = nro(d.pct);
-    if (REGLA[pol]) { if (pct0 === '') pct0 = REGLA[pol]; if (ret0 === '' && prima0 !== '') ret0 = Math.round(prima0 * pct0 / 100); }
+    if (pol === '2000743946') { ret0 = ''; pct0 = ''; }   // la VG no genera retorno de comisión
+    else if (REGLA[pol]) { if (pct0 === '') pct0 = REGLA[pol]; if (ret0 === '' && prima0 !== '') ret0 = Math.round(prima0 * pct0 / 100); }
     else if (pct0 === '' && prima0 && ret0 !== '') pct0 = Math.round(ret0 / prima0 * 10000) / 100;
     d.retorno = ret0; d.pct = pct0;
     var fila = [fac, fecha(d.desde), fecha(d.hasta), String(d.radHome || '').trim(), String(d.radCorreo || '').trim(), nro(d.cobro), Number(pol), MUNDIAL_POLIZAS[pol],
