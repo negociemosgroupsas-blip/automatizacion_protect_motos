@@ -67,3 +67,8 @@ small,.sub,.tot,.nota,.seg-nota,.ay-sub,.od-ayuda{font-size:max(.8rem,12px)}
 
 .asy-pos{display:inline-block;min-width:1.4em;font-weight:700;color:#fdc33e}
 body.inicio-claro .asy-pos{color:#b7860b}
+
+/* etiquetas de estado (Al día, Atrasado…) legibles en modo claro y oscuro */
+.semaforo.verde{background:#dcf5e6!important;color:#14532d!important;border:1px solid #a9d9bb}
+.semaforo.naranja{background:#fff4d6!important;color:#6b4a00!important;border:1px solid #e6c25a}
+.semaforo.rojo{background:#fde8ea!important;color:#7a1f2e!important;border:1px solid #e8a3ad}
