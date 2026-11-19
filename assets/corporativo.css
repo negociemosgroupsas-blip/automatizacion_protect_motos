@@ -75,3 +75,12 @@ body.inicio-claro .asy-pos{color:#b7860b}
 
 /* número rojo en el menú (facturas de Mundial por pagar) */
 nav li a{position:relative} nav li a .mbadge{margin-left:auto;background:#dc2626;color:#fff;border-radius:999px;font-size:.7rem;font-weight:700;min-width:20px;height:20px;line-height:20px;text-align:center;padding:0 6px;flex:none}
+
+/* Modo oscuro: botones legibles en todos los módulos (el azul del tema se vuelve claro y dejaba letra blanca sobre fondo claro) */
+body.pm-oscuro .btn,body.pm-oscuro .cn-b{background:#2f4690;color:#fff}
+body.pm-oscuro .btn.d,body.pm-oscuro .btn.o,body.pm-oscuro .cn-b.o{background:#fdc33e!important;color:#14224f!important}
+body.pm-oscuro .btn.v,body.pm-oscuro .cn-b.v{background:#1e3a8a!important;color:#fff!important}
+body.pm-oscuro .btn.g,body.pm-oscuro .cn-b.g{background:#e3e8f2!important;color:#13223f!important}
+body.pm-oscuro .btn.s{background:#2f4690;color:#fff}
+body.pm-oscuro .estado.er,body.pm-oscuro .cn-st.mal,body.pm-oscuro .pmcr-fondo+* .mal{color:#ff9aa8}
+body.pm-oscuro .estado.ok,body.pm-oscuro .cn-st.bien{color:#7ee2a8}
