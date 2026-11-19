@@ -1,0 +1,47 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Opciones para la meta del mes</title><link rel="stylesheet" href="assets/tipografia.css">
+<style>
+body{margin:0;padding:22px;background:#eef2fa;font-family:'Lato',sans-serif;color:#fff}
+h1{color:#13223f;font-size:1.15rem;margin:0 0 14px}.blk{margin-bottom:22px}.tt{color:#13223f;font-weight:700;font-size:.95rem}.dd{color:#55648a;font-size:.82rem;margin:2px 0 8px}
+.w{border-radius:16px;border-top:3px solid #fdc33e;background:linear-gradient(180deg,#14275e,#0b1840);padding:16px 22px;position:relative;overflow:hidden;box-sizing:border-box}
+.ti{font-family:'Montserrat',sans-serif;font-weight:700;font-size:.98rem;display:flex;gap:10px;align-items:center}.ti:before{content:"";width:4px;height:18px;background:#fdc33e;border-radius:2px}.ti small{font-weight:400;opacity:.8}
+.mut{color:#b4c3e6;font-size:.84rem}.au{color:#fdc33e}
+/* A: moto */
+.A .pista{position:relative;height:84px;margin-top:6px}.A .via{position:absolute;left:0;right:0;bottom:0;height:22px;background:#1a2a62;border-top:3px solid #34498f}
+.A .rec{position:absolute;left:0;bottom:19px;height:3px;width:33%;background:#fdc33e}.A .h{position:absolute;bottom:22px;width:2px;height:22px;background:#8fa3d8}.A .h span{position:absolute;top:-16px;transform:translateX(-50%);font-size:.78rem;color:#b4c3e6;white-space:nowrap}
+.A .moto{position:absolute;left:33%;bottom:14px;transform:translateX(-50%);font-size:2.4rem}.A .tag{position:absolute;left:33%;bottom:62px;transform:translateX(-50%);background:#fdc33e;color:#14224f;border-radius:6px;padding:2px 10px;font-size:.8rem;font-weight:700}
+/* B: gauge + cifras */
+.B{display:flex;gap:26px;align-items:center}.B .g{flex:none;width:190px;height:110px;position:relative}.B .g svg{width:100%}.B .g b{position:absolute;left:0;right:0;bottom:2px;text-align:center;font-size:2rem;font-family:'Montserrat'}
+.B .c{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;flex:1}.B .c div{background:rgba(255,255,255,.07);border-radius:12px;padding:10px 14px}.B .c span{font-size:.7rem;letter-spacing:.05em;color:#b4c3e6;display:block}.B .c b{font-size:1.5rem;font-family:'Montserrat'}
+/* C: barras ritmo */
+.C .row{display:flex;align-items:center;gap:12px;margin:9px 0}.C .row label{width:130px;font-size:.82rem;color:#b4c3e6}.C .bar{flex:1;height:14px;border-radius:8px;background:#27407f;position:relative;overflow:hidden}.C .bar i{display:block;height:100%;border-radius:8px}.C .v{width:110px;font-weight:700;font-size:.9rem}
+.C .est{display:inline-block;margin-left:10px;background:#7a1f2e;color:#fff;font-size:.72rem;padding:2px 10px;border-radius:999px;font-family:'Lato'}
+/* D: anillo */
+.D{display:flex;gap:28px;align-items:center}.D .an{flex:none;width:130px;height:130px;position:relative}.D .an svg{width:100%;transform:rotate(-90deg)}.D .an div{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}.D .an b{font-size:1.9rem;font-family:'Montserrat'}.D .an small{font-size:.7rem;color:#b4c3e6}
+.D .t{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 28px;flex:1}.D .t span{font-size:.72rem;letter-spacing:.05em;color:#b4c3e6;display:block}.D .t b{font-size:1.35rem;font-family:'Montserrat'}
+/* E: semanas */
+.E .sem{display:flex;gap:10px;margin-top:10px}.E .sem div{flex:1;background:rgba(255,255,255,.07);border-radius:10px;padding:9px 12px}.E .sem span{font-size:.72rem;color:#b4c3e6;display:block}.E .sem b{font-size:1.15rem;font-family:'Montserrat'}.E .sem i{display:block;height:6px;border-radius:4px;background:#27407f;margin-top:6px;overflow:hidden}.E .sem i u{display:block;height:100%;background:#fdc33e}
+</style></head><body><h1>¿Cómo mostramos la meta del mes? Opciones para el Inicio</h1>
+
+<div class="blk"><div class="tt">OPCIÓN A · La moto sobria (la que dejé ahora)</div><div class="dd">La moto avanza por la carretera hacia la meta, con las marcas de 25, 50 y 75 %.</div>
+<div class="w A"><div class="ti">Avance de la meta mensual <small>· Noviembre 2026</small></div><div class="mut" style="margin-top:4px">35 de 105 contratos · vas 32 por debajo del ritmo de hoy (67)</div>
+<div class="pista"><div class="tag">Contrato 35 de 105 · faltan 70</div><div class="moto">🛵</div><div class="via"></div><div class="rec"></div>
+<div class="h" style="left:25%"><span class="au">25 % · 26</span></div><div class="h" style="left:50%"><span>50 % · 53</span></div><div class="h" style="left:63%;background:#fff"><span>hoy: 67</span></div><div class="h" style="left:75%"><span>75 % · 79</span></div><div class="h" style="left:99.5%;background:#fdc33e"><span class="au">105</span></div></div></div></div>
+
+<div class="blk"><div class="tt">OPCIÓN B · Medidor con cifras (estilo tablero de control)</div><div class="dd">Un medidor semicircular grande y, al lado, las cuatro cifras que importan. La más ejecutiva y la que mejor se entiende de un vistazo.</div>
+<div class="w B"><div class="g"><svg viewBox="0 0 200 110"><path d="M15 100A85 85 0 0 1 185 100" fill="none" stroke="#27407f" stroke-width="16" stroke-linecap="round"/><path d="M15 100A85 85 0 0 1 185 100" fill="none" stroke="#fdc33e" stroke-width="16" stroke-linecap="round" stroke-dasharray="89 267"/><line x1="100" y1="100" x2="100" y2="8" stroke="#fff" stroke-width="2" stroke-dasharray="3 4" transform="rotate(-6 100 100)"/></svg><b>33 %</b></div>
+<div><div class="ti">Avance de la meta mensual <small>· Noviembre 2026</small></div><div class="mut" style="margin:4px 0 10px">Meta: 105 contratos</div><div class="c" style="grid-template-columns:repeat(4,minmax(110px,1fr))"><div><span>VAN</span><b>35</b></div><div><span>FALTAN</span><b>70</b></div><div><span>RITMO ESPERADO HOY</span><b>67</b></div><div><span>DÍAS PARA CERRAR</span><b>11</b></div></div></div></div></div>
+
+<div class="blk"><div class="tt">OPCIÓN C · Real contra esperado (dos barras)</div><div class="dd">Una barra con lo que llevamos y otra con lo que deberíamos llevar hoy. Se ve la diferencia al instante y una etiqueta dice si vamos bien o atrasados.</div>
+<div class="w C"><div class="ti">Avance de la meta mensual <small>· Noviembre 2026</small> <span class="est">32 contratos por debajo del ritmo</span></div>
+<div class="row"><label>Llevamos</label><div class="bar"><i style="width:33%;background:#fdc33e"></i></div><div class="v au">35 de 105</div></div>
+<div class="row"><label>Deberíamos llevar hoy</label><div class="bar"><i style="width:64%;background:#6aa5ea"></i></div><div class="v">67 de 105</div></div>
+<div class="row"><label>Proyección al cierre</label><div class="bar"><i style="width:55%;background:#4a8fe0"></i></div><div class="v">~58 contratos</div></div></div></div>
+
+<div class="blk"><div class="tt">OPCIÓN D · Anillo con indicadores</div><div class="dd">Un anillo de progreso con el porcentaje en el centro y seis cifras alrededor: van, faltan, ritmo, proyección, días y promedio por día que se necesita.</div>
+<div class="w D"><div class="an"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#27407f" stroke-width="12"/><circle cx="60" cy="60" r="50" fill="none" stroke="#fdc33e" stroke-width="12" stroke-linecap="round" stroke-dasharray="104 314"/></svg><div><b>33 %</b><small>de la meta</small></div></div>
+<div style="flex:1"><div class="ti" style="margin-bottom:10px">Avance de la meta mensual <small>· Noviembre 2026</small></div><div class="t"><div><span>CONTRATOS</span><b>35 de 105</b></div><div><span>FALTAN</span><b>70</b></div><div><span>RITMO ESPERADO HOY</span><b>67</b></div><div><span>PROYECCIÓN AL CIERRE</span><b>~58</b></div><div><span>DÍAS PARA CERRAR</span><b>11</b></div><div><span>NECESITAMOS POR DÍA</span><b>6,4</b></div></div></div></div></div>
+
+<div class="blk"><div class="tt">OPCIÓN E · Semana por semana</div><div class="dd">Divide el mes en semanas y muestra cuántos contratos se hicieron en cada una frente al ritmo necesario. Sirve para ver en qué semana se perdió o se ganó terreno.</div>
+<div class="w E"><div class="ti">Avance de la meta mensual <small>· Noviembre 2026 · 35 de 105 (33 %)</small></div>
+<div class="sem"><div><span>SEMANA 1 · 1 al 7</span><b>14 <small class="mut">de 24</small></b><i><u style="width:58%"></u></i></div><div><span>SEMANA 2 · 8 al 14</span><b>12 <small class="mut">de 24</small></b><i><u style="width:50%"></u></i></div><div><span>SEMANA 3 · 15 al 21</span><b>9 <small class="mut">de 24</small></b><i><u style="width:38%"></u></i></div><div><span>SEMANA 4 · 22 al 28</span><b>— <small class="mut">de 24</small></b><i><u style="width:0"></u></i></div><div><span>29 al 30</span><b>— <small class="mut">de 9</small></b><i><u style="width:0"></u></i></div></div></div></div>
+</body></html>
