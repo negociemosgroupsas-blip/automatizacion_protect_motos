@@ -604,7 +604,7 @@
   #inKpis .k-azu{background:linear-gradient(135deg,#27407f,#4a64b0)} #inKpis .k-nar{background:linear-gradient(135deg,#7a4a12,#c58a1b)}
 </style>
 <script src="assets/dash_oms.js"></script>
-<script src="assets/logo_data.js"></script><script src="assets/informe_diario.js"></script>
+<script src="assets/logo_data.js"></script><script src="assets/informe_diario.js"></script><script src="assets/mundial_core.js"></script>
 <script src="assets/pptxgen.bundle.js"></script>
 <script src="assets/zip_simple.js"></script>
 <link rel="stylesheet" href="assets/tipografia.css">
@@ -1689,9 +1689,23 @@
       A(h8,'Contratos que vencen en ≤ 8 días','Protect activos: es hora de ofrecer la renovación','#cobros',true)+
       (PK.soatRen!=null?A(PK.soatRen,'SOAT por renovar','Vencen en 8 días o menos','#soat',true):'')+
       (PK.omsRen!=null?A(PK.omsRen,'Pólizas OMS por renovar','Vencen en 8 días o menos','#oms',true):'')+
+      (PK.munVen!=null?A(PK.munVen,'Facturas de Mundial vencidas sin pagar',(PK.munVen?cop0(PK.munVal)+' por pagar · ':'')+(PK.munPro||0)+(PK.munPro===1?' factura vence':' facturas vencen')+' en 7 días o menos','#mundial'):'')+
       (PK.faltaConc!=null?A(PK.faltaConc,'Faltan por consolidar','Pagos pendientes de conciliar'+(PK.menos?' · '+PK.menos+' pagaron de menos':''),'#conciliacion'):'')+
       (rc?A(cmPend,'Comisiones sin decidir','Casos especiales que esperan su decisión','#comisiones'):'');
   }
+  function cop0(n){return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
+  /* Alertas de pago de las facturas de Mundial (hoja «Estado de Facturas»): Atención requerida y número en el menú */
+  var munCarg=false,munT=0;
+  function cargarMundialAl(){
+    if(!window.PMMundial||munCarg||Date.now()-munT<50000)return;var u=rnUrl();if(!u)return;munCarg=true;munT=Date.now();
+    PMMundial.leer().then(function(x){var L=PMMundial.pendientes(x.filas),R=PMMundial.resumenAlertas(L);
+      window.PMK=window.PMK||{};PMK.munVen=R.ven;PMK.munVal=R.vVen;PMK.munPro=R.urg+R.pro;
+      var a=document.querySelector('#menu a[data-id=mundial]');if(a){var b=a.querySelector('.mbadge');if(!b){b=document.createElement('span');b.className='mbadge';a.appendChild(b)}var n=R.ven+R.urg;b.textContent=n||'';b.style.display=n?'':'none';b.title=R.ven+' vencida(s) y '+R.urg+' que vencen en 3 días o menos'}
+      pintarGerencia();
+    }).catch(function(){}).then(function(){munCarg=false});
+  }
+  window.cargarMundialAl=cargarMundialAl;
+  document.addEventListener('pm-cobros',function(){try{cargarMundialAl()}catch(e){}});setTimeout(function(){try{cargarMundialAl()}catch(e){}},3000);setInterval(function(){try{if(!document.hidden)cargarMundialAl()}catch(e){}},60000);
   window.pintarGerencia=pintarGerencia;
   document.addEventListener('pm-cobros',function(){try{pintarGerencia()}catch(e){}});
   function normAses(a){return String(a==null?'':a).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase()}

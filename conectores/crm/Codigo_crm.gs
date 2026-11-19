@@ -612,8 +612,7 @@ function accionBancoAnotar(p) {
 
 
 /* ===== Cuentas con Seguros Mundial: lee la hoja «Estado de Facturas» (solo lectura) =====
-   Columnas: A #Factura · B Periodo desde · C Periodo hasta · F #cobro · G #póliza · H Producto · I Valor cobrado ·
-   J Valor prima base · K Valor Retorno NG · L % · M Estado actual · N Fecha límite de pago · O Observaciones. */
+   Se lee todo lo que haya (hasta 20 columnas); el sistema ubica cada dato por el título de su columna. */
 var MUNDIAL_SHEET_ID = '1G1pHHVPcRVaJ_qqm1bYZBk2Yl1QpIfnVSWmHIUV1te4';   // ID de la hoja «Estado de Facturas» (lo que va entre /d/ y /edit en su enlace); también se puede pegar en el módulo
 var MUNDIAL_HOJA = '';       // nombre de la pestaña; vacío = la primera
 function accionMundialLeer(p) {
@@ -636,9 +635,34 @@ function accionMundialLeer(p) {
 
 
 /* ===== Facturación Mundial: registrar y corregir cobros en «Estado de Facturas» =====
-   Escribe solo en las columnas A–O de UNA fila (la nueva al final o la que se corrige). Nunca borra filas.
-   Las únicas pólizas válidas son estas tres; el producto sale de la póliza. */
+   Cada dato se escribe en la columna que tenga ese TÍTULO en la fila 1 (así sigue funcionando si se insertan columnas, como «# factura Retorno»).
+   Solo toca la fila que se guarda; nunca borra filas. Las únicas pólizas válidas son estas tres; el producto sale de la póliza. */
 var MUNDIAL_POLIZAS = { '2000725842': 'AP', '2000722986': 'RC', '2000743946': 'VG' };
+function mundialColumnas_(hoja) {
+  var ult = Math.max(hoja.getLastColumn(), 1), enc = hoja.getRange(1, 1, 1, ult).getValues()[0];
+  var n = function (t) { return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); };
+  var c = {};
+  enc.forEach(function (t, j) {
+    var h = n(t); if (!h) return;
+    if (/factura/.test(h) && /retorno/.test(h)) c.facRet = j;
+    else if (/factura/.test(h) && c.fac == null) c.fac = j;
+    else if (/periodo.*desde/.test(h)) c.desde = j;
+    else if (/periodo.*hasta/.test(h)) c.hasta = j;
+    else if (/radicad/.test(h) && /home/.test(h)) c.radHome = j;
+    else if (/radicad/.test(h) && /(correo|rc)/.test(h)) c.radCorreo = j;
+    else if (/^#?\s*cobro/.test(h)) c.cobro = j;
+    else if (/^#?\s*poliza/.test(h)) c.poliza = j;
+    else if (/^producto/.test(h)) c.producto = j;
+    else if (/^valor cobrado/.test(h)) c.valor = j;
+    else if (/prima base/.test(h)) c.prima = j;
+    else if (/retorno/.test(h)) c.retorno = j;
+    else if (/^%/.test(h)) c.pct = j;
+    else if (/^estado/.test(h)) c.estado = j;
+    else if (/fecha limite/.test(h)) c.limite = j;
+    else if (/observ/.test(h)) c.obs = j;
+  });
+  return { c: c, ancho: ult };
+}
 function accionMundialGuardar(p) {
   var id = String(p.sheetId || MUNDIAL_SHEET_ID || '').trim();
   if (!/^[A-Za-z0-9_-]{20,}$/.test(id)) return { ok: false, error: 'Falta el ID de la hoja «Estado de Facturas».' };
@@ -655,41 +679,43 @@ function accionMundialGuardar(p) {
     var nombreHoja = String(p.hoja || MUNDIAL_HOJA || '').trim();
     var hoja = nombreHoja ? ss.getSheetByName(nombreHoja) : ss.getSheets()[0];
     if (!hoja) return { ok: false, error: 'No encontré la pestaña de facturas.' };
-    var enc = String(hoja.getRange(1, 1).getValue() || '').toLowerCase();
-    if (enc.indexOf('factura') < 0) return { ok: false, error: 'La celda A1 de la hoja no es «# Factura de pago»: no escribo para no dañar la hoja.' };
+    var mp = mundialColumnas_(hoja), C = mp.c, falta = [];
+    ['fac', 'poliza', 'producto', 'valor', 'retorno', 'estado'].forEach(function (k) { if (C[k] == null) falta.push(k); });
+    if (falta.length) return { ok: false, error: 'No encuentro en la fila 1 de la hoja las columnas: ' + falta.join(', ') + '. No escribo para no dañar la hoja.' };
     var fecha = function (t) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(t || '')); return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : ''; };
     var nro = function (t) { if (t === '' || t == null) return ''; var n = Number(String(t).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? '' : n; };
-    // Regla de retorno NG sobre la prima base: RC 3,75 % · AP 10 %. Si falta el retorno o el %, se calculan.
+    // Regla de retorno NG sobre la prima base: RC 3,75 % · AP 10 % · VG sin retorno.
     var REGLA = { '2000722986': 3.75, '2000725842': 10 }, prima0 = nro(d.prima), ret0 = nro(d.retorno), pct0 = nro(d.pct);
-    if (pol === '2000743946') { ret0 = ''; pct0 = ''; }   // la VG no genera retorno de comisión
+    if (pol === '2000743946') { ret0 = ''; pct0 = ''; }
     else if (REGLA[pol]) { if (pct0 === '') pct0 = REGLA[pol]; if (ret0 === '' && prima0 !== '') ret0 = Math.round(prima0 * pct0 / 100); }
     else if (pct0 === '' && prima0 && ret0 !== '') pct0 = Math.round(ret0 / prima0 * 10000) / 100;
-    d.retorno = ret0; d.pct = pct0;
-    var fila = [fac, fecha(d.desde), fecha(d.hasta), String(d.radHome || '').trim(), String(d.radCorreo || '').trim(), nro(d.cobro), Number(pol), MUNDIAL_POLIZAS[pol],
-      nro(d.valor), nro(d.prima), nro(d.retorno), nro(d.pct), String(d.estado || '').trim(), fecha(d.limite), String(d.obs || '').trim()];
-    var ult = hoja.getLastRow(), colA = ult > 1 ? hoja.getRange(1, 1, ult, 1).getValues() : [[enc]], colG = ult > 1 ? hoja.getRange(1, 7, ult, 1).getValues() : [[]];
+    var valores = { fac: fac, desde: fecha(d.desde), hasta: fecha(d.hasta), radHome: String(d.radHome || '').trim(), radCorreo: String(d.radCorreo || '').trim(), cobro: nro(d.cobro),
+      poliza: Number(pol), producto: MUNDIAL_POLIZAS[pol], valor: nro(d.valor), prima: prima0, facRet: String(d.facRet || '').trim(), retorno: ret0, pct: pct0,
+      estado: String(d.estado || '').trim(), limite: fecha(d.limite), obs: String(d.obs || '').trim() };
+    var ult = hoja.getLastRow(), colFac = ult > 1 ? hoja.getRange(1, C.fac + 1, ult, 1).getValues() : [[]], colPol = ult > 1 ? hoja.getRange(1, C.poliza + 1, ult, 1).getValues() : [[]];
+    var colCob = (C.cobro != null && ult > 1) ? hoja.getRange(1, C.cobro + 1, ult, 1).getValues() : null;
     var objetivo, nueva = (String(p.modo) !== 'editar');
     if (nueva) {
-      // fila duplicada: misma factura, póliza y # de cobro
-      var cobN = String(fila[5]);
-      for (var i = 1; i < colA.length; i++) {
-        if (String(colA[i][0]).trim() === fac && String(colG[i][0]).replace(/\D/g, '') === pol) {
-          var cb = hoja.getRange(i + 1, 6).getValue();
-          if (String(cb) === cobN && !String(p.forzar || '')) return { ok: false, duplicado: true, error: 'Ya existe esta factura con esta póliza y este # de cobro (fila ' + (i + 1) + '). Si es otro cobro, cambie el # de cobro.' };
+      for (var i = 1; i < colFac.length; i++) {
+        if (String(colFac[i][0]).trim() === fac && String(colPol[i][0]).replace(/\D/g, '') === pol) {
+          if (colCob && String(colCob[i][0]) === String(valores.cobro) && !String(p.forzar || '')) return { ok: false, duplicado: true, error: 'Ya existe esta factura con esta póliza y este # de cobro (fila ' + (i + 1) + '). Si es otro cobro, cambie el # de cobro.' };
         }
       }
-      var ultima = 1; for (var j = 1; j < colA.length; j++) { if (String(colA[j][0]).trim() !== '' || String(colG[j][0]).trim() !== '') ultima = j + 1; }
+      var ultima = 1; for (var j = 1; j < colFac.length; j++) { if (String(colFac[j][0]).trim() !== '' || String(colPol[j][0]).trim() !== '') ultima = j + 1; }
       objetivo = ultima + 1;
     } else {
       objetivo = Number(p.fila);
       if (!(objetivo > 1) || objetivo > ult) return { ok: false, error: 'La fila a corregir no es válida.' };
-      var esp = String(p.esperada || '');     // «factura|póliza» que tenía la fila cuando se leyó: evita pisar otra fila si la hoja cambió
-      var actual = String(colA[objetivo - 1][0]).trim() + '|' + String(colG[objetivo - 1][0]).replace(/\D/g, '');
+      var esp = String(p.esperada || '');
+      var actual = String(colFac[objetivo - 1][0]).trim() + '|' + String(colPol[objetivo - 1][0]).replace(/\D/g, '');
       if (esp && actual !== esp) return { ok: false, error: 'La hoja cambió: la fila ' + objetivo + ' ya no es la misma (ahora dice ' + actual + '). Vuelva a leer la hoja y repita la corrección.' };
     }
-    hoja.getRange(objetivo, 1, 1, 15).setValues([fila]);
-    hoja.getRange(objetivo, 2, 1, 2).setNumberFormat('d/m/yyyy'); hoja.getRange(objetivo, 14).setNumberFormat('d/m/yyyy');
-    hoja.getRange(objetivo, 9, 1, 3).setNumberFormat('$ #,##0');
+    // se parte de lo que ya hay en la fila (para no borrar columnas que este formulario no maneja) y se escriben solo las columnas conocidas
+    var fila = nueva ? new Array(mp.ancho).fill('') : hoja.getRange(objetivo, 1, 1, mp.ancho).getValues()[0];
+    Object.keys(valores).forEach(function (k) { if (C[k] != null) fila[C[k]] = valores[k]; });
+    hoja.getRange(objetivo, 1, 1, mp.ancho).setValues([fila]);
+    ['desde', 'hasta', 'limite'].forEach(function (k) { if (C[k] != null) hoja.getRange(objetivo, C[k] + 1).setNumberFormat('d/m/yyyy'); });
+    ['valor', 'prima', 'retorno'].forEach(function (k) { if (C[k] != null) hoja.getRange(objetivo, C[k] + 1).setNumberFormat('$ #,##0'); });
     SpreadsheetApp.flush();
     return { ok: true, fila: objetivo, nueva: nueva };
   } finally { lock.releaseLock(); }

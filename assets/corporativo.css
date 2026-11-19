@@ -72,3 +72,6 @@ body.inicio-claro .asy-pos{color:#b7860b}
 .semaforo.verde{background:#dcf5e6!important;color:#14532d!important;border:1px solid #a9d9bb}
 .semaforo.naranja{background:#fff4d6!important;color:#6b4a00!important;border:1px solid #e6c25a}
 .semaforo.rojo{background:#fde8ea!important;color:#7a1f2e!important;border:1px solid #e8a3ad}
+
+/* número rojo en el menú (facturas de Mundial por pagar) */
+nav li a{position:relative} nav li a .mbadge{margin-left:auto;background:#dc2626;color:#fff;border-radius:999px;font-size:.7rem;font-weight:700;min-width:20px;height:20px;line-height:20px;text-align:center;padding:0 6px;flex:none}

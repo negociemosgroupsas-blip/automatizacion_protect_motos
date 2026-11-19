@@ -28,6 +28,8 @@
   .fg .ancho{grid-column:1/-1} .tag{display:inline-block;background:#fdc33e;color:#14224f;border-radius:999px;padding:2px 12px;font-size:.78rem;font-weight:700}
   .barra{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center} .btn.g{background:#e3e8f2;color:var(--azul)} .btn.s{padding:5px 10px;font-size:.78rem}
   #lCuerpo td{white-space:nowrap;font-size:.84rem} #lCuerpo td:last-child{white-space:normal;min-width:120px}
+  .al{display:flex;gap:12px;align-items:flex-start;border-radius:10px;border:1px solid;padding:10px 14px;margin:0 0 8px;font-size:.92rem;line-height:1.35} .al b{font-weight:700} .al small{display:block;opacity:.85;margin-top:2px}
+  .al.v{background:#fde8ea;color:#7a1f2e;border-color:#f2b8c0} .al.u{background:#ffe9cc;color:#7a3b00;border-color:#f0c28a} .al.p{background:#fff4d6;color:#6b4a00;border-color:#f0cf6a} .al.s{background:#eef0f4;color:#374151;border-color:#d5d9e2} .al.ok{background:#e3f6ea;color:#14532d;border-color:#b6e2c6}
   .vacio{padding:14px;color:var(--suave);font-size:.9rem} .nota{font-size:.82rem;color:var(--suave);margin:8px 0 0;line-height:1.4}
 </style>
 <link rel="stylesheet" href="../assets/tipografia.css">
@@ -36,18 +38,23 @@
 <body>
 <header><h1>Facturación Mundial</h1><p>Lo que se le ha pagado a Seguros Mundial, lo que se le debe, las facturas pendientes y el retorno que recibe Negociemos por comisión. Solo lee la hoja «Estado de Facturas»; no la modifica.</p></header>
 <main>
-  <section class="panel" id="pCon">
-    <h2>Hoja «Estado de Facturas»</h2>
-    <p class="sub">Pegue una sola vez el enlace de la hoja de Google (queda guardado en este navegador). Debe estar en la misma cuenta de Google donde publicó el Apps Script.</p>
-    <div class="fil"><label style="flex:1;min-width:320px">Enlace de la hoja<input type="text" id="mLink" placeholder="https://docs.google.com/spreadsheets/d/…"></label>
-      <label>Pestaña (opcional)<input type="text" id="mTab" placeholder="la primera" style="width:150px"></label>
-      <button class="btn" id="mLeer" type="button">Leer la hoja</button></div>
-    <p class="estado" id="mEst"></p>
+  <section class="panel" id="pCon" style="padding:12px 18px">
+    <div class="fil" style="margin:0;align-items:center"><button class="btn" id="mLeer" type="button">Actualizar</button><span class="estado" id="mEst" style="margin:0"></span></div>
+    <details style="margin-top:8px"><summary style="cursor:pointer;font-size:.84rem;color:var(--suave)">Usar otra hoja o pestaña (opcional)</summary>
+      <div class="fil" style="margin-top:8px"><label style="flex:1;min-width:320px">Enlace de otra hoja<input type="text" id="mLink" placeholder="Déjelo vacío: se usa la hoja «Estado de Facturas» que ya está en el código"></label><label>Pestaña<input type="text" id="mTab" placeholder="la primera" style="width:150px"></label></div>
+    </details>
+  </section>
+
+  <section class="panel" id="pAl" hidden>
+    <h2>Alertas de pago a Mundial</h2>
+    <p class="sub" id="alSub"></p>
+    <div class="tiles" id="alTiles"></div>
+    <div id="alLista"></div>
   </section>
 
   <section class="panel" id="pForm">
     <h2>Registrar o corregir un cobro <span class="tag" id="fModo">Cobro nuevo</span></h2>
-    <p class="sub">Cada campo es una columna de la hoja «Estado de Facturas». Al guardar, el sistema escribe la fila en la hoja. La póliza solo puede ser una de las tres de Mundial y el producto se pone solo.</p>
+    <p class="sub">Cada campo es una columna de la hoja «Estado de Facturas» (de la A a la P). Al guardar, el sistema escribe la fila en la hoja. La póliza solo puede ser una de las tres de Mundial y el producto se pone solo.</p>
     <div class="fg">
       <label>A · # Factura de pago *<input type="text" id="f_fac" list="dlFac" autocomplete="off" placeholder="Ej.: F6"><datalist id="dlFac"></datalist></label>
       <label>B · Período de cobro desde<input type="date" id="f_des"></label>
@@ -59,11 +66,12 @@
       <label>H · Producto (automático)<input type="text" id="f_prod" readonly></label>
       <label>I · Valor cobrado<input type="text" id="f_val" inputmode="numeric" autocomplete="off" placeholder="$"></label>
       <label>J · Valor prima base<input type="text" id="f_pri" inputmode="numeric" autocomplete="off" placeholder="$"></label>
-      <label>K · Valor Retorno NG<input type="text" id="f_ret" inputmode="numeric" autocomplete="off" placeholder="$"></label>
-      <label>L · % de retorno<input type="text" id="f_pct" inputmode="decimal" autocomplete="off" placeholder="3,75"></label>
-      <label>M · Estado actual<input type="text" id="f_est" list="dlEst" autocomplete="off" placeholder="Pendiente, Pagado…"><datalist id="dlEst"></datalist></label>
-      <label>N · Fecha límite de pago<input type="date" id="f_lim"></label>
-      <label class="ancho">O · Observaciones<input type="text" id="f_obs" autocomplete="off"></label>
+      <label>K · # factura Retorno<input type="text" id="f_fr" autocomplete="off" placeholder="Ej.: FR-12"></label>
+      <label>L · Valor Retorno NG<input type="text" id="f_ret" inputmode="numeric" autocomplete="off" placeholder="$"></label>
+      <label>M · % de retorno<input type="text" id="f_pct" inputmode="decimal" autocomplete="off" placeholder="3,75"></label>
+      <label>N · Estado actual<input type="text" id="f_est" list="dlEst" autocomplete="off" placeholder="Pendiente, Pagado…"><datalist id="dlEst"></datalist></label>
+      <label>O · Fecha límite de pago<input type="date" id="f_lim"></label>
+      <label class="ancho">P · Observaciones<input type="text" id="f_obs" autocomplete="off"></label>
     </div>
     <p class="nota" id="fRegla" style="font-weight:700;color:#1e3a8a"></p>
     <div class="barra"><button class="btn o" id="bGuardar" type="button">Guardar cobro nuevo</button><button class="btn g" id="bLimpiar" type="button">Limpiar el formulario</button><span class="estado" id="fEst" style="margin:0"></span></div>
@@ -73,7 +81,7 @@
   <section class="panel" id="pLista">
     <h2>Cobros registrados en la hoja</h2>
     <div class="fil"><label>Buscar<input type="text" id="lBus" placeholder="factura, póliza, estado u observación"></label><label>Póliza<select id="lPol"><option value="">Todas</option><option value="2000725842">AP · 2000725842</option><option value="2000722986">RC · 2000722986</option><option value="2000743946">VG · 2000743946</option></select></label></div>
-    <div class="scroll" style="max-height:480px;overflow:auto"><table><thead><tr><th></th><th>Fila</th><th>Factura</th><th>Período</th><th class="n"># cobro</th><th>Póliza</th><th>Prod.</th><th class="n">Valor cobrado</th><th class="n">Prima base</th><th class="n">Retorno NG</th><th class="n">%</th><th>Estado</th><th>Límite</th><th>Obs.</th></tr></thead><tbody id="lCuerpo"></tbody></table></div>
+    <div class="scroll" style="max-height:480px;overflow:auto"><table><thead><tr><th></th><th>Fila</th><th>Factura</th><th>Período</th><th class="n"># cobro</th><th>Póliza</th><th>Prod.</th><th class="n">Valor cobrado</th><th class="n">Prima base</th><th># fact. retorno</th><th class="n">Retorno NG</th><th class="n">%</th><th>Estado</th><th>Límite</th><th>Obs.</th></tr></thead><tbody id="lCuerpo"></tbody></table></div>
     <p class="nota" id="lNota"></p>
   </section>
 
@@ -110,6 +118,7 @@
     </section>
   </div>
 </main>
+<script src="../assets/mundial_core.js"></script>
 <script>
 (function(){
   'use strict';
@@ -130,35 +139,33 @@
       var url=LS('pm_crm_url'),tok=LS('pm_crm_token')||'PM-CRM-2026';
       if(!url){mal(new Error('Falta la URL del conector (pestaña Conexiones → Conector único).'));return}
       cnt++;var cb='pm_mu_'+Date.now()+'_'+cnt,s=document.createElement('script'),fin=false;
-      var t=setTimeout(function(){if(fin)return;fin=true;lim();mal(new Error('El conector no respondió a tiempo (más de 60 segundos). Revise que publicó «Nueva versión» con el código crm-11 y que ejecutó AUTORIZAR_TODO.'))},60000);
+      var t=setTimeout(function(){if(fin)return;fin=true;lim();mal(new Error('El conector no respondió a tiempo (más de 60 segundos). Revise que publicó «Nueva versión» con el código crm-12 y que ejecutó AUTORIZAR_TODO.'))},60000);
       function lim(){clearTimeout(t);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}
       window[cb]=function(r){if(fin)return;fin=true;lim();ok(r)};
       s.onerror=function(){if(fin)return;fin=true;lim();mal(new Error('No se pudo contactar el conector.'))};
       s.src=url+(url.indexOf('?')<0?'?':'&')+'action=mundial_leer&token='+encodeURIComponent(tok)+'&sheetId='+encodeURIComponent(id||'')+'&hoja='+encodeURIComponent(hoja||'')+'&callback='+cb+'&_='+Date.now();document.body.appendChild(s);
-    }).then(function(r){if(!r||r.ok===false){var m=(r&&r.error)||'Respuesta inválida.';if(/Acción no disponible/.test(m))m='El conector todavía no puede leer esta hoja (versión crm-11): pegue el código nuevo (Codigo_UNICO.gs) y publique «Nueva versión».';throw new Error(m)}return r});
+    }).then(function(r){if(!r||r.ok===false){var m=(r&&r.error)||'Respuesta inválida.';if(/Acción no disponible/.test(m))m='El conector todavía no puede leer esta hoja (versión crm-12): pegue el código nuevo (Codigo_UNICO.gs) y publique «Nueva versión».';throw new Error(m)}return r});
   }
-  /* ---- interpretar la hoja: busca la fila de títulos y cada columna por su nombre ---- */
-  function interpretar(A){
-    var hi=-1,c={};
-    for(var i=0;i<Math.min(A.length,30)&&hi<0;i++){var H=(A[i]||[]).map(norm);if(H.some(function(h){return /^valor cobrado/.test(h)})&&H.some(function(h){return /factura/.test(h)})){hi=i;
-      H.forEach(function(h,j){
-        if(c.fac==null&&/factura/.test(h))c.fac=j; else if(/periodo.*desde/.test(h))c.des=j; else if(/periodo.*hasta/.test(h))c.has=j; else if(/^#?\s*poliza/.test(h))c.pol=j; else if(/^producto/.test(h))c.prod=j;
-        else if(/^valor cobrado/.test(h))c.val=j; else if(/prima base/.test(h))c.prima=j; else if(/retorno/.test(h))c.ret=j; else if(/^%/.test(h))c.pct=j; else if(/^estado/.test(h))c.est=j; else if(/fecha limite/.test(h))c.lim=j; else if(/observ/.test(h))c.obs=j; else if(/^#?\s*cobro/.test(h))c.cob=j; else if(/radicado/.test(h)&&/home/.test(h))c.rh=j; else if(/radicado/.test(h)&&/correo|rc/.test(h))c.rc=j;
-      })}}
-    if(hi<0)throw new Error('No encontré la fila de títulos. Busco una columna «#Factura de pago» y otra «Valor cobrado».');
-    var out=[];
-    for(var k=hi+1;k<A.length;k++){var w=A[k]||[];var val=num(w[c.val]);var fac=String(w[c.fac]==null?'':w[c.fac]).trim();if(!fac&&!val)continue;
-      var d=fecha(w[c.des]);out.push({fila:k+1,facRaw:fac,rh:String(w[c.rh]==null?'':w[c.rh]).trim(),rc:String(w[c.rc]==null?'':w[c.rc]).trim(),cob:String(w[c.cob]==null?'':w[c.cob]).trim(),pct:w[c.pct]==null?'':w[c.pct],fac:fac||'(sin factura)',des:d,has:fecha(w[c.has]),pol:String(w[c.pol]==null?'':w[c.pol]).trim(),prod:String(w[c.prod]||'').trim().toUpperCase()||'SIN DATO',val:val,prima:num(w[c.prima]),ret:num(w[c.ret]),est:String(w[c.est]==null?'':w[c.est]).trim(),lim:fecha(w[c.lim]),obs:String(w[c.obs]||'').trim()})}
-    return out;
-  }
-  /* ---- qué significa cada estado (se guarda en el navegador) ---- */
-  function mapaEst(){try{return JSON.parse(LS('pm_mundial_estados')||'{}')}catch(e){return {}}}
-  function claseEst(txt){var m=mapaEst(),k=norm(txt)||'(vacío)';if(m[k])return m[k];if(/pagad|cancelad|abonad|cubiert/.test(k))return 'pagado';if(/anulad|devuelt|reversad/.test(k))return 'ignorar';return 'pendiente'}
+  var interpretar=PMMundial.interpretar,mapaEst=PMMundial.mapaEst,claseEst=PMMundial.claseEst;   // misma lectura y misma regla de estados que el Inicio
   /* ---- pintar ---- */
   var FL={a:'',m:'',p:''};
   function filtrar(){return FILAS.filter(function(r){return(!FL.a||(r.des&&String(r.des.y)===FL.a))&&(!FL.m||(r.des&&String(r.des.m)===FL.m))&&(!FL.p||r.prod===FL.p)})}
+  function pintarAlertas(){
+    var L=PMMundial.pendientes(FILAS),R=PMMundial.resumenAlertas(L),pan=$('pAl');pan.hidden=false;
+    $('alSub').textContent=L.length?L.length+' factura(s) por pagar a Mundial. La alerta se calcula con la «Fecha límite de pago» de la hoja.':'';
+    $('alTiles').innerHTML=
+      '<div class="t ro"><span>Vencidas sin pagar</span><b>'+R.ven+'</b><small>'+cop(R.vVen)+' · ya pasó la fecha límite</small></div>'+
+      '<div class="t am"><span>Vencen en 3 días o menos</span><b>'+R.urg+'</b><small>'+cop(R.vUrg)+' · pagar ya</small></div>'+
+      '<div class="t az"><span>Vencen en 4 a 7 días</span><b>'+R.pro+'</b><small>'+cop(R.vPro)+' · programar el pago</small></div>'+
+      '<div class="t"><span>Sin fecha límite</span><b>'+R.sin+'</b><small>factura(s) pendiente(s) sin fecha en la hoja</small></div>';
+    var h=L.filter(function(o){return o.nivel!=='enplazo'}).map(function(o){
+      var cl=o.nivel==='vencida'?'v':o.nivel==='urgente'?'u':o.nivel==='pronto'?'p':'s',ic=o.nivel==='vencida'?'⛔':o.nivel==='sinfecha'?'ⓘ':'⚠';
+      var tx=o.nivel==='vencida'?'NO SE HA PAGADO: debía pagarse el '+fbonita(o.lim)+' (hace '+(-o.dias)+' día'+(-o.dias===1?'':'s')+')':o.nivel==='sinfecha'?'Pendiente de pago y sin fecha límite en la hoja':(o.dias===0?'DEBE PAGARSE HOY ('+fbonita(o.lim)+')':'Debe pagarse el '+fbonita(o.lim)+' (en '+o.dias+' día'+(o.dias===1?'':'s')+')');
+      return '<div class="al '+cl+'"><span>'+ic+'</span><div><b>Factura '+esc(o.fac)+' · '+cop(o.val)+'</b> · '+o.n+' póliza(s)<small>'+tx+' · período '+fbonita(o.des)+' al '+fbonita(o.has)+'</small></div></div>'}).join('');
+    $('alLista').innerHTML=h||(L.length?'<div class="al ok"><span>✔</span><div><b>Sin alertas por ahora.</b> Todas las facturas pendientes están en plazo (más de 7 días).</div></div>':'<div class="al ok"><span>✔</span><div><b>No hay facturas pendientes de pago.</b></div></div>');
+  }
   function pintar(){
-    $('res').style.display='block';pintarLista();
+    $('res').style.display='block';pintarLista();pintarAlertas();
     var ys={},ps={};FILAS.forEach(function(r){if(r.des)ys[r.des.y]=1;ps[r.prod]=1});
     var yl=Object.keys(ys).sort().reverse(),pl=Object.keys(ps).sort();
     $('fAnio').innerHTML='<option value="">Todos los años</option>'+yl.map(function(y){return '<option>'+y+'</option>'}).join('');if(!ys[FL.a])FL.a='';$('fAnio').value=FL.a;
@@ -228,9 +235,9 @@
   $('f_pct').addEventListener('input',function(){pctManual=true;if(!retManual)recalcular()});
   $('f_pol').addEventListener('change',function(){$('f_prod').value=POL[this.value]||'';pctManual=false;retManual=false;recalcular()});
   function fest(t,c){var e=$('fEst');e.textContent=t;e.className='estado '+(c||'');e.style.margin='0'}
-  function limpiarForm(){EDIT=null;pctManual=false;retManual=false;['f_fac','f_des','f_has','f_rh','f_rc','f_cob','f_pol','f_prod','f_val','f_pri','f_ret','f_pct','f_est','f_lim','f_obs'].forEach(function(i){$(i).value=''});$('fModo').textContent='Cobro nuevo';$('bGuardar').textContent='Guardar cobro nuevo';fest('');recalcular()}
+  function limpiarForm(){EDIT=null;pctManual=false;retManual=false;['f_fac','f_des','f_has','f_rh','f_rc','f_cob','f_pol','f_prod','f_val','f_pri','f_fr','f_ret','f_pct','f_est','f_lim','f_obs'].forEach(function(i){$(i).value=''});$('fModo').textContent='Cobro nuevo';$('bGuardar').textContent='Guardar cobro nuevo';fest('');recalcular()}
   $('bLimpiar').addEventListener('click',limpiarForm);
-  function datos(){return {factura:$('f_fac').value.trim(),desde:$('f_des').value,hasta:$('f_has').value,radHome:$('f_rh').value,radCorreo:$('f_rc').value,cobro:$('f_cob').value,poliza:$('f_pol').value,valor:num($('f_val').value)||'',prima:num($('f_pri').value)||'',retorno:SIN_RETORNO[$('f_pol').value]?'':(num($('f_ret').value)||''),pct:SIN_RETORNO[$('f_pol').value]?'':($('f_pct').value.trim()===''?'':num($('f_pct').value)),estado:$('f_est').value,limite:$('f_lim').value,obs:$('f_obs').value}}
+  function datos(){return {factura:$('f_fac').value.trim(),desde:$('f_des').value,hasta:$('f_has').value,radHome:$('f_rh').value,radCorreo:$('f_rc').value,facRet:$('f_fr').value,cobro:$('f_cob').value,poliza:$('f_pol').value,valor:num($('f_val').value)||'',prima:num($('f_pri').value)||'',retorno:SIN_RETORNO[$('f_pol').value]?'':(num($('f_ret').value)||''),pct:SIN_RETORNO[$('f_pol').value]?'':($('f_pct').value.trim()===''?'':num($('f_pct').value)),estado:$('f_est').value,limite:$('f_lim').value,obs:$('f_obs').value}}
   function guardarLlamar(params){
     return new Promise(function(ok,mal){
       var url=LS('pm_crm_url'),tok=LS('pm_crm_token')||'PM-CRM-2026';if(!url){mal(new Error('Falta la URL del conector (pestaña Conexiones → Conector único).'));return}
@@ -258,7 +265,7 @@
   function editar(r){
     EDIT={fila:r.fila,esperada:r.facRaw+'|'+r.pol.replace(/\D/g,'')};pctManual=true;retManual=true;
     var set=function(i,v){$(i).value=v==null?'':v};
-    set('f_fac',r.facRaw);set('f_des',r.des?r.des.iso:'');set('f_has',r.has?r.has.iso:'');set('f_rh',r.rh);set('f_rc',r.rc);set('f_cob',r.cob);set('f_pol',r.pol.replace(/\D/g,''));$('f_prod').value=POL[r.pol.replace(/\D/g,'')]||r.prod;
+    set('f_fac',r.facRaw);set('f_des',r.des?r.des.iso:'');set('f_has',r.has?r.has.iso:'');set('f_rh',r.rh);set('f_rc',r.rc);set('f_cob',r.cob);set('f_fr',r.fret);set('f_pol',r.pol.replace(/\D/g,''));$('f_prod').value=POL[r.pol.replace(/\D/g,'')]||r.prod;
     set('f_val',r.val?String(Math.round(r.val)).replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'');set('f_pri',r.prima?String(Math.round(r.prima)).replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'');set('f_ret',r.ret?String(Math.round(r.ret)).replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'');
     set('f_pct',r.pct===''?'':String(r.pct).replace('.',','));set('f_est',r.est);set('f_lim',r.lim?r.lim.iso:'');set('f_obs',r.obs);
     recalcular();$('fModo').textContent='Corrigiendo la fila '+r.fila;$('bGuardar').textContent='Guardar cambios de la fila '+r.fila;fest('');
@@ -267,7 +274,7 @@
   function pintarLista(){
     if(!FILAS)return;var q=norm($('lBus').value),pl=$('lPol').value;
     var L=FILAS.filter(function(r){return(!pl||r.pol.replace(/\D/g,'')===pl)&&(!q||norm([r.facRaw,r.pol,r.est,r.obs,r.prod].join(' ')).indexOf(q)>=0)}).slice().reverse();
-    $('lCuerpo').innerHTML=L.slice(0,300).map(function(r){return '<tr><td><button class="btn s" data-f="'+r.fila+'" type="button">Editar</button></td><td>'+r.fila+'</td><td><b>'+esc(r.facRaw)+'</b></td><td>'+fbonita(r.des)+' al '+fbonita(r.has)+'</td><td class="n">'+esc(r.cob)+'</td><td>'+esc(r.pol)+'</td><td>'+esc(r.prod)+'</td><td class="n">'+cop(r.val)+'</td><td class="n">'+cop(r.prima)+'</td><td class="n">'+cop(r.ret)+'</td><td class="n">'+esc(r.pct===''?'':String(r.pct).replace('.',','))+(function(){var e=retornoEsperado(r.pol.replace(/\D/g,''),r.prima);return(e!==null&&r.ret&&Math.abs(e-r.ret)>1)?' <span class="bd d" title="Según la regla el retorno debería ser '+cop(e)+'">revisar</span>':''})()+'</td><td>'+esc(r.est)+'</td><td>'+fbonita(r.lim)+'</td><td>'+esc(r.obs)+'</td></tr>'}).join('')||'<tr><td colspan="15" class="vacio">No hay cobros con ese filtro.</td></tr>';
+    $('lCuerpo').innerHTML=L.slice(0,300).map(function(r){return '<tr><td><button class="btn s" data-f="'+r.fila+'" type="button">Editar</button></td><td>'+r.fila+'</td><td><b>'+esc(r.facRaw)+'</b></td><td>'+fbonita(r.des)+' al '+fbonita(r.has)+'</td><td class="n">'+esc(r.cob)+'</td><td>'+esc(r.pol)+'</td><td>'+esc(r.prod)+'</td><td class="n">'+cop(r.val)+'</td><td class="n">'+cop(r.prima)+'</td><td>'+esc(r.fret)+'</td><td class="n">'+cop(r.ret)+'</td><td class="n">'+esc(r.pct===''?'':String(r.pct).replace('.',','))+(function(){var e=retornoEsperado(r.pol.replace(/\D/g,''),r.prima);return(e!==null&&r.ret&&Math.abs(e-r.ret)>1)?' <span class="bd d" title="Según la regla el retorno debería ser '+cop(e)+'">revisar</span>':''})()+'</td><td>'+esc(r.est)+'</td><td>'+fbonita(r.lim)+'</td><td>'+esc(r.obs)+'</td></tr>'}).join('')||'<tr><td colspan="16" class="vacio">No hay cobros con ese filtro.</td></tr>';
     $('lNota').textContent=L.length+' cobro(s)'+(L.length>300?' · se muestran los 300 más recientes; use el buscador':'')+' · lo último de la hoja va arriba.';
     var fs={},es={};FILAS.forEach(function(r){if(r.facRaw)fs[r.facRaw]=1;if(r.est)es[r.est]=1});
     $('dlFac').innerHTML=Object.keys(fs).map(function(x){return '<option value="'+esc(x)+'">'}).join('');
@@ -286,7 +293,7 @@
   }
   $('mLeer').addEventListener('click',function(){leer(false)});
   (function(){var id=LS('pm_mundial_sheet');if(id)$('mLink').value='https://docs.google.com/spreadsheets/d/'+id+'/edit';$('mTab').value=LS('pm_mundial_tab');
-    if(id||LS('pm_crm_url'))leer(false);else est('Pegue el enlace de la hoja y pulse «Leer la hoja».')})();
+    if(LS('pm_crm_url'))leer(false);else est('Falta conectar el conector único: en el menú, Conexiones → Conector único.','er')})();
   setInterval(function(){if(!document.hidden&&FILAS)leer(true)},60000);
 })();
 </script>
