@@ -221,6 +221,9 @@
   /* la franja de datos del cliente es siempre clara: sus letras deben ser oscuras también en modo oscuro */
   .ficha-cliente{color:#13223f} .ficha-cliente .campo .etiqueta{color:#5f6f93!important} .ficha-cliente .campo .valor{color:#13223f!important}
 
+  .btn-vig{margin-top:6px;border:1px solid;border-radius:999px;padding:3px 12px;font:inherit;font-size:.78rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+  .btn-vig.rojo{background:#fde8ea;color:#7a1f2e;border-color:#e8a3ad} .btn-vig.ambar{background:#fff4d6;color:#6b4a00;border-color:#e6c25a} .btn-vig.verde{background:#e3f6ea;color:#14532d;border-color:#a9d9bb}
+  .btn-vig:hover{filter:brightness(.96)} .vig-det{margin:0 0 12px}
   .alarma-vig{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:10px;margin:0 0 10px;font-size:.9rem;line-height:1.35;border:1px solid}
   .alarma-vig b{font-weight:700} .alarma-vig small{display:block;opacity:.85;margin-top:2px}
   .alarma-vig.rojo{background:#fde8ea;color:#7a1f2e;border-color:#f2b8c0} .alarma-vig.ambar{background:#fff4d6;color:#6b4a00;border-color:#f0cf6a}
@@ -2662,9 +2665,6 @@
 
     var mapaPagos = construirMapaPagos();
 
-    var alarmas = alarmasVigenciaDe(encontrados);
-    if(alarmas) contenedor.insertAdjacentHTML('beforeend', alarmas);
-
     if(encontrados.length>1){
       var aviso = document.createElement('div');
       aviso.className = 'sub';
@@ -2678,6 +2678,23 @@
     });
   }
 
+  // Botón de alarma que va debajo de «Lleva RC» / «Lleva AP»: rojo si venció, ámbar si vence pronto; al pulsarlo se ve el detalle
+  function botonVigencia(c, tipo){
+    if(!VIGS) return '';
+    var ced = normCed(c.cedula); if(!ced) return '';
+    var v = null; VIGS.forEach(function(x){ if(x.tipo===tipo && normCed(x.cedula)===ced) v = x; });
+    if(!v) return '';
+    var fin = parsearISO(v.finISO); if(!fin) return '';
+    var N = Number(document.getElementById('vigDias').value)||30, dias = diferenciaDias(fin, hoy());
+    var cls = dias<0 ? 'rojo' : dias<=N ? 'ambar' : 'verde';
+    var txt = dias<0 ? tipo+' vencida' : dias<=N ? tipo+' vence en '+dias+' día'+(dias===1?'':'s') : tipo+' vigente';
+    return '<div><button type="button" class="btn-vig '+cls+'" data-vig-det="1" title="Ver el detalle de la vigencia de '+tipo+'">'+(cls==='rojo'?'⛔':cls==='ambar'?'⚠':'✔')+' '+txt+'</button></div>';
+  }
+  document.getElementById('resultadoHistorial').addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-vig-det]'); if(!b) return;
+    var t = b.closest('.tarjeta-poliza'), d = t && t.querySelector('.vig-det'); if(!d) return;
+    d.hidden = !d.hidden; if(!d.hidden) d.scrollIntoView({behavior:'smooth', block:'nearest'});
+  });
   // Alarma de vigencias de RC y AP del cliente buscado (de las hojas de RC y AP), aparte del flujo de renovaciones de Protect
   function alarmasVigenciaDe(encontrados){
     if(!VIGS) return '';
@@ -2717,8 +2734,8 @@
       campoFicha('Cliente', encontrado.cliente)+
       campoFicha('Cédula', encontrado.cedula)+
       campoFicha('Placa', encontrado.placa)+
-      campoSiNo('Lleva RC', valorExtra(encontrado,'rc'))+
-      campoSiNo('Lleva AP', valorExtra(encontrado,'ap'))+
+      campoSiNo('Lleva RC', valorExtra(encontrado,'rc'), botonVigencia(encontrado,'RC'))+
+      campoSiNo('Lleva AP', valorExtra(encontrado,'ap'), botonVigencia(encontrado,'AP'))+
       campoFicha('Contrato', encontrado.contrato)+
       campoFicha('Forma', encontrado.forma)+
       campoFicha('Estado', encontrado.estado)+
@@ -2731,6 +2748,7 @@
       campoFicha('Celular', encontrado.celular)+
       campoFicha('Correo', encontrado.correo || ((extrasCRM[encontrado.contrato]||{}).correo) || '—')+
     '</div>';
+    html += '<div class="vig-det" hidden>'+alarmasVigenciaDe([encontrado])+'</div>';
 
     html += '<div style="margin-bottom:10px;"><span class="semaforo '+sem.clase+'"><span class="punto"></span>'+sem.texto+'</span></div>';
 
@@ -2846,11 +2864,11 @@
     if(!e) return null;
     return String(e[campo]||'').trim().toUpperCase()==='SI' ? 'SI' : 'NO';
   }
-  function campoSiNo(etiqueta, v){
+  function campoSiNo(etiqueta, v, extra){
     var html = v===null ? '<span style="color:var(--texto-suave);font-weight:500" title="Conecta el conector del CRM en «Conexiones» para ver este dato">—</span>'
       : v==='SI' ? '<span style="display:inline-block;background:var(--verde-bg);color:var(--verde);border-radius:999px;padding:1px 12px;font-weight:700">Sí</span>'
       : '<span style="display:inline-block;background:#eef0f4;color:#4b5563;border-radius:999px;padding:1px 12px;font-weight:700">No</span>';
-    return '<div class="campo"><div class="etiqueta">'+etiqueta+'</div><div class="valor">'+html+'</div></div>';
+    return '<div class="campo"><div class="etiqueta">'+etiqueta+'</div><div class="valor">'+html+'</div>'+(extra||'')+'</div>';
   }
   window.addEventListener('message', function(ev){
     var d = ev.data;
