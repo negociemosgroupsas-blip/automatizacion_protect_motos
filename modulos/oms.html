@@ -218,6 +218,8 @@
   }
   .ficha-cliente .campo .etiqueta{font-size:.85rem;text-transform:uppercase;color:var(--texto-suave);letter-spacing:.3px;}
   .ficha-cliente .campo .valor{font-size:.9rem;font-weight:600;color:var(--texto);}
+  /* la franja de datos del cliente es siempre clara: sus letras deben ser oscuras también en modo oscuro */
+  .ficha-cliente{color:#13223f} .ficha-cliente .campo .etiqueta{color:#5f6f93!important} .ficha-cliente .campo .valor{color:#13223f!important}
 
   .tarjeta-poliza + .tarjeta-poliza{margin-top:22px;padding-top:22px;border-top:2px dashed var(--borde);}
 
