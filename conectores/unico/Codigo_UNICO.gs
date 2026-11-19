@@ -1261,7 +1261,7 @@ var MUNDIAL_SHEET_ID = '1G1pHHVPcRVaJ_qqm1bYZBk2Yl1QpIfnVSWmHIUV1te4';   // ID d
 var MUNDIAL_HOJA = '';       // nombre de la pestaña; vacío = la primera
 function accionMundialLeer(p) {
   var id = String(p.sheetId || MUNDIAL_SHEET_ID || '').trim();
-  if (!/^[A-Za-z0-9_-]{20,}$/.test(id)) return { ok: false, error: 'Falta el ID de la hoja «Estado de Facturas». Péguelo en el módulo «Cuentas con Mundial» o en MUNDIAL_SHEET_ID dentro del código.' };
+  if (!/^[A-Za-z0-9_-]{20,}$/.test(id)) return { ok: false, error: 'Falta el ID de la hoja «Estado de Facturas». Péguelo en el módulo «Facturación Mundial» o en MUNDIAL_SHEET_ID dentro del código.' };
   var ss;
   try { ss = SpreadsheetApp.openById(id); } catch (e) { return { ok: false, error: 'No pude abrir la hoja de facturas. Revise el enlace y que esté en la misma cuenta de Google donde publicó el script.' }; }
   var nombreHoja = String(p.hoja || MUNDIAL_HOJA || '').trim();
@@ -1278,7 +1278,7 @@ function accionMundialLeer(p) {
 }
 
 
-/* ===== Cuentas con Mundial: registrar y corregir cobros en «Estado de Facturas» =====
+/* ===== Facturación Mundial: registrar y corregir cobros en «Estado de Facturas» =====
    Escribe solo en las columnas A–O de UNA fila (la nueva al final o la que se corrige). Nunca borra filas.
    Las únicas pólizas válidas son estas tres; el producto sale de la póliza. */
 var MUNDIAL_POLIZAS = { '2000725842': 'AP', '2000722986': 'RC', '2000743946': 'VG' };
