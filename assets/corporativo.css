@@ -37,21 +37,14 @@ body>header:not(.app)>div{flex:1 1 auto}
 .btn-verde,.btn.v,.cn-b.v,.pmcr-b.v,.bt.v{background:#1e3a8a!important;color:#fff!important}
 .btn-oro,.btn.o,.cn-b.o,.pmcr-b.o{background:#fdc33e!important;color:#14224f!important}
 
-/* Meta del mes: barra de avance limpia (sin la moto animada) */
-.ruta{padding:14px 20px 8px!important;border-top-width:3px!important}
-.ruta .moto,.ruta .globo,.ruta .confeti,.ruta .ruta-via::before,.ruta .ruta-via::after{display:none!important}
-.ruta-pista{height:84px!important;margin-top:2px!important}
-.ruta-via{bottom:auto!important;top:34px!important;height:14px!important;border:0!important;border-radius:8px!important;background:#27407f!important;background-image:none!important}
-.ruta-rec{bottom:auto!important;top:34px!important;height:14px!important;border-radius:8px!important;background:#fdc33e!important;box-shadow:none!important}
-.ruta-hito{bottom:auto!important;top:30px!important;height:22px!important;width:2px!important;background:#7f93d0!important}
-.ruta-hito.meta{height:22px!important;background:#fdc33e!important}
-.ruta-hito span{top:26px!important;font-size:.78rem!important;color:#aab9e3!important;font-weight:400!important}
-.ruta-hito.pasado{background:#fdc33e!important} .ruta-hito.pasado span{color:#fdc33e!important;font-weight:700!important}
-.ruta-hito.meta span{color:#fdc33e!important;font-weight:700!important;top:26px!important}
-.ruta-ritmo{bottom:auto!important;top:22px!important;height:38px!important;border-left:2px dashed #ffffffcc!important}
-.ruta-ritmo span{bottom:auto!important;top:42px!important;font-size:.78rem!important;left:-23px!important;width:46px!important;color:#fff!important}
-.moto-tag{bottom:auto!important;top:0!important;background:#fdc33e!important;color:#14224f!important;font-size:.82rem!important;padding:3px 12px!important;border-radius:6px!important;box-shadow:none!important}
-.moto-tag small{margin-left:6px;opacity:.8}
+/* Meta del mes: se conserva la moto, con el aspecto sobrio del panel ejecutivo */
+.ruta{border-top-width:3px!important;background:linear-gradient(180deg,#14275e 0%,#0b1840 100%)!important}
+.ruta-via{background:#1a2a62!important;border-top:3px solid #34498f!important}
+.ruta-rec{background:#fdc33e!important;box-shadow:0 0 8px #fdc33e66!important}
+.ruta-hito{background:#8fa3d8!important} .ruta-hito span{color:#b4c3e6!important;font-weight:400!important}
+.ruta-hito.pasado{background:#fdc33e!important} .ruta-hito.pasado span,.ruta-hito.meta span{color:#fdc33e!important;font-weight:700!important}
+.moto-tag{background:#fdc33e!important;color:#14224f!important;border-radius:6px!important;box-shadow:none!important;font-size:.82rem!important;padding:3px 12px!important}
+.ruta .ruta-ritmo span{color:#fff!important}
 
 /* Mensajes de «sin datos» y avisos: tarjeta tranquila, no texto suelto */
 #v-inicio .nota,#v-inicio .tot:empty+.nota{background:rgba(120,145,210,.08);border:1px dashed rgba(150,170,220,.35);border-radius:10px;padding:10px 14px;color:#b4c3e6;font-size:.85rem}

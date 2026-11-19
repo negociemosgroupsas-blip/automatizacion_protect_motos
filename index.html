@@ -816,7 +816,7 @@
     $g('rutaMeta').textContent=meta;
     rutaFalta=Math.max(0,meta-total);rutaEsp=esp;rutaTotal=total;
     var dif=total-esp;
-    $g('rutaTxt').textContent=total+' de '+meta+' contratos · '+(total>=meta?'meta cumplida':dif>=0?'vas '+(dif?dif+' por delante':'justo al ritmo')+' (ritmo de hoy: '+esp+')':'vas '+(-dif)+' por debajo del ritmo de hoy ('+esp+')')+'';
+    $g('rutaTxt').textContent=total+' de '+meta+' contratos · '+(total>=meta?'meta cumplida':dif>=0?'vas '+(dif?dif+' por delante':'justo al ritmo')+' (ritmo de hoy: '+esp+')':'vas '+(-dif)+' por debajo del ritmo de hoy ('+esp+')')+' · toca la moto';
     if(total>=meta&&!rutaConfeti){rutaConfeti=true;lanzarConfeti()}
   }
   function lanzarConfeti(){
