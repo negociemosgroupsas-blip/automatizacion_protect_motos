@@ -26,7 +26,7 @@ modulos/                      Un archivo por botón del menú
   conciliacion.html           OPERACIÓN · cruza Protect contra el Consolidado de pagos
   cotizador.html              OPERACIÓN · cotizaciones para CLIENTES NUEVOS (mismo cotizador de Contratos, PDF/imagen/WhatsApp, hoja «Cotizaciones Clientes Nuevos»)
   banco.html                  OPERACIÓN · Verificación bancaria: lee la hoja de Google del banco (acción banco_leer, crm-9; el ID de la hoja va en BANCO_SHEET_ID dentro del código) y la compara con la hoja Pagos por fecha y valor, con el cliente al frente
-  mundial.html                OPERACIÓN · Cuentas con Mundial: pagado, deuda, facturas pendientes y retorno NG (acción mundial_leer, crm-11; ID de la hoja «Estado de Facturas» en MUNDIAL_SHEET_ID)
+  mundial.html                OPERACIÓN · Cuentas con Mundial: registra y corrige los cobros de «Estado de Facturas» (formulario por columnas; pólizas AP 2000725842, RC 2000722986, VG 2000743946) y resume pagado, deuda, facturas pendientes y retorno NG (acciones mundial_leer y mundial_guardar, crm-12; ID de la hoja «Estado de Facturas» en MUNDIAL_SHEET_ID)
   erp.html                    OPERACIÓN · Cruce semanal ERP (clientes ERP-Protect): archivo del jefe vs hoja Protect (cédula + Total vs columna P)
   oms.html / soat.html        SEGUROS · clientes OMS y SOAT (cobros, primer pago, renovaciones, tablero)
   comisiones.html             GESTIÓN · informe de comisiones de asesores (mensual, anual, histórico)

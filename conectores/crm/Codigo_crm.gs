@@ -60,6 +60,8 @@ function doGet(e) {
         salida = accionVerReporte(params);
       } else if (accion === 'banco_leer') {
         salida = accionBancoLeer(params);
+      } else if (accion === 'mundial_guardar') {
+        salida = accionMundialGuardar(params);
       } else if (accion === 'mundial_leer') {
         salida = accionMundialLeer(params);
       } else if (accion === 'banco_anotar') {
@@ -77,7 +79,7 @@ function doGet(e) {
       } else if (accion === 'cotRen_estado') {
         salida = accionCotRenEstado(params);
       } else if (accion === 'ping') {
-        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-11' };
+        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-12' };
       } else {
         salida = { ok: false, error: 'Acción no disponible: ' + accion };
       }
@@ -630,4 +632,59 @@ function accionMundialLeer(p) {
     return f.map(function (v) { return (v instanceof Date) ? Utilities.formatDate(v, tz, 'yyyy-MM-dd') : v; });
   });
   return { ok: true, nombre: ss.getName(), hoja: hoja.getName(), pestanas: pestanas, filas: filas, totalFilas: ult };
+}
+
+
+/* ===== Cuentas con Mundial: registrar y corregir cobros en «Estado de Facturas» =====
+   Escribe solo en las columnas A–O de UNA fila (la nueva al final o la que se corrige). Nunca borra filas.
+   Las únicas pólizas válidas son estas tres; el producto sale de la póliza. */
+var MUNDIAL_POLIZAS = { '2000725842': 'AP', '2000722986': 'RC', '2000743946': 'VG' };
+function accionMundialGuardar(p) {
+  var id = String(p.sheetId || MUNDIAL_SHEET_ID || '').trim();
+  if (!/^[A-Za-z0-9_-]{20,}$/.test(id)) return { ok: false, error: 'Falta el ID de la hoja «Estado de Facturas».' };
+  var d;
+  try { d = JSON.parse(p.datos || '{}'); } catch (e) { return { ok: false, error: 'Datos inválidos.' }; }
+  var pol = String(d.poliza || '').replace(/\D/g, '');
+  if (!MUNDIAL_POLIZAS[pol]) return { ok: false, error: 'La póliza debe ser una de estas: 2000725842 (AP), 2000722986 (RC) o 2000743946 (VG).' };
+  var fac = String(d.factura || '').trim();
+  if (!fac) return { ok: false, error: 'Falta el número de factura.' };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return { ok: false, error: 'El sistema está ocupado, intente de nuevo en unos segundos.' };
+  try {
+    var ss; try { ss = SpreadsheetApp.openById(id); } catch (e) { return { ok: false, error: 'No pude abrir la hoja de facturas.' }; }
+    var nombreHoja = String(p.hoja || MUNDIAL_HOJA || '').trim();
+    var hoja = nombreHoja ? ss.getSheetByName(nombreHoja) : ss.getSheets()[0];
+    if (!hoja) return { ok: false, error: 'No encontré la pestaña de facturas.' };
+    var enc = String(hoja.getRange(1, 1).getValue() || '').toLowerCase();
+    if (enc.indexOf('factura') < 0) return { ok: false, error: 'La celda A1 de la hoja no es «# Factura de pago»: no escribo para no dañar la hoja.' };
+    var fecha = function (t) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(t || '')); return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : ''; };
+    var nro = function (t) { if (t === '' || t == null) return ''; var n = Number(String(t).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? '' : n; };
+    var fila = [fac, fecha(d.desde), fecha(d.hasta), String(d.radHome || '').trim(), String(d.radCorreo || '').trim(), nro(d.cobro), Number(pol), MUNDIAL_POLIZAS[pol],
+      nro(d.valor), nro(d.prima), nro(d.retorno), nro(d.pct), String(d.estado || '').trim(), fecha(d.limite), String(d.obs || '').trim()];
+    var ult = hoja.getLastRow(), colA = ult > 1 ? hoja.getRange(1, 1, ult, 1).getValues() : [[enc]], colG = ult > 1 ? hoja.getRange(1, 7, ult, 1).getValues() : [[]];
+    var objetivo, nueva = (String(p.modo) !== 'editar');
+    if (nueva) {
+      // fila duplicada: misma factura, póliza y # de cobro
+      var cobN = String(fila[5]);
+      for (var i = 1; i < colA.length; i++) {
+        if (String(colA[i][0]).trim() === fac && String(colG[i][0]).replace(/\D/g, '') === pol) {
+          var cb = hoja.getRange(i + 1, 6).getValue();
+          if (String(cb) === cobN && !String(p.forzar || '')) return { ok: false, duplicado: true, error: 'Ya existe esta factura con esta póliza y este # de cobro (fila ' + (i + 1) + '). Si es otro cobro, cambie el # de cobro.' };
+        }
+      }
+      var ultima = 1; for (var j = 1; j < colA.length; j++) { if (String(colA[j][0]).trim() !== '' || String(colG[j][0]).trim() !== '') ultima = j + 1; }
+      objetivo = ultima + 1;
+    } else {
+      objetivo = Number(p.fila);
+      if (!(objetivo > 1) || objetivo > ult) return { ok: false, error: 'La fila a corregir no es válida.' };
+      var esp = String(p.esperada || '');     // «factura|póliza» que tenía la fila cuando se leyó: evita pisar otra fila si la hoja cambió
+      var actual = String(colA[objetivo - 1][0]).trim() + '|' + String(colG[objetivo - 1][0]).replace(/\D/g, '');
+      if (esp && actual !== esp) return { ok: false, error: 'La hoja cambió: la fila ' + objetivo + ' ya no es la misma (ahora dice ' + actual + '). Vuelva a leer la hoja y repita la corrección.' };
+    }
+    hoja.getRange(objetivo, 1, 1, 15).setValues([fila]);
+    hoja.getRange(objetivo, 2, 1, 2).setNumberFormat('d/m/yyyy'); hoja.getRange(objetivo, 14).setNumberFormat('d/m/yyyy');
+    hoja.getRange(objetivo, 9, 1, 3).setNumberFormat('$ #,##0');
+    SpreadsheetApp.flush();
+    return { ok: true, fila: objetivo, nueva: nueva };
+  } finally { lock.releaseLock(); }
 }
