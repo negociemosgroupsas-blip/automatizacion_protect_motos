@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Protect Motos · Cuentas con Mundial</title>
+<link rel="icon" type="image/png" href="../assets/logo_menu.png">
+<style>
+  :root{--azul:#13223f;--azul2:#1f4e79;--dorado:#d6a417;--fondo:#f4f5f7;--tarjeta:#fff;--texto:#1f2430;--suave:#6b7280;--borde:#e3e6eb;--verde:#1f9d55;--naranja:#d97706;--rojo:#dc2626}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fondo);color:var(--texto)}
+  header{background:linear-gradient(135deg,#13223f,#1c3050);color:#fff;padding:18px 24px}
+  header h1{margin:0;font-size:1.3rem} header p{margin:4px 0 0;font-size:.9rem;opacity:.85}
+  main{max-width:1200px;margin:0 auto;padding:18px}
+  .panel{background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .panel h2{margin:0 0 4px;font-size:1.05rem;color:var(--azul)} .sub{font-size:.9rem;color:var(--suave);margin:0 0 12px}
+  .fil{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px}
+  .fil label{display:flex;flex-direction:column;font-size:.82rem;color:var(--suave);gap:3px}
+  select,input[type=text]{border:1px solid #cfd6e4;border-radius:8px;padding:8px 11px;font:inherit;font-size:.9rem;background:#fff;color:var(--texto)}
+  .btn{border:0;border-radius:8px;padding:9px 15px;font:inherit;font-size:.88rem;font-weight:700;cursor:pointer;background:var(--azul);color:#fff} .btn.o{background:#fdc33e;color:#14224f} .btn:disabled{opacity:.5}
+  .estado{font-size:.88rem;color:var(--suave);margin:6px 0 0;min-height:1.2em} .estado.er{color:#b3261e} .estado.ok{color:#0b6b2b}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 14px}
+  .t{border-radius:12px;padding:13px 16px;color:#fff;background:linear-gradient(135deg,#1e3a8a,#2f5fb8)} .t span{display:block;font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;opacity:.9} .t b{display:block;font-size:1.6rem;margin:3px 0 1px} .t small{font-size:.78rem;opacity:.9}
+  .t.am{background:linear-gradient(135deg,#7a4a12,#c58a1b)} .t.ro{background:linear-gradient(135deg,#8f2d45,#b84a62)} .t.az{background:linear-gradient(135deg,#1d4f91,#3b82c4)} .t.vd{background:linear-gradient(135deg,#17406f,#2d6fa8)}
+  .scroll{overflow-x:auto} table{width:100%;border-collapse:collapse;font-size:.88rem} th{text-align:left;padding:8px 10px;background:#eef2fb;color:var(--azul);font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap} td{padding:8px 10px;border-bottom:1px solid var(--borde)} .n{text-align:right;font-variant-numeric:tabular-nums} tfoot td{border-top:2px solid var(--borde);font-weight:700;border-bottom:0}
+  .bd{display:inline-block;border-radius:6px;padding:2px 9px;font-size:.74rem;font-weight:700} .bd.p{background:#dcf5e6;color:#14532d} .bd.d{background:#fff4d6;color:#6b4a00} .bd.v{background:#fde8ea;color:#7a1f2e} .bd.g{background:#eef0f4;color:#4b5563}
+  .vacio{padding:14px;color:var(--suave);font-size:.9rem} .nota{font-size:.82rem;color:var(--suave);margin:8px 0 0;line-height:1.4}
+</style>
+<link rel="stylesheet" href="../assets/tipografia.css">
+<link rel="stylesheet" href="../assets/corporativo.css">
+</head>
+<body>
+<header><h1>Cuentas con Mundial</h1><p>Lo que se le ha pagado a Seguros Mundial, lo que se le debe, las facturas pendientes y el retorno que recibe Negociemos por comisión. Solo lee la hoja «Estado de Facturas»; no la modifica.</p></header>
+<main>
+  <section class="panel" id="pCon">
+    <h2>Hoja «Estado de Facturas»</h2>
+    <p class="sub">Pegue una sola vez el enlace de la hoja de Google (queda guardado en este navegador). Debe estar en la misma cuenta de Google donde publicó el Apps Script.</p>
+    <div class="fil"><label style="flex:1;min-width:320px">Enlace de la hoja<input type="text" id="mLink" placeholder="https://docs.google.com/spreadsheets/d/…"></label>
+      <label>Pestaña (opcional)<input type="text" id="mTab" placeholder="la primera" style="width:150px"></label>
+      <button class="btn" id="mLeer" type="button">Leer la hoja</button></div>
+    <p class="estado" id="mEst"></p>
+  </section>
+
+  <div id="res" style="display:none">
+    <section class="panel">
+      <h2>Resumen</h2>
+      <div class="fil"><label>Año del período de cobro<select id="fAnio"></select></label><label>Mes<select id="fMes"></select></label><label>Producto<select id="fProd"></select></label></div>
+      <div class="tiles" id="tiles"></div>
+      <p class="nota" id="notaRes"></p>
+    </section>
+
+    <section class="panel">
+      <h2>Facturas pendientes de pago</h2>
+      <p class="sub" id="subPend"></p>
+      <div class="scroll"><table><thead><tr><th>Factura</th><th>Período de cobro</th><th class="n">Pólizas</th><th class="n">Valor a pagar</th><th class="n">Retorno NG</th><th>Fecha límite</th><th class="n">Días</th><th>Estado</th></tr></thead><tbody id="cPend"></tbody><tfoot id="pPend"></tfoot></table></div>
+      <div class="vacio" id="vPend" style="display:none">No hay facturas pendientes con este filtro.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Mes a mes</h2>
+      <div class="scroll"><table><thead><tr><th>Período</th><th class="n">Facturado</th><th class="n">Pagado a Mundial</th><th class="n">Pendiente</th><th class="n">Retorno NG</th><th class="n">% retorno sobre la prima base</th></tr></thead><tbody id="cMes"></tbody><tfoot id="pMes"></tfoot></table></div>
+    </section>
+
+    <section class="panel">
+      <h2>Por producto</h2>
+      <div class="scroll"><table><thead><tr><th>Producto</th><th class="n">Pólizas</th><th class="n">Facturado</th><th class="n">Pagado</th><th class="n">Pendiente</th><th class="n">Retorno NG</th></tr></thead><tbody id="cProd"></tbody></table></div>
+    </section>
+
+    <section class="panel">
+      <h2>¿Qué significa cada estado de la hoja?</h2>
+      <p class="sub">El sistema no puede adivinar qué quiere decir cada texto de la columna «Estado actual». Indíquelo una vez: queda guardado y se recalcula todo.</p>
+      <div class="scroll"><table><thead><tr><th>Estado en la hoja</th><th class="n">Filas</th><th class="n">Valor cobrado</th><th>Cuenta como</th></tr></thead><tbody id="cEst"></tbody></table></div>
+      <p class="nota">«Pagado» = ya se le pagó a Mundial. «Pendiente» = todavía se le debe. «No contar» = no entra en ningún total (por ejemplo, anulada).</p>
+    </section>
+  </div>
+</main>
+<script>
+(function(){
+  'use strict';
+  var $=function(i){return document.getElementById(i)};
+  var LS=function(k){try{return localStorage.getItem(k)||''}catch(e){return ''}};
+  var LSs=function(k,v){try{localStorage.setItem(k,v)}catch(e){}};
+  var MESN=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function cop(n){return '$'+Math.round(Number(n)||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
+  function norm(s){return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim()}
+  function num(v){if(typeof v==='number')return v;var t=String(v==null?'':v).replace(/[$\s]/g,'');if(!t||t==='-')return 0;if(/,\d{1,2}$/.test(t))t=t.replace(/\./g,'').replace(',','.');else t=t.replace(/[.,](?=\d{3}(\D|$))/g,'');var n=parseFloat(t);return isNaN(n)?0:n}
+  function fecha(v){var t=String(v==null?'':v).trim(),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(t);if(m)return {y:+m[1],m:+m[2],d:+m[3],iso:m[1]+'-'+m[2]+'-'+m[3]};m=/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/.exec(t);return m?{y:+m[3],m:+m[2],d:+m[1],iso:m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2)}:null}
+  function fbonita(f){return f?('0'+f.d).slice(-2)+'/'+('0'+f.m).slice(-2)+'/'+f.y:'—'}
+  function idDe(l){var m=/\/d\/([A-Za-z0-9_-]{20,})/.exec(l)||/^\s*([A-Za-z0-9_-]{25,})\s*$/.exec(l);return m?m[1]:''}
+  var cnt=0,FILAS=null,CFG={};
+  function llamar(id,hoja){
+    return new Promise(function(ok,mal){
+      var url=LS('pm_crm_url'),tok=LS('pm_crm_token')||'PM-CRM-2026';
+      if(!url){mal(new Error('Falta la URL del conector (pestaña Conexiones → Conector único).'));return}
+      cnt++;var cb='pm_mu_'+Date.now()+'_'+cnt,s=document.createElement('script'),fin=false;
+      var t=setTimeout(function(){if(fin)return;fin=true;lim();mal(new Error('El conector no respondió a tiempo (más de 60 segundos). Revise que publicó «Nueva versión» con el código crm-11 y que ejecutó AUTORIZAR_TODO.'))},60000);
+      function lim(){clearTimeout(t);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)}
+      window[cb]=function(r){if(fin)return;fin=true;lim();ok(r)};
+      s.onerror=function(){if(fin)return;fin=true;lim();mal(new Error('No se pudo contactar el conector.'))};
+      s.src=url+(url.indexOf('?')<0?'?':'&')+'action=mundial_leer&token='+encodeURIComponent(tok)+'&sheetId='+encodeURIComponent(id||'')+'&hoja='+encodeURIComponent(hoja||'')+'&callback='+cb+'&_='+Date.now();document.body.appendChild(s);
+    }).then(function(r){if(!r||r.ok===false){var m=(r&&r.error)||'Respuesta inválida.';if(/Acción no disponible/.test(m))m='El conector todavía no puede leer esta hoja (versión crm-11): pegue el código nuevo (Codigo_UNICO.gs) y publique «Nueva versión».';throw new Error(m)}return r});
+  }
+  /* ---- interpretar la hoja: busca la fila de títulos y cada columna por su nombre ---- */
+  function interpretar(A){
+    var hi=-1,c={};
+    for(var i=0;i<Math.min(A.length,30)&&hi<0;i++){var H=(A[i]||[]).map(norm);if(H.some(function(h){return /^valor cobrado/.test(h)})&&H.some(function(h){return /factura/.test(h)})){hi=i;
+      H.forEach(function(h,j){
+        if(c.fac==null&&/factura/.test(h))c.fac=j; else if(/periodo.*desde/.test(h))c.des=j; else if(/periodo.*hasta/.test(h))c.has=j; else if(/^#?\s*poliza/.test(h))c.pol=j; else if(/^producto/.test(h))c.prod=j;
+        else if(/^valor cobrado/.test(h))c.val=j; else if(/prima base/.test(h))c.prima=j; else if(/retorno/.test(h))c.ret=j; else if(/^%/.test(h))c.pct=j; else if(/^estado/.test(h))c.est=j; else if(/fecha limite/.test(h))c.lim=j; else if(/observ/.test(h))c.obs=j; else if(/^#?\s*cobro/.test(h))c.cob=j;
+      })}}
+    if(hi<0)throw new Error('No encontré la fila de títulos. Busco una columna «#Factura de pago» y otra «Valor cobrado».');
+    var out=[];
+    for(var k=hi+1;k<A.length;k++){var w=A[k]||[];var val=num(w[c.val]);var fac=String(w[c.fac]==null?'':w[c.fac]).trim();if(!fac&&!val)continue;
+      var d=fecha(w[c.des]);out.push({fac:fac||'(sin factura)',des:d,has:fecha(w[c.has]),pol:String(w[c.pol]==null?'':w[c.pol]).trim(),prod:String(w[c.prod]||'').trim().toUpperCase()||'SIN DATO',val:val,prima:num(w[c.prima]),ret:num(w[c.ret]),est:String(w[c.est]==null?'':w[c.est]).trim(),lim:fecha(w[c.lim]),obs:String(w[c.obs]||'').trim()})}
+    return out;
+  }
+  /* ---- qué significa cada estado (se guarda en el navegador) ---- */
+  function mapaEst(){try{return JSON.parse(LS('pm_mundial_estados')||'{}')}catch(e){return {}}}
+  function claseEst(txt){var m=mapaEst(),k=norm(txt)||'(vacío)';if(m[k])return m[k];if(/pagad|cancelad|abonad|cubiert/.test(k))return 'pagado';if(/anulad|devuelt|reversad/.test(k))return 'ignorar';return 'pendiente'}
+  /* ---- pintar ---- */
+  var FL={a:'',m:'',p:''};
+  function filtrar(){return FILAS.filter(function(r){return(!FL.a||(r.des&&String(r.des.y)===FL.a))&&(!FL.m||(r.des&&String(r.des.m)===FL.m))&&(!FL.p||r.prod===FL.p)})}
+  function pintar(){
+    $('res').style.display='block';
+    var ys={},ps={};FILAS.forEach(function(r){if(r.des)ys[r.des.y]=1;ps[r.prod]=1});
+    var yl=Object.keys(ys).sort().reverse(),pl=Object.keys(ps).sort();
+    $('fAnio').innerHTML='<option value="">Todos los años</option>'+yl.map(function(y){return '<option>'+y+'</option>'}).join('');if(!ys[FL.a])FL.a='';$('fAnio').value=FL.a;
+    $('fMes').innerHTML='<option value="">Todos los meses</option>'+MESN.map(function(n,i){return '<option value="'+(i+1)+'">'+n.charAt(0).toUpperCase()+n.slice(1)+'</option>'}).join('');$('fMes').value=FL.m;
+    $('fProd').innerHTML='<option value="">Todos</option>'+pl.map(function(x){return '<option>'+esc(x)+'</option>'}).join('');if(!ps[FL.p])FL.p='';$('fProd').value=FL.p;
+    var F=filtrar(),hoy=new Date(),hISO=hoy.getFullYear()+'-'+('0'+(hoy.getMonth()+1)).slice(-2)+'-'+('0'+hoy.getDate()).slice(-2);
+    F.forEach(function(r){r.cl=claseEst(r.est)});
+    var T={val:0,pag:0,pen:0,ven:0,ret:0,retP:0,retN:0,prima:0,nVen:0,nPen:0};
+    F.forEach(function(r){if(r.cl==='ignorar')return;T.val+=r.val;T.ret+=r.ret;T.prima+=r.prima;if(r.cl==='pagado'){T.pag+=r.val;T.retP+=r.ret}else{T.pen+=r.val;T.retN+=r.ret;if(r.lim&&r.lim.iso<hISO){T.ven+=r.val;T.nVen++}}});
+    var facP={};F.forEach(function(r){if(r.cl==='pendiente')facP[r.fac]=1});T.nPen=Object.keys(facP).length;
+    $('tiles').innerHTML=
+      '<div class="t"><span>Total facturado por Mundial</span><b>'+cop(T.val)+'</b><small>suma de «Valor cobrado»</small></div>'+
+      '<div class="t vd"><span>Pagado a Mundial</span><b>'+cop(T.pag)+'</b><small>'+(T.val?Math.round(T.pag*100/T.val):0)+' % de lo facturado</small></div>'+
+      '<div class="t am"><span>Lo que se le debe</span><b>'+cop(T.pen)+'</b><small>'+T.nPen+' factura(s) pendiente(s)</small></div>'+
+      '<div class="t ro"><span>De eso, con plazo vencido</span><b>'+cop(T.ven)+'</b><small>'+T.nVen+' fila(s) pasada(s) de la fecha límite</small></div>'+
+      '<div class="t az"><span>Retorno NG (comisión)</span><b>'+cop(T.ret)+'</b><small>'+(T.prima?(Math.round(T.ret/T.prima*1000)/10).toString().replace('.',','):'0')+' % de la prima base</small></div>'+
+      '<div class="t az"><span>Retorno de lo ya pagado</span><b>'+cop(T.retP)+'</b><small>por recibir de facturas pendientes: '+cop(T.retN)+'</small></div>';
+    $('notaRes').textContent='Los totales usan el filtro de arriba (período de cobro «desde»). Las filas marcadas «No contar» no suman. Lo pendiente incluye todo estado que no esté marcado como pagado.';
+    // pendientes por factura
+    var g={};F.forEach(function(r){if(r.cl!=='pendiente')return;var o=g[r.fac]=g[r.fac]||{fac:r.fac,des:r.des,has:r.has,n:0,val:0,ret:0,lim:r.lim,est:{}};o.n++;o.val+=r.val;o.ret+=r.ret;if(r.lim&&(!o.lim||r.lim.iso<o.lim.iso))o.lim=r.lim;if(r.est)o.est[r.est]=1});
+    var L=Object.keys(g).map(function(k){return g[k]}).sort(function(a,b){return(a.lim?a.lim.iso:'9')<(b.lim?b.lim.iso:'9')?-1:1});
+    $('cPend').innerHTML=L.map(function(o){var dias=o.lim?Math.round((new Date(o.lim.y,o.lim.m-1,o.lim.d)-new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()))/86400000):null;
+      var b=dias===null?'<span class="bd g">Sin fecha límite</span>':dias<0?'<span class="bd v">Vencida</span>':dias<=7?'<span class="bd d">Vence pronto</span>':'<span class="bd g">En plazo</span>';
+      return '<tr><td><b>'+esc(o.fac)+'</b></td><td>'+fbonita(o.des)+' al '+fbonita(o.has)+'</td><td class="n">'+o.n+'</td><td class="n"><b>'+cop(o.val)+'</b></td><td class="n">'+cop(o.ret)+'</td><td>'+fbonita(o.lim)+'</td><td class="n">'+(dias===null?'—':dias)+'</td><td>'+b+' <small style="color:#6b7280">'+esc(Object.keys(o.est).join(', '))+'</small></td></tr>'}).join('');
+    $('vPend').style.display=L.length?'none':'block';$('subPend').textContent=L.length?L.length+' factura(s) con '+cop(L.reduce(function(s,o){return s+o.val},0))+' por pagar, ordenadas por fecha límite. Los días negativos significan que ya pasó la fecha.':'';
+    $('pPend').innerHTML=L.length?'<tr><td>Total</td><td></td><td class="n">'+L.reduce(function(s,o){return s+o.n},0)+'</td><td class="n">'+cop(L.reduce(function(s,o){return s+o.val},0))+'</td><td class="n">'+cop(L.reduce(function(s,o){return s+o.ret},0))+'</td><td colspan="3"></td></tr>':'';
+    // mes a mes
+    var M={};F.forEach(function(r){if(r.cl==='ignorar'||!r.des)return;var k=r.des.y+'-'+('0'+r.des.m).slice(-2),o=M[k]=M[k]||{val:0,pag:0,pen:0,ret:0,prima:0};o.val+=r.val;o.ret+=r.ret;o.prima+=r.prima;if(r.cl==='pagado')o.pag+=r.val;else o.pen+=r.val});
+    var K=Object.keys(M).sort().reverse(),pc=function(a,b){return b?(Math.round(a/b*1000)/10).toString().replace('.',',')+' %':'—'};
+    $('cMes').innerHTML=K.map(function(k){var o=M[k],p=k.split('-');return '<tr><td>'+MESN[+p[1]-1].charAt(0).toUpperCase()+MESN[+p[1]-1].slice(1)+' '+p[0]+'</td><td class="n">'+cop(o.val)+'</td><td class="n">'+cop(o.pag)+'</td><td class="n">'+cop(o.pen)+'</td><td class="n"><b>'+cop(o.ret)+'</b></td><td class="n">'+pc(o.ret,o.prima)+'</td></tr>'}).join('')||'<tr><td colspan="6" class="vacio">Sin datos con este filtro.</td></tr>';
+    $('pMes').innerHTML=K.length?'<tr><td>Total</td><td class="n">'+cop(T.val)+'</td><td class="n">'+cop(T.pag)+'</td><td class="n">'+cop(T.pen)+'</td><td class="n">'+cop(T.ret)+'</td><td class="n">'+pc(T.ret,T.prima)+'</td></tr>':'';
+    // producto
+    var P={};F.forEach(function(r){if(r.cl==='ignorar')return;var o=P[r.prod]=P[r.prod]||{n:0,val:0,pag:0,pen:0,ret:0};o.n++;o.val+=r.val;o.ret+=r.ret;if(r.cl==='pagado')o.pag+=r.val;else o.pen+=r.val});
+    $('cProd').innerHTML=Object.keys(P).sort().map(function(k){var o=P[k];return '<tr><td><b>'+esc(k)+'</b></td><td class="n">'+o.n+'</td><td class="n">'+cop(o.val)+'</td><td class="n">'+cop(o.pag)+'</td><td class="n">'+cop(o.pen)+'</td><td class="n">'+cop(o.ret)+'</td></tr>'}).join('');
+    // estados
+    var E={};FILAS.forEach(function(r){var k=norm(r.est)||'(vacío)',o=E[k]=E[k]||{t:r.est||'(vacío)',n:0,val:0};o.n++;o.val+=r.val});
+    $('cEst').innerHTML=Object.keys(E).sort().map(function(k){var o=E[k],cl=claseEst(o.t);return '<tr><td><b>'+esc(o.t)+'</b></td><td class="n">'+o.n+'</td><td class="n">'+cop(o.val)+'</td><td><select data-k="'+esc(k)+'"><option value="pagado"'+(cl==='pagado'?' selected':'')+'>Pagado a Mundial</option><option value="pendiente"'+(cl==='pendiente'?' selected':'')+'>Pendiente de pago</option><option value="ignorar"'+(cl==='ignorar'?' selected':'')+'>No contar</option></select></td></tr>'}).join('');
+  }
+  $('cEst').addEventListener('change',function(ev){var k=ev.target.getAttribute('data-k');if(k===null)return;var m=mapaEst();m[k]=ev.target.value;LSs('pm_mundial_estados',JSON.stringify(m));pintar()});
+  [['fAnio','a'],['fMes','m'],['fProd','p']].forEach(function(x){$(x[0]).addEventListener('change',function(){FL[x[1]]=this.value;pintar()})});
+  function est(t,c){var e=$('mEst');e.textContent=t;e.className='estado '+(c||'')}
+  function leer(silencioso){
+    var l=$('mLink').value.trim(),id=l?idDe(l):'';
+    if(l&&!id){est('Ese enlace no parece de una hoja de Google. Pegue el enlace completo (https://docs.google.com/spreadsheets/…).','er');return Promise.resolve()}
+    LSs('pm_mundial_sheet',id);LSs('pm_mundial_tab',$('mTab').value.trim());
+    if(!silencioso)est('Leyendo la hoja…');$('mLeer').disabled=true;
+    return llamar(id,$('mTab').value.trim()).then(function(r){FILAS=interpretar(r.filas||[]);est('Conectado · «'+r.nombre+'» · pestaña «'+r.hoja+'» · '+FILAS.length+' filas de facturas leídas · se actualiza solo cada minuto','ok');pintar()})
+      .catch(function(e){est(e.message,'er')}).then(function(){$('mLeer').disabled=false});
+  }
+  $('mLeer').addEventListener('click',function(){leer(false)});
+  (function(){var id=LS('pm_mundial_sheet');if(id)$('mLink').value='https://docs.google.com/spreadsheets/d/'+id+'/edit';$('mTab').value=LS('pm_mundial_tab');
+    if(id||LS('pm_crm_url'))leer(false);else est('Pegue el enlace de la hoja y pulse «Leer la hoja».')})();
+  setInterval(function(){if(!document.hidden&&FILAS)leer(true)},60000);
+})();
+</script>
+<script src="../assets/tema_modulo.js"></script>
+<script src="../assets/corporativo.js"></script>
+</body>
+</html>

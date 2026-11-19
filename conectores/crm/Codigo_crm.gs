@@ -60,6 +60,8 @@ function doGet(e) {
         salida = accionVerReporte(params);
       } else if (accion === 'banco_leer') {
         salida = accionBancoLeer(params);
+      } else if (accion === 'mundial_leer') {
+        salida = accionMundialLeer(params);
       } else if (accion === 'banco_anotar') {
         salida = accionBancoAnotar(params);
       } else if (accion === 'erp_protect') {
@@ -75,7 +77,7 @@ function doGet(e) {
       } else if (accion === 'cotRen_estado') {
         salida = accionCotRenEstado(params);
       } else if (accion === 'ping') {
-        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-10' };
+        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-11' };
       } else {
         salida = { ok: false, error: 'Acción no disponible: ' + accion };
       }
@@ -604,4 +606,28 @@ function accionBancoAnotar(p) {
   });
   SpreadsheetApp.flush();
   return { ok: true, escritas: esc, omitidas: omit };
+}
+
+
+/* ===== Cuentas con Seguros Mundial: lee la hoja «Estado de Facturas» (solo lectura) =====
+   Columnas: A #Factura · B Periodo desde · C Periodo hasta · F #cobro · G #póliza · H Producto · I Valor cobrado ·
+   J Valor prima base · K Valor Retorno NG · L % · M Estado actual · N Fecha límite de pago · O Observaciones. */
+var MUNDIAL_SHEET_ID = '1G1pHHVPcRVaJ_qqm1bYZBk2Yl1QpIfnVSWmHIUV1te4';   // ID de la hoja «Estado de Facturas» (lo que va entre /d/ y /edit en su enlace); también se puede pegar en el módulo
+var MUNDIAL_HOJA = '';       // nombre de la pestaña; vacío = la primera
+function accionMundialLeer(p) {
+  var id = String(p.sheetId || MUNDIAL_SHEET_ID || '').trim();
+  if (!/^[A-Za-z0-9_-]{20,}$/.test(id)) return { ok: false, error: 'Falta el ID de la hoja «Estado de Facturas». Péguelo en el módulo «Cuentas con Mundial» o en MUNDIAL_SHEET_ID dentro del código.' };
+  var ss;
+  try { ss = SpreadsheetApp.openById(id); } catch (e) { return { ok: false, error: 'No pude abrir la hoja de facturas. Revise el enlace y que esté en la misma cuenta de Google donde publicó el script.' }; }
+  var nombreHoja = String(p.hoja || MUNDIAL_HOJA || '').trim();
+  var hoja = nombreHoja ? ss.getSheetByName(nombreHoja) : ss.getSheets()[0];
+  var pestanas = ss.getSheets().map(function (x) { return x.getName(); });
+  if (!hoja) return { ok: false, error: 'No encontré la pestaña «' + nombreHoja + '». Las pestañas son: ' + pestanas.join(', ') + '.' };
+  var ult = hoja.getLastRow(), anc = Math.min(Math.max(hoja.getLastColumn(), 1), 20), tz = Session.getScriptTimeZone();
+  if (ult < 1) return { ok: true, nombre: ss.getName(), hoja: hoja.getName(), pestanas: pestanas, filas: [] };
+  var max = Math.min(ult, 20000);
+  var filas = hoja.getRange(1, 1, max, anc).getValues().map(function (f) {
+    return f.map(function (v) { return (v instanceof Date) ? Utilities.formatDate(v, tz, 'yyyy-MM-dd') : v; });
+  });
+  return { ok: true, nombre: ss.getName(), hoja: hoja.getName(), pestanas: pestanas, filas: filas, totalFilas: ult };
 }
