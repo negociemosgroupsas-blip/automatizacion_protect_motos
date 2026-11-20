@@ -1826,17 +1826,21 @@ var COLS = [
   { clave: 'fecha',       pos: 1,  nombres: ['fecha', 'fecha venta', 'fecha de venta'] },
   { clave: 'num',         pos: 2,  nombres: ['#', 'n', 'no', 'numero'] },
   { clave: 'cliente',     pos: 3,  nombres: ['cliente', 'nombre', 'nombre del cliente'] },
-  { clave: 'cedula',      pos: 4,  nombres: ['cedula', 'documento', 'cc'] },
-  { clave: 'placa',       pos: 5,  nombres: ['placa'] },
-  { clave: 'tipo',        pos: 6,  nombres: ['tipo vehiculo', 'tipo de vehiculo', 'tipo'] },
-  { clave: 'cilindraje',  pos: 7,  nombres: ['cilindraje'] },
-  { clave: 'inicio',      pos: 8,  nombres: ['fecha inicio', 'fecha inicial', 'inicio'] },
-  { clave: 'vence',       pos: 9,  nombres: ['fecha vencimiento', 'fecha venc', 'vencimiento', 'fecha vence', 'vence'] },
-  { clave: 'valor',       pos: 10, nombres: ['valor soat', 'valor'] },
-  { clave: 'ganancia',    pos: 11, nombres: ['ganancia'] },
-  { clave: 'total',       pos: 12, nombres: ['total consignado', 'total a consignar', 'total'] },
-  { clave: 'forma',       pos: 13, nombres: ['forma de pago', 'forma pago', 'pago'] },
-  { clave: 'celular',     pos: 14, nombres: ['celular', 'telefono', 'cel', 'whatsapp'] }
+  { clave: 'tipoDoc',     pos: 4,  nombres: ['tipo doc', 'tipo documento', 'tipo de documento'] },
+  { clave: 'cedula',      pos: 5,  nombres: ['cedula', 'documento', 'cc'] },
+  { clave: 'placa',       pos: 6,  nombres: ['placa'] },
+  { clave: 'tipo',        pos: 7,  nombres: ['tipo vehiculo', 'tipo de vehiculo'] },
+  { clave: 'cilindraje',  pos: 8,  nombres: ['cilindraje'] },
+  { clave: 'inicio',      pos: 9,  nombres: ['fecha inicio', 'fecha inicial', 'inicio'] },
+  { clave: 'vence',       pos: 10, nombres: ['fecha vencimiento', 'fecha venc', 'vencimiento', 'fecha vence', 'vence'] },
+  { clave: 'valor',       pos: 11, nombres: ['valor soat', 'valor'] },
+  { clave: 'ganancia',    pos: 12, nombres: ['ganancia'] },
+  { clave: 'total',       pos: 13, nombres: ['total consignado', 'total a consignar', 'total'] },
+  { clave: 'forma',       pos: 14, nombres: ['forma de pago', 'forma pago', 'pago'] },
+  { clave: 'celular',     pos: 15, nombres: ['celular', 'telefono', 'cel', 'whatsapp'] },
+  { clave: 'correo',      pos: 16, nombres: ['correo', 'email', 'e mail', 'correo electronico'] },
+  { clave: 'direccion',   pos: 17, nombres: ['direccion'] },
+  { clave: 'residencia',  pos: 18, nombres: ['lugar de residencia', 'residencia', 'ciudad'] }
 ];
 
 var ENCABEZADOS_GESTIONES = ['Fecha de gestión', 'Clave SOAT', 'Cédula', 'Cliente', 'Placa', 'Acción', 'Registrado por'];
@@ -1853,7 +1857,7 @@ function doGet(e) {
       if (accion === 'datos') salida = accionDatos();
       else if (accion === 'registrarGestion') salida = accionRegistrarGestion(params);
       else if (accion === 'agregar') salida = accionAgregar(params);
-      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de SOAT activo', version: 'soat-2' };
+      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de SOAT activo', version: 'soat-3' };
       else salida = { ok: false, error: 'Acción no disponible: ' + accion };
     }
   } catch (err) {
@@ -1907,17 +1911,20 @@ function leerSoat(hoja) {
     var get = function (k) { return idx[k] >= 0 ? f[idx[k]] : ''; };
     var placa = limpiarPlaca(get('placa')), cliente = texto(get('cliente'));
     if (!placa && !cliente) continue;
-    var vence = aFecha(get('vence')), inicio = aFecha(get('inicio'));
+    var venta = aFecha(get('fecha'));
+    var inicio = aFechaCerca(get('inicio'), venta);                       // si el texto es ambiguo (05-11 / 11-05) se elige el más cercano a la venta
+    var vence = aFechaCerca(get('vence'), inicio ? sumarAnio(inicio) : venta);   // ...y el vencimiento, el más cercano a «inicio + 1 año»
     out.push({
       fila: FILA_ENCABEZADOS + 1 + i,
-      fecha: fmt(aFecha(get('fecha'))), fechaISO: iso(aFecha(get('fecha'))),
+      fecha: fmt(venta), fechaISO: iso(venta),
       num: texto(get('num')),
       cliente: cliente, cedula: texto(get('cedula')), placa: placa,
       tipo: texto(get('tipo')).toUpperCase(), cilindraje: texto(get('cilindraje')),
       inicio: fmt(inicio), inicioISO: iso(inicio),
       vence: fmt(vence), venceISO: iso(vence),
       valor: numero(get('valor')), ganancia: numero(get('ganancia')), total: numero(get('total')),
-      forma: texto(get('forma')), celular: texto(get('celular'))
+      forma: texto(get('forma')), celular: texto(get('celular')),
+      tipoDoc: texto(get('tipoDoc')).toUpperCase(), correo: texto(get('correo')), direccion: texto(get('direccion')), residencia: texto(get('residencia'))
     });
   }
   return out;
@@ -1997,14 +2004,15 @@ function accionAgregar(p) {
     if (!d.forzar && ult > FILA_ENCABEZADOS) {
       var datos = hoja.getRange(FILA_ENCABEZADOS + 1, 1, ult - FILA_ENCABEZADOS, ncol).getValues();
       for (var i = 0; i < datos.length; i++) {
-        if (limpiarPlaca(datos[i][idx.placa]) === placa && mismaFecha(aFecha(datos[i][idx.inicio]), ini))
+        if (limpiarPlaca(datos[i][idx.placa]) === placa && mismaFecha(aFechaCerca(datos[i][idx.inicio], aFecha(datos[i][idx.fecha])), ini))
           return { ok: false, duplicado: true, error: 'Ya hay un SOAT de la placa ' + placa + ' con esa fecha de inicio (fila ' + (FILA_ENCABEZADOS + 1 + i) + ').' };
       }
     }
     var nueva = ult + 1;
     if (ult > FILA_ENCABEZADOS) hoja.getRange(ult, 1, 1, ncol).copyTo(hoja.getRange(nueva, 1, 1, ncol), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
     var val = { fecha: venta, cliente: cliente, cedula: aNumeroSiPuede(d.cedula), placa: placa, tipo: texto(d.tipo).toUpperCase(), cilindraje: numero(d.cilindraje) || texto(d.cilindraje),
-      inicio: ini, vence: ven, valor: valor, ganancia: ganancia, total: total, forma: texto(d.forma), celular: aNumeroSiPuede(d.celular) };
+      inicio: ini, vence: ven, valor: valor, ganancia: ganancia, total: total, forma: texto(d.forma), celular: aNumeroSiPuede(d.celular),
+      tipoDoc: texto(d.tipoDoc).toUpperCase(), correo: texto(d.correo), direccion: texto(d.direccion), residencia: texto(d.residencia) };
     var asignada = {}, omitidos = [];
     COLS.forEach(function (c) {
       var col = idx[c.clave]; if (col < 0 || c.clave === 'num') return;
@@ -2099,6 +2107,17 @@ function aFecha(v) {
   m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
   return null;
+}
+// Igual que aFecha, pero si el texto puede leerse de dos maneras (día/mes o mes/día) elige la más cercana a la fecha de referencia.
+function aFechaCerca(v, ref) {
+  if (Object.prototype.toString.call(v) === '[object Date]' || !ref) return aFecha(v);
+  var t = texto(v), m = t.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+  if (!m) return aFecha(v);
+  var a = +m[3]; if (a < 100) a += 2000;
+  var x = +m[1], y = +m[2];
+  if (x > 12 || y > 12 || x === y) return aFecha(v);
+  var c1 = new Date(a, y - 1, x), c2 = new Date(a, x - 1, y);   // día/mes  y  mes/día
+  return Math.abs(c1 - ref) <= Math.abs(c2 - ref) ? c1 : c2;
 }
 function fmt(d) { return d ? ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear() : ''; }
 function iso(d) { return d ? d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2) : ''; }

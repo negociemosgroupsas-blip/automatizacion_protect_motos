@@ -447,8 +447,12 @@
     <div class="msg-modal" id="nvNota"></div>
     <div class="fgrid">
       <div class="campo-form full"><label>Cliente *</label><input type="text" id="nvCliente" autocomplete="off" placeholder="Nombre completo"></div>
+      <div class="campo-form"><label>Tipo de documento</label><select id="nvTipoDoc"><option>CC</option><option>CE</option><option>TI</option><option>PPT</option><option>PASAPORTE</option><option>NIT</option></select></div>
       <div class="campo-form"><label>Cédula</label><input type="text" id="nvCedula" inputmode="numeric" autocomplete="off"></div>
       <div class="campo-form"><label>Celular</label><input type="text" id="nvCel" inputmode="numeric" autocomplete="off"></div>
+      <div class="campo-form"><label>Correo</label><input type="email" id="nvCorreo" autocomplete="off"></div>
+      <div class="campo-form"><label>Dirección</label><input type="text" id="nvDir" autocomplete="off"></div>
+      <div class="campo-form"><label>Lugar de residencia</label><input type="text" id="nvRes" autocomplete="off" placeholder="Ciudad o municipio"></div>
       <div class="campo-form"><label>Placa *</label><input type="text" id="nvPlaca" autocomplete="off" maxlength="8" style="text-transform:uppercase" placeholder="Ej. ABC12D"><span class="ayuda">Si la placa ya existe, se llenan solos los datos del SOAT anterior.</span></div>
       <div class="campo-form"><label>Tipo de vehículo</label><select id="nvTipo"><option>MOTO</option><option>CARRO</option></select></div>
       <div class="campo-form"><label>Cilindraje</label><input type="number" id="nvCil" min="0" step="1"></div>
@@ -789,7 +793,7 @@
     function msg(id,tipo,t){var e=$(id);e.className='msg-modal'+(tipo?' '+tipo:'');e.textContent=t||''}
     function total(){var v=Number($('nvValor').value)||0,g=Number($('nvGan').value)||0;$('nvTotal').value=(v||g)?dinero(v+g):''}
     function abrir(){
-      ['nvCliente','nvCedula','nvCel','nvPlaca','nvCil','nvForma','nvValor','nvGan'].forEach(function(i){$(i).value=''});
+      ['nvCliente','nvCedula','nvCel','nvCorreo','nvDir','nvRes','nvPlaca','nvCil','nvForma','nvValor','nvGan'].forEach(function(i){$(i).value=''});$('nvTipoDoc').value='CC';
       $('nvTipo').value='MOTO';$('nvFecha').value=iso(new Date());$('nvInicio').value=iso(new Date());$('nvVence').value=masAnio($('nvInicio').value);venceManual=false;total();
       var fs={};estado.soat.forEach(function(s){if(s.forma)fs[s.forma]=1});$('nvFormas').innerHTML=Object.keys(fs).map(function(f){return '<option value="'+esc(f)+'">'}).join('');
       msg('nvMsg');msg('nvNota');$('nvGuardar').disabled=false;modal.classList.add('abierto');setTimeout(function(){$('nvCliente').focus()},50);
@@ -806,11 +810,11 @@
       var pl=this.value,prev=null;estado.soat.forEach(function(s){if(s.placa===pl&&(!prev||(s.venceISO||'')>(prev.venceISO||'')))prev=s});
       if(!prev){msg('nvNota');return}
       var pon=function(id,v){if(!$(id).value&&v!==''&&v!=null)$(id).value=v};
-      pon('nvCliente',prev.cliente);pon('nvCedula',prev.cedula);pon('nvCel',prev.celular);pon('nvCil',prev.cilindraje);pon('nvForma',prev.forma);pon('nvValor',prev.valor||'');pon('nvGan',prev.ganancia||'');
+      pon('nvCliente',prev.cliente);pon('nvCedula',prev.cedula);pon('nvCel',prev.celular);pon('nvCorreo',prev.correo);pon('nvDir',prev.direccion);pon('nvRes',prev.residencia);if(prev.tipoDoc&&[].some.call($('nvTipoDoc').options,function(o){return o.value===prev.tipoDoc}))$('nvTipoDoc').value=prev.tipoDoc;pon('nvCil',prev.cilindraje);pon('nvForma',prev.forma);pon('nvValor',prev.valor||'');pon('nvGan',prev.ganancia||'');
       if(prev.tipo)$('nvTipo').value=/carro|camion|auto/i.test(prev.tipo)?'CARRO':'MOTO';total();
       msg('nvNota','nota','Esta placa ya tiene un SOAT: es una renovación. Se llenaron los datos del SOAT anterior; revísalos.');
     });
-    function datos(forzar){return {cliente:$('nvCliente').value.trim(),cedula:$('nvCedula').value.trim(),celular:$('nvCel').value.trim(),placa:$('nvPlaca').value.trim(),tipo:$('nvTipo').value,cilindraje:$('nvCil').value,forma:$('nvForma').value.trim(),fecha:$('nvFecha').value,inicio:$('nvInicio').value,vence:$('nvVence').value,valor:$('nvValor').value,ganancia:$('nvGan').value||0,forzar:forzar?1:0}}
+    function datos(forzar){return {cliente:$('nvCliente').value.trim(),cedula:$('nvCedula').value.trim(),celular:$('nvCel').value.trim(),tipoDoc:$('nvTipoDoc').value,correo:$('nvCorreo').value.trim(),direccion:$('nvDir').value.trim(),residencia:$('nvRes').value.trim(),placa:$('nvPlaca').value.trim(),tipo:$('nvTipo').value,cilindraje:$('nvCil').value,forma:$('nvForma').value.trim(),fecha:$('nvFecha').value,inicio:$('nvInicio').value,vence:$('nvVence').value,valor:$('nvValor').value,ganancia:$('nvGan').value||0,forzar:forzar?1:0}}
     function enviar(forzar){
       var d=datos(forzar);
       if(!d.cliente){msg('nvMsg','error','Escribe el nombre del cliente.');return}
