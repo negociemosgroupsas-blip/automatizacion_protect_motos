@@ -2167,6 +2167,9 @@ function doGet(e) {
       var sh  = getSheet_();
       var row = JSON.parse(e.parameter.row);
       var contrato = String(row[13] || '').trim();         // col N (#CONTRATO) = índice 13
+      // Un contrato nuevo siempre entra con el estado del cliente ACTIVO (col AR = índice 43), salvo que ya venga otro estado
+      while (row.length < 44) row.push('');
+      if (!String(row[43] || '').trim()) row[43] = 'ACTIVO';
 
       // --- ANTI-DUPLICADO: si el contrato ya está, no lo vuelve a pegar ---
       var yaFila = contrato ? buscarContrato_(sh, contrato) : 0;

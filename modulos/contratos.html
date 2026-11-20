@@ -504,7 +504,7 @@ function buildRowArray(d){
     d.rc, (d.rc==="SI"?d.valorRC:""), d.asistencias, (a?d.planAsist:""), (a?(d.asesor||"").toUpperCase():""), (a?d.valorAsist:""),
     d.valorMoto, d.marca, d.referencia, d.estadoMoto, d.celular, d.correo, d.direccion,
     d.docCC, d.docMatricula, d.docSoat, d.docFactura, d.docFotos, d.docContrato, d.docContratoEsc,
-    d.estadoRC, d.estadoAP, d.archivado, d.estadoCliente, d.fechaPago, d.renovacion
+    d.estadoRC, d.estadoAP, d.archivado, (String(d.estadoCliente||'').trim()||'ACTIVO'), d.fechaPago, d.renovacion
   ];
 }
 function buildRow(d){ return buildRowArray(d).join("\t"); }
