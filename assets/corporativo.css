@@ -84,3 +84,17 @@ body.pm-oscuro .btn.g,body.pm-oscuro .cn-b.g{background:#e3e8f2!important;color:
 body.pm-oscuro .btn.s{background:#2f4690;color:#fff}
 body.pm-oscuro .estado.er,body.pm-oscuro .cn-st.mal,body.pm-oscuro .pmcr-fondo+* .mal{color:#ff9aa8}
 body.pm-oscuro .estado.ok,body.pm-oscuro .cn-st.bien{color:#7ee2a8}
+
+/* ===== Modo oscuro: estados que quedaban claros con letra clara (hover, chips, tarjetas, avisos) ===== */
+body.pm-oscuro .cabecera-clic:hover{background:#1b2850}
+body.pm-oscuro .filtro-chip{background:#1b2850;color:#e8eefc;border:1px solid #3d5198}
+body.pm-oscuro .filtro-chip button{background:rgba(255,255,255,.14);color:#e8eefc}
+body.pm-oscuro .filtro-chip button:hover{background:rgba(255,255,255,.28)}
+body.pm-oscuro .pmcr-t{background:#1b2850;border-color:#2a3b70;color:#e8eefc} body.pm-oscuro .pmcr-t b{color:#fff} body.pm-oscuro .pmcr-t span{color:#a3b4d8}
+body.pm-oscuro .pmcr-sub{color:#a3b4d8} body.pm-oscuro .pmcr-caja .pmcr-sub{color:#667}
+body.pm-oscuro .estado-conexion.error{background:#4a1d24;color:#ffb3bd}
+body.pm-oscuro .estado-conexion.ok{background:#0f3d33;color:#7ee2a8}
+body.pm-oscuro .estado-conexion.cargando{background:#17306b;color:#b9d2ff}
+body.pm-oscuro .conc-hover,body.pm-oscuro .link-chico:hover{background:#26356a}
+body.pm-oscuro .pago-botones button:hover{background:#26356a}
+body.pm-oscuro .lapiz:hover{background:#26356a}
