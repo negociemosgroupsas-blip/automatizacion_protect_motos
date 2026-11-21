@@ -1609,9 +1609,15 @@
   function rpCop(n){return '$'+Math.round(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
   function rpDatos(K){
     var y=+K.slice(0,4),m=+K.slice(5,7),R=window.PM_COBROS,d={ok:!!(R&&R.contratos),nf:0,vf:0,nc:0,vc:0,soat:null,gan:0,oms:null,cxc:null,dugo:null,mes:m,anio:y};
-    if(R&&R.contratos)R.contratos.forEach(function(x){if(!String(x.cliente||'').trim()||String(x.estado||'').toUpperCase()==='ANULADO')return;var r=mesAnio(x);if(r.m!==m||r.a!==y)return;if(x.fechaFirmaISO&&x.fechaFirmaISO>K)return;
-      var v=Number(x.valorCaja)||0;if(x.forma==='FINANCIADO'){d.nf++;d.vf+=v}else if(x.forma==='CONTADO'){d.nc++;d.vc+=v}});
-    d.n=d.nf+d.nc;
+    /* Mismas reglas del conteo del Inicio: cuenta todo contrato con cliente que no esté anulado (por la columna AR o por el nombre).
+       La forma de pago se reconoce aunque venga escrita distinto (Financiada, Contado ., etc.); lo que no se reconoce igual se cuenta en el total. */
+    d.no=0;d.vo=0;d.sinValor=0;
+    var hoyK=rtIso(new Date());
+    if(R&&R.contratos)R.contratos.forEach(function(x){if(!String(x.cliente||'').trim()||estadoFila(x)==='ANULADO')return;var r=mesAnio(x);if(r.m!==m||r.a!==y)return;
+      if(K<hoyK&&x.fechaFirmaISO&&x.fechaFirmaISO>K)return;   /* en un corte de días pasados no se cuentan los firmados después */
+      var v=Number(x.valorCaja)||0,f=String(x.forma||'').toUpperCase();if(!v)d.sinValor++;
+      if(/^FINANC/.test(f)){d.nf++;d.vf+=v}else if(/^CONTAD/.test(f)){d.nc++;d.vc+=v}else{d.no++;d.vo+=v}});
+    d.n=d.nf+d.nc+d.no;
     if(typeof soatRecs!=='undefined'&&soatRecs.length){d.soat=0;soatRecs.forEach(function(x){if(x.y===y&&x.m===m){d.soat++;d.gan+=x.g}})}
     if(window.PM_OMS&&PM_OMS.contratos){d.oms=0;PM_OMS.contratos.forEach(function(c){var f=c.fechaFirmaISO||'';if(f.slice(0,4)==String(y)&&+f.slice(5,7)===m&&f<=K&&String(c.cliente||'').trim())d.oms++})}
     if(window.PM_CONFILAS){d.cxc=0;PM_CONFILAS.forEach(function(f){if(f.estado==='Falta por consolidar')d.cxc+=Number(f.pagado)||0})}
@@ -1637,7 +1643,8 @@
     RP.d={corte:K,n:d.ok?d.n:null,nc:d.ok?d.nc:null,vc:d.ok?d.vc:null,nf:d.ok?d.nf:null,vf:d.ok?d.vf:null,banco:d.banco,dugo:d.dugo,soat:d.soat,gan:d.soat===null?null:d.gan,oms:d.oms,saldo:saldoEl.value?sn:0};
     document.getElementById('rpdTxt').value=T.join('\n');
     var falt=[];if(!d.ok)falt.push('Protect');if(d.dugo===null)falt.push('Valor cobrado a Dugo Motos');if(d.soat===null)falt.push('SOAT');if(d.oms===null)falt.push('Clientes OMS');if(d.banco===null)falt.push('Verificación bancaria (hoja del banco)');if(!saldoEl.value)falt.push('el saldo (escríbalo en la casilla)');
-    document.getElementById('rpdEst').textContent=(falt.length?'Faltan datos de: '+falt.join(', ')+'. Donde dice [falta] complételo a mano.':'Datos completos de '+MESL[d.mes-1]+' hasta el '+fa+'.');
+    var aviso=(d.ok&&(d.no||d.sinValor))?' Ojo: '+(d.no?d.no+' contrato(s) sin forma de pago CONTADO/FINANCIADO se cuentan en el total pero no en contado ni financiados. ':'')+(d.sinValor?d.sinValor+' contrato(s) tienen vacío el valor de la columna P. ':''):'';
+    document.getElementById('rpdEst').textContent=aviso+(falt.length?'Faltan datos de: '+falt.join(', ')+'. Donde dice [falta] complételo a mano.':'Datos completos de '+MESL[d.mes-1]+' hasta el '+fa+'.');
   }
   (function(){var f=document.getElementById('rpdFecha'),h=new Date();f.value=rtIso(h);
     document.getElementById('gInf').addEventListener('click',function(){var w=document.getElementById('rpdWrap');w.hidden=!w.hidden;if(!w.hidden){document.getElementById('rpdSaldo').value='';rpArmar();w.scrollIntoView({behavior:'smooth',block:'start'})}});
