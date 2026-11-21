@@ -1616,10 +1616,11 @@
       var v=Number(x.valorCaja)||0,f=String(x.forma||'').toUpperCase();if(!v)d.sinValor++;
       if(/^FINANC/.test(f)){d.nf++;d.vf+=v}else if(/^CONTAD/.test(f)){d.nc++;d.vc+=v}else{d.no++;d.vo+=v}});
     d.n=d.nf+d.nc+d.no;
-    if(typeof soatRecs!=='undefined'&&soatRecs.length){d.soat=0;soatRecs.forEach(function(x){if(x.y===y&&x.m===m){d.soat++;d.gan+=x.g}})}
+    if(window.PM_SOAT&&PM_SOAT.soat&&PM_SOAT.soat.length){d.soat=0;var pre=y+'-'+('0'+m).slice(-2);   /* SOAT del mes según la fecha de venta (columna «Fecha» de la hoja Soat) */
+      PM_SOAT.soat.forEach(function(x){if(String(x.fechaISO||'').slice(0,7)===pre){d.soat++;d.gan+=Number(x.ganancia)||0}})}
     if(window.PM_OMS&&PM_OMS.contratos){d.oms=0;PM_OMS.contratos.forEach(function(c){var f=c.fechaFirmaISO||'';if(f.slice(0,4)==String(y)&&+f.slice(5,7)===m&&f<=K&&String(c.cliente||'').trim())d.oms++})}
     if(window.PM_CONFILAS){d.cxc=0;PM_CONFILAS.forEach(function(f){if(f.estado==='Falta por consolidar')d.cxc+=Number(f.pagado)||0})}
-    if(BK&&BK.filas){d.banco=0;BK.filas.forEach(function(o){if(o.y===y&&o.m===m&&o.d<=+K.slice(8,10))d.banco+=o.v})}
+    if(BK&&BK.filas&&BK.filas.length){d.banco=0;BK.filas.forEach(function(o){if(o.y===y&&o.m===m&&o.d<=+K.slice(8,10))d.banco+=o.v})}
     if(window.PM_CONS&&PM_CONS.meses){PM_CONS.meses.forEach(function(o){if(o.anio===y&&o.mes===m)d.dugo=(o.auto!=null?o.auto:(o.c||o.d||0))});if(d.dugo===null)d.dugo=0}
     return d;
   }
@@ -1642,14 +1643,20 @@
     document.getElementById('rpdTxt').value=T.join('\n');
     var falt=[];if(!d.ok)falt.push('Protect');if(d.dugo===null)falt.push('Valor cobrado a Dugo Motos');if(d.soat===null)falt.push('SOAT');if(d.oms===null)falt.push('Clientes OMS');if(d.banco===null)falt.push('Verificación bancaria (hoja del banco)');if(!saldoEl.value)falt.push('el saldo (escríbalo en la casilla)');
     var aviso=(d.ok&&(d.no||d.sinValor))?' Ojo: '+(d.no?d.no+' contrato(s) sin forma de pago CONTADO/FINANCIADO se cuentan en el total pero no en contado ni financiados. ':'')+(d.sinValor?d.sinValor+' contrato(s) tienen vacío el valor de la columna P. ':''):'';
-    document.getElementById('rpdEst').textContent=aviso+(falt.length?'Faltan datos de: '+falt.join(', ')+'. Donde dice [falta] complételo a mano.':'Datos completos de '+MESL[d.mes-1]+' hasta el '+fa+'.');
+    document.getElementById('rpdEst').textContent=aviso+(falt.length?'Faltan datos de: '+falt.join(', ')+'. Se están pidiendo a la hoja y el informe se actualiza solo (puede tardar hasta 1–2 minutos); si no llegan, revise la conexión en «Conexiones» o complételo a mano donde dice [falta].':'Datos completos de '+MESL[d.mes-1]+' hasta el '+fa+'.');
   }
   (function(){var f=document.getElementById('rpdFecha'),h=new Date();f.value=rtIso(h);
-    document.getElementById('gInf').addEventListener('click',function(){var w=document.getElementById('rpdWrap');w.hidden=!w.hidden;if(!w.hidden){document.getElementById('rpdSaldo').value='';rpArmar();w.scrollIntoView({behavior:'smooth',block:'start'})}});
+    document.getElementById('gInf').addEventListener('click',function(){var w=document.getElementById('rpdWrap');w.hidden=!w.hidden;if(!w.hidden){document.getElementById('rpdSaldo').value='';rpArmar();rpEsperar();w.scrollIntoView({behavior:'smooth',block:'start'})}});
     document.getElementById('rpdImg').addEventListener('click',function(){rpArmar();if(!window.PMInforme||!RP.d)return;var st=document.getElementById('rpdEst');st.textContent='Creando la imagen…';
       PMInforme.png(RP.d).then(function(b){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='Cierre_diario_Protect_Motos_'+RP.d.corte+'.png';document.body.appendChild(a);a.click();a.remove();st.textContent='Imagen descargada. Envíela por WhatsApp como foto.'},function(e){st.textContent='No se pudo crear la imagen: '+e.message})});
     document.getElementById('rpdPdf').addEventListener('click',function(){rpArmar();if(!window.PMInforme||!RP.d)return;var st=document.getElementById('rpdEst');if(!PMInforme.imprimir(RP.d))st.textContent='El navegador bloqueó la ventana: permita ventanas emergentes y vuelva a intentar.';else st.textContent='Se abrió la hoja: en «Destino» elija «Guardar como PDF».'});
-    f.addEventListener('change',function(){rpArmar()});document.getElementById('rpdAct').addEventListener('click',function(){rpArmar()});
+    /* El informe se completa solo: si todavía no llegaron los datos de SOAT, Dugo Motos o el banco, los pide y se actualiza cada 3 s (hasta 3 min) mientras usted no edite el texto. */
+    var rpTim=null,rpEdit=false;document.getElementById('rpdTxt').addEventListener('input',function(){rpEdit=true});
+    function rpEsperar(){clearInterval(rpTim);rpEdit=false;var n=0;try{if(window.PM_recargarFuentes)PM_recargarFuentes();if(window.cargarBanco){BK.t=0;cargarBanco()}}catch(e){}
+      rpTim=setInterval(function(){n++;var K=f.value;if(!K||n>60||document.getElementById('rpdWrap').hidden){clearInterval(rpTim);return}
+        var d=rpDatos(K);if(d.soat!==null&&d.dugo!==null&&d.banco!==null){clearInterval(rpTim)}if(!rpEdit)rpArmar()},3000)}
+    window.rpEsperar=rpEsperar;
+    f.addEventListener('change',function(){rpArmar();rpEsperar()});document.getElementById('rpdAct').addEventListener('click',function(){rpArmar();rpEsperar()});
     document.getElementById('rpdSaldo').addEventListener('input',function(){var el=this,n=el.value.replace(/\D/g,'');el.value=n?n.replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'';rpArmar()});
     document.getElementById('rpdCopia').addEventListener('click',function(){var t=document.getElementById('rpdTxt');t.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t.value).then(function(){document.getElementById('rpdEst').textContent='Informe copiado. Péguelo en WhatsApp.'},function(){document.getElementById('rpdEst').textContent=ok?'Informe copiado.':'No se pudo copiar: seleccione el texto y use Ctrl+C.'})}else document.getElementById('rpdEst').textContent=ok?'Informe copiado. Péguelo en WhatsApp.':'No se pudo copiar: seleccione el texto y use Ctrl+C.'});
   })();
@@ -1926,6 +1933,7 @@
   document.addEventListener('pm-cobros',function(){COB=window.PM_COBROS;marcarHora();if(document.activeElement===q)buscar()});
   if(window.PM_COBROS)COB=window.PM_COBROS;
   $('btnRec').addEventListener('click',function(){if(window.PM_recargarCobros)window.PM_recargarCobros();cargarConc()});
+  window.PM_recargarFuentes=function(){cargarConc();cargarSoat();cargarOms()};
   cargarConc();cargarSoat();cargarOms();cargarRen();
   var ultimoAuto=Date.now();
   var sv=PMG.sv,stxt=PMG.stxt,enAncho=PMG.enAncho,verTip=PMG.verTip,ocultarTip=PMG.ocultarTip,MES_C=PMG.MES_C;
