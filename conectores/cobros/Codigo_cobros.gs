@@ -188,6 +188,7 @@ function leerContratos(hoja) {
       direccion: String(fila[COL.DIRECCION - 1] || ''),
       estado: String(fila[COL.ESTADO_CLIENTE - 1] || '').trim().toUpperCase(),
       fechaCancelacion: colFC ? formatoFecha(fila[colFC - 1]) : '',
+      valorCaja: valorCajaP_(fila[15]),   // columna P: valor pagado a Dugo Motos
       fechaCancelacionISO: colFC ? formatoISO(fila[colFC - 1]) : '',
       motivoCancelacion: colMC ? String(fila[colMC - 1] || '').trim() : ''
     });
@@ -615,4 +616,17 @@ function formatoFechaParaNombre(texto) {
   var dia = ('0' + fecha.getDate()).slice(-2);
   var mes = ('0' + (fecha.getMonth() + 1)).slice(-2);
   return dia + '-' + mes + '-' + fecha.getFullYear();
+}
+
+
+// Columna P (valor pagado a Dugo Motos): acepta números o textos como "$ 1.234.567".
+function valorCajaP_(v) {
+  if (typeof v === 'number') return isNaN(v) ? null : v;
+  var t = String(v === null || v === undefined ? '' : v).replace(/[$\s]/g, '');
+  if (!t) return null;
+  if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) t = t.replace(/\./g, '').replace(',', '.');
+  else if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) t = t.replace(/,/g, '');
+  else t = t.replace(',', '.');
+  var n = Number(t);
+  return isNaN(n) ? null : n;
 }

@@ -1612,9 +1612,7 @@
     /* Mismas reglas del conteo del Inicio: cuenta todo contrato con cliente que no esté anulado (por la columna AR o por el nombre).
        La forma de pago se reconoce aunque venga escrita distinto (Financiada, Contado ., etc.); lo que no se reconoce igual se cuenta en el total. */
     d.no=0;d.vo=0;d.sinValor=0;
-    var hoyK=rtIso(new Date());
     if(R&&R.contratos)R.contratos.forEach(function(x){if(!String(x.cliente||'').trim()||estadoFila(x)==='ANULADO')return;var r=mesAnio(x);if(r.m!==m||r.a!==y)return;
-      if(K<hoyK&&x.fechaFirmaISO&&x.fechaFirmaISO>K)return;   /* en un corte de días pasados no se cuentan los firmados después */
       var v=Number(x.valorCaja)||0,f=String(x.forma||'').toUpperCase();if(!v)d.sinValor++;
       if(/^FINANC/.test(f)){d.nf++;d.vf+=v}else if(/^CONTAD/.test(f)){d.nc++;d.vc+=v}else{d.no++;d.vo+=v}});
     d.n=d.nf+d.nc+d.no;
