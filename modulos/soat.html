@@ -327,6 +327,14 @@
   @media(max-width:1000px){.dcard.c8,.dcard.c4{grid-column:1/-1} .tipo-row{grid-template-columns:1fr}}
 </style>
 <style>
+
+  .if-fil{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:8px 0}
+  .if-fil .campo-form{min-width:150px;flex:1}
+  .if-fil select[size]{width:100%}
+  .if-prev{border:1px solid var(--borde);border-radius:10px;background:#eef1f6;padding:10px;max-height:46vh;overflow:auto;margin:10px 0}
+  .if-prev .escala{zoom:.62;margin:0 auto;width:760px;background:#fff}
+  .if-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .if-txt{width:100%;min-height:150px;font:13px/1.45 Consolas,monospace;border:1px solid var(--borde);border-radius:8px;padding:10px}
   .rep-w{position:relative;display:inline-block} .rep-m{position:absolute;right:0;top:calc(100% + 6px);z-index:60;min-width:290px;background:#13223f;color:#eef2ff;border:1px solid #3b4f8f;border-radius:12px;padding:8px;box-shadow:0 12px 30px rgba(0,0,0,.4);display:grid;gap:2px}
   .rep-m[hidden]{display:none} .rep-m b{padding:4px 8px;color:#fdc33e;font-size:.85rem} .rep-m button{background:transparent;color:#eef2ff;text-align:left;border:0;border-radius:8px;padding:8px 10px;font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit} .rep-m button:hover{background:#25366a}
   .rep-modo{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:2px 0 6px;padding:4px;background:#0d1530;border-radius:10px} .rep-m .rep-modo button{text-align:center;white-space:normal;font-size:.85rem;padding:7px 6px;border:1px solid transparent} .rep-m .rep-modo button.on{background:#fdc33e;color:#1a1200;border-color:#fdc33e}
@@ -342,6 +350,7 @@
   #repAviso{position:fixed;right:18px;bottom:18px;background:#13223f;color:#fff;padding:9px 14px;border-radius:10px;font-size:.85rem;z-index:80;display:none;box-shadow:0 8px 22px rgba(0,0,0,.35)}
 </style>
 <script src="../assets/zip_simple.js"></script>
+<script src="../assets/logo_data.js"></script><script src="../assets/informe_diario.js"></script><script src="../assets/informe_soat.js"></script>
 <link rel="stylesheet" href="../assets/tipografia.css">
 <link rel="stylesheet" href="../assets/corporativo.css">
 </head>
@@ -367,6 +376,7 @@
   <div class="estado-conexion" id="estadoConexion"></div>
 
   <div class="acciones-top"><div class="acc-nuevo"><button class="btn btn-oro btn-registrar" id="btnNuevo" type="button">➕ Registrar SOAT nuevo</button><span class="acc-ayuda">Anota una venta de SOAT y se guarda sola en la hoja «Historico Soat».</span></div>
+    <button class="btn btn-azul" id="btnInfJefe" type="button" title="Informe de una venta o de un período, para enviárselo al jefe">📋 Informe para el jefe</button>
     <span class="rep-w"><button class="btn btn-verde" id="btnRep" type="button">⬇ Descarga de reportes</button><div class="rep-m" id="repM" hidden></div></span></div>
 
   <div class="contadores">
@@ -470,6 +480,31 @@
 </div>
 <footer>Protect Motos © <span id="anioActual"></span> — SOAT</footer>
 
+<div class="modal-fondo" id="modalInf">
+  <div class="modal ancho">
+    <h3>Informe para el jefe</h3>
+    <div class="sub">Elija de qué venta o período quiere el informe. Lo puede copiar para WhatsApp, bajar como imagen o guardar como PDF.</div>
+    <div class="if-fil">
+      <div class="campo-form"><label>¿De qué?</label><select id="ifAlc"><option value="cliente">Un cliente (una venta)</option><option value="dia">Un día</option><option value="mes">Un mes</option><option value="anio">Un año</option><option value="todo">General (todo el histórico)</option></select></div>
+      <div class="campo-form" id="ifDiaW" style="display:none"><label>Día</label><input type="date" id="ifDia"></div>
+      <div class="campo-form" id="ifMesW" style="display:none"><label>Mes</label><select id="ifMes"></select></div>
+      <div class="campo-form" id="ifAnioW" style="display:none"><label>Año</label><select id="ifAnio"></select></div>
+    </div>
+    <div id="ifCliW"><div class="campo-form"><label>Buscar cliente (nombre, cédula o placa)</label><input type="text" id="ifBus" autocomplete="off" placeholder="Escriba y elija la venta"></div>
+      <select id="ifLista" size="6" style="width:100%;margin-top:6px"></select></div>
+    <div class="msg-modal" id="ifMsg"></div>
+    <div class="if-prev"><div class="escala" id="ifPrev"></div></div>
+    <textarea class="if-txt" id="ifTxt" spellcheck="false"></textarea>
+    <div class="if-acc">
+      <button class="btn btn-verde" id="ifCopiar" type="button">📋 Copiar texto</button>
+      <button class="btn btn-verde" id="ifWA" type="button">💬 Abrir WhatsApp</button>
+      <button class="btn btn-azul" id="ifImg" type="button">🖼 Descargar imagen</button>
+      <button class="btn btn-azul" id="ifPdf" type="button">📄 PDF</button>
+      <button class="btn btn-gris" id="ifCerrar" type="button" style="margin-left:auto">Cerrar</button>
+    </div>
+    <div class="hint" id="ifEst" style="margin-top:6px"></div>
+  </div>
+</div>
 <script>
 (function(){
   "use strict";
@@ -828,9 +863,76 @@
         if(!r||!r.ok){msg('nvMsg','error',(r&&r.error)||'No se pudo guardar. Revisa la conexión.');return}
         cerrar();mostrar('ok','SOAT guardado '+d.cliente+' · '+d.placa+(r.omitidos&&r.omitidos.length?' (no se pudo llenar en la hoja: '+r.omitidos.join(', ')+')':''));
         setTimeout(function(){cargar(false)},600);
+        var n0=estado.soat.length;setTimeout(function(){if(window.PMInfSoat)PMInfSoat.abrirVenta(d.placa.toUpperCase().replace(/[^A-Z0-9]/g,''),n0)},800);
       }).catch(function(e){guardando=false;$('nvGuardar').disabled=false;msg('nvMsg','error',e.message)});
     }
     $('nvGuardar').addEventListener('click',function(){enviar(false)});
+  })();
+
+  /* ===== Informe para el jefe: una venta (un cliente) o un período ===== */
+  (function(){
+    var $=function(i){return document.getElementById(i)},modal=$('modalInf'),MESN=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],D=null,sel='';
+    function iso(d){var z=function(n){return ('0'+n).slice(-2)};return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())}
+    function ventas(){return estado.soat.filter(function(s){return /^\d{4}-\d{2}-\d{2}/.test(s.fechaISO||'')}).slice().sort(function(a,b){return (b.fechaISO||'').localeCompare(a.fechaISO||'')||(b.fila||0)-(a.fila||0)})}
+    function tot(s){return Number(s.total)||((Number(s.valor)||0)+(Number(s.ganancia)||0))}
+    function llenarAnios(){
+      var ys={},h=new Date();ys[h.getFullYear()]=1;ventas().forEach(function(s){ys[s.fechaISO.slice(0,4)]=1});
+      var l=Object.keys(ys).sort().reverse(),a=$('ifAnio'),act=a.value||String(h.getFullYear());a.innerHTML=l.map(function(y){return '<option>'+y+'</option>'}).join('');a.value=ys[act]?act:l[0];
+      var m=$('ifMes');if(!m.options.length){m.innerHTML=MESN.map(function(n,i){return '<option value="'+(i+1)+'">'+n+'</option>'}).join('');m.value=String(h.getMonth()+1)}
+    }
+    function resumen(L,sub){
+      var f={},v=0,g=0,t=0,mo=0,ca=0;
+      L.forEach(function(s){v+=Number(s.valor)||0;g+=Number(s.ganancia)||0;t+=tot(s);if(/carro|camioneta|auto/i.test(s.tipo||''))ca++;else mo++;
+        var k=String(s.forma||'Sin dato').trim()||'Sin dato';var o=f[k]=f[k]||[k,0,0];o[1]++;o[2]+=tot(s)});
+      var asc=L.slice().sort(function(a,b){return (a.fechaISO||'').localeCompare(b.fechaISO||'')||(a.fila||0)-(b.fila||0)}),MAX=40;
+      return {tipo:'resumen',sub:sub,n:L.length,valor:v,ganancia:g,total:t,motos:mo,carros:ca,formas:Object.keys(f).map(function(k){return f[k]}).sort(function(a,b){return b[1]-a[1]}),filas:asc.slice(0,MAX),mas:Math.max(0,asc.length-MAX)};
+    }
+    function armar(){
+      var a=$('ifAlc').value,L=ventas();
+      $('ifCliW').style.display=a==='cliente'?'':'none';$('ifDiaW').style.display=a==='dia'?'':'none';$('ifMesW').style.display=a==='mes'?'':'none';$('ifAnioW').style.display=(a==='mes'||a==='anio')?'':'none';
+      $('ifMsg').textContent='';D=null;
+      if(a==='cliente'){
+        var q=$('ifBus').value.toLowerCase().trim(),F=L.filter(function(s){return !q||(s.cliente+' '+s.cedula+' '+s.placa).toLowerCase().indexOf(q)>=0}).slice(0,60);
+        var cur=sel;$('ifLista').innerHTML=F.map(function(s,i){var k=s.placa+'|'+s.fechaISO+'|'+s.cliente;return '<option value="'+esc(k)+'">'+esc(s.fechaISO.split('-').reverse().join('/')+' · '+s.cliente+' · '+s.placa+' · '+dinero(s.valor))+'</option>'}).join('');
+        var ks=F.map(function(s){return s.placa+'|'+s.fechaISO+'|'+s.cliente});
+        if(ks.indexOf(cur)<0)cur=ks[0]||'';$('ifLista').value=cur;sel=cur;
+        var s0=F.filter(function(s){return s.placa+'|'+s.fechaISO+'|'+s.cliente===cur})[0];
+        if(s0)D={tipo:'venta',s:s0};else $('ifMsg').textContent=L.length?'No hay ventas con ese texto.':'Todavía no hay SOAT cargados.';
+      }else{
+        var Y=$('ifAnio').value,M=('0'+$('ifMes').value).slice(-2),dia=$('ifDia').value,F2,sub;
+        if(a==='dia'){F2=L.filter(function(s){return s.fechaISO===dia});sub='Día '+(dia?dia.split('-').reverse().join('/'):'')}
+        else if(a==='mes'){F2=L.filter(function(s){return s.fechaISO.slice(0,7)===Y+'-'+M});sub=MESN[+M-1]+' de '+Y}
+        else if(a==='anio'){F2=L.filter(function(s){return s.fechaISO.slice(0,4)===Y});sub='Año '+Y}
+        else{F2=L;sub='Histórico completo'}
+        if(F2.length)D=resumen(F2,sub);else $('ifMsg').textContent='No hay SOAT vendidos en ese período.';
+      }
+      var ok=!!D;['ifCopiar','ifWA','ifImg','ifPdf'].forEach(function(i){$(i).disabled=!ok});
+      $('ifPrev').innerHTML=ok?'<style>'+PMInformeSoat.css()+'</style>'+PMInformeSoat.html(D):'';
+      $('ifTxt').value=ok?PMInformeSoat.texto(D):'';$('ifEst').textContent='';
+    }
+    function abrir(){
+      if(!window.PMInformeSoat)return;llenarAnios();if(!$('ifDia').value)$('ifDia').value=iso(new Date());
+      modal.classList.add('abierto');armar();
+    }
+    function titulo(){return D&&D.tipo==='venta'?'Informe SOAT - '+D.s.cliente+' - '+D.s.placa:'Informe SOAT - '+(D?D.sub:'')}
+    $('btnInfJefe').addEventListener('click',function(){if(!estado.soat.length){mostrar('error','Primero se deben cargar los SOAT (pegue la URL del conector arriba).');return}$('ifAlc').value='cliente';$('ifBus').value='';sel='';abrir()});
+    ['ifAlc','ifDia','ifMes','ifAnio'].forEach(function(i){$(i).addEventListener('change',armar)});
+    $('ifBus').addEventListener('input',armar);$('ifLista').addEventListener('change',function(){sel=this.value;armar()});
+    $('ifTxt').addEventListener('input',function(){});
+    $('ifCerrar').addEventListener('click',function(){modal.classList.remove('abierto')});
+    modal.addEventListener('mousedown',function(ev){if(ev.target===modal)modal.classList.remove('abierto')});
+    $('ifCopiar').addEventListener('click',function(){var t=$('ifTxt');t.select();try{if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t.value);else document.execCommand('copy');$('ifEst').textContent='Texto copiado. Péguelo en WhatsApp.'}catch(e){document.execCommand('copy');$('ifEst').textContent='Texto copiado.'}});
+    $('ifWA').addEventListener('click',function(){window.open('https://wa.me/?text='+encodeURIComponent($('ifTxt').value),'_blank')});
+    $('ifImg').addEventListener('click',function(){if(!D)return;$('ifEst').textContent='Creando la imagen…';PMInformeSoat.png(D).then(function(b){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=titulo().replace(/[^\w\- ]+/g,'')+'.png';document.body.appendChild(a);a.click();a.remove();$('ifEst').textContent='Imagen descargada. Envíela por WhatsApp como foto.'},function(e){$('ifEst').textContent='No se pudo crear la imagen: '+e.message})});
+    $('ifPdf').addEventListener('click',function(){if(!D)return;if(!PMInformeSoat.imprimir(D,titulo()))$('ifEst').textContent='El navegador bloqueó la ventana: permita ventanas emergentes y vuelva a intentar.';else $('ifEst').textContent='Se abrió la hoja: en «Destino» elija «Guardar como PDF».'});
+    /* al registrar un SOAT se ofrece enseguida el informe de esa venta */
+    window.PMInfSoat={abrirVenta:function(placa,n0,intentos){
+      intentos=intentos||0;
+      if(estado.soat.length<=n0){if(intentos<14)setTimeout(function(){PMInfSoat.abrirVenta(placa,n0,intentos+1)},700);return}
+      var hit=null;estado.soat.forEach(function(x){if(x.placa===placa&&/^\d{4}-/.test(x.fechaISO||'')&&(!hit||(x.fila||0)>(hit.fila||0)))hit=x});
+      if(!hit)return;
+      $('ifAlc').value='cliente';$('ifBus').value=placa;sel=hit.placa+'|'+hit.fechaISO+'|'+hit.cliente;abrir();
+    }};
   })();
 
   /* ===== Descarga de reportes de este módulo (Excel .csv) ===== */

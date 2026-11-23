@@ -72,5 +72,5 @@
       img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
     });
   }
-  w.PMInforme={html:html,pagina:pagina,imprimir:imprimir,png:png};
+  w.PMInforme={html:html,pagina:pagina,imprimir:imprimir,png:png,FUENTE:FUENTE};
 })(window);

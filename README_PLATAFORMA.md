@@ -92,3 +92,6 @@ Separadas: «Historico polizas» (OMS), «Historico Soat» (SOAT), Responsabilid
 
 ## Otro Sí de un cliente que ya tiene contrato
 En «Contratos» el botón **📎 Otro Sí** abre un modo sin formularios: se escribe el N° de contrato (columna N de Protect), el sistema trae titular, identificación, placa y asesor de la hoja, se elige RC y/o AP y se descarga el PDF. Al descargar se escribe **SI en la columna U (RC) y/o W (AP)** de esa fila (acciones `otrosi_buscar` y `otrosi_aplicar` del conector de contratos). Con RC, el PDF trae al final las políticas de Seguros Mundial (Conduce Tranquilo).
+
+## Informe de ventas de SOAT para el jefe
+En el módulo **SOAT**, botón **📋 Informe para el jefe**: se elige un cliente (una venta), un día, un mes, un año o todo el histórico; sale el texto para WhatsApp, la imagen PNG y el PDF (assets/informe_soat.js). Al registrar un SOAT nuevo se abre solo el informe de esa venta.
