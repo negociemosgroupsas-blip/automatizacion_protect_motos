@@ -441,7 +441,7 @@
         <button data-f="todos" class="act">Todos</button><button data-f="vigente">Vigentes</button><button data-f="renovar">Por renovar</button><button data-f="vencido">Vencidos</button><button data-f="renovado">Renovados</button>
       </div>
       <table>
-        <thead><tr><th>Cliente</th><th>Cédula</th><th>Placa</th><th>Vehículo</th><th>Inicio</th><th>Vence</th><th>Valor</th><th>Ganancia</th><th>Pago</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Cédula</th><th>Placa</th><th>Vehículo</th><th>Inicio</th><th>Vence</th><th>Valor</th><th>Ganancia</th><th>Pago</th><th>Consignación</th><th>Estado</th></tr></thead>
         <tbody id="cuerpoTodos"></tbody>
       </table>
       <div class="vacio" id="vacioTodos" style="display:none;">No hay SOAT para mostrar.</div>
@@ -473,6 +473,7 @@
       <div class="campo-form"><label>Valor del SOAT *</label><input type="number" id="nvValor" min="0" step="1"></div>
       <div class="campo-form"><label>Ganancia</label><input type="number" id="nvGan" min="0" step="1"></div>
       <div class="campo-form"><label>Total a consignar</label><input type="text" id="nvTotal" readonly><span class="ayuda">Valor del SOAT + ganancia.</span></div>
+      <div class="campo-form full"><label>Comprobante de la consignación (opcional)</label><input type="file" id="nvArchivo" accept="image/*,application/pdf"><span class="ayuda">Si ya consignó, adjunte la captura: queda en la carpeta del cliente en Drive y en «Comprobantes_Soat».</span></div>
     </div>
     <div class="msg-modal" id="nvMsg"></div>
     <div class="modal-acciones"><button class="btn btn-gris" id="nvCancelar" type="button">Cancelar</button><button class="btn btn-verde" id="nvGuardar" type="button">Guardar en la hoja</button></div>
@@ -480,6 +481,20 @@
 </div>
 <footer>Protect Motos © <span id="anioActual"></span> — SOAT</footer>
 
+<div class="modal-fondo" id="modalComp">
+  <div class="modal ancho">
+    <h3>Consignación del cliente</h3>
+    <div class="sub" id="cpSub">Deja constancia de lo que el cliente consignó por el SOAT. La captura se guarda en Drive, en la carpeta de su cédula.</div>
+    <div class="fgrid">
+      <div class="campo-form"><label>Valor consignado (COP) *</label><input type="number" id="cpValor" min="1" step="1"></div>
+      <div class="campo-form"><label>Fecha de la consignación</label><input type="date" id="cpFecha"></div>
+      <div class="campo-form full"><label>Nota (opcional)</label><input type="text" id="cpNota" autocomplete="off" placeholder="N° de comprobante, banco, observación..."></div>
+      <div class="campo-form full"><label>Comprobante: foto, captura o PDF *</label><input type="file" id="cpArchivo" accept="image/*,application/pdf"><div id="cpPegar" class="zona-pegar" tabindex="0" style="border:1.5px dashed #b8c2d6;border-radius:8px;padding:10px;margin-top:6px;font-size:.85rem;color:#6b7280;cursor:text">📋 O haga clic aquí y pegue la captura con Ctrl+V</div><img id="cpPrev" alt="" style="display:none;max-width:100%;max-height:180px;margin-top:8px;border-radius:8px;border:1px solid #e3e6eb"><span class="ayuda" id="cpAyuda"></span></div>
+    </div>
+    <div class="msg-modal" id="cpMsg"></div>
+    <div class="modal-acciones"><button class="btn btn-gris" id="cpCancel" type="button">Cancelar</button><button class="btn btn-verde" id="cpGuardar" type="button">Guardar consignación</button></div>
+  </div>
+</div>
 <div class="modal-fondo" id="modalInf">
   <div class="modal ancho">
     <h3>Informe para el jefe</h3>
@@ -512,7 +527,7 @@
   var CLAVE_URL = 'pm_soat_url_conector';
   var DIAS_AVISO = 8, DIAS_VENCIDO_VISIBLE = 30, AUTO_MS = 60000, TIMEOUT_MS = 60000;
   var ACC_ENVIADO = 'Mensaje de renovación enviado', ACC_RENOVO = 'Renovó', ACC_NO = 'No renovará';
-  var estado = { soat: [], gestiones: [], url: localStorage.getItem(CLAVE_URL) || '', filtro: 'todos', q: '' };
+  var estado = { soat: [], gestiones: [], comprobantes: [], url: localStorage.getItem(CLAVE_URL) || '', filtro: 'todos', q: '' };
 
   function hoy(){ var d = new Date(); d.setHours(0,0,0,0); return d; }
   function parsearISO(iso){ if(!iso) return null; var p = iso.split('-'); if(p.length!==3) return null; var d = new Date(+p[0], +p[1]-1, +p[2]); d.setHours(0,0,0,0); return d; }
@@ -578,7 +593,7 @@
     llamar({action:'datos'}).then(function(r){
       enCarga = false;
       if(!r || !r.ok){ mostrar('error', (r && r.error) ? r.error : 'Respuesta inválida del conector.'); return; }
-      estado.soat = r.soat || []; estado.gestiones = r.gestiones || [];
+      estado.soat = r.soat || []; estado.gestiones = r.gestiones || []; estado.comprobantes = r.comprobantes || [];
       pintar();
       if(!silencioso) mostrar('ok','Datos al día ('+estado.soat.length+' SOAT)');
     }).catch(function(e){ enCarga = false; mostrar('error', e.message); });
@@ -633,6 +648,10 @@
     });
   }
 
+  function compDe(s){var k=claveSoat(s);return (estado.comprobantes||[]).filter(function(c){return c.clave===k||(c.cedula&&c.cedula===s.cedula&&c.placa===s.placa&&!c.clave)})}
+  function celdaComp(s){var l=compDe(s),h='';
+    l.forEach(function(c,i){if(c.comprobante)h+='<a href="'+esc(c.comprobante)+'" target="_blank" rel="noopener" title="'+esc((c.fecha||'')+' · '+dinero(c.valor))+'">📎 Ver'+(l.length>1?' '+(i+1):'')+'</a> '});
+    return h+'<button type="button" class="btn btn-gris btn-sm" data-comp="'+esc(claveSoat(s))+'" style="padding:3px 8px;font-size:.78rem">'+(l.length?'➕':'📎 Subir')+'</button>'}
   function pintarTodos(){
     var q = estado.q.toLowerCase().trim(), cuerpo = document.getElementById('cuerpoTodos'), tot = 0, mostrados = 0, filas = [];
     estado.soat.forEach(function(s){
@@ -646,7 +665,7 @@
     tot = filas.length; filas = filas.slice(0,300);
     cuerpo.innerHTML = filas.map(function(x){
       var s = x.s, e = ETQ[x.i.tipo];
-      return '<tr><td data-etiqueta="Cliente"><strong>'+esc(s.cliente)+'</strong></td><td data-etiqueta="Cédula">'+esc(s.cedula)+'</td><td data-etiqueta="Placa">'+esc(s.placa)+'</td><td data-etiqueta="Vehículo">'+vehiculo(s)+'</td><td data-etiqueta="Inicio">'+esc(s.inicio)+'</td><td data-etiqueta="Vence">'+esc(s.vence)+'</td><td data-etiqueta="Valor">'+(s.valor?dinero(s.valor):'—')+'</td><td data-etiqueta="Ganancia"><strong>'+(s.ganancia?dinero(s.ganancia):'—')+'</strong></td><td data-etiqueta="Pago">'+esc(s.forma)+'</td><td data-etiqueta="Estado"><span class="tag '+e[0]+'">'+e[1]+'</span></td></tr>';
+      return '<tr><td data-etiqueta="Cliente"><strong>'+esc(s.cliente)+'</strong></td><td data-etiqueta="Cédula">'+esc(s.cedula)+'</td><td data-etiqueta="Placa">'+esc(s.placa)+'</td><td data-etiqueta="Vehículo">'+vehiculo(s)+'</td><td data-etiqueta="Inicio">'+esc(s.inicio)+'</td><td data-etiqueta="Vence">'+esc(s.vence)+'</td><td data-etiqueta="Valor">'+(s.valor?dinero(s.valor):'—')+'</td><td data-etiqueta="Ganancia"><strong>'+(s.ganancia?dinero(s.ganancia):'—')+'</strong></td><td data-etiqueta="Pago">'+esc(s.forma)+'</td><td data-etiqueta="Consignación">'+celdaComp(s)+'</td><td data-etiqueta="Estado"><span class="tag '+e[0]+'">'+e[1]+'</span></td></tr>';
     }).join('');
     document.getElementById('vacioTodos').style.display = tot ? 'none' : 'block';
     document.getElementById('notaTodos').textContent = tot>300 ? 'Se muestran 300 de '+tot+'. Usa el buscador para encontrar uno específico.' : '';
@@ -828,7 +847,7 @@
     function msg(id,tipo,t){var e=$(id);e.className='msg-modal'+(tipo?' '+tipo:'');e.textContent=t||''}
     function total(){var v=Number($('nvValor').value)||0,g=Number($('nvGan').value)||0;$('nvTotal').value=(v||g)?dinero(v+g):''}
     function abrir(){
-      ['nvCliente','nvCedula','nvCel','nvCorreo','nvDir','nvRes','nvPlaca','nvCil','nvForma','nvValor','nvGan'].forEach(function(i){$(i).value=''});$('nvTipoDoc').value='CC';
+      ['nvCliente','nvCedula','nvCel','nvCorreo','nvDir','nvRes','nvPlaca','nvCil','nvForma','nvValor','nvGan'].forEach(function(i){$(i).value=''});$('nvArchivo').value='';$('nvTipoDoc').value='CC';
       $('nvTipo').value='MOTO';$('nvFecha').value=iso(new Date());$('nvInicio').value=iso(new Date());$('nvVence').value=masAnio($('nvInicio').value);venceManual=false;total();
       var fs={};estado.soat.forEach(function(s){if(s.forma)fs[s.forma]=1});$('nvFormas').innerHTML=Object.keys(fs).map(function(f){return '<option value="'+esc(f)+'">'}).join('');
       msg('nvMsg');msg('nvNota');$('nvGuardar').disabled=false;modal.classList.add('abierto');setTimeout(function(){$('nvCliente').focus()},50);
@@ -861,12 +880,55 @@
         guardando=false;$('nvGuardar').disabled=false;
         if(r&&r.duplicado){msg('nvMsg','aviso',r.error);if(confirm(r.error+'\n\n¿Guardarlo de todas formas?'))enviar(true);return}
         if(!r||!r.ok){msg('nvMsg','error',(r&&r.error)||'No se pudo guardar. Revisa la conexión.');return}
+        var archivoNv=$('nvArchivo').files[0]||null;
+        if(archivoNv&&window.PMComp){var sNv={cliente:d.cliente,cedula:d.cedula,placa:d.placa.toUpperCase().replace(/[^A-Z0-9]/g,''),venceISO:d.vence||masAnio(d.inicio),inicioISO:d.inicio};var fNv=d.fecha||d.inicio;
+          mostrar('cargando','SOAT guardado. Subiendo el comprobante de la consignación…');
+          PMComp.subir(archivoNv,sNv,fNv).then(function(sub){return PMComp.registrar({cliente:d.cliente,cedula:d.cedula,placa:sNv.placa,venceISO:d.vence||masAnio(d.inicio)},(Number(d.valor)||0)+(Number(d.ganancia)||0),fNv,'',sub).then(function(){mostrar('ok','Consignación guardada en Drive: '+(sub.ruta||'carpeta del cliente'));setTimeout(function(){cargar(true)},800)})}).catch(function(e){mostrar('error','El SOAT quedó guardado, pero el comprobante no se pudo subir: '+e.message+'. Súbalo después con el botón «📎 Subir» de la tabla.')});
+        }
         cerrar();mostrar('ok','SOAT guardado '+d.cliente+' · '+d.placa+(r.omitidos&&r.omitidos.length?' (no se pudo llenar en la hoja: '+r.omitidos.join(', ')+')':''));
         setTimeout(function(){cargar(false)},600);
         var n0=estado.soat.length;setTimeout(function(){if(window.PMInfSoat)PMInfSoat.abrirVenta(d.placa.toUpperCase().replace(/[^A-Z0-9]/g,''),n0)},800);
       }).catch(function(e){guardando=false;$('nvGuardar').disabled=false;msg('nvMsg','error',e.message)});
     }
     $('nvGuardar').addEventListener('click',function(){enviar(false)});
+  })();
+
+
+  /* ===== Consignaciones de los clientes: captura al Drive (carpeta de la cédula) + registro en la hoja ===== */
+  (function(){
+    var $=function(i){return document.getElementById(i)},modal=$('modalComp'),S=null,guardandoC=false;
+    function msg(t,c){var m=$('cpMsg');m.className='msg-modal'+(c?' '+c:'');m.textContent=t||''}
+    function iso(d){var z=function(n){return ('0'+n).slice(-2)};return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())}
+    function prev(){var f=$('cpArchivo').files[0],im=$('cpPrev');if(!f){im.style.display='none';return}
+      if(f.size>8*1024*1024){$('cpAyuda').textContent='El archivo pesa más de 8 MB: use una foto más liviana.';$('cpArchivo').value='';im.style.display='none';return}
+      if(/^image\//.test(f.type)){var r=new FileReader();r.onload=function(){im.src=r.result;im.style.display='block'};r.readAsDataURL(f);$('cpAyuda').textContent=f.name}else{im.style.display='none';$('cpAyuda').textContent='Archivo listo: '+f.name}}
+    $('cpArchivo').addEventListener('change',prev);
+    $('cpPegar').addEventListener('paste',function(ev){var it=(ev.clipboardData||{}).items||[];for(var i=0;i<it.length;i++){if(/^image\//.test(it[i].type)){var f=it[i].getAsFile();if(f){var dt=new DataTransfer();dt.items.add(new File([f],'captura-'+Date.now()+'.png',{type:f.type}));$('cpArchivo').files=dt.files;prev();ev.preventDefault();return}}}});
+    window.PMComp={
+      subir:function(file,s,fecha){return new Promise(function(ok,fail){var r=new FileReader();r.onerror=function(){fail(new Error('No se pudo leer el archivo.'))};r.onload=function(){
+        fetch(estado.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:TOKEN,action:'subirComprobante',cedula:s.cedula,cliente:s.cliente,placa:s.placa,fecha:fecha,nombreArchivo:file.name,tipoMime:file.type||'image/jpeg',datosBase64:String(r.result).split(',')[1]||''})}).then(function(x){return x.json()}).then(function(d){d.ok?ok({url:d.url,carpeta:d.carpetaUrl||'',ruta:d.ruta||''}):fail(new Error(d.error||'El conector rechazó el archivo.'))}).catch(function(e){fail(new Error('No se pudo subir: '+e.message))})};r.readAsDataURL(file)})},
+      registrar:function(s,valor,fecha,nota,sub){var por=quienRegistra();return llamar({action:'registrarComprobante',clave:claveSoat(s),cedula:s.cedula,cliente:s.cliente,placa:s.placa,valor:valor,fecha:fecha,nota:nota||'',registradoPor:por,comprobante:(sub&&sub.url)||'',carpeta:(sub&&sub.carpeta)||''}).then(function(r){
+        if(!r||!r.ok)throw new Error((r&&r.error)||'No se pudo guardar.');
+        estado.comprobantes.push({fechaISO:fecha,clave:claveSoat(s),cedula:s.cedula,cliente:s.cliente,placa:s.placa,valor:Number(valor)||0,nota:nota||'',comprobante:(sub&&sub.url)||'',carpeta:(sub&&sub.carpeta)||'',fecha:fecha.split('-').reverse().join('/')});return r})}
+    };
+    function abrir(s){
+      S=s;$('cpSub').textContent=s.cliente+' · '+s.placa+' · cédula '+s.cedula+'. La captura se guarda en Drive, en la carpeta de su cédula.';
+      $('cpValor').value=Number(s.total)||((Number(s.valor)||0)+(Number(s.ganancia)||0))||'';$('cpFecha').value=iso(new Date());$('cpNota').value='';$('cpArchivo').value='';$('cpPrev').style.display='none';$('cpAyuda').textContent='';msg('');
+      $('cpGuardar').disabled=false;guardandoC=false;modal.classList.add('abierto');
+    }
+    $('cpCancel').addEventListener('click',function(){modal.classList.remove('abierto')});
+    modal.addEventListener('mousedown',function(ev){if(ev.target===modal&&!guardandoC)modal.classList.remove('abierto')});
+    document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-comp]');if(!b)return;
+      if(!estado.url){mostrar('error','Primero pega y guarda la URL del conector de SOAT arriba.');return}
+      var k=b.getAttribute('data-comp'),s=null;estado.soat.forEach(function(x){if(claveSoat(x)===k)s=x});if(s)abrir(s)});
+    $('cpGuardar').addEventListener('click',function(){
+      if(guardandoC||!S)return;var valor=Number($('cpValor').value)||0,fecha=$('cpFecha').value,nota=$('cpNota').value.trim(),f=$('cpArchivo').files[0]||null;
+      if(valor<=0){msg('Escriba el valor consignado.','error');return}if(!fecha){msg('Elija la fecha.','error');return}if(!f){msg('Adjunte la captura o el PDF de la consignación.','error');return}
+      guardandoC=true;$('cpGuardar').disabled=true;msg('Subiendo el comprobante a Drive…','nota');
+      PMComp.subir(f,S,fecha).then(function(sub){msg('Guardando en la hoja… Quedó en: '+(sub.ruta||'carpeta del cliente'),'nota');return PMComp.registrar(S,valor,fecha,nota,sub).then(function(){return sub})})
+        .then(function(sub){msg('Consignación guardada ✓ Quedó en Drive: '+(sub.ruta||'carpeta del cliente'),'ok');pintarTodos();mostrar('ok','Consignación de '+S.cliente+' guardada '+dinero(valor));setTimeout(function(){modal.classList.remove('abierto')},2500)})
+        .catch(function(e){guardandoC=false;$('cpGuardar').disabled=false;msg('No se pudo guardar: '+e.message,'error')});
+    });
   })();
 
   /* ===== Informe para el jefe: una venta (un cliente) o un período ===== */

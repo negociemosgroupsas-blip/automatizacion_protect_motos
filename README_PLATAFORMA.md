@@ -95,3 +95,6 @@ En «Contratos» el botón **📎 Otro Sí** abre un modo sin formularios: se es
 
 ## Informe de ventas de SOAT para el jefe
 En el módulo **SOAT**, botón **📋 Informe para el jefe**: se elige un cliente (una venta), un día, un mes, un año o todo el histórico; sale el texto para WhatsApp, la imagen PNG y el PDF (assets/informe_soat.js). Al registrar un SOAT nuevo se abre solo el informe de esa venta.
+
+## Consignaciones de SOAT (comprobantes)
+En el módulo **SOAT**, tabla «Todos los SOAT», columna **Consignación**: botón **📎 Subir** (valor, fecha, nota y la captura o PDF). También se puede adjuntar al **registrar un SOAT nuevo**. La captura queda en Drive en «Carpeta de clientes» → subcarpeta de la cédula (si ya existe una carpeta cuyo nombre contiene esa cédula, p. ej. `4175780-177281664`, se usa esa; si no, se crea) y el registro en la pestaña **Comprobantes_Soat** del Google Sheet de SOAT. Opcional: `CARPETA_CLIENTES_ID` en el conector fija la carpeta exacta.

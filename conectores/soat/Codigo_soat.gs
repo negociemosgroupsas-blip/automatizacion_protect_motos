@@ -38,6 +38,12 @@ var COLS = [
   { clave: 'residencia',  pos: 18, nombres: ['lugar de residencia', 'residencia', 'ciudad'] }
 ];
 
+// Consignaciones de los clientes (comprobantes). La captura se guarda en Drive dentro de «Carpeta de clientes», en la subcarpeta de la cédula.
+var HOJA_COMPROBANTES = 'Comprobantes_Soat';
+var ENCABEZADOS_COMPROBANTES = ['Fecha de pago', 'Clave SOAT', 'Cédula', 'Cliente', 'Placa', 'Valor consignado', 'Nota', 'Registrado por', 'Comprobante', 'Carpeta'];
+var CARPETA_CLIENTES_NOMBRE = 'Carpeta de clientes';   // la que está dentro de «9.Soat-Comprobantes de pago»
+var CARPETA_CLIENTES_ID = '';                          // opcional: el ID de esa carpeta (lo que va en su URL después de /folders/). Vacío = se busca sola.
+
 var ENCABEZADOS_GESTIONES = ['Fecha de gestión', 'Clave SOAT', 'Cédula', 'Cliente', 'Placa', 'Acción', 'Registrado por'];
 
 // ==================== PUNTO DE ENTRADA ====================
@@ -52,13 +58,28 @@ function doGet(e) {
       if (accion === 'datos') salida = accionDatos();
       else if (accion === 'registrarGestion') salida = accionRegistrarGestion(params);
       else if (accion === 'agregar') salida = accionAgregar(params);
-      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de SOAT activo', version: 'soat-3' };
+      else if (accion === 'registrarComprobante') salida = accionRegistrarComprobante(params);
+      else if (accion === 'ping') salida = { ok: true, mensaje: 'Conector de SOAT activo', version: 'soat-4' };
       else salida = { ok: false, error: 'Acción no disponible: ' + accion };
     }
   } catch (err) {
     salida = { ok: false, error: 'Error en el servidor: ' + err.message };
   }
   return responder(salida, params.callback);
+}
+
+// Para subir la imagen del comprobante (no cabe en una URL de GET).
+function doPost(e) {
+  var salida;
+  try {
+    var body = (e && e.postData && e.postData.contents) ? JSON.parse(e.postData.contents) : {};
+    if (body.token !== TOKEN) salida = { ok: false, error: 'Token inválido.' };
+    else if (body.action === 'subirComprobante') salida = accionSubirComprobante(body);
+    else salida = { ok: false, error: 'Acción desconocida: ' + body.action };
+  } catch (err) {
+    salida = { ok: false, error: 'Error en el servidor: ' + err.message };
+  }
+  return responder(salida, null);
 }
 
 function responder(objeto, callback) {
@@ -90,7 +111,7 @@ function accionDatos() {
   var ss = abrirSS();
   var hoja = buscarHoja(ss, HOJA_SOAT);
   if (!hoja) throw new Error('No se encontró la pestaña "' + HOJA_SOAT + '". Revisa que se llame exactamente así.');
-  return { ok: true, soat: leerSoat(hoja), gestiones: leerGestiones(ss.getSheetByName(HOJA_GESTIONES)) };
+  return { ok: true, soat: leerSoat(hoja), gestiones: leerGestiones(ss.getSheetByName(HOJA_GESTIONES)), comprobantes: leerComprobantes(ss.getSheetByName(HOJA_COMPROBANTES)) };
 }
 
 function leerSoat(hoja) {
@@ -137,6 +158,81 @@ function leerGestiones(hoja) {
       cliente: texto(d[i][3]), placa: texto(d[i][4]), accion: texto(d[i][5]), registradoPor: texto(d[i][6]) });
   }
   return out;
+}
+
+// ==================== CONSIGNACIONES (COMPROBANTES) ====================
+function leerComprobantes(hoja) {
+  if (!hoja) return [];
+  var n = hoja.getLastRow();
+  if (n < 2) return [];
+  var d = hoja.getRange(2, 1, n - 1, 10).getValues(), out = [];
+  for (var i = 0; i < d.length; i++) {
+    if (!texto(d[i][1]) && !texto(d[i][2])) continue;
+    out.push({ fecha: fmt(aFecha(d[i][0])), fechaISO: iso(aFecha(d[i][0])), clave: texto(d[i][1]), cedula: texto(d[i][2]), cliente: texto(d[i][3]),
+      placa: texto(d[i][4]), valor: numero(d[i][5]), nota: texto(d[i][6]), registradoPor: texto(d[i][7]), comprobante: texto(d[i][8]), carpeta: texto(d[i][9]) });
+  }
+  return out;
+}
+
+// Registra la consignación en la pestaña «Comprobantes_Soat» (se crea sola).
+function accionRegistrarComprobante(p) {
+  var clave = texto(p.clave), valor = numero(p.valor);
+  if (!clave) return { ok: false, error: 'Falta la clave del SOAT.' };
+  var fecha = aFecha(p.fecha) || new Date();
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
+  try {
+    var ss = abrirSS(), hoja = ss.getSheetByName(HOJA_COMPROBANTES);
+    if (!hoja) { hoja = ss.insertSheet(HOJA_COMPROBANTES); hoja.getRange(1, 1, 1, ENCABEZADOS_COMPROBANTES.length).setValues([ENCABEZADOS_COMPROBANTES]).setFontWeight('bold'); hoja.setFrozenRows(1); }
+    hoja.appendRow([fecha, clave, texto(p.cedula), texto(p.cliente), texto(p.placa), valor, texto(p.nota), texto(p.registradoPor), texto(p.comprobante), texto(p.carpeta)]);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo guardar la consignación: ' + err.message };
+  } finally { lock.releaseLock(); }
+}
+
+// Guarda la imagen/PDF en Drive: «Carpeta de clientes» / subcarpeta de la cédula (si ya existe, por ejemplo «4175780-177281664», se usa; si no, se crea).
+function carpetaBaseClientes_() {
+  if (CARPETA_CLIENTES_ID) return DriveApp.getFolderById(CARPETA_CLIENTES_ID);
+  var it = DriveApp.getFoldersByName(CARPETA_CLIENTES_NOMBRE), mejor = null, primera = null;
+  while (it.hasNext()) {
+    var f = it.next(); if (!primera) primera = f;
+    try { var pd = f.getParents(); if (pd.hasNext() && /soat/i.test(pd.next().getName())) { mejor = f; break; } } catch (e) {}
+  }
+  if (mejor || primera) return mejor || primera;
+  var padres = null; try { padres = DriveApp.getFileById(abrirSS().getId()).getParents(); } catch (e2) {}
+  var base = (padres && padres.hasNext()) ? padres.next() : DriveApp.getRootFolder();
+  return base.createFolder(CARPETA_CLIENTES_NOMBRE);
+}
+function carpetaDelCliente_(cedula, cliente) {
+  var base = carpetaBaseClientes_(), ced = String(cedula || '').replace(/\D/g, '').replace(/^0+/, '');
+  if (!ced) ced = 'sin-cedula';
+  var subs = base.getFolders();
+  while (subs.hasNext()) {
+    var sf = subs.next(), partes = sf.getName().split(/[^0-9A-Za-z]+/).map(function (x) { return x.replace(/^0+/, ''); });
+    if (partes.indexOf(ced) >= 0) return sf;
+  }
+  return base.createFolder(ced);
+}
+function accionSubirComprobante(b) {
+  var ced = texto(b.cedula), cliente = texto(b.cliente), placa = texto(b.placa);
+  var nombreArchivo = texto(b.nombreArchivo) || 'comprobante', tipo = texto(b.tipoMime) || 'image/jpeg';
+  if (!ced && !placa) return { ok: false, error: 'Falta la cédula del cliente.' };
+  if (!b.datosBase64) return { ok: false, error: 'No se recibió ningún archivo.' };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) return { ok: false, error: 'El sistema está ocupado, intenta de nuevo en unos segundos.' };
+  try {
+    var ext = (nombreArchivo.match(/\.[a-zA-Z0-9]+$/) || [''])[0];
+    var f = aFecha(texto(b.fecha)) || new Date();
+    var nombre = 'Consignación SOAT ' + (placa ? placa + ' ' : '') + iso(f) + ext;
+    var blob = Utilities.newBlob(Utilities.base64Decode(b.datosBase64), tipo, nombre);
+    var carp = carpetaDelCliente_(ced, cliente), archivo = carp.createFile(blob), ruta = '';
+    archivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    try { var pad = carp.getParents(); ruta = (pad.hasNext() ? pad.next().getName() + ' / ' : '') + carp.getName() + ' / ' + archivo.getName(); } catch (e2) { ruta = carp.getName() + ' / ' + archivo.getName(); }
+    return { ok: true, url: 'https://drive.google.com/file/d/' + archivo.getId() + '/view', carpetaUrl: carp.getUrl(), ruta: ruta };
+  } catch (err) {
+    return { ok: false, error: 'No se pudo subir el comprobante: ' + err.message };
+  } finally { lock.releaseLock(); }
 }
 
 // ==================== REGISTRAR GESTIÓN ====================
