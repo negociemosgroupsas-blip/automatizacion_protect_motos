@@ -221,7 +221,26 @@
   .sm-head .sm-title{font-family:var(--serif);font-size:20px;color:#0071CE;font-weight:700;}
   .sm-head .sm-sub{font-size:11px;color:var(--slate);margin-top:3px;}
   .ct-accept{text-align:center;color:var(--navy);font-weight:700;font-size:11px;margin-top:22px;}
-  .sheet.brkbefore{margin-top:22px;}
+.sheet.brkbefore{margin-top:22px;}
+
+  /* ===== Otro Sí de un cliente que ya tiene contrato ===== */
+  #osiApp{display:none;}
+  body.modo-os #osiApp{display:block;}
+  body.modo-os .grid{display:none;}
+  .os-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px;}
+  .os-card h3{margin:0 0 4px;font-size:15px;color:var(--navy);}
+  .os-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:10px;}
+  .os-row .f{min-width:200px;}
+  .os-found{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:12px;}
+  .os-found div{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12.5px;}
+  .os-found div small{display:block;color:var(--slate);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;}
+  .os-found div b{color:var(--navy);}
+  .os-pick{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
+  .os-pick label{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:9px;padding:10px 16px;font-weight:700;color:var(--navy);cursor:pointer;}
+  .os-pick label.on{border-color:var(--gold);background:#fdf9ee;}
+  .os-msg{margin-top:10px;font-size:12.5px;font-weight:600;}
+  .os-msg.ok{color:#1c7c54;} .os-msg.er{color:#b23a3a;} .os-msg.av{color:#8a5a00;}
+  body.modo-os .rcbar{display:none;}
   #panel-cliente{display:none;}
 
   @media print{
@@ -263,7 +282,35 @@ body.print-otrosi #panel-otrosi{display:block !important;}
       <button data-rc="NO">Sin RC</button>
     </div>
     <span class="hint" id="rcHint">Incluye coberturas de responsabilidad civil y el pago a la aseguradora aliada.</span>
+    <button type="button" class="btn navy" id="btnModoOS" title="Para un cliente que ya tiene contrato: solo escribes el número y descargas el Otro Sí">📎 Otro Sí (cliente que ya tiene contrato)</button>
     <button type="button" class="btn" id="btnNuevoContrato" title="Borra todo lo escrito para empezar un contrato nuevo, sin refrescar la página" style="margin-left:auto;background:#c0392b;color:#fff;border-color:#c0392b">🆕 Nuevo contrato (limpiar todo)</button>
+  </div>
+
+  <div id="osiApp">
+    <div class="os-card no-print">
+      <h3>Otro Sí · cliente que ya tiene contrato</h3>
+      <div class="hint">No hay que llenar nada: escribe el <b>mismo número de contrato</b> que ya tiene el cliente. Los datos salen de la hoja Protect y, al descargar, se marca SI en la columna U (RC) y/o en la columna W (AP).</div>
+      <div class="os-row">
+        <div class="f"><label>N° de contrato</label><input autocomplete="off" id="osNum" placeholder="Ej. 4821"></div>
+        <button type="button" class="btn gold" id="osBuscar">Buscar cliente</button>
+        <button type="button" class="btn" id="osVolver">← Volver al contrato nuevo</button>
+      </div>
+      <div class="os-msg" id="osMsg"></div>
+      <div id="osFicha" style="display:none">
+        <div class="os-found" id="osDatos"></div>
+        <div class="hint" style="margin-top:12px"><b>¿Qué se adiciona en este Otro Sí?</b></div>
+        <div class="os-pick">
+          <label id="osLRC"><input autocomplete="off" type="checkbox" id="osRC"> Responsabilidad Civil (RC)</label>
+          <label id="osLAP"><input autocomplete="off" type="checkbox" id="osAP"> Accidentes Personales (AP) / Asistencias</label>
+        </div>
+        <div class="os-row">
+          <button type="button" class="btn gold big" id="osDescargar">Descargar PDF y marcar en la hoja</button>
+          <button type="button" class="btn" id="osSolo">Solo descargar PDF (sin tocar la hoja)</button>
+        </div>
+        <div class="hint" style="margin-top:8px">Con RC, el PDF incluye al final las políticas de Seguros Mundial (Conduce Tranquilo).</div>
+      </div>
+    </div>
+    <div class="doc-scroll"><div class="sheet wm" id="osPrev"></div><div id="osPol"></div></div>
   </div>
 
   <div class="grid">
@@ -402,7 +449,7 @@ body.print-otrosi #panel-otrosi{display:block !important;}
           <label class="osichip"><input autocomplete="off" type="checkbox" id="osiRC"> RC</label>
           <label class="osichip"><input autocomplete="off" type="checkbox" id="osiAP"> AP</label>
         </div>
-        <div class="doc-scroll"><div class="sheet wm" id="otrosi"></div></div>
+        <div class="doc-scroll"><div class="sheet wm" id="otrosi"></div><div id="otrosiPol"></div></div>
       </div>
 
       <div class="panel" id="panel-refs">
@@ -675,13 +722,14 @@ function buildConstancia(d){
   return h;
 }
 
-function buildOtroSi(d){
+function buildOtroSi(d,forzar){
   var rcChk=$("osiRC"), apChk=$("osiAP");
   // si el usuario nunca ha tocado los chips, se sincronizan con el contrato
   if(rcChk && !window.__osiTouched){ rcChk.checked=(d.rc==="SI"); }
   if(apChk && !window.__osiTouched){ apChk.checked=(d.asistencias==="SI"); }
   var rcAdd=rcChk?rcChk.checked:(d.rc==="SI");
   var apAdd=apChk?apChk.checked:(d.asistencias==="SI");
+  if(forzar){ rcAdd=!!forzar.rc; apAdd=!!forzar.ap; }
   var h="";
   h+=docHeader("Otro Sí \u2014 Adici\u00f3n de coberturas","Adici\u00f3n al contrato Protect Motos \u00b7 RC / AP");
   h+='<div class="metastrip" style="grid-template-columns:repeat(4,1fr)">'
@@ -924,6 +972,7 @@ function render(){
   $("constancia").innerHTML=buildConstancia(d);
   $("ap").innerHTML=buildAP(d);
   $("otrosi").innerHTML=buildOtroSi(d);
+  $("otrosiPol").innerHTML=($("osiRC")&&$("osiRC").checked)?'<div class="sheet brkbefore">'+buildRCPolicy(d)+'</div>':"";
   $("clientPack").innerHTML=buildClientPack(d);
   var apOn=d.asistencias==="SI";
   $("dlSub").textContent=apOn?"Incluye contrato completo, constancia y certificado AP.":"Incluye contrato completo y constancia.";
@@ -973,7 +1022,7 @@ $("copyBtn").addEventListener("click",function(){
   else{document.execCommand("copy");done();}
 });
 function printDoc(which){
-  document.body.classList.remove("print-caratula","print-constancia","print-ap","print-cliente","print-otrosi");
+  document.body.classList.remove("print-caratula","print-constancia","print-ap","print-cliente","print-otrosi","print-osiapp");
   document.body.classList.add("print-"+which);
   /* Dentro del CRM el módulo va en un marco: el nombre del PDF lo toma el título de la página principal, así que se lo enviamos. */
   var enMarco=false;try{enMarco=window.parent!==window;}catch(e){}
@@ -981,7 +1030,7 @@ function printDoc(which){
   setTimeout(function(){
     window.print();
     setTimeout(function(){
-      document.body.classList.remove("print-caratula","print-constancia","print-ap","print-cliente","print-otrosi");
+      document.body.classList.remove("print-caratula","print-constancia","print-ap","print-cliente","print-otrosi","print-osiapp");
       if(enMarco){try{window.parent.postMessage({pmTitulo:null},"*");}catch(e){}}
     },600);
   },enMarco?200:0);
@@ -1055,6 +1104,85 @@ $("forma").addEventListener("change",function(){applyForma();render();});
 applyForma();
 
 
+
+
+/* ===== Modo «Otro Sí de un cliente que ya tiene contrato»: sin formularios, solo el N° de contrato ===== */
+(function(){
+  var D=null;
+  function msg(t,c){var m=$("osMsg");m.textContent=t||"";m.className="os-msg"+(c?" "+c:"");}
+  function hoyFmt(){var h=new Date();return h.getDate()+"/"+(h.getMonth()+1)+"/"+h.getFullYear();}
+  function llamar(params,done){
+    var url=val("gsUrl"); if(!url){done(null,"Falta la URL del conector (se pega en la pestaña «Fila Google Sheet» del contrato nuevo).");return;}
+    var cb="pm_os_"+Date.now()+"_"+Math.floor(Math.random()*9999),sc=document.createElement("script");
+    var to=setTimeout(function(){fin();done(null,"Tardó demasiado; revisa tu internet.");},20000);
+    function fin(){clearTimeout(to);try{delete window[cb];}catch(e){window[cb]=undefined;}if(sc.parentNode)sc.parentNode.removeChild(sc);}
+    window[cb]=function(r){fin();done(r,null);};
+    var q=url+(url.indexOf("?")>=0?"&":"?")+"token="+encodeURIComponent(TOKEN)+"&callback="+cb;
+    for(var k in params)q+="&"+k+"="+encodeURIComponent(params[k]);
+    sc.onerror=function(){fin();done(null,"No se pudo conectar (revisa la URL o el internet).");};
+    sc.src=q;document.head.appendChild(sc);
+  }
+  function datos(){
+    return {contrato:D.contrato,titular:D.titular,tipoDoc:D.tipoDoc||"CC",cedula:D.cedula,placa:D.placa,asesor:D.asesor,
+      aliada:"Seguros Mundial S.A.",planAsist:"Completo",ciudad:"Medell\u00edn",fechaInicio:hoyFmt(),radicadoRC:"",radicadoAP:"",rc:$("osRC").checked?"SI":"NO",asistencias:$("osAP").checked?"SI":"NO"};
+  }
+  function pintar(){
+    var prev=$("osPrev"),pol=$("osPol");
+    if(!D){prev.innerHTML="";pol.innerHTML="";prev.style.display="none";return;}
+    prev.style.display="";
+    var rc=$("osRC").checked,ap=$("osAP").checked,d=datos();
+    $("osLRC").className=rc?"on":"";$("osLAP").className=ap?"on":"";
+    prev.innerHTML=buildOtroSi(d,{rc:rc,ap:ap});
+    pol.innerHTML=rc?'<div class="sheet brkbefore">'+buildRCPolicy(d)+'</div>':"";
+  }
+  function entrar(){document.body.classList.add("modo-os");$("btnModoOS").style.display="none";$("osNum").focus();}
+  function salir(){document.body.classList.remove("modo-os");$("btnModoOS").style.display="";}
+  $("btnModoOS").addEventListener("click",entrar);
+  $("osVolver").addEventListener("click",salir);
+  function buscar(){
+    var n=$("osNum").value.trim();
+    if(!n){msg("Escribe el n\u00famero de contrato.","er");return;}
+    msg("Buscando en la hoja Protect\u2026","");D=null;$("osFicha").style.display="none";pintar();
+    llamar({action:"otrosi_buscar",contrato:n},function(r,err){
+      if(err){msg(err,"er");return;}
+      if(!r||!r.ok){msg((r&&r.error)||"Error del conector.","er");return;}
+      if(!r.encontrado){msg("No encontr\u00e9 el contrato "+n+" en la hoja Protect. Revisa el n\u00famero.","er");return;}
+      D=r.datos;
+      var caja=function(l,v){return "<div><small>"+l+"</small><b>"+esc(v||"\u2014")+"</b></div>";};
+      $("osDatos").innerHTML=caja("Titular",D.titular)+caja("Identificaci\u00f3n",(D.tipoDoc||"CC")+" "+(D.cedula||""))+caja("Placa",D.placa)+caja("Asesor",D.asesor)+caja("Estado del cliente",D.estado)+caja("Hoy en la hoja",(D.rc==="SI"?"Lleva RC":"Sin RC")+" \u00b7 "+(D.ap==="SI"?"Lleva AP":"Sin AP"));
+      $("osRC").checked=false;$("osAP").checked=false;$("osFicha").style.display="";
+      msg("Cliente encontrado (fila "+r.fila+"). Elige qu\u00e9 se adiciona.","ok");pintar();
+    });
+  }
+  $("osBuscar").addEventListener("click",buscar);
+  $("osNum").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();buscar();}});
+  $("osRC").addEventListener("change",pintar);$("osAP").addEventListener("change",pintar);
+  function imprimir(){
+    var t=document.title;document.title="OTRO SI-"+D.contrato+"-"+D.titular;
+    printDoc("osiapp");setTimeout(function(){document.title=t;},1500);
+  }
+  $("osSolo").addEventListener("click",function(){
+    if(!D)return; if(!$("osRC").checked&&!$("osAP").checked){msg("Elige RC, AP o ambas.","er");return;}
+    imprimir();
+  });
+  $("osDescargar").addEventListener("click",function(){
+    if(!D)return; var rc=$("osRC").checked,ap=$("osAP").checked;
+    if(!rc&&!ap){msg("Elige RC, AP o ambas.","er");return;}
+    var b=$("osDescargar");b.disabled=true;msg("Marcando en la hoja Protect\u2026","");
+    llamar({action:"otrosi_aplicar",contrato:D.contrato,rc:rc?"1":"0",ap:ap?"1":"0"},function(r,err){
+      b.disabled=false;
+      if(err||!r||!r.ok){
+        var m=err||(r&&r.error)||"Error del conector.";
+        msg("No se pudo marcar en la hoja: "+m,"er");
+        if(confirm("No se pudo actualizar la hoja ("+m+").\n\n\u00bfDescargar el PDF de todos modos?"))imprimir();
+        return;
+      }
+      if(rc)D.rc="SI"; if(ap)D.ap="SI";
+      msg("Hoja actualizada \u2713 (fila "+r.fila+"): "+(rc?"columna U = SI (RC)":"")+(rc&&ap?" \u00b7 ":"")+(ap?"columna W = SI (AP)":"")+". Abriendo el PDF\u2026","ok");
+      imprimir();
+    });
+  });
+})();
 
 /* Otro Sí: permitir escoger RC / AP manualmente */
 (function(){

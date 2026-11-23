@@ -96,6 +96,16 @@ function doGet(e) {
       return out_(cb, res);
     }
 
+    // ===== OTRO SÍ: buscar al cliente por N° de contrato y marcar RC / AP en la hoja Protect =====
+    if (accion === 'otrosi_buscar') {
+      if (e.parameter.token !== TOKEN) return out_(cb, { ok:false, error:'CLAVE_INCORRECTA' });
+      return out_(cb, otroSiBuscar_(e.parameter));
+    }
+    if (accion === 'otrosi_aplicar') {
+      if (e.parameter.token !== TOKEN) return out_(cb, { ok:false, error:'CLAVE_INCORRECTA' });
+      return out_(cb, otroSiAplicar_(e.parameter));
+    }
+
     return ContentService.createTextOutput('Conector Protect Motos activo ✔');
   } catch (err) {
     return out_(cb, { ok:false, error:String(err) });
@@ -241,4 +251,38 @@ function diagnostico() {
   try { SpreadsheetApp.openById(SHEET3_ID).getSheets()[0]; log.push('AP: OK'); } catch (e) { log.push('AP ERROR: ' + e); }
   try { var shf = hojaFase_(); log.push('Fasecolda: OK ("' + shf.getName() + '", ' + Math.max(0, shf.getLastRow()-1) + ' códigos)'); } catch (e) { log.push('Fasecolda ERROR: ' + e); }
   Logger.log(log.join('\n'));
+}
+
+
+/* ============ OTRO SÍ ============ */
+// El cliente ya tiene su contrato en la hoja Protect: no se llena nada de nuevo. Solo se busca por el N° de contrato
+// (columna N) y, al aplicar, se escribe SI en la columna U (lleva RC) y/o en la columna W (lleva AP).
+function otroSiFecha_(v) {
+  if (v instanceof Date && !isNaN(v.getTime())) return Utilities.formatDate(v, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+  return String(v == null ? '' : v).trim();
+}
+function otroSiBuscar_(p) {
+  var contrato = String(p.contrato || '').trim();
+  if (!contrato) return { ok:false, error:'Escribe el número de contrato.' };
+  var sh = getSheet_(), fila = buscarContrato_(sh, contrato);
+  if (!fila) return { ok:true, encontrado:false, contrato:contrato };
+  var r = sh.getRange(fila, 1, 1, Math.max(sh.getLastColumn(), 44)).getValues()[0];
+  var t = function (i) { return String(r[i] == null ? '' : r[i]).trim(); };
+  return { ok:true, encontrado:true, fila:fila, datos:{
+    contrato:contrato, asesor:t(1), tipoDoc:t(3), cedula:t(4), titular:t(7), fechaInicio:otroSiFecha_(r[10]), fechaFin:otroSiFecha_(r[11]),
+    placa:t(12), rc:t(20).toUpperCase(), ap:t(22).toUpperCase(), estado:t(43).toUpperCase()
+  } };
+}
+function otroSiAplicar_(p) {
+  var contrato = String(p.contrato || '').trim();
+  if (!contrato) return { ok:false, error:'Falta el número de contrato.' };
+  var rc = p.rc === '1', ap = p.ap === '1';
+  if (!rc && !ap) return { ok:false, error:'Elige RC, AP o ambas.' };
+  var sh = getSheet_(), fila = buscarContrato_(sh, contrato);
+  if (!fila) return { ok:false, error:'No encontré el contrato ' + contrato + ' en la hoja Protect.' };
+  var antes = { rc:String(sh.getRange(fila, 21).getValue() || '').trim(), ap:String(sh.getRange(fila, 23).getValue() || '').trim() };
+  if (rc) sh.getRange(fila, 21).setValue('SI');     // columna U = Lleva RC
+  if (ap) sh.getRange(fila, 23).setValue('SI');     // columna W = Lleva AP
+  SpreadsheetApp.flush();
+  return { ok:true, fila:fila, antes:antes, rc:rc, ap:ap };
 }

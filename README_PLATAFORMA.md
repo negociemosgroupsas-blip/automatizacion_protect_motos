@@ -89,3 +89,6 @@ Separadas: «Historico polizas» (OMS), «Historico Soat» (SOAT), Responsabilid
 - No borre pestañas ni cambie los nombres de las hojas de Google (los conectores las buscan por nombre).
 - Guarde el archivo de conexiones en un lugar privado (contiene las direcciones de sus conectores).
 - El espacio de Drive lleno bloquea la subida de comprobantes.
+
+## Otro Sí de un cliente que ya tiene contrato
+En «Contratos» el botón **📎 Otro Sí** abre un modo sin formularios: se escribe el N° de contrato (columna N de Protect), el sistema trae titular, identificación, placa y asesor de la hoja, se elige RC y/o AP y se descarga el PDF. Al descargar se escribe **SI en la columna U (RC) y/o W (AP)** de esa fila (acciones `otrosi_buscar` y `otrosi_aplicar` del conector de contratos). Con RC, el PDF trae al final las políticas de Seguros Mundial (Conduce Tranquilo).
