@@ -42,7 +42,7 @@
       return envoltura('Informe de venta de SOAT','Venta del '+(fechaLarga(s.fechaISO)||'—'),
         '<div class="gran"><div class="k a"><span>Valor del SOAT</span><b>'+cop(s.valor)+'</b></div><div class="k b"><span>Ganancia</span><b>'+cop(s.ganancia)+'</b></div><div class="k c"><span>Total consignado</span><b>'+cop(s.total||((+s.valor||0)+(+s.ganancia||0)))+'</b></div></div>'+
         '<p class="sec">Cliente y vehículo</p><div class="lista">'+
-        fila('Cliente',s.cliente)+fila('Documento',((s.tipoDoc||'')+' '+(s.cedula||'')).trim())+fila('Celular',s.celular)+
+        fila('Fecha de venta',fechaCorta(s.fechaISO))+(s.num?fila('N.º de venta',s.num):'')+fila('Cliente',s.cliente)+fila('Documento',((s.tipoDoc||'')+' '+(s.cedula||'')).trim())+fila('Celular',s.celular)+fila('Correo',s.correo)+fila('Dirección',s.direccion)+fila('Lugar de residencia',s.residencia)+
         fila('Placa',s.placa)+fila('Vehículo',((s.tipo||'')+(s.cilindraje?' · '+s.cilindraje+' cc':'')).trim())+
         fila('Vigencia',(s.inicio&&s.vence)?(s.inicio+'  al  '+s.vence):'')+fila('Forma de pago',s.forma)+'</div>');
     }
@@ -60,7 +60,7 @@
     if(d.tipo==='venta'){
       var s=d.s;
       T.push('Le comparto el informe de la venta de SOAT del '+fechaCorta(s.fechaISO)+':','',
-        '* Cliente: '+(s.cliente||'—'),'* Documento: '+(((s.tipoDoc||'')+' '+(s.cedula||'')).trim()||'—'),'* Celular: '+(s.celular||'—'),
+        '* Fecha de venta: '+fechaCorta(s.fechaISO)+(s.num?' (N.º '+s.num+')':''),'* Cliente: '+(s.cliente||'—'),'* Documento: '+(((s.tipoDoc||'')+' '+(s.cedula||'')).trim()||'—'),'* Celular: '+(s.celular||'—'),'* Correo: '+(s.correo||'—'),'* Dirección: '+(s.direccion||'—'),'* Lugar de residencia: '+(s.residencia||'—'),
         '* Placa: '+(s.placa||'—')+' ('+(((s.tipo||'')+(s.cilindraje?' '+s.cilindraje+' cc':'')).trim()||'—')+')',
         '* Vigencia: '+((s.inicio&&s.vence)?(s.inicio+' al '+s.vence):'—'),
         '* Valor del SOAT: '+cop(s.valor),'* Ganancia: '+cop(s.ganancia),'* Total consignado: '+cop(s.total||((+s.valor||0)+(+s.ganancia||0))),'* Forma de pago: '+(s.forma||'—'));
