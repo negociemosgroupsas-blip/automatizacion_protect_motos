@@ -1138,6 +1138,9 @@ applyForma();
   function entrar(){document.body.classList.add("modo-os");$("btnModoOS").style.display="none";$("osNum").focus();}
   function salir(){document.body.classList.remove("modo-os");$("btnModoOS").style.display="";}
   $("btnModoOS").addEventListener("click",entrar);
+  /* la pestaña «Otro Sí» también abre el modo nuevo (solo el N° de contrato) */
+  var tabOS=document.querySelector('.tabs [data-tab="otrosi"]');
+  if(tabOS)tabOS.addEventListener("click",function(e){e.stopImmediatePropagation();e.preventDefault();entrar();window.scrollTo(0,0);},true);
   $("osVolver").addEventListener("click",salir);
   function buscar(){
     var n=$("osNum").value.trim();
