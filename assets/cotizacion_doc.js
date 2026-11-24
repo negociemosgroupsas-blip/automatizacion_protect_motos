@@ -54,49 +54,45 @@
     '@page{size:letter;margin:6mm}',
     '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-family:inherit}',
     'body{margin:0;background:#fff;color:#13223f;font-family:'+F+'}',
-    '.doc{font-family:'+F+';width:794px;margin:0 auto;padding:22px 34px 108px;font-size:12px;line-height:1.35;color:#13223f;background:#fff;position:relative;overflow:hidden;min-height:1000px}',
-    '.doc.d2{padding-bottom:50px} .doc+.doc{page-break-before:always}',
+    '.doc{font-family:'+F+';width:794px;margin:0 auto;padding:18px 30px 0;font-size:12px;line-height:1.3;color:#13223f;background:#fff;position:relative;overflow:hidden}',
+    
     '.sup{display:flex;justify-content:space-between;align-items:center;gap:12px}',
     '.sup img{height:50px;width:auto;display:block}',
     '.sup .fecha{text-align:right;font-size:12px;color:#5b6b8c;line-height:1.5} .sup .fecha b{color:#13223f;font-weight:700}',
     '.sup .val{display:inline-block;background:#fff3d6;color:#8a5a00;border:1px solid #f0cf86;border-radius:20px;padding:2px 11px;font-size:11px;font-weight:700;margin-top:3px}',
-    '.hero{margin-top:12px;background:linear-gradient(135deg,#021346,#1e3a8a);border-radius:18px;padding:20px 26px;color:#fff;position:relative;min-height:158px}',
+    '.hero{margin-top:10px;background:linear-gradient(135deg,#021346,#1e3a8a);border-radius:18px;padding:16px 24px;color:#fff;position:relative;min-height:128px}',
     '.hero small{color:#9fb8e8;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase}',
-    '.hero h1{font-size:24px;line-height:1.2;margin:5px 0 8px;max-width:430px;font-weight:700} .hero h1 em{font-style:normal;color:#fdc33e}',
+    '.hero h1{font-size:22px;line-height:1.2;margin:4px 0 6px;max-width:430px;font-weight:700} .hero h1 em{font-style:normal;color:#fdc33e}',
     '.hero p{font-size:13px;color:#d5def5;max-width:420px;line-height:1.5;margin:0} .hero p b{color:#fff;font-weight:700}',
-    '.hero .cifra{position:absolute;right:22px;top:34px;background:#fdc33e;color:#021346;border-radius:14px;padding:11px 16px;text-align:center;width:196px}',
+    '.hero .cifra{position:absolute;right:22px;top:26px;background:#fdc33e;color:#021346;border-radius:14px;padding:11px 16px;text-align:center;width:196px}',
     '.hero .cifra span{font-size:10.5px;text-transform:uppercase;font-weight:700;letter-spacing:.05em} .hero .cifra b{display:block;font-size:25px;line-height:1.15;font-weight:700} .hero .cifra i{font-style:normal;font-size:11px}',
-    '.cards{display:flex;gap:14px;margin-top:20px;align-items:stretch}',
-    '.card{flex:1;border:1.5px solid #dbe3f3;border-radius:16px;padding:16px 18px;position:relative;background:#fff}',
+    '.cards{display:flex;gap:14px;margin-top:18px;align-items:stretch}',
+    '.card{flex:1;border:1.5px solid #dbe3f3;border-radius:16px;padding:13px 16px;position:relative;background:#fff}',
     '.card.rec{border:2.5px solid #fdc33e;background:#fffdf5;box-shadow:0 8px 22px rgba(253,195,62,.28)}',
     '.card .tag{position:absolute;top:-12px;left:16px;background:#fdc33e;color:#021346;font-size:10.5px;font-weight:700;border-radius:20px;padding:3px 13px;letter-spacing:.04em}',
     '.card h3{font-size:14.5px;margin:0 0 1px;font-weight:700;color:#021346} .card .s{font-size:11.5px;color:#5b6b8c;margin-bottom:9px}',
-    '.card .pr small{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#5b6b8c;font-weight:700;display:block} .card .pr b{display:block;font-size:28px;line-height:1.1;color:#021346;font-weight:700}',
+    '.card .pr small{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#5b6b8c;font-weight:700;display:block} .card .pr b{display:block;font-size:26px;line-height:1.1;color:#021346;font-weight:700}',
     '.card .pr2{margin-top:8px;padding-top:8px;border-top:1px dashed #cfd8ec} .card .pr2 b{font-size:18px} .card .pr2 em{font-style:normal;font-size:11px;color:#5b6b8c;display:block}',
     '.card .dia{margin-top:9px;background:#eef3fc;border-radius:10px;padding:6px 10px;font-size:11.5px;color:#1e3a8a;font-weight:700;text-align:center}',
-    '.card ul{list-style:none;margin:11px 0 0;padding:0;display:grid;gap:5px;font-size:12px}',
+    '.card ul{list-style:none;margin:9px 0 0;padding:0;display:grid;gap:4px;font-size:11.5px}',
     '.card li{display:flex;gap:7px;align-items:center} .card li .ck{display:inline-flex;width:17px;height:17px;border-radius:50%;background:#1e3a8a;color:#fff;font-size:10px;align-items:center;justify-content:center;font-weight:700;flex:none}',
     '.card li.no{color:#9aa6bf} .card li.no .ck{background:#cfd6e6} .card li b{font-weight:700}',
-    '.plus{margin-top:16px;border:1.5px dashed #1e3a8a;border-radius:14px;padding:10px 16px;display:flex;align-items:center;gap:14px;background:#f6f9ff;font-size:12.5px;line-height:1.45}',
-    '.plus .big{font-size:21px;color:#1e3a8a;white-space:nowrap;font-weight:700} .plus b{font-weight:700}',
-    '.rg{margin-top:12px;background:linear-gradient(90deg,#fdc33e,#ffe08a);color:#021346;border-radius:14px;padding:10px 16px}',
+    '.rg{margin-top:14px;background:linear-gradient(90deg,#fdc33e,#ffe08a);color:#021346;border-radius:14px;padding:10px 16px}',
     '.rg .rt{display:flex;align-items:center;gap:12px} .rg .ic{font-size:26px;line-height:1} .rg b{font-size:13.5px;font-weight:700} .rg small{display:block;font-size:11.5px;opacity:.85}',
     '.rg .ri{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:6px} .rg .ri div{display:flex;gap:6px;align-items:center;font-size:11.5px;background:rgba(255,255,255,.78);border-radius:999px;padding:2px 11px 2px 5px} .rg .ri i{font-style:normal;flex:0 0 15px;height:15px;border-radius:50%;background:#021346;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center}',
-    '.pasos{display:flex;gap:9px;margin-top:13px} .pasos div{flex:1;background:#eef3fc;border-radius:12px;padding:8px 11px;font-size:11.5px;line-height:1.4} .pasos b{display:inline-flex;width:21px;height:21px;border-radius:50%;background:#1e3a8a;color:#fff;align-items:center;justify-content:center;margin-right:6px;font-size:11.5px;font-weight:700}',
-    '.fine{position:absolute;left:34px;right:34px;bottom:86px;font-size:9.5px;color:#7a88a6;text-align:center}',
-    '.cta{position:absolute;left:0;right:0;bottom:0;background:#021346;color:#fff;padding:13px 34px;display:flex;align-items:center;gap:18px;border-top:5px solid #fdc33e}',
+    '.cta{margin:14px -30px 0;background:#021346;color:#fff;padding:12px 30px;display:flex;align-items:center;gap:18px;border-top:5px solid #fdc33e}',
     '.cta .t{flex:1} .cta .t>b{font-size:16.5px;display:block;font-weight:700} .cta .t span{font-size:11.5px;color:#c9d6f6}',
     '.cta .w{background:#25d366;color:#04301a;border-radius:12px;padding:9px 17px;font-weight:700;font-size:13.5px;text-align:center;text-decoration:none} .cta .w small{display:block;font-size:10.5px;font-weight:400}',
     /* hoja 2: detalle de coberturas */
-    '.d2 .tit{margin:14px 0 4px;font-size:20px;font-weight:700;color:#021346} .d2 .sub{font-size:12px;color:#5b6b8c;margin-bottom:12px}',
-    '.d2 .cob{display:grid;grid-template-columns:1.55fr 1fr;gap:10px;align-items:start}',
-    '.d2 .dc{background:#f5f9ff;color:#0b2a6b;border-radius:14px;overflow:hidden;padding-bottom:8px;border:1px solid #dbe8f8}',
-    '.d2 .dc h4{margin:0 0 5px;background:#1e3a8a;color:#fff;padding:7px 12px;font-size:11px;letter-spacing:.4px;text-transform:uppercase;font-weight:700}',
-    '.dc .f3{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:3px;margin:0 8px 3px;font-size:11px} .dc .f3 span{background:#fff;border-radius:999px;padding:3px 9px;line-height:1.2;display:flex;align-items:center}',
+    '.det{margin-top:14px} .det .tit{margin:0 0 7px;font-size:13px;font-weight:700;color:#021346;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:10px} .det .tit:after{content:"";flex:1;height:1px;background:#dfe5f1}',
+    '.det .cob{display:grid;grid-template-columns:1.55fr 1fr;gap:10px;align-items:start}',
+    '.det .dc{background:#f5f9ff;color:#0b2a6b;border-radius:14px;overflow:hidden;padding-bottom:8px;border:1px solid #dbe8f8}',
+    '.det .dc h4{margin:0 0 4px;background:#1e3a8a;color:#fff;padding:5px 12px;font-size:11px;letter-spacing:.4px;text-transform:uppercase;font-weight:700}',
+    '.dc .f3{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:3px;margin:0 8px 2px;font-size:10.5px} .dc .f3 span{background:#fff;border-radius:999px;padding:2px 9px;line-height:1.2;display:flex;align-items:center}',
     '.dc .f3.h span{background:none;color:#1e3a8a;font-weight:700;font-size:10.5px;justify-content:center;padding:1px 0} .dc .f3.h span:first-child{justify-content:flex-start}',
-    '.dc .f2{display:flex;justify-content:space-between;gap:6px;margin:0 8px 3px;background:#fff;border-radius:999px;padding:3px 11px;font-size:11px} .dc .f2 b{white-space:nowrap;font-weight:700}',
+    '.dc .f2{display:flex;justify-content:space-between;gap:6px;margin:0 8px 2px;background:#fff;border-radius:999px;padding:2px 11px;font-size:10.5px} .dc .f2 b{white-space:nowrap;font-weight:700}',
     '.dc .tl{margin:5px 8px;background:#fff6d6;border:1px solid #f0cf6a;color:#7a4b00;border-radius:10px;padding:4px 10px;font-size:11px} .dc .tl b{color:#b45309;display:block;font-size:11.5px;font-weight:700}',
-    '.d2 .pie{position:absolute;left:34px;right:34px;bottom:14px;font-size:10px;color:#7a88a6;text-align:center}'
+    ''
   ].join('');
 
   function celdaFin(o, plazo){
@@ -160,28 +156,20 @@
         '<div class="pr pr2"><small>Financiado a '+d.plazo+' meses</small>'+celdaFin(o, d.plazo)+'</div>'+
         (dia>0?'<div class="dia">Menos de '+cop(dia)+' al día</div>':'')+'<ul>'+lista+'</ul></div>';
     };
-    var dif = (Number(d.op2.contado)||0) - (Number(d.op1.contado)||0);
-    var plus = dif>0 ? '<div class="plus"><span class="big">+ '+cop(dif)+'</span><div>Por solo <b>'+cop(porDia(dif))+' más al día</b> pasas de la Opción 1 a la 2 y sumas <b>responsabilidad civil</b>, asistencia en la vía y un <b>plan de salud sin costo</b>.</div></div>' : '';
-    var asesor = d.asesor ? 'Tu asesor: <b>'+esc(d.asesor)+'</b> · Protect Motos' : 'Protect Motos · Negociemos Group S.A.S.';
+        var asesor = d.asesor ? 'Tu asesor: <b>'+esc(d.asesor)+'</b> · Protect Motos' : 'Protect Motos · Negociemos Group S.A.S.';
     var tel = d.telefono || TEL, tdig = String(tel).replace(/\D/g,''); if(tdig.length===10) tdig = '57'+tdig;
     var hayDetalle = p2.secs.length>0;
+    var rcS = p2.secs.filter(function(x){ return !/^(ap|carro)/i.test(x.titulo); }), otS = p2.secs.filter(function(x){ return /^(ap|carro)/i.test(x.titulo); });
+    var detalle = hayDetalle ? '<div class="det"><div class="tit">Detalle de coberturas · Opción 2</div><div class="cob"><div class="dc">'+rcS.map(seccion).join('')+'</div>'+(otS.length?'<div class="dc">'+otS.map(seccion).join('')+'</div>':'')+'</div></div>' : '';
     var pg1 = '<div class="doc">'+
       '<div class="sup"><div>'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'<b style="font-size:20px;color:#021346">PROTECT MOTOS</b>')+'</div>'+
         '<div class="fecha"><b>Cotización'+(d.id?' N.º '+esc(d.id):'')+'</b><br>'+esc(fecha)+'<br><span class="val">⏳ Válida hasta el '+vigenciaTxt()+'</span></div></div>'+
       '<div class="hero"><small>Hola, '+esc(primer)+' 👋'+(d.placa?' · '+esc(d.placa):'')+'</small><h1>'+titulo+'</h1><p>'+intro+'</p>'+cifra+'</div>'+
       '<div class="cards">'+tarjeta(1,'Hurto o pérdida total',protect?'Respaldo del 80 % de tu moto':'Cobertura esencial',d.op1,lista1,d1,false)+
         tarjeta(2,protect?'Protección total':'Hurto, pérdida total + más','Todo lo de la Opción 1 + RC + Asistencias',d.op2,lista2,d2,true)+'</div>'+
-      plus+regaloHtml(d)+
-      '<div class="pasos"><div><b>1</b>Elige tu opción</div><div><b>2</b>Envíanos tus datos y los de tu moto</div><div><b>3</b>Paga y quedas protegido</div></div>'+
-      '<div class="fine">'+(hayDetalle?'Detalle de coberturas, límites y deducibles en la página 2 · ':'')+'Protect Motos · Negociemos Group S.A.S.</div>'+
+      regaloHtml(d)+detalle+
       '<div class="cta"><div class="t"><b>¿Listo para proteger tu moto?</b><span>'+asesor+'</span></div><a class="w" href="https://wa.me/'+tdig+'">💬 Escríbeme por WhatsApp<small>'+esc(tel)+'</small></a></div></div>';
-    if(!hayDetalle) return pg1;
-    var rc = p2.secs.filter(function(x){ return !/^(ap|carro)/i.test(x.titulo); }), ot = p2.secs.filter(function(x){ return /^(ap|carro)/i.test(x.titulo); });
-    var pg2 = '<div class="doc d2"><div class="sup"><div>'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'')+'</div><div class="fecha"><b>'+esc(d.nombre)+'</b><br>'+esc(motoTxt)+(d.placa?' · '+esc(d.placa):'')+'</div></div>'+
-      '<div class="tit">Detalle de coberturas · Opción 2</div><div class="sub">Límites asegurados y deducibles de la responsabilidad civil y de las asistencias.</div>'+
-      '<div class="cob"><div class="dc">'+rc.map(seccion).join('')+'</div>'+(ot.length?'<div class="dc">'+ot.map(seccion).join('')+'</div>':'')+'</div>'+
-      '<div class="pie">Protect Motos · Negociemos Group S.A.S. · RC respaldada por Compañía Mundial de Seguros S.A.</div></div>';
-    return pg1 + pg2;
+    return pg1;
   }
   function regaloHtml(d){
     var L = d.salud || [];
