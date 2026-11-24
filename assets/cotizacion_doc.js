@@ -65,28 +65,19 @@
     '.hero h1{font-size:24px;line-height:1.2;margin:5px 0 0;font-weight:700} .hero h1 em{font-style:normal;color:'+C_GOLD+'}',
     '.hero .cifra{position:absolute;right:22px;top:22px;background:'+C_GOLD+';color:'+C_NAVY+';border-radius:0;padding:10px 16px;text-align:center;width:200px}',
     '.hero .cifra span{font-size:10.5px;text-transform:uppercase;font-weight:700;letter-spacing:.05em} .hero .cifra b{display:block;font-size:26px;line-height:1.15;font-weight:700} .hero .cifra i{font-style:normal;font-size:11px}',
-    '.cards{display:flex;gap:14px;margin-top:18px;align-items:stretch}',
-    '.card{flex:1;border:1px solid #dfe5f1;border-radius:0;padding:13px 16px;position:relative;background:#fff}',
-    '.card.rec{border:2px solid '+C_GOLD+';background:#fff}',
-    '.card .tag{position:absolute;top:-12px;left:16px;background:'+C_GOLD+';color:'+C_NAVY+';font-size:10.5px;font-weight:700;border-radius:0;padding:3px 13px;letter-spacing:.04em}',
-    '.card h3{font-size:14.5px;margin:0 0 8px;font-weight:700;color:'+C_NAVY+'}',
-    '.card .pr small{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#5b6b8c;font-weight:700;display:block} .card .pr b{display:block;font-size:27px;line-height:1.1;color:'+C_NAVY+';font-weight:700}',
-    '.card .pr2{margin-top:7px;padding-top:7px;border-top:1px dashed #cfd8ec} .card .pr2 b{font-size:17px} .card .pr2 em{font-style:normal;font-size:11px;color:#5b6b8c;display:block}',
-    '.card .dia{margin-top:8px;background:#f3f5fa;border-radius:0;padding:5px 10px;font-size:11px;color:#3a4a6b;font-weight:700;text-align:center}',
-    '.card ul{list-style:none;margin:9px 0 0;padding:0;display:grid;gap:4px;font-size:11.5px}',
-    '.card li{display:flex;gap:7px;align-items:center} .card li .ck{display:inline-flex;width:16px;height:16px;border-radius:0;background:'+C_NAVY+';color:#fff;font-size:10px;align-items:center;justify-content:center;font-weight:700;flex:none} .card li b{font-weight:700}',
-    '.rg{margin-top:14px;background:#fff8e5;border-left:5px solid '+C_GOLD+';color:'+C_NAVY+';border-radius:0;padding:9px 16px;display:flex;align-items:center;gap:12px}',
-    '.rg .ic{font-size:26px;line-height:1} .rg b{font-size:13px;font-weight:700;display:block} .rg span.l{display:block;font-size:11.5px;margin-top:2px;line-height:1.4}',
-    '.det{margin-top:14px}',
-    '.det .tit{margin:0 0 7px;font-size:13px;font-weight:700;color:'+C_NAVY+';text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:10px} .det .tit:after{content:"";flex:1;height:1px;background:#dfe5f1}',
-    '.det .cob{display:grid;grid-template-columns:1.1fr 1fr;gap:10px;align-items:start}',
-    '.det .dc{border-radius:0;overflow:hidden;padding-bottom:7px;border:1px solid #dfe5f1;background:#fff}',
-    '.det .dc h4{margin:0 0 7px;color:'+C_NAVY+';padding:7px 12px;font-size:11px;letter-spacing:.4px;text-transform:uppercase;font-weight:700;background:#eef1f7;border-bottom:2px solid '+C_GOLD+'}',
-    '.det .g{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:0 8px}',
-    '.det .t{background:#fafbfd;border:1px solid #e6eaf3;border-radius:0;padding:4px 9px}',
-    '.det .t span{display:block;font-size:10px;color:#5b6b8c;line-height:1.2} .det .t b{display:block;font-size:13.5px;color:'+C_NAVY+';font-weight:700;line-height:1.25} .det .t i{display:block;font-style:normal;font-size:9.5px;color:#7a869f;line-height:1.2}',
-    '.det .tl{margin:7px 8px 0;background:#fff8e5;border-left:4px solid '+C_GOLD+';color:#5a4a1a;border-radius:0;padding:4px 10px;font-size:10.5px} .det .tl b{color:'+C_NAVY+';font-weight:700}',
-    '.det .nota{margin:6px 10px 0;font-size:10px;color:#5b6b8c}',
+    '.op{display:flex;border:1px solid #dfe5f1;margin-top:12px;position:relative;background:#fff;page-break-inside:avoid}',
+    '.op.rec{border:2px solid '+C_GOLD+'}',
+    '.op .tag{position:absolute;top:-12px;left:16px;background:'+C_GOLD+';color:'+C_NAVY+';font-size:10.5px;font-weight:700;padding:3px 13px;letter-spacing:.04em}',
+    '.op .pp{width:236px;flex:none;background:#f6f7fb;padding:16px 16px;border-right:1px solid #e3e8f2}',
+    '.op h3{font-size:14.5px;margin:0 0 9px;font-weight:700;color:'+C_NAVY+'}',
+    '.op .pr small{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#5b6b8c;font-weight:700;display:block} .op .pr b{display:block;font-size:27px;line-height:1.1;color:'+C_NAVY+';font-weight:700}',
+    '.op .pr2{margin-top:8px;padding-top:8px;border-top:1px dashed #cfd8ec} .op .pr2 b{font-size:17px} .op .pr2 em{font-style:normal;font-size:11px;color:#5b6b8c;display:block}',
+    '.op .dia{margin-top:9px;background:#fff;border:1px solid #e3e8f2;padding:4px 8px;font-size:11px;color:#3a4a6b;font-weight:700;text-align:center}',
+    '.op .cv{flex:1;padding:9px 16px 6px}',
+    '.op .sh{margin:7px 0 2px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:'+C_NAVY+';border-bottom:2px solid '+C_GOLD+';padding-bottom:2px;display:flex;justify-content:space-between;gap:8px} .op .sh:first-child{margin-top:0} .op .sh i{font-style:normal;font-weight:400;text-transform:none;letter-spacing:0;color:#5b6b8c}',
+    '.op .r{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:2px 0;border-bottom:1px solid #eef1f7;font-size:11px;line-height:1.2} .op .r b{white-space:nowrap;font-weight:700;color:'+C_NAVY+'} .op .r small{color:#7a869f;font-size:9.5px;margin-left:5px}',
+    '.op .r .ck{display:inline-flex;width:14px;height:14px;background:'+C_NAVY+';color:#fff;font-size:9px;align-items:center;justify-content:center;font-weight:700;margin-right:8px;flex:none;vertical-align:middle} .op .r span.n{display:flex;align-items:center}',
+    '.op .gf{margin:9px 0 0;background:#fff8e5;border-left:5px solid '+C_GOLD+';padding:5px 10px;font-size:11px;font-weight:700;color:'+C_NAVY+'}',
     '.cta{margin:14px -30px 0;background:'+C_NAVY+';color:#fff;padding:12px 30px;display:flex;align-items:center;gap:18px;border-top:5px solid '+C_GOLD+'}',
     '.cta .t{flex:1} .cta .t>b{font-size:16.5px;display:block;font-weight:700} .cta .t span{font-size:11.5px;color:#c9d6f6}',
     '.cta .w{background:#fff;color:'+C_NAVY+';border-radius:0;padding:9px 17px;font-weight:700;font-size:13.5px;text-align:center;text-decoration:none} .cta .w small{display:block;font-size:10.5px;font-weight:400}'
@@ -136,28 +127,35 @@
     var garantizado = Number(d.garantizar)>0 ? Number(d.garantizar) : (Number(d.cubre)>0 ? Number(d.cubre)/0.8 : 0);
     var titulo = renov ? 'Renueva la protección de tu <em>'+esc(motoTxt||'moto')+'</em>' : 'Tu <em>'+esc(motoTxt||'moto')+'</em> merece estar protegida';
     var cifra = '';
-    var li = function(t, fuerte){ return '<li><span class="ck">✓</span>'+(fuerte?'<b>'+esc(t)+'</b>':esc(t))+'</li>'; };
-    var lista1 = p1.chips.map(function(t){ return li(t); }).join('');
-    var lista2 = p2.chips.map(function(t){ return li(t,/responsabilidad|salud/i.test(t)); }).join('') + ((d.salud&&d.salud.length)?li('Plan de salud de regalo',true):'');
-    var d1 = porDia(d.op1.contado), d2 = porDia(d.op2.contado);
-    var tarjeta = function(n, tit, o, lista, dia, rec){
-      return '<div class="card'+(rec?' rec':'')+'">'+(rec?'<div class="tag">⭐ RECOMENDADA · LA MÁS ELEGIDA</div>':'')+'<h3>Opción '+n+' · '+esc(tit)+'</h3>'+
+    var d1 = porDia(d.op1.contado), d2 = porDia(d.op2.contado), L = d.salud || [];
+    var ck = function(t, fuerte){ return '<div class="r"><span class="n"><span class="ck">✓</span>'+(fuerte?'<b style="font-weight:700">'+esc(t)+'</b>':esc(t))+'</span></div>'; };
+    var fila = function(c){ if(/^valor total/i.test(c[0])) return ''; var dd = c.length>=3 ? ded(c) : '';
+      return '<div class="r"><span>'+esc(c[0])+(dd?'<small>Deducible '+esc(dd)+'</small>':'')+'</span>'+(c.length>=2?'<b>'+esc(c[1])+'</b>':'')+'</div>'; };
+    var precios = function(n, tit, o, dia, rec){
+      return '<div class="pp">'+(rec?'<div class="tag">⭐ RECOMENDADA · LA MÁS ELEGIDA</div>':'')+'<h3>Opción '+n+' · '+esc(tit)+'</h3>'+
         '<div class="pr"><small>De contado</small><b>'+cop(o.contado)+'</b></div>'+
         '<div class="pr pr2"><small>Financiado a '+d.plazo+' meses</small>'+celdaFin(o, d.plazo)+'</div>'+
-        (dia>0?'<div class="dia">Menos de '+cop(dia)+' al día</div>':'')+'<ul>'+lista+'</ul></div>';
+        (dia>0?'<div class="dia">Menos de '+cop(dia)+' al día</div>':'')+'</div>';
     };
+    /* Opción 1: lo que cubre, en una columna */
+    var cv1 = '<div class="sh">Qué cubre</div>'+p1.chips.map(function(t){ return ck(t); }).join('');
+    /* Opción 2: TODO lo que cubre, en una sola columna (lo de la Opción 1 + RC + AP + Carro taller + regalo) */
+    var cv2 = '<div class="sh">Qué cubre · todo en una sola opción</div>'+(p1.chips.length?p1.chips.map(function(t){ return ck(t); }).join(''):'');
+    if(p2.secs.length){
+      p2.secs.forEach(function(sc){
+        var carro = /^carro taller/i.test(sc.titulo), tit = carro ? 'Carro taller' : sc.titulo.replace(/^(responsabilidad civil)\s*·\s*condiciones de cobertura$/i,'$1'), nota = carro ? sc.titulo.replace(/^carro taller:?\s*/i,'') : (/responsabilidad civil/i.test(tit)&&protect?'respaldada por Seguros Mundial':'');
+        cv2 += '<div class="sh"><span>'+esc(tit)+'</span>'+(nota?'<i>'+esc(nota)+'</i>':'')+'</div>'+sc.filas.map(fila).join('');
+      });
+    } else cv2 += p2.chips.filter(function(t){ return !/^todo lo de/i.test(t) && p1.chips.indexOf(t)<0; }).map(function(t){ return ck(t); }).join('');
+    if(L.length) cv2 += '<div class="gf">🎁 DE REGALO · Plan de salud para el titular y 2 beneficiarios</div>'+'<div class="r" style="display:block;border-bottom:0;padding:3px 0 0"><span class="n" style="display:block">'+L.map(esc).join(' · ')+'</span></div>';
     var asesor = d.asesor ? 'Tu asesor: <b>'+esc(d.asesor)+'</b> · Protect Motos' : 'Protect Motos · Negociemos Group S.A.S.';
     var tel = d.telefono || TEL, tdig = String(tel).replace(/\D/g,''); if(tdig.length===10) tdig = '57'+tdig;
-    var rcS = p2.secs.filter(function(x){ return !/^(ap|carro)/i.test(x.titulo); }), otS = p2.secs.filter(function(x){ return /^(ap|carro)/i.test(x.titulo); });
-    var detalle = p2.secs.length ? '<div class="det"><div class="tit">Todo lo que cubre tu Opción 2</div><div class="cob"><div class="dc">'+rcS.map(function(x){ return seccion(x); }).join('')+(protect?'<div class="nota">Responsabilidad civil respaldada por Compañía Mundial de Seguros S.A.</div>':'')+'</div>'+(otS.length?'<div class="dc aq">'+otS.map(function(x){ return seccion(x,true); }).join('')+'</div>':'')+'</div></div>' : '';
-    var L = d.salud || [];
-    var regalo = '<div class="rg"><span class="ic">🎁</span><div><b>DE REGALO con la Opción 2 · Plan de salud para ti y 2 beneficiarios</b>'+(L.length?'<span class="l">'+L.map(esc).join(' · ')+'</span>':'')+'</div></div>';
     return '<div class="doc">'+
       '<div class="sup"><div>'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'<b style="font-size:20px;color:#021346">PROTECT MOTOS</b>')+'</div>'+
         '<div class="fecha"><b>Cotización'+(d.id?' N.º '+esc(d.id):'')+'</b><br>'+esc(fecha)+'<br><span class="val">⏳ Válida hasta el '+vigenciaTxt()+'</span></div></div>'+
       '<div class="hero"><small>Hola, '+esc(primer)+' 👋'+(d.placa?' · '+esc(d.placa):'')+'</small><h1>'+titulo+'</h1>'+cifra+'</div>'+
-      '<div class="cards">'+tarjeta(1,'Hurto o pérdida total',d.op1,lista1,d1,false)+tarjeta(2,protect?'Protección total':'Todo incluido',d.op2,lista2,d2,true)+'</div>'+
-      regalo+detalle+
+      '<div class="op">'+precios(1,'Hurto o pérdida total',d.op1,d1,false)+'<div class="cv">'+cv1+'</div></div>'+
+      '<div class="op rec">'+precios(2,protect?'Protección total':'Todo incluido',d.op2,d2,true)+'<div class="cv">'+cv2+'</div></div>'+
       '<div class="cta"><div class="t"><b>¿Listo para proteger tu moto?</b><span>'+asesor+'</span></div><a class="w" href="https://wa.me/'+tdig+'">💬 Escríbeme por WhatsApp<small>'+esc(tel)+'</small></a></div></div>';
   }
   function pagina(d){
