@@ -46,50 +46,62 @@
   function planSalud(){ try{ var g = JSON.parse(localStorage.getItem(CLAVE_PLAN)||'null'); if(g && g.length) return g; }catch(e){} return PLAN_DEFECTO.slice(); }
   function guardarPlanSalud(lista){ try{ localStorage.setItem(CLAVE_PLAN, JSON.stringify((lista||[]).filter(Boolean))); }catch(e){} }
 
-  /* ---- Estilos del documento (limpio: lo esencial arriba, el detalle de coberturas en la segunda hoja) ---- */
+  /* ---- Estilos del documento: hoja 1 = lo que convence (respaldo, opciones, regalo, cómo comprar, contacto); hoja 2 = detalle de coberturas.
+          Letra: Lato (la misma de todo el CRM). Colores: azul corporativo + dorado. ---- */
+  var TEL = '(+57) 312 880 68 73', WA = 'https://wa.me/573128806873', VIGENCIA_DIAS = 5;
+  var F = "'LatoInf','Lato',Arial,Helvetica,sans-serif";
   var CSS = (w.PM_LATO_FF || '') + [
     '@page{size:letter;margin:6mm}',
     '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-family:inherit}',
-    'body{margin:0;background:#fff;color:#13223f;font-family:\'LatoInf\',\'Lato\',Arial,Helvetica,sans-serif}',
-    '.doc{font-family:\'LatoInf\',\'Lato\',Arial,Helvetica,sans-serif;width:794px;margin:0 auto;padding:16px 22px 14px;font-size:12px;line-height:1.3;color:#fff;border-radius:22px;position:relative;overflow:hidden;',
-      'background:radial-gradient(circle at 92% 3%,rgba(255,255,255,.26),rgba(255,255,255,0) 32%),radial-gradient(circle at 3% 60%,rgba(255,255,255,.14),rgba(255,255,255,0) 30%),linear-gradient(165deg,#0b63c9 0%,#1596e0 52%,#0a4fae 100%)}',
+    'body{margin:0;background:#fff;color:#13223f;font-family:'+F+'}',
+    '.doc{font-family:'+F+';width:794px;margin:0 auto;padding:22px 34px 108px;font-size:12px;line-height:1.35;color:#13223f;background:#fff;position:relative;overflow:hidden;min-height:1000px}',
+    '.doc.d2{padding-bottom:50px} .doc+.doc{page-break-before:always}',
     '.sup{display:flex;justify-content:space-between;align-items:center;gap:12px}',
-    '.logo{background:#fff;border-radius:999px;padding:5px 16px;display:flex;align-items:center;box-shadow:0 3px 10px rgba(0,0,0,.18)} .logo img{height:44px;width:auto;display:block}',
-    '.fecha{font-size:12px;text-align:right;line-height:1.4} .fecha b{display:block;font-size:12.5px}',
-    '.titulo{margin-top:10px;background:#0b2a6b;border-radius:18px 18px 18px 4px;padding:10px 20px;box-shadow:0 4px 12px rgba(0,0,0,.22);display:flex;justify-content:space-between;align-items:center;gap:12px}',
-    '.titulo small{display:block;font-size:11px;letter-spacing:.3em;opacity:.85;font-weight:700} .titulo b{display:block;font-size:25px;line-height:1.1;font-weight:900;margin:1px 0 0}',
-    '.titulo .der{text-align:right} .titulo .cl{font-size:16px;font-weight:800;color:#ffd54a} .titulo .mt{font-size:12.5px;opacity:.95;margin-top:1px}',
-    '.hola{margin:8px 6px 0;font-size:13px}',
-    '.op{margin-top:9px;background:#fff;color:#13223f;border-radius:18px;overflow:hidden;box-shadow:0 6px 16px rgba(0,0,0,.2);page-break-inside:avoid}',
-    '.op h3{margin:0;background:#0b2a6b;color:#fff;padding:7px 16px;font-size:13.5px;letter-spacing:.3px;border-radius:0 0 16px 0;display:inline-block;max-width:96%}',
-    '.op h3 small{font-weight:400;color:#ffd54a;margin-left:8px;font-size:12px}',
-    '.pre{display:grid;grid-template-columns:1fr 1.15fr;gap:8px;padding:8px 12px 6px}',
-    '.pre>div{border-radius:14px;padding:8px 14px}',
-    '.pre>div:first-child{background:#ffc928;color:#0b2a6b} .pre>div:last-child{background:#e3f2fd;color:#0b2a6b}',
-    '.pre span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:800;opacity:.85} .pre b{display:block;font-size:23px;line-height:1.1;margin:2px 0 0;font-weight:900} .pre small{display:block;font-size:11px;opacity:.9}',
-    '.chips{padding:0 12px 9px;display:flex;flex-wrap:wrap;gap:4px 6px}',
-    '.chips div{display:flex;gap:6px;align-items:center;font-size:11px;background:#eef6ff;border-radius:999px;padding:2px 10px 2px 4px;color:#0b2a6b} .chips i{flex:0 0 15px;height:15px;border-radius:50%;background:#0b63c9;color:#fff;font-style:normal;font-size:10px;text-align:center;line-height:15px}',
-    /* coberturas dentro de la opción 2 (en la misma hoja) */
-    '.pie2{margin-top:8px;text-align:center;font-size:10.5px;opacity:.85;letter-spacing:.3px}',
-    '.rg{margin-top:9px;background:linear-gradient(135deg,#fff3c4,#ffd04d);color:#0b2a6b;border-radius:18px;padding:9px 16px 10px;box-shadow:0 4px 12px rgba(0,0,0,.2)}',
-    '.rg .rt{display:flex;align-items:center;gap:10px} .rg .ic{font-size:24px;line-height:1} .rg b{font-size:14.5px;letter-spacing:.3px} .rg small{display:block;font-size:11.5px;font-weight:700;opacity:.8}',
-    '.rg .ri{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:6px} .rg .ri div{display:flex;gap:6px;align-items:center;font-size:11.5px;background:rgba(255,255,255,.75);border-radius:999px;padding:2px 11px 2px 5px} .rg .ri i{flex:0 0 15px;height:15px;border-radius:50%;background:#0b2a6b;color:#ffd04d;font-style:normal;font-size:10px;text-align:center;line-height:15px}',
-    '.cob{display:grid;grid-template-columns:1.55fr 1fr;gap:8px;padding:0 12px 10px;align-items:start}',
-    '.cob .dc{background:#f5f9ff;color:#0b2a6b;border-radius:14px;overflow:hidden;padding-bottom:6px;border:1px solid #dbe8f8}',
-    '.cob .dc h4{margin:0 0 4px;background:#0b63c9;color:#fff;padding:5px 12px;font-size:11px;letter-spacing:.4px;text-transform:uppercase}',
-    '.dc .f3{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:3px;margin:0 8px 2px;font-size:10.5px} .dc .f3 span{background:#fff;border-radius:999px;padding:2px 8px;line-height:1.2;display:flex;align-items:center} .dc .f3 span+span{justify-content:center;text-align:center;font-weight:700}',
-    '.dc .f3.h span{background:none;color:#0b63c9;font-weight:800;font-size:10px;justify-content:center;padding:1px 0} .dc .f3.h span:first-child{justify-content:flex-start}',
-    '.dc .f2{display:flex;justify-content:space-between;gap:6px;margin:0 8px 2px;background:#fff;border-radius:999px;padding:2px 10px;font-size:10.5px} .dc .f2 b{white-space:nowrap}',
-    '.dc .tl{margin:4px 8px 4px;background:#fff6d6;border:1px solid #f0cf6a;color:#7a4b00;border-radius:10px;padding:3px 10px;font-size:10.5px} .dc .tl b{color:#b45309;display:block;font-size:11px}',
-    '.cta{margin-top:9px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0b2a6b;border-radius:18px;padding:8px 18px;box-shadow:0 4px 12px rgba(0,0,0,.22)}',
-    '.cta b{font-size:16px;letter-spacing:.3px} .cta .ph{background:#fff;color:#0b2a6b;border-radius:999px;padding:5px 16px;font-weight:900;font-size:15px;white-space:nowrap}',
-    '.pie{margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;color:#13223f;border-radius:999px;padding:4px 20px;font-size:11px}',
-    '.pie img{height:30px;width:auto;display:block}'
+    '.sup img{height:50px;width:auto;display:block}',
+    '.sup .fecha{text-align:right;font-size:12px;color:#5b6b8c;line-height:1.5} .sup .fecha b{color:#13223f;font-weight:700}',
+    '.sup .val{display:inline-block;background:#fff3d6;color:#8a5a00;border:1px solid #f0cf86;border-radius:20px;padding:2px 11px;font-size:11px;font-weight:700;margin-top:3px}',
+    '.hero{margin-top:12px;background:linear-gradient(135deg,#021346,#1e3a8a);border-radius:18px;padding:20px 26px;color:#fff;position:relative;min-height:158px}',
+    '.hero small{color:#9fb8e8;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase}',
+    '.hero h1{font-size:24px;line-height:1.2;margin:5px 0 8px;max-width:430px;font-weight:700} .hero h1 em{font-style:normal;color:#fdc33e}',
+    '.hero p{font-size:13px;color:#d5def5;max-width:420px;line-height:1.5;margin:0} .hero p b{color:#fff;font-weight:700}',
+    '.hero .cifra{position:absolute;right:22px;top:34px;background:#fdc33e;color:#021346;border-radius:14px;padding:11px 16px;text-align:center;width:196px}',
+    '.hero .cifra span{font-size:10.5px;text-transform:uppercase;font-weight:700;letter-spacing:.05em} .hero .cifra b{display:block;font-size:25px;line-height:1.15;font-weight:700} .hero .cifra i{font-style:normal;font-size:11px}',
+    '.cards{display:flex;gap:14px;margin-top:20px;align-items:stretch}',
+    '.card{flex:1;border:1.5px solid #dbe3f3;border-radius:16px;padding:16px 18px;position:relative;background:#fff}',
+    '.card.rec{border:2.5px solid #fdc33e;background:#fffdf5;box-shadow:0 8px 22px rgba(253,195,62,.28)}',
+    '.card .tag{position:absolute;top:-12px;left:16px;background:#fdc33e;color:#021346;font-size:10.5px;font-weight:700;border-radius:20px;padding:3px 13px;letter-spacing:.04em}',
+    '.card h3{font-size:14.5px;margin:0 0 1px;font-weight:700;color:#021346} .card .s{font-size:11.5px;color:#5b6b8c;margin-bottom:9px}',
+    '.card .pr small{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#5b6b8c;font-weight:700;display:block} .card .pr b{display:block;font-size:28px;line-height:1.1;color:#021346;font-weight:700}',
+    '.card .pr2{margin-top:8px;padding-top:8px;border-top:1px dashed #cfd8ec} .card .pr2 b{font-size:18px} .card .pr2 em{font-style:normal;font-size:11px;color:#5b6b8c;display:block}',
+    '.card .dia{margin-top:9px;background:#eef3fc;border-radius:10px;padding:6px 10px;font-size:11.5px;color:#1e3a8a;font-weight:700;text-align:center}',
+    '.card ul{list-style:none;margin:11px 0 0;padding:0;display:grid;gap:5px;font-size:12px}',
+    '.card li{display:flex;gap:7px;align-items:center} .card li .ck{display:inline-flex;width:17px;height:17px;border-radius:50%;background:#1e3a8a;color:#fff;font-size:10px;align-items:center;justify-content:center;font-weight:700;flex:none}',
+    '.card li.no{color:#9aa6bf} .card li.no .ck{background:#cfd6e6} .card li b{font-weight:700}',
+    '.plus{margin-top:16px;border:1.5px dashed #1e3a8a;border-radius:14px;padding:10px 16px;display:flex;align-items:center;gap:14px;background:#f6f9ff;font-size:12.5px;line-height:1.45}',
+    '.plus .big{font-size:21px;color:#1e3a8a;white-space:nowrap;font-weight:700} .plus b{font-weight:700}',
+    '.rg{margin-top:12px;background:linear-gradient(90deg,#fdc33e,#ffe08a);color:#021346;border-radius:14px;padding:10px 16px}',
+    '.rg .rt{display:flex;align-items:center;gap:12px} .rg .ic{font-size:26px;line-height:1} .rg b{font-size:13.5px;font-weight:700} .rg small{display:block;font-size:11.5px;opacity:.85}',
+    '.rg .ri{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:6px} .rg .ri div{display:flex;gap:6px;align-items:center;font-size:11.5px;background:rgba(255,255,255,.78);border-radius:999px;padding:2px 11px 2px 5px} .rg .ri i{font-style:normal;flex:0 0 15px;height:15px;border-radius:50%;background:#021346;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center}',
+    '.pasos{display:flex;gap:9px;margin-top:13px} .pasos div{flex:1;background:#eef3fc;border-radius:12px;padding:8px 11px;font-size:11.5px;line-height:1.4} .pasos b{display:inline-flex;width:21px;height:21px;border-radius:50%;background:#1e3a8a;color:#fff;align-items:center;justify-content:center;margin-right:6px;font-size:11.5px;font-weight:700}',
+    '.fine{position:absolute;left:34px;right:34px;bottom:86px;font-size:9.5px;color:#7a88a6;text-align:center}',
+    '.cta{position:absolute;left:0;right:0;bottom:0;background:#021346;color:#fff;padding:13px 34px;display:flex;align-items:center;gap:18px;border-top:5px solid #fdc33e}',
+    '.cta .t{flex:1} .cta .t>b{font-size:16.5px;display:block;font-weight:700} .cta .t span{font-size:11.5px;color:#c9d6f6}',
+    '.cta .w{background:#25d366;color:#04301a;border-radius:12px;padding:9px 17px;font-weight:700;font-size:13.5px;text-align:center;text-decoration:none} .cta .w small{display:block;font-size:10.5px;font-weight:400}',
+    /* hoja 2: detalle de coberturas */
+    '.d2 .tit{margin:14px 0 4px;font-size:20px;font-weight:700;color:#021346} .d2 .sub{font-size:12px;color:#5b6b8c;margin-bottom:12px}',
+    '.d2 .cob{display:grid;grid-template-columns:1.55fr 1fr;gap:10px;align-items:start}',
+    '.d2 .dc{background:#f5f9ff;color:#0b2a6b;border-radius:14px;overflow:hidden;padding-bottom:8px;border:1px solid #dbe8f8}',
+    '.d2 .dc h4{margin:0 0 5px;background:#1e3a8a;color:#fff;padding:7px 12px;font-size:11px;letter-spacing:.4px;text-transform:uppercase;font-weight:700}',
+    '.dc .f3{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:3px;margin:0 8px 3px;font-size:11px} .dc .f3 span{background:#fff;border-radius:999px;padding:3px 9px;line-height:1.2;display:flex;align-items:center}',
+    '.dc .f3.h span{background:none;color:#1e3a8a;font-weight:700;font-size:10.5px;justify-content:center;padding:1px 0} .dc .f3.h span:first-child{justify-content:flex-start}',
+    '.dc .f2{display:flex;justify-content:space-between;gap:6px;margin:0 8px 3px;background:#fff;border-radius:999px;padding:3px 11px;font-size:11px} .dc .f2 b{white-space:nowrap;font-weight:700}',
+    '.dc .tl{margin:5px 8px;background:#fff6d6;border:1px solid #f0cf6a;color:#7a4b00;border-radius:10px;padding:4px 10px;font-size:11px} .dc .tl b{color:#b45309;display:block;font-size:11.5px;font-weight:700}',
+    '.d2 .pie{position:absolute;left:34px;right:34px;bottom:14px;font-size:10px;color:#7a88a6;text-align:center}'
   ].join('');
 
   function celdaFin(o, plazo){
-    if(o.primera !== o.resto) return '<b>'+cop(o.primera)+'</b><small>1ª cuota y luego '+(plazo-1)+' de '+cop(o.resto)+'</small>';
-    return '<b>'+plazo+' × '+cop(o.cuota)+'</b><small>Total '+cop(o.total)+'</small>';
+    if(o.primera !== o.resto) return '<b>'+cop(o.primera)+'</b><em>1ª cuota y luego '+(plazo-1)+' de '+cop(o.resto)+'</em>';
+    return '<b>'+plazo+' × '+cop(o.cuota)+'</b><em>Total '+cop(o.total)+'</em>';
   }
   function conValores(t, d){ return String(t).replace(/\{V80\}/g, d.cubre?cop(d.cubre):'').replace(/\{RC\}/g, cop(d.rc||152857)).replace(/\{AP\}/g, cop(d.ap||47000)); }
   /* separa una lista de coberturas: las líneas simples (van en la tarjeta) y los bloques con detalle (van en la segunda hoja) */
@@ -116,36 +128,60 @@
       return '<div class="f2"><span>'+esc(c[0])+'</span></div>';
     }).join('');
   }
+  var MES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  function vigenciaTxt(){ var f = new Date(); f.setDate(f.getDate()+VIGENCIA_DIAS); return f.getDate()+' de '+MES[f.getMonth()]; }
+  function porDia(v){ return Math.ceil((Number(v)||0)/365/100)*100; }
 
-  /* d: {fecha,id,nombre,placa,moto,aseguradora,plazo,op1:{contado,primera,resto,cuota,total},op2:{...},cob1:[],cob2:[]} */
+  /* d: {fecha,id,nombre,placa,moto,aseguradora,plazo,op1:{contado,primera,resto,cuota,total},op2:{...},cubre,cob1:[],cob2:[],salud:[],asesor?,telefono?} */
   function html(d){
     var logo = w.PM_LOGO || '';
     var fecha = d.fecha || new Date().toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'});
     var p1 = partes(d.cob1, d), p2 = partes(d.cob2, d);
-    var chips = function(a){ return a.length ? '<div class="chips">'+a.map(function(t){ return '<div><i>✓</i><span>'+esc(t)+'</span></div>'; }).join('')+'</div>' : ''; };
-    var op = function(n, titulo, sub, o, pp, conCob){
-      var cob = '';
-      if(conCob && pp.secs.length){
-        var rc = pp.secs.filter(function(x){ return !/^(ap|carro)/i.test(x.titulo); }), ot = pp.secs.filter(function(x){ return /^(ap|carro)/i.test(x.titulo); });
-        cob = '<div class="cob"><div class="dc">'+rc.map(seccion).join('')+'</div>'+(ot.length?'<div class="dc">'+ot.map(seccion).join('')+'</div>':'')+'</div>';
-        if(!ot.length) cob = cob.replace('grid-template-columns','grid-template-columns');
-      }
-      var regalo = '';
-      return '<div class="op"><h3>OPCIÓN '+n+' · '+esc(titulo)+(sub?'<small>'+esc(sub)+'</small>':'')+'</h3>'+
-        '<div class="pre"><div><span>De contado</span><b>'+cop(o.contado)+'</b></div>'+
-        '<div><span>Financiado a '+d.plazo+' meses</span>'+celdaFin(o, d.plazo)+'</div></div>'+chips(pp.chips)+regalo+cob+'</div>';
+    var protect = (d.aseguradora||'Protect Motos') === 'Protect Motos';
+    var primer = String(d.nombre||'').split(' ')[0] || 'cliente';
+    var motoTxt = String(d.moto||'').replace(/\s*·\s*$/,'').trim();
+    var renov = d.tipo !== 'nueva';
+    var garantizado = Number(d.garantizar)>0 ? Number(d.garantizar) : (Number(d.cubre)>0 ? Number(d.cubre)/0.8 : 0);
+    var titulo = renov ? 'Renueva la protección de tu <em>'+esc(motoTxt||'moto')+'</em> y sigue tranquilo' : 'Tu <em>'+esc(motoTxt||'moto')+'</em> merece estar protegida de verdad';
+    var cifra = (protect && Number(d.cubre)>0) ? '<div class="cifra"><span>Te respaldamos hasta</span><b>'+cop(d.cubre)+'</b><i>80 % de '+cop(garantizado)+'</i></div>' : '';
+    var intro = (protect && Number(d.cubre)>0)
+      ? 'Si te la roban o la pierdes por un accidente, <b>Protect Motos te respalda con el 80 % del valor de tu moto</b>. Elige el plan que mejor se ajuste a ti.'
+      : 'Estas son las opciones que preparamos para ti. Elige la que mejor se ajuste a lo que necesitas.';
+    /* lo que tiene la Opción 2 y la 1 no: aparece en gris en la Opción 1 para que se vea la diferencia */
+    var extras = p2.chips.filter(function(t){ return !/^todo lo de/i.test(t) && p1.chips.indexOf(t)<0; });
+    if(d.salud && d.salud.length) extras.push('Plan de salud de regalo');
+    var li = function(t, no, fuerte){ return '<li'+(no?' class="no"':'')+'><span class="ck">'+(no?'–':'✓')+'</span>'+(fuerte?'<b>'+esc(t)+'</b>':esc(t))+'</li>'; };
+    var lista1 = p1.chips.map(function(t){ return li(t); }).concat(extras.map(function(t){ return li(t,true); })).join('');
+    var lista2 = p2.chips.map(function(t){ return li(t,false,/responsabilidad|salud/i.test(t)); }).join('') + ((d.salud&&d.salud.length)?li('Plan de salud de regalo (titular + 2 beneficiarios)',false,true):'');
+    var d1 = porDia(d.op1.contado), d2 = porDia(d.op2.contado);
+    var tarjeta = function(n, tit, sub, o, lista, dia, rec){
+      return '<div class="card'+(rec?' rec':'')+'">'+(rec?'<div class="tag">⭐ RECOMENDADA · LA MÁS ELEGIDA</div>':'')+'<h3>Opción '+n+' · '+esc(tit)+'</h3><div class="s">'+esc(sub)+'</div>'+
+        '<div class="pr"><small>De contado</small><b>'+cop(o.contado)+'</b></div>'+
+        '<div class="pr pr2"><small>Financiado a '+d.plazo+' meses</small>'+celdaFin(o, d.plazo)+'</div>'+
+        (dia>0?'<div class="dia">Menos de '+cop(dia)+' al día</div>':'')+'<ul>'+lista+'</ul></div>';
     };
-    var primer = String(d.nombre||'').split(' ')[0];
-    return '<div class="doc">'+
-      '<div class="sup"><div class="logo">'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'<b style="color:#0b2a6b;font-size:20px">PROTECT MOTOS</b>')+'</div>'+
-      '<div class="fecha"><b>'+esc(fecha)+'</b>'+(d.id?'N.º '+esc(d.id):'')+'</div></div>'+
-      '<div class="titulo"><div><small>'+(d.tipo==='nueva'?'GARANTÍA':'RENOVACIÓN')+'</small><b>COTIZACIÓN</b></div><div class="der"><div class="cl">'+esc(d.nombre)+'</div><div class="mt">'+esc([d.moto,d.placa].filter(Boolean).join(' · '))+' · Respaldo: '+esc(d.aseguradora)+'</div></div></div>'+
-      '<p class="hola">Hola, '+esc(primer)+'. Estas son tus opciones'+(d.tipo==='nueva'?' de protección:':' para renovar:')+'</p>'+
-      op(1,'Hurto o pérdida total',(d.aseguradora==='Protect Motos'?'cubre el 80 %':''),d.op1,p1,false)+
-      op(2,'Hurto o pérdida total + RC + Asistencias','',d.op2,p2,true)+
-      regaloHtml(d)+
-      '<div class="pie2">Protect Motos · Negociemos Group S.A.S.</div>'+
-      '</div>';
+    var dif = (Number(d.op2.contado)||0) - (Number(d.op1.contado)||0);
+    var plus = dif>0 ? '<div class="plus"><span class="big">+ '+cop(dif)+'</span><div>Por solo <b>'+cop(porDia(dif))+' más al día</b> pasas de la Opción 1 a la 2 y sumas <b>responsabilidad civil</b>, asistencia en la vía y un <b>plan de salud sin costo</b>.</div></div>' : '';
+    var asesor = d.asesor ? 'Tu asesor: <b>'+esc(d.asesor)+'</b> · Protect Motos' : 'Protect Motos · Negociemos Group S.A.S.';
+    var tel = d.telefono || TEL, tdig = String(tel).replace(/\D/g,''); if(tdig.length===10) tdig = '57'+tdig;
+    var hayDetalle = p2.secs.length>0;
+    var pg1 = '<div class="doc">'+
+      '<div class="sup"><div>'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'<b style="font-size:20px;color:#021346">PROTECT MOTOS</b>')+'</div>'+
+        '<div class="fecha"><b>Cotización'+(d.id?' N.º '+esc(d.id):'')+'</b><br>'+esc(fecha)+'<br><span class="val">⏳ Válida hasta el '+vigenciaTxt()+'</span></div></div>'+
+      '<div class="hero"><small>Hola, '+esc(primer)+' 👋'+(d.placa?' · '+esc(d.placa):'')+'</small><h1>'+titulo+'</h1><p>'+intro+'</p>'+cifra+'</div>'+
+      '<div class="cards">'+tarjeta(1,'Hurto o pérdida total',protect?'Respaldo del 80 % de tu moto':'Cobertura esencial',d.op1,lista1,d1,false)+
+        tarjeta(2,protect?'Protección total':'Hurto, pérdida total + más','Todo lo de la Opción 1 + RC + Asistencias',d.op2,lista2,d2,true)+'</div>'+
+      plus+regaloHtml(d)+
+      '<div class="pasos"><div><b>1</b>Elige tu opción</div><div><b>2</b>Envíanos tus datos y los de tu moto</div><div><b>3</b>Paga y quedas protegido</div></div>'+
+      '<div class="fine">'+(hayDetalle?'Detalle de coberturas, límites y deducibles en la página 2 · ':'')+'Protect Motos · Negociemos Group S.A.S.</div>'+
+      '<div class="cta"><div class="t"><b>¿Listo para proteger tu moto?</b><span>'+asesor+'</span></div><a class="w" href="https://wa.me/'+tdig+'">💬 Escríbeme por WhatsApp<small>'+esc(tel)+'</small></a></div></div>';
+    if(!hayDetalle) return pg1;
+    var rc = p2.secs.filter(function(x){ return !/^(ap|carro)/i.test(x.titulo); }), ot = p2.secs.filter(function(x){ return /^(ap|carro)/i.test(x.titulo); });
+    var pg2 = '<div class="doc d2"><div class="sup"><div>'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'')+'</div><div class="fecha"><b>'+esc(d.nombre)+'</b><br>'+esc(motoTxt)+(d.placa?' · '+esc(d.placa):'')+'</div></div>'+
+      '<div class="tit">Detalle de coberturas · Opción 2</div><div class="sub">Límites asegurados y deducibles de la responsabilidad civil y de las asistencias.</div>'+
+      '<div class="cob"><div class="dc">'+rc.map(seccion).join('')+'</div>'+(ot.length?'<div class="dc">'+ot.map(seccion).join('')+'</div>':'')+'</div>'+
+      '<div class="pie">Protect Motos · Negociemos Group S.A.S. · RC respaldada por Compañía Mundial de Seguros S.A.</div></div>';
+    return pg1 + pg2;
   }
   function regaloHtml(d){
     var L = d.salud || [];
@@ -162,8 +198,8 @@
     if(!v){ return false; }
     v.document.open(); v.document.write(pagina(d)); v.document.close();
     var lanzar = function(){ try{
-      /* una sola hoja carta: si el documento es más alto o ancho que la hoja, se reduce para que quepa */
-      var doc = v.document.querySelector('.doc'); if(doc){ var h = doc.offsetHeight, z = Math.min(1, 1000/h, 765/794); if(z<1) doc.style.zoom = String(Math.round(z*1000)/1000); }
+      /* cada hoja (.doc) cabe en una hoja carta: se reduce un poco el ancho para respetar los márgenes */
+      [].forEach.call(v.document.querySelectorAll('.doc'), function(doc){ var h = doc.offsetHeight, z = Math.min(1, 1000/h, 765/794); if(z<1) doc.style.zoom = String(Math.round(z*1000)/1000); });
       v.focus(); v.print(); }catch(e){} };
     if(v.document.readyState === 'complete') setTimeout(lanzar, 400); else v.onload = function(){ setTimeout(lanzar, 400); };
     return true;
