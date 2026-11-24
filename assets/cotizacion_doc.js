@@ -60,24 +60,27 @@
     '.sup img{height:50px;width:auto;display:block}',
     '.sup .fecha{text-align:right;font-size:12px;color:#5b6b8c;line-height:1.5} .sup .fecha b{color:#13223f;font-weight:700}',
     '.sup .val{display:inline-block;background:#fff8e5;color:#6b5320;border:1px solid #f0e0b0;border-radius:0;padding:2px 11px;font-size:11px;font-weight:700;margin-top:3px}',
-    '.hero{margin-top:10px;background:'+C_NAVY+';border-radius:0;padding:16px 24px 18px;color:#fff;position:relative}',
+    '.hero{margin-top:10px;background:'+C_NAVY+';border-radius:0;padding:20px 26px 22px;color:#fff;position:relative}',
     '.hero small{color:#aebbd8;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase}',
-    '.hero h1{font-size:24px;line-height:1.2;margin:5px 0 0;font-weight:700} .hero h1 em{font-style:normal;color:'+C_GOLD+'}',
+    '.hero h1{font-size:27px;line-height:1.2;margin:5px 0 0;font-weight:700} .hero h1 em{font-style:normal;color:'+C_GOLD+'}',
     '.hero .cifra{position:absolute;right:22px;top:22px;background:'+C_GOLD+';color:'+C_NAVY+';border-radius:0;padding:10px 16px;text-align:center;width:200px}',
     '.hero .cifra span{font-size:10.5px;text-transform:uppercase;font-weight:700;letter-spacing:.05em} .hero .cifra b{display:block;font-size:26px;line-height:1.15;font-weight:700} .hero .cifra i{font-style:normal;font-size:11px}',
     '.op{display:flex;border:1px solid #dfe5f1;margin-top:12px;position:relative;background:#fff;page-break-inside:avoid}',
     '.op.rec{border:2px solid '+C_GOLD+'}',
     '.op .tag{position:absolute;top:-12px;left:16px;background:'+C_GOLD+';color:'+C_NAVY+';font-size:10.5px;font-weight:700;padding:3px 13px;letter-spacing:.04em}',
-    '.op .pp{width:236px;flex:none;background:#f6f7fb;padding:16px 16px;border-right:1px solid #e3e8f2}',
+    '.op .pp{width:236px;flex:none;background:#f6f7fb;padding:16px 16px;border-right:1px solid #e3e8f2;display:flex;flex-direction:column}',
     '.op h3{font-size:14.5px;margin:0 0 9px;font-weight:700;color:'+C_NAVY+'}',
-    '.op .pr small{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#5b6b8c;font-weight:700;display:block} .op .pr b{display:block;font-size:27px;line-height:1.1;color:'+C_NAVY+';font-weight:700}',
-    '.op .pr2{margin-top:8px;padding-top:8px;border-top:1px dashed #cfd8ec} .op .pr2 b{font-size:17px} .op .pr2 em{font-style:normal;font-size:11px;color:#5b6b8c;display:block}',
-    '.op .dia{margin-top:9px;background:#fff;border:1px solid #e3e8f2;padding:4px 8px;font-size:11px;color:#3a4a6b;font-weight:700;text-align:center}',
+    '.op .pr small{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#5b6b8c;font-weight:700;display:block} .op .pr b{display:block;font-size:34px;line-height:1.1;color:'+C_NAVY+';font-weight:700}',
+    '.op .pr2{margin-top:8px;padding-top:8px;border-top:1px dashed #cfd8ec} .op .pr2 b{font-size:21px} .op .pr2 em{font-style:normal;font-size:11px;color:#5b6b8c;display:block}',
+    '.op .dia{margin-top:12px;background:#fff;border:1px solid #e3e8f2;padding:6px 8px;font-size:12px;color:#3a4a6b;font-weight:700;text-align:center}',
     '.op .cv{flex:1;padding:9px 16px 6px}',
-    '.op .sh{margin:7px 0 2px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:'+C_NAVY+';border-bottom:2px solid '+C_GOLD+';padding-bottom:2px;display:flex;justify-content:space-between;gap:8px} .op .sh:first-child{margin-top:0} .op .sh i{font-style:normal;font-weight:400;text-transform:none;letter-spacing:0;color:#5b6b8c}',
-    '.op .r{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:2px 0;border-bottom:1px solid #eef1f7;font-size:11px;line-height:1.2} .op .r b{white-space:nowrap;font-weight:700;color:'+C_NAVY+'} .op .r small{color:#7a869f;font-size:9.5px;margin-left:5px}',
+    '.op .sh{margin:9px 0 3px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:'+C_NAVY+';border-bottom:2px solid '+C_GOLD+';padding-bottom:2px;display:flex;justify-content:space-between;gap:8px} .op .sh:first-child{margin-top:0} .op .sh i{font-style:normal;font-weight:400;text-transform:none;letter-spacing:0;color:#5b6b8c}',
+    '.op .r{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:4px 0;border-bottom:1px solid #eef1f7;font-size:12.5px;line-height:1.2} .op .r b{white-space:nowrap;font-weight:700;color:'+C_NAVY+'} .op .r small{color:#7a869f;font-size:9.5px;margin-left:5px}',
     '.op .r .ck{display:inline-flex;width:14px;height:14px;background:'+C_NAVY+';color:#fff;font-size:9px;align-items:center;justify-content:center;font-weight:700;margin-right:8px;flex:none;vertical-align:middle} .op .r span.n{display:flex;align-items:center}',
     '.op .gf{margin:9px 0 0;background:#fff8e5;border-left:5px solid '+C_GOLD+';padding:5px 10px;font-size:11px;font-weight:700;color:'+C_NAVY+'}',
+    '.op.h{display:block} .op.h .top{display:flex;align-items:flex-end;gap:18px;background:#f6f7fb;padding:12px 16px;border-bottom:1px solid #e3e8f2} .op.h .top h3{margin:0;width:190px;flex:none;align-self:center} .op.h .top .pr{flex:1} .op.h .top .pr b{font-size:22px} .op.h .top .pr2{margin:0;padding:0;border:0} .op.h .top .pr2 b{font-size:17px;padding-top:4px} .op.h .top .dia{margin:0;align-self:center;flex:none}',
+    '.op.h .cv{display:grid;grid-template-columns:repeat(3,1fr);gap:0 18px;padding:8px 16px 8px} .op.h .cv .r{border-bottom:0;padding:3px 0;font-size:12.5px}',
+    '.op .gl{margin-top:22px;background:#fff8e5;border-left:5px solid '+C_GOLD+';padding:12px 12px} .op .gl b{display:block;font-size:12.5px;color:'+C_NAVY+';font-weight:700;margin-bottom:5px;line-height:1.3} .op .gl div{font-size:12px;line-height:1.3;padding:4px 0 4px 15px;position:relative;color:#3a3220} .op .gl div:before{content:"✓";position:absolute;left:0;font-weight:700;color:'+C_NAVY+'}',
     '.cta{margin:14px -30px 0;background:'+C_NAVY+';color:#fff;padding:12px 30px;display:flex;align-items:center;gap:18px;border-top:5px solid '+C_GOLD+'}',
     '.cta .t{flex:1} .cta .t>b{font-size:16.5px;display:block;font-weight:700} .cta .t span{font-size:11.5px;color:#c9d6f6}',
     '.cta .w{background:#fff;color:'+C_NAVY+';border-radius:0;padding:9px 17px;font-weight:700;font-size:13.5px;text-align:center;text-decoration:none} .cta .w small{display:block;font-size:10.5px;font-weight:400}'
@@ -131,11 +134,11 @@
     var ck = function(t, fuerte){ return '<div class="r"><span class="n"><span class="ck">✓</span>'+(fuerte?'<b style="font-weight:700">'+esc(t)+'</b>':esc(t))+'</span></div>'; };
     var fila = function(c){ if(/^valor total/i.test(c[0])) return ''; var dd = c.length>=3 ? ded(c) : '';
       return '<div class="r"><span>'+esc(c[0])+(dd?'<small>Deducible '+esc(dd)+'</small>':'')+'</span>'+(c.length>=2?'<b>'+esc(c[1])+'</b>':'')+'</div>'; };
-    var precios = function(n, tit, o, dia, rec){
+    var precios = function(n, tit, o, dia, rec, extra){
       return '<div class="pp">'+(rec?'<div class="tag">⭐ RECOMENDADA · LA MÁS ELEGIDA</div>':'')+'<h3>Opción '+n+' · '+esc(tit)+'</h3>'+
         '<div class="pr"><small>De contado</small><b>'+cop(o.contado)+'</b></div>'+
         '<div class="pr pr2"><small>Financiado a '+d.plazo+' meses</small>'+celdaFin(o, d.plazo)+'</div>'+
-        (dia>0?'<div class="dia">Menos de '+cop(dia)+' al día</div>':'')+'</div>';
+        (dia>0?'<div class="dia">Menos de '+cop(dia)+' al día</div>':'')+(extra||'')+'</div>';
     };
     /* Opción 1: lo que cubre, en una columna */
     var cv1 = '<div class="sh">Qué cubre</div>'+p1.chips.map(function(t){ return ck(t); }).join('');
@@ -147,15 +150,15 @@
         cv2 += '<div class="sh"><span>'+esc(tit)+'</span>'+(nota?'<i>'+esc(nota)+'</i>':'')+'</div>'+sc.filas.map(fila).join('');
       });
     } else cv2 += p2.chips.filter(function(t){ return !/^todo lo de/i.test(t) && p1.chips.indexOf(t)<0; }).map(function(t){ return ck(t); }).join('');
-    if(L.length) cv2 += '<div class="gf">🎁 DE REGALO · Plan de salud para el titular y 2 beneficiarios</div>'+'<div class="r" style="display:block;border-bottom:0;padding:3px 0 0"><span class="n" style="display:block">'+L.map(esc).join(' · ')+'</span></div>';
+    var regaloIzq = L.length ? '<div class="gl"><b>🎁 DE REGALO con la Opción 2<br>Plan de salud para el titular y 2 beneficiarios</b>'+L.map(function(t){ return '<div>'+esc(t)+'</div>'; }).join('')+'</div>' : '';
     var asesor = d.asesor ? 'Tu asesor: <b>'+esc(d.asesor)+'</b> · Protect Motos' : 'Protect Motos · Negociemos Group S.A.S.';
     var tel = d.telefono || TEL, tdig = String(tel).replace(/\D/g,''); if(tdig.length===10) tdig = '57'+tdig;
     return '<div class="doc">'+
       '<div class="sup"><div>'+(logo?'<img alt="Protect Motos" src="'+logo+'">':'<b style="font-size:20px;color:#021346">PROTECT MOTOS</b>')+'</div>'+
         '<div class="fecha"><b>Cotización'+(d.id?' N.º '+esc(d.id):'')+'</b><br>'+esc(fecha)+'<br><span class="val">⏳ Válida hasta el '+vigenciaTxt()+'</span></div></div>'+
       '<div class="hero"><small>Hola, '+esc(primer)+' 👋'+(d.placa?' · '+esc(d.placa):'')+'</small><h1>'+titulo+'</h1>'+cifra+'</div>'+
-      '<div class="op">'+precios(1,'Hurto o pérdida total',d.op1,d1,false)+'<div class="cv">'+cv1+'</div></div>'+
-      '<div class="op rec">'+precios(2,protect?'Protección total':'Todo incluido',d.op2,d2,true)+'<div class="cv">'+cv2+'</div></div>'+
+      '<div class="op h"><div class="top"><h3>Opción 1 · Hurto o pérdida total</h3>'+(function(){ var o=d.op1; return '<div class="pr"><small>De contado</small><b>'+cop(o.contado)+'</b></div><div class="pr pr2"><small>Financiado a '+d.plazo+' meses</small>'+celdaFin(o, d.plazo)+'</div>'+(d1>0?'<div class="dia">Menos de '+cop(d1)+' al día</div>':''); })()+'</div><div class="cv">'+p1.chips.map(function(t){ return ck(t); }).join('')+'</div></div>'+
+      '<div class="op rec">'+precios(2,protect?'Protección total':'Todo incluido',d.op2,d2,true,regaloIzq)+'<div class="cv">'+cv2+'</div></div>'+
       '<div class="cta"><div class="t"><b>¿Listo para proteger tu moto?</b><span>'+asesor+'</span></div><a class="w" href="https://wa.me/'+tdig+'">💬 Escríbeme por WhatsApp<small>'+esc(tel)+'</small></a></div></div>';
   }
   function pagina(d){
