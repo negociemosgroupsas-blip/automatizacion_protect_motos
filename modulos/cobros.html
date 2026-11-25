@@ -1404,9 +1404,9 @@
   function textoSeguimiento(n, c){
     var fin = c.finISO ? parsearISO(c.finISO) : null, vencida = fin && diferenciaDias(fin, hoy()) < 0;
     var cuando = fin ? (vencida ? 'venció el ' : 'vence el ') + formatoFechaCO(fin) : 'está por vencer';
-    if(n===1) return 'Hola, '+c.cliente+'\nTe escribimos de Protect Motos. Hace unos días te contamos que la garantía suplementaria de tu moto de placa '+c.placa+' '+cuando+'.\n\n¿Pudiste revisar la información? Con gusto resolvemos tus dudas y te ayudamos a renovarla en un momento';
-    if(n===2) return 'Hola, '+c.cliente+', ¿cómo estás?\nTe recordamos que la garantía de tu moto de placa '+c.placa+' '+cuando+'. Renovarla te permite seguir con tu respaldo y evitar costos inesperados si tu moto necesita una reparación.\n\n¿Te parece si la renovamos hoy? Solo respóndenos y nosotros hacemos el resto';
-    return 'Hola, '+c.cliente+'\nEste es nuestro último mensaje sobre la garantía de tu moto de placa '+c.placa+' ('+cuando+'). No queremos que te quedes sin respaldo.\n\nSi quieres renovar, escríbenos ahora; si ya no te interesa, cuéntanos para dejar tu solicitud cerrada. ¡Gracias por confiar en Protect Motos!';
+    if(n===1) return 'Hola, '+c.cliente+'\nTe escribimos de Protect Motos. Hace unos días te contamos que la garantía extendida de tu moto'+(c.placa?' de placa '+c.placa:'')+' '+cuando+'.\n\n¿Pudiste revisar la información? Con gusto resolvemos tus dudas y te ayudamos a renovarla en un momento';
+    if(n===2) return 'Hola, '+c.cliente+', ¿cómo estás?\nTe recordamos que la garantía extendida de tu moto'+(c.placa?' de placa '+c.placa:'')+' '+cuando+'. Renovarla te permite seguir con tu respaldo y evitar costos inesperados si tu moto necesita una reparación.\n\n¿Te parece si la renovamos hoy? Solo respóndenos y nosotros hacemos el resto';
+    return 'Hola, '+c.cliente+'\nEste es nuestro último mensaje sobre la garantía extendida de tu moto'+(c.placa?' de placa '+c.placa:'')+' ('+cuando+'). No queremos que te quedes sin respaldo.\n\nSi quieres renovar, escríbenos ahora; si ya no te interesa, cuéntanos para dejar tu solicitud cerrada. ¡Gracias por confiar en Protect Motos!';
   }
   function datosSegCli(){
     var por = {};
@@ -1992,7 +1992,7 @@
   function abrirWhatsAppRenovacion(c, fechaFin){
     var mensaje =
       'Hola, '+c.cliente+'\n'+
-      'Te escribimos de Protect Motos porque tu garantía suplementaria para tu moto de placa '+c.placa+' está por vencer el '+formatoFechaCO(fechaFin)+'.\n\n'+
+      'Te escribimos de Protect Motos porque tu garantía extendida para tu moto'+(c.placa?' de placa '+c.placa:'')+' está por vencer el '+formatoFechaCO(fechaFin)+'.\n\n'+
       'Queremos ayudarte a renovarla a tiempo para que sigas protegido sin interrupciones.\n\n'+
       '¿Quieres que te contemos las opciones de renovación?';
     var url = 'https://wa.me/'+numeroWhatsApp(c.celular)+'?text='+encodeURIComponent(mensaje);
