@@ -104,3 +104,7 @@ En el módulo **SOAT**, tabla «Todos los SOAT», columna **Consignación**: bot
 
 ## Recuperar un contrato ya borrado
 En «Contratos», botón **🔎 Recuperar contrato**: se escribe la cédula, el nombre, la placa o el N.º de contrato; el conector lee la hoja Protect (y las de Responsabilidad Civil y Accidentes Personales por cédula) y vuelve a llenar el contrato para imprimirlo (acciones `contrato_buscar` y `contrato_traer`). El beneficiario no se guarda en ninguna hoja y hay que escribirlo a mano.
+
+## Facturación Mundial: gráfica en Inicio y registro de cobros
+- **Inicio → Seguros Mundial**: «Valor consignado a Mundial frente al retorno», mes a mes, con filtros de año, producto y facturas (todas o solo pagadas). Valor consignado = suma de la columna «Valor cobrado» (I); retorno = suma de la columna de retorno (se muestra cuál se está leyendo y se puede cambiar en el módulo, «Columna que cuenta como retorno»).
+- **Facturación Mundial → ➕ Registrar cobro nuevo**: escribe la fila en «Estado de Facturas» sin abrir Google Sheets; el módulo y el Inicio se actualizan solos cada minuto.

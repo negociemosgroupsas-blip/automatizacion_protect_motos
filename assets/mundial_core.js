@@ -11,12 +11,15 @@
     for(var i=0;i<Math.min(A.length,30)&&hi<0;i++){var H=(A[i]||[]).map(norm);if(H.some(function(h){return /^valor cobrado/.test(h)})&&H.some(function(h){return /factura/.test(h)})){hi=i;
       H.forEach(function(h,j){
         if(/factura/.test(h)&&/retorno/.test(h))c.fret=j; else if(c.fac==null&&/factura/.test(h))c.fac=j; else if(/periodo.*desde/.test(h))c.des=j; else if(/periodo.*hasta/.test(h))c.has=j; else if(/^#?\s*poliza/.test(h))c.pol=j; else if(/^producto/.test(h))c.prod=j;
-        else if(/^valor cobrado/.test(h))c.val=j; else if(/prima base/.test(h))c.prima=j; else if(/retorno/.test(h)&&!/factura/.test(h))c.ret=j; else if(/^%/.test(h))c.pct=j; else if(/^estado/.test(h))c.est=j; else if(/fecha limite/.test(h))c.lim=j; else if(/observ/.test(h))c.obs=j; else if(/^#?\s*cobro/.test(h))c.cob=j; else if(/radicado/.test(h)&&/home/.test(h))c.rh=j; else if(/radicado/.test(h)&&/correo|rc/.test(h))c.rc=j;
-      })}}
+        else if(/^valor cobrado/.test(h))c.val=j; else if(/prima base/.test(h))c.prima=j; else if(/retorno/.test(h)&&!/factura/.test(h)&&!/^%/.test(h))c.ret=j; else if(/^%/.test(h))c.pct=j; else if(/^estado/.test(h))c.est=j; else if(/fecha limite/.test(h))c.lim=j; else if(/observ/.test(h))c.obs=j; else if(/^#?\s*cobro/.test(h))c.cob=j; else if(/radicado/.test(h)&&/home/.test(h))c.rh=j; else if(/radicado/.test(h)&&/correo|rc/.test(h))c.rc=j;
+      });var ov=norm(LS('pm_mundial_colret'));if(ov){var jj=H.indexOf(ov);if(jj>=0)c.ret=jj}}}
     if(hi<0)throw new Error('No encontré la fila de títulos. Busco una columna «#Factura de pago» y otra «Valor cobrado».');
+    var HR=(A[hi]||[]),LET=function(j){var t='';j++;while(j>0){var m=(j-1)%26;t=String.fromCharCode(65+m)+t;j=Math.floor((j-1)/26)}return t};
     var out=[];
     for(var k=hi+1;k<A.length;k++){var w=A[k]||[];var val=num(w[c.val]);var fac=String(w[c.fac]==null?'':w[c.fac]).trim();if(!fac&&!val)continue;
       out.push({fila:k+1,facRaw:fac,rh:String(w[c.rh]==null?'':w[c.rh]).trim(),fret:String(w[c.fret]==null?'':w[c.fret]).trim(),rc:String(w[c.rc]==null?'':w[c.rc]).trim(),cob:String(w[c.cob]==null?'':w[c.cob]).trim(),pct:w[c.pct]==null?'':w[c.pct],fac:fac||'(sin factura)',des:fecha(w[c.des]),has:fecha(w[c.has]),pol:String(w[c.pol]==null?'':w[c.pol]).trim(),prod:String(w[c.prod]||'').trim().toUpperCase()||'SIN DATO',val:val,prima:num(w[c.prima]),ret:num(w[c.ret]),est:String(w[c.est]==null?'':w[c.est]).trim(),lim:fecha(w[c.lim]),obs:String(w[c.obs]||'').trim()})}
+    /* qué columnas se están leyendo como «valor cobrado» y como «retorno» (para mostrarlo y poder cambiarlo) */
+    out.cols={val:c.val==null?null:{l:LET(c.val),t:String(HR[c.val]||'').trim()},ret:c.ret==null?null:{l:LET(c.ret),t:String(HR[c.ret]||'').trim()},heads:HR.map(function(t,j){return {l:LET(j),t:String(t==null?'':t).trim(),j:j}}).filter(function(x){return x.t})};
     return out;
   }
   function mapaEst(){try{return JSON.parse(LS('pm_mundial_estados')||'{}')}catch(e){return {}}}

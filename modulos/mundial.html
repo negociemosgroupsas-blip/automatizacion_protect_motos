@@ -39,7 +39,7 @@
 <header><h1>Facturación Mundial</h1><p>Lo que se le ha pagado a Seguros Mundial, lo que se le debe, las facturas pendientes y el retorno que recibe Negociemos por comisión. Solo lee la hoja «Estado de Facturas»; no la modifica.</p></header>
 <main>
   <section class="panel" id="pCon" style="padding:12px 18px">
-    <div class="fil" style="margin:0;align-items:center"><button class="btn" id="mLeer" type="button">Actualizar</button><span class="estado" id="mEst" style="margin:0"></span></div>
+    <div class="fil" style="margin:0;align-items:center"><button class="btn o" id="mNuevo" type="button">➕ Registrar cobro nuevo</button><button class="btn" id="mLeer" type="button">Actualizar</button><span class="estado" id="mEst" style="margin:0"></span></div>
     <details style="margin-top:8px"><summary style="cursor:pointer;font-size:.84rem;color:var(--suave)">Usar otra hoja o pestaña (opcional)</summary>
       <div class="fil" style="margin-top:8px"><label style="flex:1;min-width:320px">Enlace de otra hoja<input type="text" id="mLink" placeholder="Déjelo vacío: se usa la hoja «Estado de Facturas» que ya está en el código"></label><label>Pestaña<input type="text" id="mTab" placeholder="la primera" style="width:150px"></label></div>
     </details>
@@ -88,7 +88,7 @@
   <div id="res" style="display:none">
     <section class="panel">
       <h2>Resumen</h2>
-      <div class="fil"><label>Año del período de cobro<select id="fAnio"></select></label><label>Mes<select id="fMes"></select></label><label>Producto<select id="fProd"></select></label></div>
+      <div class="fil"><label>Año del período de cobro<select id="fAnio"></select></label><label>Mes<select id="fMes"></select></label><label>Producto<select id="fProd"></select></label><label>Columna que cuenta como retorno<select id="fColRet"></select></label></div>
       <div class="tiles" id="tiles"></div>
       <p class="nota" id="notaRes"></p>
     </section>
@@ -133,7 +133,7 @@
   function fecha(v){var t=String(v==null?'':v).trim(),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(t);if(m)return {y:+m[1],m:+m[2],d:+m[3],iso:m[1]+'-'+m[2]+'-'+m[3]};m=/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/.exec(t);return m?{y:+m[3],m:+m[2],d:+m[1],iso:m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2)}:null}
   function fbonita(f){return f?('0'+f.d).slice(-2)+'/'+('0'+f.m).slice(-2)+'/'+f.y:'—'}
   function idDe(l){var m=/\/d\/([A-Za-z0-9_-]{20,})/.exec(l)||/^\s*([A-Za-z0-9_-]{25,})\s*$/.exec(l);return m?m[1]:''}
-  var cnt=0,FILAS=null,CFG={};
+  var cnt=0,FILAS=null,RAW=[],CFG={};
   function llamar(id,hoja){
     return new Promise(function(ok,mal){
       var url=LS('pm_crm_url'),tok=LS('pm_crm_token')||'PM-CRM-2026';
@@ -171,6 +171,9 @@
     $('fAnio').innerHTML='<option value="">Todos los años</option>'+yl.map(function(y){return '<option>'+y+'</option>'}).join('');if(!ys[FL.a])FL.a='';$('fAnio').value=FL.a;
     $('fMes').innerHTML='<option value="">Todos los meses</option>'+MESN.map(function(n,i){return '<option value="'+(i+1)+'">'+n.charAt(0).toUpperCase()+n.slice(1)+'</option>'}).join('');$('fMes').value=FL.m;
     $('fProd').innerHTML='<option value="">Todos</option>'+pl.map(function(x){return '<option>'+esc(x)+'</option>'}).join('');if(!ps[FL.p])FL.p='';$('fProd').value=FL.p;
+    (function(){var C=FILAS.cols||{},hs=(C.heads||[]),cur=LS('pm_mundial_colret');
+      $('fColRet').innerHTML='<option value="">Automática'+(C.ret?' ('+C.ret.l+' · '+esc(C.ret.t)+')':'')+'</option>'+hs.map(function(h){return '<option value="'+esc(norm(h.t))+'">'+h.l+' · '+esc(h.t)+'</option>'}).join('');
+      $('fColRet').value=cur;if($('fColRet').value!==cur)$('fColRet').value=''})();
     var F=filtrar(),hoy=new Date(),hISO=hoy.getFullYear()+'-'+('0'+(hoy.getMonth()+1)).slice(-2)+'-'+('0'+hoy.getDate()).slice(-2);
     F.forEach(function(r){r.cl=claseEst(r.est)});
     var T={val:0,pag:0,pen:0,ven:0,ret:0,retP:0,retN:0,prima:0,nVen:0,nPen:0};
@@ -183,7 +186,7 @@
       '<div class="t ro"><span>De eso, con plazo vencido</span><b>'+cop(T.ven)+'</b><small>'+T.nVen+' fila(s) pasada(s) de la fecha límite</small></div>'+
       '<div class="t az"><span>Retorno NG (comisión)</span><b>'+cop(T.ret)+'</b><small>'+(T.prima?(Math.round(T.ret/T.prima*1000)/10).toString().replace('.',','):'0')+' % de la prima base</small></div>'+
       '<div class="t az"><span>Retorno de lo ya pagado</span><b>'+cop(T.retP)+'</b><small>por recibir de facturas pendientes: '+cop(T.retN)+'</small></div>';
-    $('notaRes').textContent='Los totales usan el filtro de arriba (período de cobro «desde»). Las filas marcadas «No contar» no suman. Lo pendiente incluye todo estado que no esté marcado como pagado.';
+    var CC=FILAS.cols||{};$('notaRes').textContent='Lo consignado a Mundial es la suma de «'+((CC.val&&CC.val.t)||'Valor cobrado')+'» (columna '+((CC.val&&CC.val.l)||'I')+') y el retorno es la suma de «'+((CC.ret&&CC.ret.t)||'retorno')+'» (columna '+((CC.ret&&CC.ret.l)||'?')+'). Si el retorno está en otra columna, cámbiela arriba. Los totales usan el filtro de arriba (período de cobro «desde»). Las filas marcadas «No contar» no suman. Lo pendiente incluye todo estado que no esté marcado como pagado.';
     // pendientes por factura
     var g={};F.forEach(function(r){if(r.cl!=='pendiente')return;var o=g[r.fac]=g[r.fac]||{fac:r.fac,des:r.des,has:r.has,n:0,val:0,ret:0,lim:r.lim,est:{}};o.n++;o.val+=r.val;o.ret+=r.ret;if(r.lim&&(!o.lim||r.lim.iso<o.lim.iso))o.lim=r.lim;if(r.est)o.est[r.est]=1});
     var L=Object.keys(g).map(function(k){return g[k]}).sort(function(a,b){return(a.lim?a.lim.iso:'9')<(b.lim?b.lim.iso:'9')?-1:1});
@@ -288,10 +291,12 @@
     if(l&&!id){est('Ese enlace no parece de una hoja de Google. Pegue el enlace completo (https://docs.google.com/spreadsheets/…).','er');return Promise.resolve()}
     LSs('pm_mundial_sheet',id);LSs('pm_mundial_tab',$('mTab').value.trim());
     if(!silencioso)est('Leyendo la hoja…');$('mLeer').disabled=true;
-    return llamar(id,$('mTab').value.trim()).then(function(r){FILAS=interpretar(r.filas||[]);est('Conectado · «'+r.nombre+'» · pestaña «'+r.hoja+'» · '+FILAS.length+' filas de facturas leídas · se actualiza solo cada minuto','ok');pintar()})
+    return llamar(id,$('mTab').value.trim()).then(function(r){RAW=r.filas||[];FILAS=interpretar(RAW);est('Conectado · «'+r.nombre+'» · pestaña «'+r.hoja+'» · '+FILAS.length+' filas de facturas leídas · se actualiza solo cada minuto','ok');pintar()})
       .catch(function(e){est(e.message,'er')}).then(function(){$('mLeer').disabled=false});
   }
   $('mLeer').addEventListener('click',function(){leer(false)});
+  $('mNuevo').addEventListener('click',function(){limpiarForm();$('pForm').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(function(){try{$('f_fac').focus()}catch(e){}},400)});
+  $('fColRet').addEventListener('change',function(){LSs('pm_mundial_colret',this.value);if(RAW.length){FILAS=interpretar(RAW);pintar()}});
   (function(){var id=LS('pm_mundial_sheet');if(id)$('mLink').value='https://docs.google.com/spreadsheets/d/'+id+'/edit';$('mTab').value=LS('pm_mundial_tab');
     if(LS('pm_crm_url'))leer(false);else est('Falta conectar el conector único: en el menú, Conexiones → Conector único.','er')})();
   setInterval(function(){if(!document.hidden&&FILAS)leer(true)},60000);

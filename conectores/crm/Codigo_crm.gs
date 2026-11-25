@@ -655,7 +655,7 @@ function mundialColumnas_(hoja) {
     else if (/^producto/.test(h)) c.producto = j;
     else if (/^valor cobrado/.test(h)) c.valor = j;
     else if (/prima base/.test(h)) c.prima = j;
-    else if (/retorno/.test(h)) c.retorno = j;
+    else if (/retorno/.test(h) && !/^%/.test(h)) c.retorno = j;
     else if (/^%/.test(h)) c.pct = j;
     else if (/^estado/.test(h)) c.estado = j;
     else if (/fecha limite/.test(h)) c.limite = j;
