@@ -1301,11 +1301,12 @@ function mundialColumnas_(hoja) {
   var c = {};
   enc.forEach(function (t, j) {
     var h = n(t); if (!h) return;
-    if (/factura/.test(h) && /retorno/.test(h)) c.facRet = j;
+    if (/carpeta/.test(h)) c.carpeta = j;
+    else if (/factura/.test(h) && /retorno/.test(h)) c.facRet = j;
     else if (/factura/.test(h) && c.fac == null) c.fac = j;
     else if (/periodo.*desde/.test(h)) c.desde = j;
     else if (/periodo.*hasta/.test(h)) c.hasta = j;
-    else if (/radicad/.test(h) && /home/.test(h)) c.radHome = j;
+    else if ((/radicad/.test(h) && /home/.test(h)) || /certificad/.test(h)) c.radHome = j;   // «Radicado Home» (antes) o «No. CERTIFICADO» (ahora)
     else if (/radicad/.test(h) && /(correo|rc)/.test(h)) c.radCorreo = j;
     else if (/^#?\s*cobro/.test(h)) c.cobro = j;
     else if (/^#?\s*poliza/.test(h)) c.poliza = j;
@@ -1347,7 +1348,7 @@ function accionMundialGuardar(p) {
     else if (REGLA[pol]) { if (pct0 === '') pct0 = REGLA[pol]; if (ret0 === '' && prima0 !== '') ret0 = Math.round(prima0 * pct0 / 100); }
     else if (pct0 === '' && prima0 && ret0 !== '') pct0 = Math.round(ret0 / prima0 * 10000) / 100;
     var valores = { fac: fac, desde: fecha(d.desde), hasta: fecha(d.hasta), radHome: String(d.radHome || '').trim(), radCorreo: String(d.radCorreo || '').trim(), cobro: nro(d.cobro),
-      poliza: Number(pol), producto: MUNDIAL_POLIZAS[pol], valor: nro(d.valor), prima: prima0, facRet: String(d.facRet || '').trim(), retorno: ret0, pct: pct0,
+      poliza: Number(pol), producto: MUNDIAL_POLIZAS[pol], valor: nro(d.valor), prima: prima0, facRet: String(d.facRet || '').trim(), carpeta: String(d.carpeta || '').trim(), retorno: ret0, pct: pct0,
       estado: String(d.estado || '').trim(), limite: fecha(d.limite), obs: String(d.obs || '').trim() };
     var ult = hoja.getLastRow(), colFac = ult > 1 ? hoja.getRange(1, C.fac + 1, ult, 1).getValues() : [[]], colPol = ult > 1 ? hoja.getRange(1, C.poliza + 1, ult, 1).getValues() : [[]];
     var colCob = (C.cobro != null && ult > 1) ? hoja.getRange(1, C.cobro + 1, ult, 1).getValues() : null;
@@ -1373,6 +1374,8 @@ function accionMundialGuardar(p) {
     hoja.getRange(objetivo, 1, 1, mp.ancho).setValues([fila]);
     ['desde', 'hasta', 'limite'].forEach(function (k) { if (C[k] != null) hoja.getRange(objetivo, C[k] + 1).setNumberFormat('d/m/yyyy'); });
     ['valor', 'prima', 'retorno'].forEach(function (k) { if (C[k] != null) hoja.getRange(objetivo, C[k] + 1).setNumberFormat('$ #,##0'); });
+    // si la columna del % está con formato de porcentaje (3,75 % se guarda como 0,0375), se escribe como fracción
+    if (C.pct != null && valores.pct !== '') { var cp = hoja.getRange(objetivo, C.pct + 1); if (/%/.test(String(cp.getNumberFormat() || ''))) cp.setValue(Number(valores.pct) / 100); }
     SpreadsheetApp.flush();
     return { ok: true, fila: objetivo, nueva: nueva };
   } finally { lock.releaseLock(); }

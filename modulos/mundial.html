@@ -59,16 +59,16 @@
       <label>A · # Factura de pago *<input type="text" id="f_fac" list="dlFac" autocomplete="off" placeholder="Ej.: F6"><datalist id="dlFac"></datalist></label>
       <label>B · Período de cobro desde<input type="date" id="f_des"></label>
       <label>C · Período de cobro hasta<input type="date" id="f_has"></label>
-      <label>D · Radicado Home<input type="text" id="f_rh" autocomplete="off"></label>
+      <label>D · No. certificado<input type="text" id="f_rh" autocomplete="off" inputmode="numeric"></label>
       <label>E · Radicado correo RC-43318<input type="text" id="f_rc" autocomplete="off"></label>
       <label>F · # cobro<input type="text" id="f_cob" inputmode="numeric" autocomplete="off" placeholder="1"></label>
       <label>G · # póliza *<select id="f_pol"><option value="">— Elija la póliza —</option><option value="2000725842">2000725842 · AP</option><option value="2000722986">2000722986 · RC</option><option value="2000743946">2000743946 · VG</option></select></label>
       <label>H · Producto (automático)<input type="text" id="f_prod" readonly></label>
       <label>I · Valor cobrado<input type="text" id="f_val" inputmode="numeric" autocomplete="off" placeholder="$"></label>
       <label>J · Valor prima base<input type="text" id="f_pri" inputmode="numeric" autocomplete="off" placeholder="$"></label>
-      <label>K · # factura Retorno<input type="text" id="f_fr" autocomplete="off" placeholder="Ej.: FR-12"></label>
-      <label>L · Valor Retorno NG<input type="text" id="f_ret" inputmode="numeric" autocomplete="off" placeholder="$"></label>
-      <label>M · % de retorno<input type="text" id="f_pct" inputmode="decimal" autocomplete="off" placeholder="3,75"></label>
+      <label>K · Valor Retorno NG<input type="text" id="f_ret" inputmode="numeric" autocomplete="off" placeholder="$"></label>
+      <label>L · % de retorno<input type="text" id="f_pct" inputmode="decimal" autocomplete="off" placeholder="3,75"></label>
+      <label>M · Nombre de carpeta de la factura<input type="text" id="f_car" autocomplete="off" placeholder="Ej.: Meses faltantes"></label>
       <label>N · Estado actual<input type="text" id="f_est" list="dlEst" autocomplete="off" placeholder="Pendiente, Pagado…"><datalist id="dlEst"></datalist></label>
       <label>O · Fecha límite de pago<input type="date" id="f_lim"></label>
       <label class="ancho">P · Observaciones<input type="text" id="f_obs" autocomplete="off"></label>
@@ -81,7 +81,7 @@
   <section class="panel" id="pLista">
     <h2>Cobros registrados en la hoja</h2>
     <div class="fil"><label>Buscar<input type="text" id="lBus" placeholder="factura, póliza, estado u observación"></label><label>Póliza<select id="lPol"><option value="">Todas</option><option value="2000725842">AP · 2000725842</option><option value="2000722986">RC · 2000722986</option><option value="2000743946">VG · 2000743946</option></select></label></div>
-    <div class="scroll" style="max-height:480px;overflow:auto"><table><thead><tr><th></th><th>Fila</th><th>Factura</th><th>Período</th><th class="n"># cobro</th><th>Póliza</th><th>Prod.</th><th class="n">Valor cobrado</th><th class="n">Prima base</th><th># fact. retorno</th><th class="n">Retorno NG</th><th class="n">%</th><th>Estado</th><th>Límite</th><th>Obs.</th></tr></thead><tbody id="lCuerpo"></tbody></table></div>
+    <div class="scroll" style="max-height:480px;overflow:auto"><table><thead><tr><th></th><th>Fila</th><th>Factura</th><th>Período</th><th class="n"># cobro</th><th>Póliza</th><th>Prod.</th><th class="n">Valor cobrado</th><th class="n">Prima base</th><th>Carpeta</th><th class="n">Retorno NG</th><th class="n">%</th><th>Estado</th><th>Límite</th><th>Obs.</th></tr></thead><tbody id="lCuerpo"></tbody></table></div>
     <p class="nota" id="lNota"></p>
   </section>
 
@@ -238,9 +238,9 @@
   $('f_pct').addEventListener('input',function(){pctManual=true;if(!retManual)recalcular()});
   $('f_pol').addEventListener('change',function(){$('f_prod').value=POL[this.value]||'';pctManual=false;retManual=false;recalcular()});
   function fest(t,c){var e=$('fEst');e.textContent=t;e.className='estado '+(c||'');e.style.margin='0'}
-  function limpiarForm(){EDIT=null;pctManual=false;retManual=false;['f_fac','f_des','f_has','f_rh','f_rc','f_cob','f_pol','f_prod','f_val','f_pri','f_fr','f_ret','f_pct','f_est','f_lim','f_obs'].forEach(function(i){$(i).value=''});$('fModo').textContent='Cobro nuevo';$('bGuardar').textContent='Guardar cobro nuevo';fest('');recalcular()}
+  function limpiarForm(){EDIT=null;pctManual=false;retManual=false;['f_fac','f_des','f_has','f_rh','f_rc','f_cob','f_pol','f_prod','f_val','f_pri','f_car','f_ret','f_pct','f_est','f_lim','f_obs'].forEach(function(i){$(i).value=''});$('fModo').textContent='Cobro nuevo';$('bGuardar').textContent='Guardar cobro nuevo';fest('');recalcular()}
   $('bLimpiar').addEventListener('click',limpiarForm);
-  function datos(){return {factura:$('f_fac').value.trim(),desde:$('f_des').value,hasta:$('f_has').value,radHome:$('f_rh').value,radCorreo:$('f_rc').value,facRet:$('f_fr').value,cobro:$('f_cob').value,poliza:$('f_pol').value,valor:num($('f_val').value)||'',prima:num($('f_pri').value)||'',retorno:SIN_RETORNO[$('f_pol').value]?'':(num($('f_ret').value)||''),pct:SIN_RETORNO[$('f_pol').value]?'':($('f_pct').value.trim()===''?'':num($('f_pct').value)),estado:$('f_est').value,limite:$('f_lim').value,obs:$('f_obs').value}}
+  function datos(){return {factura:$('f_fac').value.trim(),desde:$('f_des').value,hasta:$('f_has').value,radHome:$('f_rh').value,radCorreo:$('f_rc').value,carpeta:$('f_car').value,cobro:$('f_cob').value,poliza:$('f_pol').value,valor:num($('f_val').value)||'',prima:num($('f_pri').value)||'',retorno:SIN_RETORNO[$('f_pol').value]?'':(num($('f_ret').value)||''),pct:SIN_RETORNO[$('f_pol').value]?'':($('f_pct').value.trim()===''?'':num($('f_pct').value)),estado:$('f_est').value,limite:$('f_lim').value,obs:$('f_obs').value}}
   function guardarLlamar(params){
     return new Promise(function(ok,mal){
       var url=LS('pm_crm_url'),tok=LS('pm_crm_token')||'PM-CRM-2026';if(!url){mal(new Error('Falta la URL del conector (pestaña Conexiones → Conector único).'));return}
@@ -268,7 +268,7 @@
   function editar(r){
     EDIT={fila:r.fila,esperada:r.facRaw+'|'+r.pol.replace(/\D/g,'')};pctManual=true;retManual=true;
     var set=function(i,v){$(i).value=v==null?'':v};
-    set('f_fac',r.facRaw);set('f_des',r.des?r.des.iso:'');set('f_has',r.has?r.has.iso:'');set('f_rh',r.rh);set('f_rc',r.rc);set('f_cob',r.cob);set('f_fr',r.fret);set('f_pol',r.pol.replace(/\D/g,''));$('f_prod').value=POL[r.pol.replace(/\D/g,'')]||r.prod;
+    set('f_fac',r.facRaw);set('f_des',r.des?r.des.iso:'');set('f_has',r.has?r.has.iso:'');set('f_rh',r.rh);set('f_rc',r.rc);set('f_cob',r.cob);set('f_car',r.car);set('f_pol',r.pol.replace(/\D/g,''));$('f_prod').value=POL[r.pol.replace(/\D/g,'')]||r.prod;
     set('f_val',r.val?String(Math.round(r.val)).replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'');set('f_pri',r.prima?String(Math.round(r.prima)).replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'');set('f_ret',r.ret?String(Math.round(r.ret)).replace(/\B(?=(\d{3})+(?!\d))/g,'.'):'');
     set('f_pct',r.pct===''?'':String(r.pct).replace('.',','));set('f_est',r.est);set('f_lim',r.lim?r.lim.iso:'');set('f_obs',r.obs);
     recalcular();$('fModo').textContent='Corrigiendo la fila '+r.fila;$('bGuardar').textContent='Guardar cambios de la fila '+r.fila;fest('');
@@ -277,7 +277,7 @@
   function pintarLista(){
     if(!FILAS)return;var q=norm($('lBus').value),pl=$('lPol').value;
     var L=FILAS.filter(function(r){return(!pl||r.pol.replace(/\D/g,'')===pl)&&(!q||norm([r.facRaw,r.pol,r.est,r.obs,r.prod].join(' ')).indexOf(q)>=0)}).slice().reverse();
-    $('lCuerpo').innerHTML=L.slice(0,300).map(function(r){return '<tr><td><button class="btn s" data-f="'+r.fila+'" type="button">Editar</button></td><td>'+r.fila+'</td><td><b>'+esc(r.facRaw)+'</b></td><td>'+fbonita(r.des)+' al '+fbonita(r.has)+'</td><td class="n">'+esc(r.cob)+'</td><td>'+esc(r.pol)+'</td><td>'+esc(r.prod)+'</td><td class="n">'+cop(r.val)+'</td><td class="n">'+cop(r.prima)+'</td><td>'+esc(r.fret)+'</td><td class="n">'+cop(r.ret)+'</td><td class="n">'+esc(r.pct===''?'':String(r.pct).replace('.',','))+(function(){var e=retornoEsperado(r.pol.replace(/\D/g,''),r.prima);return(e!==null&&r.ret&&Math.abs(e-r.ret)>1)?' <span class="bd d" title="Según la regla el retorno debería ser '+cop(e)+'">revisar</span>':''})()+'</td><td>'+esc(r.est)+'</td><td>'+fbonita(r.lim)+'</td><td>'+esc(r.obs)+'</td></tr>'}).join('')||'<tr><td colspan="16" class="vacio">No hay cobros con ese filtro.</td></tr>';
+    $('lCuerpo').innerHTML=L.slice(0,300).map(function(r){return '<tr><td><button class="btn s" data-f="'+r.fila+'" type="button">Editar</button></td><td>'+r.fila+'</td><td><b>'+esc(r.facRaw)+'</b></td><td>'+fbonita(r.des)+' al '+fbonita(r.has)+'</td><td class="n">'+esc(r.cob)+'</td><td>'+esc(r.pol)+'</td><td>'+esc(r.prod)+'</td><td class="n">'+cop(r.val)+'</td><td class="n">'+cop(r.prima)+'</td><td>'+esc(r.car)+'</td><td class="n">'+cop(r.ret)+'</td><td class="n">'+esc(r.pct===''?'':String(r.pct).replace('.',','))+(function(){var e=retornoEsperado(r.pol.replace(/\D/g,''),r.prima);return(e!==null&&r.ret&&Math.abs(e-r.ret)>1)?' <span class="bd d" title="Según la regla el retorno debería ser '+cop(e)+'">revisar</span>':''})()+'</td><td>'+esc(r.est)+'</td><td>'+fbonita(r.lim)+'</td><td>'+esc(r.obs)+'</td></tr>'}).join('')||'<tr><td colspan="16" class="vacio">No hay cobros con ese filtro.</td></tr>';
     $('lNota').textContent=L.length+' cobro(s)'+(L.length>300?' · se muestran los 300 más recientes; use el buscador':'')+' · lo último de la hoja va arriba.';
     var fs={},es={};FILAS.forEach(function(r){if(r.facRaw)fs[r.facRaw]=1;if(r.est)es[r.est]=1});
     $('dlFac').innerHTML=Object.keys(fs).map(function(x){return '<option value="'+esc(x)+'">'}).join('');
