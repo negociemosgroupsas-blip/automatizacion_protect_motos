@@ -89,15 +89,15 @@
   }
   function mensaje(q){
     var m = '¡Hola, '+q.nombre+'!\nTe escribimos de Protect Motos.\n\n'+
-      'Queremos ayudarte a renovar la garantía de tu moto '+(q.moto?(q.moto+' '):'')+'de placa '+q.placa+(q.aseguradora&&q.aseguradora!=='Protect Motos'?' con '+q.aseguradora:'')+'.\n\n'+
-      ' *Opción 1 · Hurto o pérdida total'+(q.aseguradora==='Protect Motos'?' (cubre el 80 %)':'')+'*\n'+
+      'Queremos ayudarte a renovar la '+(q.aseguradora==='Protect Motos'?'garantía extendida':'garantía')+' de tu moto'+(q.moto?' '+q.moto:'')+(q.placa?' de placa '+q.placa:'')+(q.aseguradora&&q.aseguradora!=='Protect Motos'?' con '+q.aseguradora:'')+'.\n\n'+
+      '*Opción 1 · Hurto o pérdida total'+(q.aseguradora==='Protect Motos'?' (cubre el 80 %)':'')+'*\n'+
       '• De contado: '+cop(q.op1.contado)+'\n'+
       '• Financiado a '+q.plazo+' meses: '+lineaFin(q.op1,q.plazo)+'\n\n'+
-      ' *Opción 2 · Hurto / pérdida total + responsabilidad civil + asistencias*\n'+
+      '*Opción 2 · Hurto / pérdida total + responsabilidad civil + asistencias*\n'+
       '• De contado: '+cop(q.op2.contado)+'\n'+
       '• Financiado a '+q.plazo+' meses: '+lineaFin(q.op2,q.plazo)+'\n'+
-      ' *¡De regalo!* Plan de salud por llevar la Opción 2, para el titular y 2 beneficiarios más: '+planTxt()+'\n\n'+
-      'Te adjuntamos la cotización con todas las coberturas. ¿Quieres que renovemos tu garantía? Respóndenos y lo dejamos listo hoy mismo';
+      '*¡De regalo!* Plan de salud por llevar la Opción 2, para el titular y 2 beneficiarios más: '+planTxt()+'\n\n'+
+      'Te adjuntamos la cotización con todas las coberturas. ¿Quieres que renovemos tu '+(q.aseguradora==='Protect Motos'?'garantía extendida':'garantía')+'? Respóndenos y lo dejamos listo hoy mismo';
     return m;
   }
 
