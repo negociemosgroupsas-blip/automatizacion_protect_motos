@@ -1968,19 +1968,19 @@
     // Recordatorio corto y amable (no de cobro): invita a no dejar vencer la cuota y avisa de la cláusula de los 5 días de mora.
     var mensaje;
     var cuenta = DATOS_PAGO.banco+' · '+DATOS_PAGO.tipoCuenta+' N° '+DATOS_PAGO.numeroCuenta+'\n'+'Titular: '+DATOS_PAGO.titular;
-    var clausula = 'Recuerda: si pasan 5 días de mora, la póliza se cancela.';
+    var clausula = 'Recuerda: si pasan 5 días de mora, tu garantía extendida se cancela.';
     if(info && info.cuotaPendiente){
       mensaje =
         'Hola, '+c.cliente+'\n'+
-        'Te recordamos de Protect Motos que tienes pendiente tu cuota'+(c.valorCuota ? ' de '+formatoDinero(c.valorCuota) : '')+', con fecha de pago el día '+info.cuotaPendiente.fechaVence.getDate()+'. '+
-        'Págala a tiempo para que sigas protegido con tu póliza.\n\n'+
+        'Te recordamos de Protect Motos que tienes pendiente la cuota de tu garantía extendida'+(c.valorCuota ? ' por '+formatoDinero(c.valorCuota) : '')+', con fecha de pago el día '+info.cuotaPendiente.fechaVence.getDate()+'. '+
+        'Págala a tiempo para que sigas protegido.\n\n'+
         clausula+'\n\n'+
         cuenta+'\n\n'+
         'Envíanos el comprobante por aquí. ¡Gracias!';
     } else {
       mensaje =
         'Hola, '+c.cliente+'\n'+
-        'Te escribimos de Protect Motos para recordarte que no se te pase el pago de tu póliza y así sigas protegido.\n\n'+
+        'Te escribimos de Protect Motos para recordarte que no se te pase el pago de tu garantía extendida y así sigas protegido.\n\n'+
         clausula+'\n\n'+
         cuenta+'\n\n'+
         'Envíanos el comprobante por aquí. ¡Gracias!';
