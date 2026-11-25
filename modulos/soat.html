@@ -674,7 +674,7 @@
   // ---------- Acciones ----------
   function abrirWA(s){
     var d = parsearISO(s.venceISO), veh = /carro|camioneta|auto/i.test(s.tipo||'') ? 'carro' : 'moto';
-    var msg = 'Hola, '+s.cliente+' 😊\nTe escribimos de Protect Motos porque el SOAT de tu '+veh+' de placa '+s.placa+' vence el '+fechaCO(d)+'.\n\nQueremos ayudarte a renovarlo a tiempo para que sigas protegido y sin multas.\n\n¿Quieres que te ayudemos con la renovación? 💙💛';
+    var msg = 'Hola, '+s.cliente+'\nTe escribimos de Protect Motos porque el SOAT de tu '+veh+' de placa '+s.placa+' vence el '+fechaCO(d)+'.\n\nQueremos ayudarte a renovarlo a tiempo para que sigas protegido y sin multas.\n\n¿Quieres que te ayudemos con la renovación?';
     window.open('https://wa.me/'+numeroWA(s.celular)+'?text='+encodeURIComponent(msg), '_blank');
   }
   function quienRegistra(){
@@ -1050,6 +1050,7 @@
   setInterval(function(){ if(estado.url && !document.hidden) cargar(true); }, AUTO_MS);
 })();
 </script>
+<script src="../assets/wa_limpio.js"></script>
 <script src="../assets/tema_modulo.js"></script>
 <script src="../assets/corporativo.js"></script>
 </body>

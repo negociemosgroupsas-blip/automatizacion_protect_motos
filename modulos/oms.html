@@ -587,7 +587,7 @@
 
   // ---------- Acciones ----------
   function abrirWA(c){
-    var msg = 'Hola, '+c.cliente+' 😊\nTe escribimos de Protect Motos: tu póliza'+(c.placa?' ('+c.placa+')':'')+' cumple su año el '+fechaCO(c.finISO)+'.\n\nQueremos ayudarte a renovarla a tiempo para que sigas protegido sin interrupciones.\n\n¿Te gustaría que te contemos las opciones de renovación? 💙💛';
+    var msg = 'Hola, '+c.cliente+'\nTe escribimos de Protect Motos: tu póliza'+(c.placa?' ('+c.placa+')':'')+' cumple su año el '+fechaCO(c.finISO)+'.\n\nQueremos ayudarte a renovarla a tiempo para que sigas protegido sin interrupciones.\n\n¿Te gustaría que te contemos las opciones de renovación?';
     window.open('https://wa.me/'+numeroWA(c.celular)+'?text='+encodeURIComponent(msg), '_blank');
   }
   function quienRegistra(){
@@ -789,9 +789,9 @@
     // ---------- Seguimiento a clientes de renovación (3 mensajes) ----------
     var scF='pend',scQ='';
     function textoSeg(n,c){var fin=pFecha(c.finISO),venc=fin&&fin<hoyD(),cuando=fin?(venc?'cumplió su año el ':'cumple su año el ')+fechaCO(c.finISO):'está por cumplir su año',pl=c.placa?' de la moto '+c.placa:'';
-      if(n===1)return 'Hola, '+c.cliente+' 😊\nTe escribimos de Protect Motos. Hace unos días te contamos que tu póliza'+pl+' '+cuando+'.\n\n¿Pudiste revisar la información? Con gusto resolvemos tus dudas y te ayudamos a renovarla en un momento 💙💛';
-      if(n===2)return 'Hola, '+c.cliente+', ¿cómo estás? 🏍️\nTe recordamos que tu póliza'+pl+' '+cuando+'. Renovarla a tiempo te permite seguir protegido y evitar costos inesperados.\n\n¿Te parece si la renovamos hoy? Solo respóndenos y nosotros hacemos el resto 💛';
-      return 'Hola, '+c.cliente+' 👋\nEste es nuestro último mensaje sobre tu póliza'+pl+' ('+cuando+'). No queremos que te quedes sin respaldo.\n\nSi quieres renovar, escríbenos ahora; si ya no te interesa, cuéntanos para dejar tu solicitud cerrada. ¡Gracias por confiar en Protect Motos! 💙'}
+      if(n===1)return 'Hola, '+c.cliente+'\nTe escribimos de Protect Motos. Hace unos días te contamos que tu póliza'+pl+' '+cuando+'.\n\n¿Pudiste revisar la información? Con gusto resolvemos tus dudas y te ayudamos a renovarla en un momento';
+      if(n===2)return 'Hola, '+c.cliente+', ¿cómo estás?\nTe recordamos que tu póliza'+pl+' '+cuando+'. Renovarla a tiempo te permite seguir protegido y evitar costos inesperados.\n\n¿Te parece si la renovamos hoy? Solo respóndenos y nosotros hacemos el resto';
+      return 'Hola, '+c.cliente+'\nEste es nuestro último mensaje sobre tu póliza'+pl+' ('+cuando+'). No queremos que te quedes sin respaldo.\n\nSi quieres renovar, escríbenos ahora; si ya no te interesa, cuéntanos para dejar tu solicitud cerrada. ¡Gracias por confiar en Protect Motos!'}
     function pintarSC(){
       var L=datosSeg().lista,n=L.length,ac=L.filter(function(o){return o.resp==='renovo'}),no=L.filter(function(o){return o.resp==='no'}),pe=n-ac.length-no.length,tm=L.reduce(function(t,o){return t+o.msgs},0);
       $('scTiles').innerHTML='<div class="seg-t" style="--c:#13223f"><span>Clientes en seguimiento</span><b>'+n+'</b><small>'+tm+' mensajes en total ('+(tm-n)+' de seguimiento)</small></div><div class="seg-t" style="--c:#5b78c7"><span>Pendientes de respuesta</span><b>'+pe+'</b><small>'+pct(pe,n)+' %</small></div><div class="seg-t" style="--c:#1f9d55"><span>Renovaron</span><b>'+ac.length+'</b><small>'+pct(ac.length,n)+' % de los contactados</small></div><div class="seg-t" style="--c:#d97706"><span>No renovarán</span><b>'+no.length+'</b><small>'+pct(no.length,n)+' %</small></div><div class="seg-t" style="--c:#7c3aed"><span>Mensajes por cliente que renovó</span><b>'+(ac.length?(ac.reduce(function(t,o){return t+o.msgs},0)/ac.length).toFixed(1):'0')+'</b><small>promedio</small></div>';
@@ -869,6 +869,7 @@
   setInterval(function(){ if(estado.url && !document.hidden) cargar(true); }, AUTO_MS);
 })();
 </script>
+<script src="../assets/wa_limpio.js"></script>
 <script src="../assets/tema_modulo.js"></script>
 <script src="../assets/corporativo.js"></script>
 </body>

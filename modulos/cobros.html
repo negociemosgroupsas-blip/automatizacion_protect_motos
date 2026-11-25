@@ -1260,7 +1260,7 @@
   function vigMensaje(o, n){
     var v = o.v, c = o.c, nombre = (c&&c.cliente) || v.nombre || '', que = v.tipo==='RC' ? 'responsabilidad civil' : 'seguro de accidentes personales';
     var cuando = (o.venc ? 'venció el ' : 'vence el ')+v.fin, pol = v.numero ? ' (póliza '+v.numero+')' : '';
-    if(n===1) return 'Hola, '+nombre+' 😊 Te escribimos de Protect Motos. La vigencia de tu '+que+pol+' '+cuando+'. ¿Te ayudamos a renovarla? Respóndenos y lo dejamos listo.';
+    if(n===1) return 'Hola, '+nombre+'. Te escribimos de Protect Motos. La vigencia de tu '+que+pol+' '+cuando+'. ¿Te ayudamos a renovarla? Respóndenos y lo dejamos listo.';
     if(n===2) return 'Hola, '+nombre+', ¿cómo estás? Te recordamos que tu '+que+pol+' '+cuando+'. Renovarla te mantiene protegido. ¿Quieres que la renovemos hoy?';
     return 'Hola, '+nombre+'. Último recordatorio: tu '+que+pol+' '+cuando+'. Si deseas continuar con la cobertura, respóndenos y lo gestionamos de inmediato. ¡Gracias!';
   }
@@ -1404,9 +1404,9 @@
   function textoSeguimiento(n, c){
     var fin = c.finISO ? parsearISO(c.finISO) : null, vencida = fin && diferenciaDias(fin, hoy()) < 0;
     var cuando = fin ? (vencida ? 'venció el ' : 'vence el ') + formatoFechaCO(fin) : 'está por vencer';
-    if(n===1) return 'Hola, '+c.cliente+' 😊\nTe escribimos de Protect Motos. Hace unos días te contamos que la garantía suplementaria de tu moto de placa '+c.placa+' '+cuando+'.\n\n¿Pudiste revisar la información? Con gusto resolvemos tus dudas y te ayudamos a renovarla en un momento 💙💛';
-    if(n===2) return 'Hola, '+c.cliente+', ¿cómo estás? 🏍️\nTe recordamos que la garantía de tu moto de placa '+c.placa+' '+cuando+'. Renovarla te permite seguir con tu respaldo y evitar costos inesperados si tu moto necesita una reparación.\n\n¿Te parece si la renovamos hoy? Solo respóndenos y nosotros hacemos el resto 💛';
-    return 'Hola, '+c.cliente+' 👋\nEste es nuestro último mensaje sobre la garantía de tu moto de placa '+c.placa+' ('+cuando+'). No queremos que te quedes sin respaldo.\n\nSi quieres renovar, escríbenos ahora; si ya no te interesa, cuéntanos para dejar tu solicitud cerrada. ¡Gracias por confiar en Protect Motos! 💙';
+    if(n===1) return 'Hola, '+c.cliente+'\nTe escribimos de Protect Motos. Hace unos días te contamos que la garantía suplementaria de tu moto de placa '+c.placa+' '+cuando+'.\n\n¿Pudiste revisar la información? Con gusto resolvemos tus dudas y te ayudamos a renovarla en un momento';
+    if(n===2) return 'Hola, '+c.cliente+', ¿cómo estás?\nTe recordamos que la garantía de tu moto de placa '+c.placa+' '+cuando+'. Renovarla te permite seguir con tu respaldo y evitar costos inesperados si tu moto necesita una reparación.\n\n¿Te parece si la renovamos hoy? Solo respóndenos y nosotros hacemos el resto';
+    return 'Hola, '+c.cliente+'\nEste es nuestro último mensaje sobre la garantía de tu moto de placa '+c.placa+' ('+cuando+'). No queremos que te quedes sin respaldo.\n\nSi quieres renovar, escríbenos ahora; si ya no te interesa, cuéntanos para dejar tu solicitud cerrada. ¡Gracias por confiar en Protect Motos!';
   }
   function datosSegCli(){
     var por = {};
@@ -1971,19 +1971,19 @@
     var clausula = 'Recuerda: si pasan 5 días de mora, la póliza se cancela.';
     if(info && info.cuotaPendiente){
       mensaje =
-        'Hola, '+c.cliente+' 😊\n'+
+        'Hola, '+c.cliente+'\n'+
         'Te recordamos de Protect Motos que tienes pendiente tu cuota'+(c.valorCuota ? ' de '+formatoDinero(c.valorCuota) : '')+', con fecha de pago el día '+info.cuotaPendiente.fechaVence.getDate()+'. '+
         'Págala a tiempo para que sigas protegido con tu póliza.\n\n'+
         clausula+'\n\n'+
         cuenta+'\n\n'+
-        'Envíanos el comprobante por aquí. ¡Gracias! 💙💛';
+        'Envíanos el comprobante por aquí. ¡Gracias!';
     } else {
       mensaje =
-        'Hola, '+c.cliente+' 😊\n'+
+        'Hola, '+c.cliente+'\n'+
         'Te escribimos de Protect Motos para recordarte que no se te pase el pago de tu póliza y así sigas protegido.\n\n'+
         clausula+'\n\n'+
         cuenta+'\n\n'+
-        'Envíanos el comprobante por aquí. ¡Gracias! 💙💛';
+        'Envíanos el comprobante por aquí. ¡Gracias!';
     }
     var url = 'https://wa.me/'+numeroWhatsApp(c.celular)+'?text='+encodeURIComponent(mensaje);
     window.open(url,'_blank');
@@ -1991,10 +1991,10 @@
 
   function abrirWhatsAppRenovacion(c, fechaFin){
     var mensaje =
-      'Hola, '+c.cliente+' 😊\n'+
+      'Hola, '+c.cliente+'\n'+
       'Te escribimos de Protect Motos porque tu garantía suplementaria para tu moto de placa '+c.placa+' está por vencer el '+formatoFechaCO(fechaFin)+'.\n\n'+
       'Queremos ayudarte a renovarla a tiempo para que sigas protegido sin interrupciones.\n\n'+
-      '¿Quieres que te contemos las opciones de renovación? 💙💛';
+      '¿Quieres que te contemos las opciones de renovación?';
     var url = 'https://wa.me/'+numeroWhatsApp(c.celular)+'?text='+encodeURIComponent(mensaje);
     window.open(url,'_blank');
   }
@@ -3046,6 +3046,7 @@
   }
 })();
 </script>
+<script src="../assets/wa_limpio.js"></script>
 <script src="../assets/tema_modulo.js"></script>
 <script src="../assets/corporativo.js"></script>
 </body>
