@@ -241,6 +241,8 @@
   .os-msg{margin-top:10px;font-size:12.5px;font-weight:600;}
   .os-msg.ok{color:#1c7c54;} .os-msg.er{color:#b23a3a;} .os-msg.av{color:#8a5a00;}
   body.modo-os .rcbar{display:none;}
+  #recApp{display:none;} body.modo-rec #recApp{display:block;} body.modo-rec .grid{display:none;} body.modo-rec .rcbar{display:none;}
+  .rec-t{width:100%;border-collapse:collapse;margin-top:12px;font-size:12.5px} .rec-t th{background:#13223f;color:#fff;text-align:left;padding:7px 9px;font-size:11px;text-transform:uppercase;letter-spacing:.04em} .rec-t td{padding:7px 9px;border-bottom:1px solid #e3e6eb} .rec-t tr:hover td{background:#f6f9ff}
   #panel-cliente{display:none;}
 
   @media print{
@@ -282,10 +284,25 @@ body.print-otrosi #panel-otrosi{display:block !important;}
       <button data-rc="NO">Sin RC</button>
     </div>
     <span class="hint" id="rcHint">Incluye coberturas de responsabilidad civil y el pago a la aseguradora aliada.</span>
+    <button type="button" class="btn navy" id="btnModoRec" title="Para volver a imprimir un contrato que ya no está en pantalla: se busca por cédula o nombre">🔎 Recuperar contrato</button>
     <button type="button" class="btn navy" id="btnModoOS" title="Para un cliente que ya tiene contrato: solo escribes el número y descargas el Otro Sí">📎 Otro Sí (cliente que ya tiene contrato)</button>
     <button type="button" class="btn" id="btnNuevoContrato" title="Borra todo lo escrito para empezar un contrato nuevo, sin refrescar la página" style="margin-left:auto;background:#c0392b;color:#fff;border-color:#c0392b">🆕 Nuevo contrato (limpiar todo)</button>
   </div>
 
+  <div id="recBanner" class="os-card no-print" style="display:none"></div>
+  <div id="recApp">
+    <div class="os-card no-print">
+      <h3>Recuperar un contrato</h3>
+      <div class="hint">Escribe la <b>cédula</b> o el <b>nombre</b> del cliente (también sirve la placa o el N.º de contrato). El sistema lee las hojas Protect, Responsabilidad Civil y Accidentes Personales y vuelve a llenar el contrato para que lo imprimas de nuevo.</div>
+      <div class="os-row">
+        <div class="f"><label>Cédula o nombre</label><input autocomplete="off" id="recQ" placeholder="Ej. 1040571381 o Juan Pérez"></div>
+        <button type="button" class="btn gold" id="recBuscar">Buscar</button>
+        <button type="button" class="btn" id="recVolver">← Volver al contrato nuevo</button>
+      </div>
+      <div class="os-msg" id="recMsg"></div>
+      <div id="recRes"></div>
+    </div>
+  </div>
   <div id="osiApp">
     <div class="os-card no-print">
       <h3>Otro Sí · cliente que ya tiene contrato</h3>
@@ -1187,6 +1204,76 @@ applyForma();
   });
 })();
 
+
+/* ===== Recuperar un contrato ya borrado: se busca por cédula o nombre y se vuelve a llenar con lo que dicen las hojas ===== */
+(function(){
+  function msg(t,c){var m=$("recMsg");m.textContent=t||"";m.className="os-msg"+(c?" "+c:"");}
+  function llamar(params,done){
+    var url=val("gsUrl"); if(!url){done(null,"Falta la URL del conector (se pega en la pestaña «Fila Google Sheet» del contrato nuevo).");return;}
+    var cb="pm_rec_"+Date.now()+"_"+Math.floor(Math.random()*9999),sc=document.createElement("script");
+    var to=setTimeout(function(){fin();done(null,"Tardó demasiado; revisa tu internet.");},30000);
+    function fin(){clearTimeout(to);try{delete window[cb];}catch(e){window[cb]=undefined;}if(sc.parentNode)sc.parentNode.removeChild(sc);}
+    window[cb]=function(r){fin();done(r,null);};
+    var q=url+(url.indexOf("?")>=0?"&":"?")+"token="+encodeURIComponent(TOKEN)+"&callback="+cb;
+    for(var k in params)q+="&"+k+"="+encodeURIComponent(params[k]);
+    sc.onerror=function(){fin();done(null,"No se pudo conectar (revisa la URL o el internet).");};
+    sc.src=q;document.head.appendChild(sc);
+  }
+  function entrar(){document.body.classList.remove("modo-os");document.body.classList.add("modo-rec");$("recBanner").style.display="none";$("recQ").focus();}
+  function salir(){document.body.classList.remove("modo-rec");}
+  $("btnModoRec").addEventListener("click",entrar);$("recVolver").addEventListener("click",salir);
+  function fechaTxt(iso){return /^\d{4}-\d{2}-\d{2}/.test(iso||"")?iso.slice(8,10)+"/"+iso.slice(5,7)+"/"+iso.slice(0,4):(iso||"—");}
+  function buscar(){
+    var q=$("recQ").value.trim();
+    if(q.length<3){msg("Escribe al menos 3 letras o números.","er");return;}
+    msg("Buscando en la hoja Protect…","");$("recRes").innerHTML="";
+    llamar({action:"contrato_buscar",q:q},function(r,err){
+      if(err){msg(err,"er");return;}
+      if(!r||!r.ok){msg((r&&r.error)||"Error del conector.","er");return;}
+      var L=r.resultados||[];
+      if(!L.length){msg("No encontré contratos con «"+q+"». Prueba con la cédula sin puntos o con el apellido.","er");return;}
+      msg(L.length+" contrato(s) encontrado(s). Elige el que quieres imprimir:","ok");
+      $("recRes").innerHTML='<table class="rec-t"><thead><tr><th>Contrato</th><th>Cliente</th><th>Cédula</th><th>Placa</th><th>Fecha</th><th>Tipo</th><th>Estado</th><th></th></tr></thead><tbody>'+
+        L.map(function(x){return '<tr><td>'+esc(x.contrato||"—")+'</td><td><b>'+esc(x.titular)+'</b></td><td>'+esc(x.cedula)+'</td><td>'+esc(x.placa)+'</td><td>'+esc(fechaTxt(x.fecha))+'</td><td>'+esc(x.forma)+(x.rc==="SI"?" · RC":"")+(x.ap==="SI"?" · AP":"")+'</td><td>'+esc(x.estado)+'</td><td><button type="button" class="btn gold" data-fila="'+x.fila+'">Traer este contrato</button></td></tr>';}).join("")+'</tbody></table>';
+    });
+  }
+  $("recBuscar").addEventListener("click",buscar);
+  $("recQ").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();buscar();}});
+  $("recRes").addEventListener("click",function(ev){var b=ev.target.closest("[data-fila]");if(!b)return;b.disabled=true;msg("Leyendo el contrato de las hojas…","");
+    llamar({action:"contrato_traer",fila:b.getAttribute("data-fila")},function(r,err){b.disabled=false;
+      if(err){msg(err,"er");return;}if(!r||!r.ok){msg((r&&r.error)||"Error del conector.","er");return;}
+      try{llenar(r);}catch(e){msg("No se pudo llenar el contrato: "+e.message,"er");}});});
+  function digitos(v){if(typeof v==="number")return String(Math.round(v));return String(v==null?"":v).replace(/[^\d]/g,"");}
+  function iso(v){return /^\d{4}-\d{2}-\d{2}/.test(String(v||""))?String(v).slice(0,10):"";}
+  function set(id,v){var e=$(id);if(!e||v==null||String(v).trim()==="")return;if(e.tagName==="SELECT"){var ok=[].some.call(e.options,function(o){return o.value===String(v)||o.text===String(v)});if(!ok)return;}e.value=String(v).trim();}
+  function llenar(r){
+    var R=r.row,C=r.rc,A=r.ap,falt=[];
+    if(window.pmReiniciar)window.pmReiniciar();
+    var conRC=String(R[20]).toUpperCase()==="SI",btn=document.querySelector('[data-rc="'+(conRC?"SI":"NO")+'"]');if(btn&&!btn.classList.contains("active"))btn.click();
+    set("asesor",R[1]);set("tipoDoc",R[3]);set("cedula",R[4]);set("titular",R[7]);set("placa",R[12]);set("contrato",R[13]);
+    var fi=iso(R[10]);if(fi)$("fechaInicio").value=fi;var fn=iso(R[5])||(C?iso(C[7]):"");if(fn)$("fechaNac").value=fn;
+    set("celular",R[30]||(C&&C[11]));set("correo",R[31]);set("direccion",R[32]||(C&&C[10]));
+    set("estadoMoto",R[29]);set("marca",R[27]);
+    var ref=String(R[28]||"");if(ref){try{window.refTouched=true;}catch(e){}$("referencia").value=ref;var pr=ref.split("-");if(pr.length>=3&&pr[0]==="Moto"){set("linea",pr[2]);if(pr[3])set("cilindraje",pr[3]);}}
+    set("valorMoto",digitos(R[26]));set("valorProtect",digitos(R[14]));set("valorDugo",digitos(R[15]));set("comision",digitos(R[18]));
+    var forma=String(R[19]||"").toUpperCase();if(/^FINANC/.test(forma))set("forma","FINANCIADO");else if(/^CONTAD/.test(forma))set("forma","CONTADO");
+    if(typeof applyForma==="function")applyForma();
+    if($("forma").value==="FINANCIADO"){set("valorCuota",digitos(R[16]));set("plazo",digitos(R[17]));set("plazoSel",digitos(R[17]));set("fechaPago",R[44]);}
+    $("valorCaja").value=digitos(R[15]);
+    if(conRC)set("valorRC",digitos(R[21]));
+    var ap=String(R[22]).toUpperCase()==="SI";$("asistCheck").checked=ap;if(ap)set("valorAsist",digitos(R[25]));
+    if(C){set("ciudad",C[12]);set("sexo",C[13]);set("fasecolda",C[14]);set("modelo",C[16]);set("motor",C[17]);set("chasis",C[18]);set("color",C[19]);if(C[20])set("cilindraje",C[20]);}
+    else{if(conRC)falt.push("ciudad, sexo, Fasecolda, modelo, motor, chasis y color (no se encontró al cliente en la hoja de RC)");else falt.push("motor, chasis, color y modelo (los contratos sin RC no guardan esos datos)");}
+    if(A&&A[7]&&!$("sexo").value)set("sexo",A[7]);
+    falt.push("el beneficiario (nombre y cédula), porque no se guarda en ninguna hoja");
+    if(typeof render==="function")render();
+    salir();
+    var tab=document.querySelector('.tabs [data-tab="caratula"]');if(tab)tab.click();window.scrollTo(0,0);
+    var ban=$("recBanner");ban.style.display="";
+    ban.innerHTML='<h3>Contrato recuperado · fila '+r.fila+' de la hoja Protect</h3><div class="hint">Se llenó con lo que dicen las hojas. Revisa en el formulario lo que <b>no se guarda en las hojas</b> y escríbelo a mano si lo necesitas en el PDF: '+falt.map(esc).join("; ")+'.'+((r.avisos&&r.avisos.length)?' <span style="color:#b23a3a">('+r.avisos.map(esc).join(" ")+')</span>':'')+'</div><div class="os-row"><button type="button" class="btn gold big" onclick="printDoc(\'cliente\')">Descargar PDF completo</button><button type="button" class="btn" onclick="document.getElementById(\'recBanner\').style.display=\'none\'">Cerrar aviso</button></div>';
+  }
+})();
+
 /* Otro Sí: permitir escoger RC / AP manualmente */
 (function(){
   var r=$("osiRC"), a=$("osiAP");
@@ -1490,6 +1577,10 @@ render();
   function nuevo(){
     if(!SNAP) tomar();
     if(!window.confirm("¿Empezar un contrato nuevo?\n\nSe borra todo lo que está escrito en el formulario (no se toca nada de la hoja de Google ni de lo ya guardado).")) return;
+    reiniciar();
+  }
+  function reiniciar(){
+    if(!SNAP) tomar();
     SNAP.forEach(function(x){ if(x.e.type==="checkbox"||x.e.type==="radio") x.e.checked=x.c; else x.e.value=x.v; });
     var rb=document.querySelector('[data-rc="'+RC0+'"]'); if(rb && !rb.classList.contains("active")) rb.click();
     try{ window.refTouched=false; }catch(e){}
@@ -1505,6 +1596,7 @@ render();
     window.scrollTo(0,0);
     var f=document.getElementById("valorMoto"); if(f) try{f.focus();}catch(e){}
   }
+  window.pmReiniciar=reiniciar;
   document.getElementById("btnNuevoContrato").addEventListener("click",nuevo);
 })();
 </script>

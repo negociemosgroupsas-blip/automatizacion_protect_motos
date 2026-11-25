@@ -101,3 +101,6 @@ En el módulo **SOAT**, tabla «Todos los SOAT», columna **Consignación**: bot
 
 ## Cotización (PDF / imagen) — diseño nuevo
 `assets/cotizacion_doc.js`: una sola hoja = encabezado «Te respaldamos hasta $…» (80 % del valor de la moto), Opción 1 y Opción 2 (la 2 marcada como «Recomendada · la más elegida», con precio por día), cuánto cuesta dar el salto, regalo del plan de salud, 3 pasos, regalo del plan de salud, detalle de coberturas (RC y AP) y botón de WhatsApp. Vigencia de la cotización: `VIGENCIA_DIAS` (5 días). Letra: Lato, igual que el resto del CRM. La imagen (PNG) es la hoja 1.
+
+## Recuperar un contrato ya borrado
+En «Contratos», botón **🔎 Recuperar contrato**: se escribe la cédula, el nombre, la placa o el N.º de contrato; el conector lee la hoja Protect (y las de Responsabilidad Civil y Accidentes Personales por cédula) y vuelve a llenar el contrato para imprimirlo (acciones `contrato_buscar` y `contrato_traer`). El beneficiario no se guarda en ninguna hoja y hay que escribirlo a mano.

@@ -96,6 +96,16 @@ function doGet(e) {
       return out_(cb, res);
     }
 
+    // ===== RECUPERAR UN CONTRATO YA BORRADO: buscar por cédula o nombre y traer su información de las hojas =====
+    if (accion === 'contrato_buscar') {
+      if (e.parameter.token !== TOKEN) return out_(cb, { ok:false, error:'CLAVE_INCORRECTA' });
+      return out_(cb, contratoBuscar_(e.parameter));
+    }
+    if (accion === 'contrato_traer') {
+      if (e.parameter.token !== TOKEN) return out_(cb, { ok:false, error:'CLAVE_INCORRECTA' });
+      return out_(cb, contratoTraer_(e.parameter));
+    }
+
     // ===== OTRO SÍ: buscar al cliente por N° de contrato y marcar RC / AP en la hoja Protect =====
     if (accion === 'otrosi_buscar') {
       if (e.parameter.token !== TOKEN) return out_(cb, { ok:false, error:'CLAVE_INCORRECTA' });
@@ -285,4 +295,60 @@ function otroSiAplicar_(p) {
   if (ap) sh.getRange(fila, 23).setValue('SI');     // columna W = Lleva AP
   SpreadsheetApp.flush();
   return { ok:true, fila:fila, antes:antes, rc:rc, ap:ap };
+}
+
+
+/* ============ RECUPERAR CONTRATO ============ */
+// El contrato ya no está en pantalla, pero sí en las hojas: Protect (siempre), Responsabilidad Civil y Accidentes Personales.
+// Se busca por cédula, nombre, placa o N° de contrato; al elegir uno se devuelve su fila completa para volver a llenar el formulario.
+function recNorm_(t) { return String(t == null ? '' : t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+function recDig_(t) { return String(t == null ? '' : t).replace(/\.0+$/, '').replace(/\D/g, '').replace(/^0+/, ''); }
+function recISO_(v) {
+  if (Object.prototype.toString.call(v) === '[object Date]' && !isNaN(v.getTime())) return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var t = String(v == null ? '' : v).trim(), m = t.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if (m) { var d = +m[1], mo = +m[2]; if (mo > 12 && d <= 12) { var x = d; d = mo; mo = x; } return m[3] + '-' + ('0' + mo).slice(-2) + '-' + ('0' + d).slice(-2); }
+  return t;
+}
+function recFila_(arr) { return arr.map(function (v) { return (Object.prototype.toString.call(v) === '[object Date]') ? recISO_(v) : (v == null ? '' : v); }); }
+
+function contratoBuscar_(p) {
+  var q = String(p.q || '').trim();
+  if (q.length < 3) return { ok:false, error:'Escribe al menos 3 letras o números.' };
+  var sh = getSheet_(), last = sh.getLastRow();
+  if (last < 2) return { ok:true, resultados:[] };
+  var ncol = Math.max(46, sh.getLastColumn()), datos = sh.getRange(2, 1, last - 1, ncol).getValues();
+  var qd = recDig_(q), soloNum = /^[\d\.\s]+$/.test(q), qn = recNorm_(q), palabras = qn.split(' ').filter(Boolean), res = [];
+  for (var i = datos.length - 1; i >= 0; i--) {        // las más recientes primero
+    var f = datos[i], titular = String(f[7] || '').trim(), contrato = String(f[13] || '').trim();
+    if (!titular && !contrato) continue;
+    var ok = false;
+    if (soloNum && qd.length >= 5) ok = recDig_(f[4]).indexOf(qd) >= 0 || recDig_(f[13]) === qd;
+    else {
+      var nn = recNorm_(titular), todas = palabras.length > 0;
+      palabras.forEach(function (w) { if (nn.indexOf(w) < 0) todas = false; });
+      ok = todas || recNorm_(f[12]).replace(/ /g, '') === qn.replace(/ /g, '') || recNorm_(contrato) === qn;
+    }
+    if (!ok) continue;
+    res.push({ fila: i + 2, contrato: contrato, titular: titular, tipoDoc: String(f[3] || ''), cedula: String(f[4] || '').trim(), placa: String(f[12] || '').trim(),
+      fecha: recISO_(f[10]), forma: String(f[19] || '').trim(), rc: String(f[20] || '').trim().toUpperCase(), ap: String(f[22] || '').trim().toUpperCase(), estado: String(f[43] || '').trim().toUpperCase() });
+    if (res.length >= 25) break;
+  }
+  return { ok:true, resultados:res };
+}
+
+function contratoTraer_(p) {
+  var fila = Number(p.fila);
+  if (!(fila >= 2)) return { ok:false, error:'Falta la fila del contrato.' };
+  var sh = getSheet_(), ncol = Math.max(46, sh.getLastColumn());
+  if (fila > sh.getLastRow()) return { ok:false, error:'Esa fila ya no existe en la hoja.' };
+  var row = recFila_(sh.getRange(fila, 1, 1, ncol).getValues()[0]), ced = recDig_(row[4]), out = { ok:true, fila:fila, row:row, rc:null, ap:null, avisos:[] };
+  function ultimaPorCedula(id, colCed, ancho) {
+    var h = SpreadsheetApp.openById(id).getSheets()[0], n = h.getLastRow(); if (n < 2 || !ced) return null;
+    var cs = h.getRange(1, colCed, n, 1).getValues();
+    for (var r = n - 1; r >= 1; r--) if (recDig_(cs[r][0]) === ced) return recFila_(h.getRange(r + 1, 1, 1, ancho).getValues()[0]);
+    return null;
+  }
+  try { if (String(row[20]).toUpperCase() === 'SI') out.rc = ultimaPorCedula(SHEET2_ID, 7, 27); } catch (e1) { out.avisos.push('No se pudo leer la hoja de RC: ' + e1); }
+  try { if (String(row[22]).toUpperCase() === 'SI') out.ap = ultimaPorCedula(SHEET3_ID, 10, 29); } catch (e2) { out.avisos.push('No se pudo leer la hoja de AP: ' + e2); }
+  return out;
 }
