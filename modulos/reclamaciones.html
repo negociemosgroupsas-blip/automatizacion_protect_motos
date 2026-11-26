@@ -105,6 +105,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .subj{display:flex;gap:8px;margin-top:4px}.subj input{margin:0;flex:1}
 .who{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;font-size:15px}
 .chip{font:700 13px M,sans-serif;color:#fff;background:var(--c);padding:5px 10px;border-radius:20px}
+.subh{font:700 14px M,sans-serif;color:var(--navy);margin:16px 0 2px}
 .empty{color:var(--mut);padding:30px;text-align:center}
 .note{font-size:13px;color:var(--mut);margin-top:12px}
 </style>
@@ -116,6 +117,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   <div class="presets">
     <button id="exNo" type="button">Ejemplo: daño parcial</button>
     <button id="exSi" type="button">Ejemplo: aprobada</button>
+    <button id="exHu" type="button">Ejemplo: hurto</button>
     <button id="clear" type="button">Nuevo caso</button>
   </div>
 </header>
@@ -159,6 +161,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
       <label>Fecha de notificación<input id="fN" type="date"></label>
       <label>Fecha de la carta<input id="fC" type="date"></label>
     </div>
+    <div id="bHurto" class="row hide" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)">
+      <label>No. de denuncia (noticia criminal)<input id="denNo" placeholder="050016000206202612345"></label>
+      <label>Fecha de la denuncia<input id="denF" type="date"></label>
+      <label>Lugar del hurto<input id="lugar" placeholder="Barrio / ciudad"></label>
+      <label>¿El vehículo fue recuperado?<select id="recup"><option value="no">No</option><option value="si">Sí, antes del pago</option></select></label>
+    </div>
   </fieldset>
 
   <fieldset><legend>Valores</legend>
@@ -185,9 +193,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
       <label><input type="checkbox" id="soat" checked>SOAT vigente al momento del siniestro</label>
       <label><input type="checkbox" id="lic" checked>Conductor con licencia vigente</label>
       <label id="cAlDia"><input type="checkbox" id="aldia" checked>Al día en las cuotas de la garantía</label>
-      <label id="cDen"><input type="checkbox" id="den" checked>Denuncia ante la Fiscalía aportada</label>
-      <label id="cPru"><input type="checkbox" id="pru" checked>Fotos, videos y pruebas de los daños aportadas</label>
     </div>
+    <h4 class="subh">Documentos recibidos <span class="hint" style="font-weight:300">(los marcados como opcionales no bloquean el caso)</span></h4>
+    <div class="checks" id="docs"></div>
+    <div class="actions" style="margin:8px 0 0"><button type="button" id="docAll">Todos recibidos</button><button type="button" id="docNone">Ninguno recibido</button></div>
     <div class="row" style="margin-top:10px">
       <label>SOAT vigente hasta<input id="soatV" type="date"></label>
       <label>Tecnomecánica vigente hasta<input id="tecV" type="date"></label>
@@ -244,13 +253,25 @@ const EXCL=[
  ['x32','Uso en competencias','3.2'],
  ['x33','Moto destinada a alquiler o arrendamiento','3.3'],
  ['x34','Siniestro durante actividad delictiva o ilegal','3.4'],
- ['x35','Moto recuperada antes del pago (hurto)','3.5'],
  ['x36','Dolo o culpa grave del titular o familiares','3.6'],
  ['x38','Titular en listas de control (SARLAFT)','3.8'],
  ['x39','Modificaciones que causaron o agravaron el siniestro','3.9'],
  ['x310','Conductor bajo efectos de alcohol o drogas','3.10']];
 $('excl').innerHTML=EXCL.map(e=>`<label><input type="checkbox" id="${e[0]}">${e[1]} <span style="color:var(--mut)">(${e[2]})</span></label>`).join('');
 
+const DOCS=[
+ ['dCed','Copia de la cédula de ciudadanía del titular.','ambos'],
+ ['dLic','Copia de la licencia de conducción vigente al momento del siniestro.','ambos'],
+ ['dSoat','Copia del SOAT vigente al momento del siniestro.','ambos'],
+ ['dTp','Copia de la tarjeta de propiedad de la motocicleta.','ambos'],
+ ['dRel','Relato detallado de los hechos (fecha, hora, lugar y descripción).','ambos'],
+ ['dFot','Fotografías claras de la motocicleta y de los daños ocasionados.','dano'],
+ ['dVid','Videos del accidente o de los daños, en caso de contar con ellos.','dano',1],
+ ['dInf','Informe de tránsito, croquis o documento de la autoridad competente, si aplica.','dano',1],
+ ['dDen','Copia completa y legible de la denuncia presentada ante la Fiscalía General de la Nación.','hurto'],
+ ['dPru','Pruebas que soporten los hechos del hurto (fotos, videos, testigos), si las tiene.','hurto',1]];
+const PERITO={nombre:'MOTO WORKING',dir:'Cra 83 #36-26, Laureles – Estadio, Medellín, Antioquia'};
+$('docs').innerHTML=DOCS.map(x=>`<label data-t="${x[2]}"><input type="checkbox" id="${x[0]}" checked>${x[1].replace(/\.$/,'')}${x[3]?' <span style="color:var(--mut)">(opcional)</span>':''}</label>`).join('');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>+String(v||'').replace(/[^\d]/g,'')||0;
 const cop=n=>'$'+Math.round(n).toLocaleString('es-CO');
@@ -262,7 +283,7 @@ const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${Str
 const days=(a,b)=>Math.round((pd(b)-pd(a))/864e5);
 const ccFmt=s=>{const n=num(s);return n?n.toLocaleString('es-CO'):String(s||'')};
 
-const IDS=['nombre','trato','soatV','tecV','uso','vig','cc','gar','placa','moto','email','ini','fin','tipoC','estado','cob','pago','tipoS','fS','fN','fC','fac','tras','com','dan','ref','cred','soat','lic','aldia','den','pru','otroDoc',...EXCL.map(e=>e[0])];
+const IDS=[...DOCS.map(x=>x[0]),'denNo','denF','lugar','recup','nombre','trato','soatV','tecV','uso','vig','cc','gar','placa','moto','email','ini','fin','tipoC','estado','cob','pago','tipoS','fS','fN','fC','fac','tras','com','dan','ref','cred','soat','lic','aldia','otroDoc',...EXCL.map(e=>e[0])];
 const get=()=>{const o={};IDS.forEach(i=>{const el=$(i);o[i]=el.type==='checkbox'?el.checked:el.value});o.tram=[...document.querySelectorAll('#tramRows .tram')].map(r=>({c:r.querySelector('.tc').value,v:r.querySelector('.tv').value}));return o};
 function tramRow(t){const div=document.createElement('div');div.className='tram';div.innerHTML='<input class="tc" placeholder="Concepto del trámite" aria-label="Concepto"><input class="tv money" inputmode="numeric" placeholder="$0" aria-label="Valor"><button type="button" aria-label="Quitar trámite">✕</button>';
   div.querySelector('.tc').value=t.c||'';div.querySelector('.tv').value=t.v||'';
@@ -291,14 +312,18 @@ function evaluate(d){
   if(d.pago==='cuotas'&&!d.aldia)r.causas.push('La garantía se encontraba en mora y, por tanto, suspendida al momento del siniestro (cláusula tercera, numeral 3.7, y cláusula sexta).');
   if(!d.lic)r.causas.push('El conductor no contaba con licencia de conducción vigente al momento del siniestro (cláusula tercera, numeral 3.12).');
   EXCL.forEach(e=>{if(d[e[0]]&&!(e[0]==='x35'&&d.tipoS!=='hurto'))r.causas.push(`${e[1]} (cláusula tercera, numeral ${e[2]}).`)});
+  if(d.tipoS==='hurto'&&d.recup==='si')r.causas.push('El vehículo fue recuperado antes del pago de la garantía (cláusula tercera, numeral 3.5).');
+  if(d.tipoS==='hurto'&&d.denF&&d.fS&&days(d.fS,d.denF)<0)r.causas.push('La fecha de la denuncia es anterior a la fecha del hurto reportada; verifique los datos.');
+  DOCS.forEach(x=>{if(!x[3]&&(x[2]==='ambos'||x[2]===d.tipoS)&&!d[x[0]])r.pend.push(x[1])});
   if(d.tipoS==='dano'){
-    if(!dan||!r.refVal)r.falta='Ingresa el valor de los daños del peritaje y el valor del vehículo para medir el 80%.';
+    if(!dan){r.peritaje=true;if(!r.refVal)r.falta='Ingresa el valor comercial del vehículo para medir el 80%.'}
+    else if(!r.refVal)r.falta='Ingresa el valor del vehículo para medir el 80%.';
     else if(r.pct<80){r.soloDano=!r.causas.length;r.causas.unshift(`Los daños equivalen al ${pct(r.pct)} del valor del vehículo y no alcanzan el ochenta por ciento (80%) requerido para la pérdida total (cláusula primera – Objeto).`)}
-    if(!d.pru)r.pend.push('Fotos, videos y demás pruebas que evidencien los daños y sus causas (cláusula segunda, numeral 1.2).');
-  }else if(!d.den)r.pend.push('Copia completa y legible de la denuncia penal presentada ante la Fiscalía General de la Nación, junto con las pruebas que soporten los hechos (cláusula segunda, numeral 1.2).');
+  }
   if(d.otroDoc.trim())r.pend.push(d.otroDoc.trim());
   if(!r.falta&&!r.base&&!r.causas.length)r.falta=d.tipoC==='renov'?'Ingresa el valor comercial Fasecolda para calcular el bono.':'Ingresa el valor pagado en factura para calcular el bono.';
-  r.estado=r.causas.length?'no':r.falta?'falta':r.pend.length?'pend':'si';
+  if(r.peritaje)r.pendPer=`Presentar la motocicleta para inspección y peritaje en ${PERITO.nombre}, ${PERITO.dir}.`;
+  r.estado=r.causas.length?'no':(r.pend.length||r.peritaje)?'pend':r.falta?'falta':'si';
   return r;
 }
 
@@ -313,6 +338,7 @@ const fMil=n=>{if(n<1000)return f999(n);const t=Math.floor(n/1000),r=n%1000;retu
 function letras(n){n=Math.round(n);if(!n)return 'CERO PESOS';const m=Math.floor(n/1e6),r=n%1e6;
   let w=m?((m===1?'UN MILLÓN':apo(fMil(m))+' MILLONES')+' '+fMil(r)).trim():fMil(r);
   return apo(w)+(m&&!r?' DE PESOS':' PESOS')}
+const denTxt=d=>`denunciado ante la Fiscalía General de la Nación${d.denNo?` con noticia criminal No. ${d.denNo}`:''}${d.denF?` del ${fl(d.denF)}`:''}`;
 const dmy=s=>{const d=pd(s);return d?`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`:''};
 const apellido=n=>{const w=String(n||'').trim().split(/\s+/);return w.length>=3?w[w.length-2]:w[w.length-1]||''};
 
@@ -329,7 +355,7 @@ function acta(d,r){
     d.pago==='cuotas'?'Pagos al día al momento del siniestro.':'Garantía pagada de contado.',
     `SOAT vigente${d.soatV?` hasta el ${fl(d.soatV)}`:''}${d.tecV?` y revisión técnico-mecánica vigente hasta el ${fl(d.tecV)}`:''}.`,
     `Licencia de conducción vigente. Vehículo de uso ${d.uso||'particular'}.`,
-    hurto?`Hurto ocurrido${d.fS?` el ${fl(d.fS)}`:''}, denunciado ante la Fiscalía General de la Nación.`:`Peritaje: daños por ${cop(r.dan)}, equivalentes al ${pct(r.pct)} del ${r.refTxt.toLowerCase()} (pérdida total).`];
+    hurto?`Hurto ocurrido${d.fS?` el ${fl(d.fS)}`:''}${d.lugar?` en ${d.lugar}`:''}, ${denTxt(d)}.`:`Peritaje: daños por ${cop(r.dan)}, equivalentes al ${pct(r.pct)} del ${r.refTxt.toLowerCase()} (pérdida total).`];
   B.push({ul:est});
   B.push({h:`${n++}. Liquidación del bono — ${renov?'contrato en renovación':'contrato en primer año'}`});
   let t;
@@ -377,7 +403,7 @@ function acta(d,r){
   B.push({title:[hurto?'ACTA DE CESIÓN DE DERECHOS SOBRE EL VEHÍCULO':'ACTA DE ENTREGA DEL VEHÍCULO','Y AUTORIZACIÓN DE TRÁMITES'],small:true});
   B.push({sub:`No. de Garantía: ${g} | Placa: ${pl} | Titular: ${nm}`});
   B.push({p:`En Medellín, a los ____ días del mes de ______________ de ________, yo, **${nm}**, ${idf} con C.C. ${cc}, titular de la Garantía Suplementaria No. ${g}, ${hurto?'cedo a favor de Protect Motos, marca de Negociemos Group S.A.S., todos los derechos sobre el siguiente vehículo, objeto de hurto:':'hago entrega a Protect Motos, marca de Negociemos Group S.A.S., del siguiente vehículo, declarado en pérdida total:'}`});
-  B.push({table:{head:['Dato','Detalle'],w:[.32,.68],rows:[['Placa',pl],['Vehículo',d.moto||'__________________________'],['No. de garantía',g],...(hurto?[['Denuncia No.','__________________________']]:[['Kilometraje','__________________________'],['Estado y observaciones','__________________________']])],bold0:true}});
+  B.push({table:{head:['Dato','Detalle'],w:[.32,.68],rows:[['Placa',pl],['Vehículo',d.moto||'__________________________'],['No. de garantía',g],...(hurto?[['Denuncia No.',d.denNo||'__________________________'],['Fecha del hurto',d.fS?fl(d.fS):'__________________________']]:[['Kilometraje','__________________________'],['Estado y observaciones','__________________________']])],bold0:true}});
   B.push({p:'Así mismo, autorizo a Protect Motos y al tramitador que esta designe para adelantar ante la Secretaría de Tránsito correspondiente el traspaso del vehículo a favor de Protect Motos y la cancelación de su matrícula, cuyos costos asumo conforme a lo liquidado en la respuesta a la reclamación.'});
   if(hurto)B.push({p:'En caso de que el vehículo sea recuperado, me comprometo a informarlo de inmediato a Protect Motos y reconozco que su propiedad corresponde a Protect Motos.'});
   B.push({sign:[[nm,'C.C.: '+cc],['Recibe: Protect Motos','Negociemos Group S.A.S.']]});
@@ -403,7 +429,7 @@ function letter(d,r){
   let asunto;
   if(r.estado==='no'){
     asunto=`Respuesta a reclamación – Garantía Suplementaria Protect Motos No. ${g}`;
-    B.push({p:`Una vez recibida su solicitud, Protect Motos adelantó el proceso de revisión y análisis técnico correspondiente${d.tipoS==='dano'?', incluyendo la evaluación del vehículo mediante peritaje realizado por perito autorizado,':''} conforme a los procedimientos de la compañía y a los términos y condiciones del contrato suscrito.`});
+    B.push({p:`Una vez recibida su solicitud, Protect Motos adelantó el proceso de revisión y análisis técnico correspondiente${d.tipoS==='dano'?', incluyendo la evaluación del vehículo mediante peritaje realizado por perito autorizado,':`, incluyendo la verificación de la denuncia por hurto${d.denNo?` (noticia criminal No. ${d.denNo})`:''} y de los documentos aportados,`} conforme a los procedimientos de la compañía y a los términos y condiciones del contrato suscrito.`});
     if(d.tipoS==='dano'&&r.dan&&r.refVal){B.push({p:'El resultado del peritaje fue el siguiente:'});B.push(danoTabla())}
     if(r.soloDano){
       B.push({p:`Como se observa, los daños representan el **${pct(r.pct)}** del valor del vehículo, por lo que **no alcanzan el ochenta por ciento (80%)** que constituye el requisito mínimo para que se configure la pérdida total por daños.`});
@@ -416,20 +442,23 @@ function letter(d,r){
     B.push({p:'En virtud de lo anterior, **no es procedente el reconocimiento de la garantía suplementaria ni la emisión del bono de reposición** contemplado en el contrato.'});
     let extra=[];
     if(d.tipoS==='dano')extra.push('Le recordamos que las coberturas de Responsabilidad Civil (RC) expedidas por Seguros Mundial amparan los daños y lesiones causados a **terceros**, por lo que no cubren los daños sufridos por su propia motocicleta.');
-    if(r.soloDano&&d.fin)extra.push(`Así mismo, su garantía suplementaria **continúa vigente hasta el ${fl(d.fin)}** y sigue amparando su motocicleta frente a hurto o pérdida total, en los términos del contrato.`);
+    if((r.soloDano||(d.tipoS==='hurto'&&r.causas.length===1&&d.recup==='si'))&&d.fin)extra.push(`Así mismo, su garantía suplementaria **continúa vigente hasta el ${fl(d.fin)}** y sigue amparando su motocicleta frente a hurto o pérdida total, en los términos del contrato.`);
     if(extra.length)B.push({p:extra.join(' ')});
     B.push({p:'En caso de que usted considere pertinente aportar nueva documentación, pruebas técnicas adicionales o solicitar una revisión del caso, podrá hacerlo a través de nuestros canales oficiales de atención. Agradecemos su confianza en Protect Motos y reiteramos nuestro compromiso de brindarle un servicio oportuno y transparente.'});
   }else if(r.estado==='pend'){
-    asunto=`Solicitud de documentos – Reclamación Garantía Suplementaria Protect Motos No. ${g}`;
-    B.push({p:'Una vez recibida su solicitud, Protect Motos inició el proceso de revisión correspondiente. Para continuar con el estudio de su reclamación, es necesario que nos haga llegar la siguiente documentación:'});
-    B.push({ol:r.pend});
+    const tipoTx=d.tipoS==='hurto'?'Hurto':'Accidente';
+    asunto=`Requisitos para radicación de reclamación por ${tipoTx.toLowerCase()} – Garantía Suplementaria Protect Motos No. ${g}`;
+    if(r.pend.length){B.push({p:`Con el fin de ${r.peritaje||r.pend.length>=5?'iniciar':'continuar'} el proceso de validación de su reclamación por ${tipoTx.toLowerCase()}, le solicitamos remitir la siguiente documentación al correo electrónico **protectmotos@gmail.com**:`});
+      B.push({ol:r.pend});}
+    if(r.peritaje){B.push({p:`**Inspección y peritaje:** la motocicleta deberá ser presentada para inspección y peritaje en **${PERITO.nombre}**, ${PERITO.dir}. La determinación de pérdida total se realizará mediante el peritaje técnico correspondiente, ya que la cobertura Protect Motos aplica únicamente para eventos que constituyan una pérdida total${d.tipoS==='hurto'?' o hurto':''} de la motocicleta.`})}
+    B.push({p:`Le recordamos que la reclamación debe reportarse dentro de los quince (15) días calendario siguientes al siniestro, y que se requiere contar con SOAT y licencia de conducción vigentes al momento del siniestro y tener el contrato activo y al día en sus pagos, cuando aplique. Al enviar la documentación, indique en el asunto: **"Reclamación por ${tipoTx} – Placa ${pl}"**.`});
     const lim=d.fN?(()=>{const x=pd(d.fN);x.setMonth(x.getMonth()+3);return iso(x)})():'';
-    B.push({p:`Puede enviarla al correo protectmotos@gmail.com o radicarla en nuestra oficina. Le recordamos que, conforme al parágrafo tercero de la cláusula tercera del contrato, el proceso debe completarse dentro de los tres (3) meses siguientes a la notificación del siniestro${lim?`, es decir, a más tardar el **${fl(lim)}**`:''}.`});
-    B.push({p:'Una vez recibamos la documentación completa, continuaremos con el análisis y le informaremos el resultado. Agradecemos su confianza en Protect Motos.'});
+    B.push({p:`Así mismo, conforme al parágrafo tercero de la cláusula tercera del contrato, el proceso debe completarse dentro de los tres (3) meses siguientes a la notificación del siniestro${lim?`, es decir, a más tardar el **${fl(lim)}**`:''}.`});
+    B.push({p:'Una vez recibida la documentación completa, se dará respuesta a su solicitud dentro de los treinta (30) días hábiles siguientes. Agradecemos su confianza en Protect Motos.'});
   }else if(r.estado==='si'){
     return acta(d,r);
   }else return null;
-  return{asunto,fecha:'Medellín, '+fl(d.fC),head:[['Señor(a):',nm],['C.C.',ccFmt(d.cc)],['Garantía Suplementaria No.',g],['Placa:',pl]],blocks:B};
+  return{asunto,fecha:'Medellín, '+fl(d.fC),head:[[d.trato==='f'?'Señora:':'Señor:',nm],['C.C.',ccFmt(d.cc)],['Garantía Suplementaria No.',g],['Placa:',pl]],blocks:B};
 }
 
 function email(d,r,L){
@@ -439,12 +468,13 @@ function email(d,r,L){
   const intro=`En atención a la reclamación presentada sobre su motocicleta${d.moto?' '+d.moto:''} de placa ${pl}, amparada bajo la Garantía Suplementaria Protect Motos No. ${g}, `;
   if(r.estado==='no'){
     if(r.soloDano)body+=intro+`le informamos que el peritaje realizado por el perito autorizado estableció daños por un valor de ${cop(r.dan)}.\n\nDe acuerdo con el contrato, la garantía aplica únicamente en caso de hurto o cuando los daños son iguales o superiores al 80% del valor de la motocicleta. Tomando como referencia su ${r.refTxt.toLowerCase()} (${cop(r.refVal)}), los daños representan aproximadamente el ${pct(r.pct)}, por lo que no se configura la pérdida total y no es procedente el reconocimiento de la garantía ni la emisión del bono de reposición.\n\n${d.fin?`Le recordamos que su Garantía Suplementaria No. ${g} continúa vigente hasta el ${fl(d.fin)} y sigue protegiendo su motocicleta frente a hurto o pérdida total.\n\n`:''}`;
-    else body+=intro+`le informamos que, una vez revisado el caso, no es procedente el reconocimiento de la garantía suplementaria por las siguientes razones:\n\n${r.causas.map(c=>'• '+c).join('\n')}\n\n`;
+    else body+=intro+`${d.tipoS==='hurto'?`relacionada con el hurto reportado${d.fS?` el ${fl(d.fS)}`:''}, `:''}le informamos que, una vez revisado el caso, no es procedente el reconocimiento de la garantía suplementaria por las siguientes razones:\n\n${r.causas.map(c=>'• '+c).join('\n')}\n\n`;
     body+='Adjunto encontrará la respuesta formal con el detalle del análisis. Quedamos atentos a cualquier inquietud o información adicional que desee aportar para la revisión del caso a través de nuestros canales oficiales de atención.';
   }else if(r.estado==='pend'){
-    body+=intro+`le informamos que para continuar con el estudio de su reclamación necesitamos que nos envíe la siguiente documentación:\n\n${r.pend.map(c=>'• '+c).join('\n')}\n\nAdjunto encontrará la comunicación formal con el detalle y el plazo para completar el proceso. Puede responder a este correo con los documentos.`;
+    const tx=d.tipoS==='hurto'?'Hurto':'Accidente';
+    body+=intro+`le informamos que para validar su reclamación por ${tx.toLowerCase()} necesitamos lo siguiente:\n\n${r.pend.length?`DOCUMENTOS REQUERIDOS\n${r.pend.map(c=>'• '+c).join('\n')}\n\n`:''}${r.peritaje?`INSPECCIÓN Y PERITAJE\nLa motocicleta deberá ser presentada para inspección y peritaje en:\n${PERITO.nombre}\n${PERITO.dir}\n\n`:''}Por favor envíe la documentación a protectmotos@gmail.com indicando en el asunto: "Reclamación por ${tx} – Placa ${(d.placa||'').toUpperCase()}". Una vez recibida la documentación completa, daremos respuesta dentro de los treinta (30) días hábiles siguientes.\n\nAdjunto encontrará la comunicación formal con el detalle de los requisitos.`;
   }else{
-    body+=intro+`nos complace informarle que su reclamación fue ACEPTADA. ${d.tipoS==='dano'?`El peritaje determinó daños equivalentes al ${pct(r.pct)} del valor del vehículo, configurándose la pérdida total.`:'Se verificó el hurto del vehículo conforme a la denuncia aportada.'}\n\nLa liquidación del bono de reposición es la siguiente:\n• Bono calculado: ${cop(r.bono)}\n${r.tramTot?`• Menos trámites legales obligatorios (traspaso y cancelación de matrícula): −${cop(r.tramTot)}\n`:''}${r.abono?`• Menos abono al saldo del crédito con la entidad beneficiaria: −${cop(r.abono)}\n`:''}• Valor neto del bono a emitir: ${cop(r.neto)}\n\nEl bono podrá redimirse únicamente en el concesionario autorizado, tiene vigencia de ${num(d.vig)||90} días desde su emisión y no es transferible ni canjeable por efectivo.\n\nAdjunto encontrará la respuesta formal con la liquidación, las instrucciones para redimir el bono, el acta ${d.tipoS==='hurto'?'de cesión de derechos':'de entrega del vehículo'} y la constancia de recepción del bono. Le pedimos comunicarse con nosotros al (+57) 312 880 68 73 para coordinar ${d.tipoS==='hurto'?'la entrega de documentos':'la entrega del vehículo dentro de los 10 días calendario siguientes'} y la firma de los documentos.`;
+    body+=intro+`nos complace informarle que su reclamación fue ACEPTADA. ${d.tipoS==='dano'?`El peritaje determinó daños equivalentes al ${pct(r.pct)} del valor del vehículo, configurándose la pérdida total.`:`Se verificó el hurto del vehículo, ${denTxt(d)}.`}\n\nLa liquidación del bono de reposición es la siguiente:\n• Bono calculado: ${cop(r.bono)}\n${r.tramTot?`• Menos trámites legales obligatorios (traspaso y cancelación de matrícula): −${cop(r.tramTot)}\n`:''}${r.abono?`• Menos abono al saldo del crédito con la entidad beneficiaria: −${cop(r.abono)}\n`:''}• Valor neto del bono a emitir: ${cop(r.neto)}\n\nEl bono podrá redimirse únicamente en el concesionario autorizado, tiene vigencia de ${num(d.vig)||90} días desde su emisión y no es transferible ni canjeable por efectivo.\n\nAdjunto encontrará la respuesta formal con la liquidación, las instrucciones para redimir el bono, el acta ${d.tipoS==='hurto'?'de cesión de derechos':'de entrega del vehículo'} y la constancia de recepción del bono. Le pedimos comunicarse con nosotros al (+57) 312 880 68 73 para coordinar ${d.tipoS==='hurto'?'la entrega y firma de los documentos':'la entrega del vehículo dentro de los 10 días calendario siguientes y la firma de los documentos'}.`;
   }
   body+='\n\nAtentamente,\nProtect Motos\nÁrea de Siniestros\nprotectmotos@gmail.com | (+57) 312 880 68 73';
   return{subj,body};
@@ -477,8 +507,8 @@ function render(){
   const d=get(),r=evaluate(d);
   try{localStorage.setItem('pm-reclamo',JSON.stringify(d))}catch(e){}
   const isD=d.tipoS==='dano',renov=d.tipoC==='renov';
-  $('lDan').classList.toggle('hide',!isD);$('lRef').classList.toggle('hide',!isD);$('cPru').classList.toggle('hide',!isD);
-  $('cDen').classList.toggle('hide',isD);$('cAlDia').classList.toggle('hide',d.pago!=='cuotas');
+  $('lDan').classList.toggle('hide',!isD);$('bHurto').classList.toggle('hide',isD);$('lRef').classList.toggle('hide',!isD);
+  document.querySelectorAll('#docs label').forEach(l=>l.classList.toggle('hide',!(l.dataset.t==='ambos'||l.dataset.t===d.tipoS)));$('cAlDia').classList.toggle('hide',d.pago!=='cuotas');
   $('lTras').classList.toggle('hide',renov||d.estado!=='usada');$('lFac').classList.toggle('hide',renov&&!(isD&&d.ref==='fac'));
   const C={si:['var(--ok)','PROCEDE','Reclamación viable'],no:['var(--no)','NO PROCEDE','Reclamación no viable'],pend:['var(--wait)','FALTAN DOCUMENTOS','Pendiente'],falta:['var(--mut)','FALTAN DATOS','Completa el caso']}[r.estado];
   const v=$('ver');v.style.setProperty('--c',C[0]);
@@ -486,11 +516,11 @@ function render(){
   if(r.falta)h+=`<p>${esc(r.falta)}</p>`;
   if(isD&&r.dan&&r.refVal)h+=`<p>Daños: <b>${pct(r.pct)}</b> del ${esc(r.refTxt.toLowerCase())} (${cop(r.dan)} de ${cop(r.refVal)}).</p><div class="meter" aria-label="Porcentaje de daño"><i style="width:${Math.min(100,r.pct)}%"></i><b></b><span>80% pérdida total</span></div>`;
   if(r.causas.length)h+=`<p><b>Causales:</b></p><ul class="why">${r.causas.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`;
-  if(r.estado==='pend')h+=`<p><b>Documentos por pedir:</b></p><ul class="why">${r.pend.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`;
+  if(r.estado==='pend')h+=`${r.pend.length?`<p><b>Documentos por pedir:</b></p><ul class="why">${r.pend.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:''}${r.peritaje?`<p style="margin-top:10px"><b>Peritaje pendiente:</b> la moto debe ir a ${esc(PERITO.nombre)} (${esc(PERITO.dir)}).</p>`:''}`;
   if(r.base&&r.estado!=='no')h+=`<table style="margin-top:12px"><tr><td>${esc(r.baseTxt)}</td><td class="n">${cop(r.base)}</td></tr><tr><td>Cobertura</td><td class="n">${Math.round(r.cob*100)}%</td></tr><tr><td>Valor del bono</td><td class="n">${cop(r.bono)}</td></tr>${r.tramTot?`<tr><td>Trámites a cargo del titular</td><td class="n">-${cop(r.tramTot)}</td></tr>`:''}${r.abono?`<tr><td>Abono a crédito</td><td class="n">-${cop(r.abono)}</td></tr>`:''}<tr class="tot"><td>Valor neto del bono</td><td class="n">${cop(r.neto)}</td></tr></table>`;
   const REQ=[['nombre','nombre del titular'],['cc','cédula'],['gar','número de garantía'],['placa','placa'],['ini','inicio de vigencia'],['fin','fin de vigencia'],['fS','fecha del siniestro'],['fN','fecha de notificación'],['fC','fecha de la carta']];
   const faltan=REQ.filter(([k])=>!String(d[k]||'').trim()).map(x=>x[1]);
-  const docName={si:'aceptación (PDF)',no:'respuesta (PDF)',pend:'solicitud (PDF)'}[r.estado];
+  const docName={si:'aceptación (PDF)',no:'respuesta (PDF)',pend:'requisitos (PDF)'}[r.estado];
   if(docName){
     if(faltan.length)h+=`<p class="warn">Para generar el documento completa: ${faltan.map(esc).join(', ')}.</p>`;
     h+=`<div class="vact"><button type="button" class="pri" id="vDl"${faltan.length?' disabled':''}>Descargar ${docName}</button><button type="button" id="vMail"${faltan.length?' disabled':''}>Copiar correo</button><button type="button" id="vVer">Ver correo</button><span class="msg" id="m3"></span></div>`;
@@ -524,10 +554,13 @@ const view=v=>{['Datos','Mail','Doc','Casos'].forEach(k=>$('vw'+k).setAttribute(
 $('vwCasos').onclick=()=>view('Casos');$('vwDatos').onclick=()=>view('Datos');$('vwMail').onclick=()=>view('Mail');$('vwDoc').onclick=()=>view('Doc');
 
 const today=iso(new Date());
-const BLANK={trato:'m',soatV:'',tecV:'',uso:'particular',vig:'90',tram:TRAM_DEF,nombre:'',cc:'',gar:'',placa:'',moto:'',email:'',ini:'',fin:'',tipoC:'primer',estado:'nueva',cob:'80',pago:'contado',tipoS:'dano',fS:'',fN:'',fC:today,fac:'',tras:'',com:'',dan:'',ref:'com',cred:'',soat:true,lic:true,aldia:true,den:true,pru:true,otroDoc:''};
+const BLANK={...Object.fromEntries(DOCS.map(x=>[x[0],true])),denNo:'',denF:'',lugar:'',recup:'no',trato:'m',soatV:'',tecV:'',uso:'particular',vig:'90',tram:TRAM_DEF,nombre:'',cc:'',gar:'',placa:'',moto:'',email:'',ini:'',fin:'',tipoC:'primer',estado:'nueva',cob:'80',pago:'contado',tipoS:'dano',fS:'',fN:'',fC:today,fac:'',tras:'',com:'',dan:'',ref:'com',cred:'',soat:true,lic:true,aldia:true,otroDoc:''};
 EXCL.forEach(e=>BLANK[e[0]]=false);
 const EX_NO={...BLANK,nombre:'Juan David Garzón Sepúlveda',cc:'1033259710',gar:'1427',placa:'KEK53I',moto:'HERO XPULSE 200 4V',email:'tasdava@gmail.com',ini:'2026-08-06',fin:'2027-08-06',fS:'2026-11-10',fN:'2026-11-12',fac:'12.400.000',com:'11.700.000',dan:'3.348.726'};
 const EX_SI={...BLANK,nombre:'Cliente de Ejemplo Prueba',cc:'1000000000',gar:'0000-R',placa:'ABC12D',moto:'Moto de ejemplo – 149cc, modelo 2025',ini:'2026-03-11',fin:'2027-03-11',tipoC:'renov',tipoS:'dano',fS:'2026-05-10',fN:'2026-05-12',fC:'2026-05-20',com:'13.000.000',dan:'10.900.000',pago:'cuotas',soatV:'2026-12-03',tecV:'2026-12-04',tram:[{c:'Semaforización',v:'84.000'},{c:'Impuesto de rodamiento',v:'179.000'},{c:'Derecho de traspaso, Rte. Fte. y tramitador',v:'420.000'}]};
+const EX_HU={...BLANK,nombre:'Cliente de Ejemplo Hurto',trato:'f',cc:'1000000001',gar:'0001',placa:'XYZ34E',moto:'Moto de ejemplo – 125cc, modelo 2026',ini:'2026-04-15',fin:'2027-04-15',tipoC:'primer',estado:'nueva',tipoS:'hurto',fS:'2026-11-08',fN:'2026-11-10',denNo:'050016000206202600000',denF:'2026-11-08',lugar:'Medellín',fac:'9.800.000',com:'9.200.000',cred:'2.500.000',pago:'cuotas',soatV:'2027-04-10',tram:[{c:'Derecho de traspaso, Rte. Fte. y tramitador',v:'420.000'},{c:'Cancelación de matrícula',v:'150.000'}]};
+$('docAll').onclick=()=>{DOCS.forEach(x=>$(x[0]).checked=true);render()};$('docNone').onclick=()=>{DOCS.forEach(x=>$(x[0]).checked=false);render()};
+$('exHu').onclick=()=>{set(EX_HU);render()};
 $('exNo').onclick=()=>{set(EX_NO);render()};$('exSi').onclick=()=>{set(EX_SI);render()};
 $('clear').onclick=()=>{set(BLANK);render()};
 $('ini').addEventListener('change',()=>{if($('ini').value){const x=pd($('ini').value);x.setFullYear(x.getFullYear()+1);$('fin').value=iso(x);render()}});
@@ -589,7 +622,7 @@ async function buildActa(L){
     if(b.page){newPage();continue}
     if(b.title){
       if(b.logo){if(shield)doc.addImage(shield,'PNG',LM,26,60,77.8);font('B');doc.setFontSize(19);doc.setTextColor(...INK);const cx=LM+70+(TW-70)/2;b.title.forEach((t,i)=>doc.text(t,cx,60+i*24,{align:'center'}));y=124}
-      else{y=Math.max(y,58);center(b.title.join(' '),12.5,true,16)}
+      else{y=Math.max(y,58);b.title.forEach(t=>center(t,12.5,true,16))}
     }else if(b.sub){y+=b.sub&&y>124?2:0;center(b.sub,9.5,true,13);doc.setDrawColor(154,163,181);doc.setLineWidth(1.2);doc.line(LM+20,y-3,W-LM-20,y-3);y+=16}
     else if(b.p){para(b.p,LM,TW,true);y+=5}
     else if(b.h){page(80);y+=6;font('B');doc.setFontSize(10);doc.setTextColor(...INK);doc.text(b.h.toUpperCase(),LM,y);y+=ld}
@@ -672,13 +705,13 @@ $('dl').onclick=async()=>{
   if(!window.jspdf){flash('m2','No se pudo cargar el generador de PDF');return}
   try{const buf=await buildPDF(cur.L);
     const nm=(cur.d.nombre||'cliente').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w]+/g,'_');
-    const pref={si:'Aprobacion',no:'Respuesta',pend:'Solicitud_documentos'}[cur.r.estado];
+    const pref={si:'Aprobacion',no:'Respuesta',pend:'Requisitos'}[cur.r.estado];
     const fname=`${pref}_reclamacion_${nm}.pdf`;
     if(standalone)saveLocal(buf,fname);else await downloads.save({filename:fname,data:new Blob([buf])});flash(mid,'Documento descargado')}
   catch(e){flash(mid,e&&e.code==='declined'?'Descarga cancelada':'No se pudo descargar ('+(e&&e.code||'error')+')')}
 };
 // ---------- Integración CRM ----------
-function payload(){const{d,r,L,E}=cur;return{datos:d,resultado:{estado:r.estado,porcentajeDano:Math.round(r.pct*10)/10,valorBase:Math.round(r.base),bono:Math.round(r.bono),abonoCredito:Math.round(r.abono),tramites:r.tram,totalTramites:r.tramTot,bonoTitular:Math.round(r.neto),causales:r.causas,pendientes:r.pend},correo:{asunto:E.subj,cuerpo:E.body},carta:{asunto:L.asunto,texto:letterText(L)},creadoEn:new Date().toISOString()}}
+function payload(){const{d,r,L,E}=cur;return{datos:d,resultado:{estado:r.estado,porcentajeDano:Math.round(r.pct*10)/10,valorBase:Math.round(r.base),bono:Math.round(r.bono),abonoCredito:Math.round(r.abono),tramites:r.tram,totalTramites:r.tramTot,bonoTitular:Math.round(r.neto),causales:r.causas,pendientes:r.pend.concat(r.pendPer?[r.pendPer]:[])},correo:{asunto:E.subj,cuerpo:E.body},carta:{asunto:L.asunto,texto:letterText(L)},creadoEn:new Date().toISOString()}}
 // ---------- Integración con el CRM: clientes de la hoja Protect y casos guardados en la hoja «Reclamaciones» (conector único) ----------
 $('sv').classList.remove('hide');$('sv2').classList.remove('hide');
 const LSg=k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}};
