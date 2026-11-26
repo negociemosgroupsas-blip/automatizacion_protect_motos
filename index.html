@@ -25,6 +25,16 @@
   nav li a.activo .ico{background:rgba(214,164,23,.28)}
   nav li a .tag{margin-left:auto;font-size:.75rem;background:var(--dorado);color:var(--azul);border-radius:8px;padding:2px 6px;font-weight:700}
   .pie{padding:12px 18px 14px;font-size:.76rem;line-height:1.5;color:#8da0c8;border-top:1px solid rgba(255,255,255,.08)}
+
+  /* Menú lateral claro: acompaña al «Fondo claro» (si se elige «Fondo oscuro», el menú vuelve a ser oscuro) */
+  body.menu-claro nav{background:#fff;color:#13223f;box-shadow:none;border-right:1px solid #e3e6eb;scrollbar-color:#c9d1e3 transparent}
+  body.menu-claro nav::-webkit-scrollbar-thumb{background:#c9d1e3}
+  body.menu-claro nav li.grp{color:#5f6882} body.menu-claro nav li.grp::after{background:#e3e6eb}
+  body.menu-claro nav li a{color:#35456b} body.menu-claro nav li a:hover{background:#f3f5fa;color:#13223f}
+  body.menu-claro nav li a.activo{background:linear-gradient(90deg,rgba(214,164,23,.20),rgba(214,164,23,.05));color:#13223f;font-weight:700}
+  body.menu-claro nav li a .ico{background:#eef1f7;color:#2a3b70} body.menu-claro nav li a .ico svg,body.menu-claro nav li a .ico svg *{stroke:#2a3b70!important}
+  body.menu-claro nav li a.activo .ico{background:rgba(214,164,23,.30)} body.menu-claro nav li a.activo .ico svg,body.menu-claro nav li a.activo .ico svg *{stroke:#8a6a0c!important}
+  body.menu-claro .pie{color:#6b7280;border-top:1px solid #e3e6eb}
   @media(max-height:1040px){.marca{padding:14px 16px 10px;gap:5px} .marca img{width:118px} nav li.grp{margin:12px 6px 4px} nav li a{padding:6px 10px;margin-bottom:2px} .pie{padding:10px 18px}}
   /* pantallas bajas (o con zoom alto): el menú se compacta para que quepa completo; si aun así no cabe, se desplaza */
   @media(max-height:900px){.marca{padding:10px 14px 8px;gap:3px} .marca img{width:100px} nav ul{margin:6px 0} nav li a{padding:5px 10px;margin-bottom:2px} nav li a .ico{flex-basis:28px;height:28px;font-size:.95rem} nav li.grp{margin:10px 6px 4px} .pie{padding:8px 16px}}
@@ -1431,6 +1441,7 @@
   function aplicarTema(enInicio){
     var p=temaPref();if(enInicio===undefined)enInicio=!!(document.getElementById('v-inicio')&&document.getElementById('v-inicio').classList.contains('activa'));
     document.body.classList.toggle('tema-inicio',enInicio&&p==='oscuro');document.body.classList.toggle('inicio-claro',enInicio&&p==='claro');
+    document.body.classList.toggle('menu-claro',p==='claro');   /* el menú de la izquierda sigue la misma elección: claro u oscuro, en todas las pantallas */
     var b=document.getElementById('gTema');if(b)b.textContent=p==='claro'?'🌙 Fondo oscuro':'☀️ Fondo claro';
   }
   window.addEventListener('hashchange',function(){mostrar(location.hash.slice(1))});
