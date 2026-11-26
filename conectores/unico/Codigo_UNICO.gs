@@ -735,8 +735,14 @@ function doGet(e) {
         salida = accionCotRenGuardar(params);
       } else if (accion === 'cotRen_estado') {
         salida = accionCotRenEstado(params);
+      } else if (accion === 'reclamacion_listar') {
+        salida = accionReclamacionListar(params);
+      } else if (accion === 'reclamacion_traer') {
+        salida = accionReclamacionTraer(params);
+      } else if (accion === 'reclamacion_estado') {
+        salida = accionReclamacionEstado(params);
       } else if (accion === 'ping') {
-        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-12' };
+        salida = { ok: true, mensaje: 'Conector del CRM activo', version: 'crm-13' };
       } else {
         salida = { ok: false, error: 'Acción no disponible: ' + accion };
       }
@@ -754,6 +760,7 @@ function doPost(e) {
     var body = (e && e.postData && e.postData.contents) ? JSON.parse(e.postData.contents) : {};
     if (body.token !== TOKEN) salida = { ok: false, error: 'Token inválido.' };
     else if (body.action === 'guardarReporte') salida = accionGuardarReporte(body);
+    else if (body.action === 'reclamacion_guardar') salida = accionReclamacionGuardar(body);
     else salida = { ok: false, error: 'Acción desconocida: ' + body.action };
   } catch (err) {
     salida = { ok: false, error: 'Error en el servidor: ' + err.message };
@@ -1379,6 +1386,84 @@ function accionMundialGuardar(p) {
     SpreadsheetApp.flush();
     return { ok: true, fila: objetivo, nueva: nueva };
   } finally { lock.releaseLock(); }
+}
+
+
+/* ===== Gestión de reclamaciones (hurto o pérdida total): casos guardados en la pestaña «Reclamaciones» de la hoja Protect =====
+   Lo que se escribe: un renglón por caso (la columna W guarda el formulario completo para poder reabrirlo). Nunca borra renglones. */
+var HOJA_RECLAMACIONES = 'Reclamaciones';
+var REC_ENC = ['Fecha de registro', 'N.º de garantía', 'Placa', 'Cédula', 'Titular', 'Correo', 'Siniestro', 'Fecha del siniestro', 'Fecha de notificación', 'Veredicto', '% de daño',
+  'Valor base', 'Bono', 'Trámites', 'Abono al crédito', 'Bono al titular', 'Causales', 'Documentos pendientes', 'Seguimiento', 'Nota', 'Registrado por', 'Asunto del correo', 'Datos del caso (no tocar)'];
+var REC_VEREDICTO = { si: 'Procede', no: 'No procede', pend: 'Faltan documentos' };
+function hojaReclamaciones_(ss) {
+  var h = ss.getSheetByName(HOJA_RECLAMACIONES);
+  if (h) return h;
+  h = ss.insertSheet(HOJA_RECLAMACIONES);
+  h.getRange(1, 1, 1, REC_ENC.length).setValues([REC_ENC]).setFontWeight('bold').setFontColor('#FFFFFF').setBackground('#0B1F4B').setHorizontalAlignment('center').setVerticalAlignment('middle').setWrap(true);
+  h.setRowHeight(1, 42); h.setFrozenRows(1);
+  h.getRange('A2:A').setNumberFormat('dd/MM/yyyy HH:mm');
+  h.getRange('L2:P').setNumberFormat('"$"#,##0');
+  var anchos = [130, 100, 80, 110, 220, 190, 80, 110, 110, 130, 70, 110, 110, 110, 110, 120, 320, 320, 130, 220, 130, 260, 120];
+  for (var i = 0; i < anchos.length; i++) h.setColumnWidth(i + 1, anchos[i]);
+  h.getRange('S2:S').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(['Recibida', 'En revisión', 'Respuesta enviada', 'Bono entregado', 'Cerrada'], true).setAllowInvalid(true).build());
+  h.getRange(1, 1, 1, REC_ENC.length).createFilter();
+  return h;
+}
+function recTxt_(v) { return (v instanceof Date) ? Utilities.formatDate(v, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm') : String(v == null ? '' : v); }
+function recNum_(v) { var n = Number(v); return isNaN(n) ? '' : n; }
+function recFechaISO_(t) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(t || '')); return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : ''; }
+
+function accionReclamacionGuardar(b) {
+  var pl = b.payload || {}, d = pl.datos || {}, r = pl.resultado || {}, co = pl.correo || {};
+  if (!d.gar && !d.placa && !d.cc) return { ok: false, error: 'Falta el número de garantía, la placa o la cédula.' };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) return { ok: false, error: 'El sistema está ocupado, intente de nuevo en unos segundos.' };
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID), h = hojaReclamaciones_(ss), fila = Number(b.fila) || 0, nueva = !(fila >= 2 && fila <= h.getLastRow());
+    var causales = (r.causales || []).join(' | '), pend = (r.pendientes || []).join(' | '), tram = (r.tramites || []).map(function (t) { return t.c + ': ' + t.v; }).join(' | ');
+    var seg = nueva ? '' : String(h.getRange(fila, 19, 1, 2).getValues()[0][0] || ''), nota = nueva ? '' : String(h.getRange(fila, 20).getValue() || '');
+    var linea = [nueva ? new Date() : h.getRange(fila, 1).getValue(), String(d.gar || ''), String(d.placa || '').toUpperCase(), String(d.cc || '').replace(/\D/g, ''), String(d.nombre || ''), String(d.email || ''),
+      d.tipoS === 'hurto' ? 'Hurto' : 'Daño por accidente', recFechaISO_(d.fS), recFechaISO_(d.fN), REC_VEREDICTO[r.estado] || String(r.estado || ''), recNum_(r.porcentajeDano),
+      recNum_(r.valorBase), recNum_(r.bono), tram, recNum_(r.abonoCredito), recNum_(r.bonoTitular), causales, pend, seg || (nueva ? 'Recibida' : ''), nota, String(b.registradoPor || ''), String(co.asunto || ''), JSON.stringify(d)];
+    // «Trámites» va como texto (concepto: valor); el total se ve en el bono al titular
+    if (nueva) { fila = Math.max(h.getLastRow(), 1) + 1; }
+    h.getRange(fila, 1, 1, linea.length).setValues([linea]);
+    h.getRange(fila, 8, 1, 2).setNumberFormat('dd/MM/yyyy');
+    h.getRange(fila, 12, 1, 1).setNumberFormat('"$"#,##0'); h.getRange(fila, 13, 1, 1).setNumberFormat('"$"#,##0'); h.getRange(fila, 15, 1, 2).setNumberFormat('"$"#,##0');
+    SpreadsheetApp.flush();
+    return { ok: true, fila: fila, nueva: nueva };
+  } finally { lock.releaseLock(); }
+}
+
+function accionReclamacionListar(p) {
+  var h = SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_RECLAMACIONES);
+  if (!h || h.getLastRow() < 2) return { ok: true, casos: [] };
+  var n = h.getLastRow() - 1, d = h.getRange(2, 1, n, 21).getValues(), out = [], inv = { 'Procede': 'si', 'No procede': 'no', 'Faltan documentos': 'pend' };
+  for (var i = d.length - 1; i >= 0; i--) {
+    var f = d[i]; if (!String(f[4] || '').trim() && !String(f[2] || '').trim()) continue;
+    out.push({ fila: i + 2, fecha: recTxt_(f[0]).slice(0, 10), garantia: String(f[1] || ''), placa: String(f[2] || ''), cedula: String(f[3] || ''), nombre: String(f[4] || ''), tipo: String(f[6] || ''),
+      veredicto: inv[String(f[9] || '')] || String(f[9] || ''), bonoTitular: Number(f[15]) || 0, seguimiento: String(f[18] || ''), nota: String(f[19] || ''), registradoPor: String(f[20] || '') });
+    if (out.length >= 400) break;
+  }
+  return { ok: true, casos: out };
+}
+
+function accionReclamacionTraer(p) {
+  var h = SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_RECLAMACIONES), fila = Number(p.fila);
+  if (!h || !(fila >= 2) || fila > h.getLastRow()) return { ok: false, error: 'Ese caso ya no está en la hoja.' };
+  var j = String(h.getRange(fila, 23).getValue() || ''), datos = null;
+  try { datos = JSON.parse(j); } catch (e) { return { ok: false, error: 'El caso no trae el formulario completo (¿se editó la columna W a mano?).' }; }
+  return { ok: true, fila: fila, datos: datos };
+}
+
+function accionReclamacionEstado(p) {
+  var h = SpreadsheetApp.openById(SHEET_ID).getSheetByName(HOJA_RECLAMACIONES), fila = Number(p.fila);
+  if (!h || !(fila >= 2) || fila > h.getLastRow()) return { ok: false, error: 'Ese caso ya no está en la hoja.' };
+  var ok = ['Recibida', 'En revisión', 'Respuesta enviada', 'Bono entregado', 'Cerrada', ''], seg = String(p.seguimiento || '');
+  if (ok.indexOf(seg) < 0) return { ok: false, error: 'Estado de seguimiento no válido.' };
+  h.getRange(fila, 19).setValue(seg);
+  SpreadsheetApp.flush();
+  return { ok: true };
 }
 
   return { doGet:doGet, doPost:doPost };
