@@ -688,6 +688,7 @@
   <section class="vista" id="v-erp"></section>
   <section class="vista" id="v-cotizador"></section>
   <section class="vista" id="v-banco"></section>
+  <section class="vista" id="v-dashboard"></section>
   <section class="vista" id="v-mundial"></section>
   <section class="vista" id="v-reclamaciones"></section>
   <section class="vista" id="v-comisiones"></section>
@@ -738,6 +739,7 @@
 
   var MODULOS=[
     {id:'inicio',   nombre:'Inicio',        ico:'🏠'},
+    {id:'dashboard',nombre:'Dashboard',     ico:'📊', disponible:true, desc:'Todas las gráficas en una sola pantalla, sin texto.'},
     {id:'contratos',grupo:'Operación',nombre:'Contratos',     ico:'📄', src:'modulos/contratos.html',     disponible:true , desc:'Automatizador: cotiza, genera e imprime el contrato y lo guarda en el Sheet.'},
     {id:'cotizador',nombre:'Cotizador',ico:'💬', src:'modulos/cotizador.html',        disponible:true,  desc:'Cotizaciones para clientes nuevos (no renovaciones) con el cotizador de Contratos: PDF, imagen y WhatsApp.'},
     {id:'cobros',   nombre:'Cobros',        ico:'💰', src:'modulos/cobros.html',        disponible:true,  desc:'Cuotas pendientes, registro de pagos, renovaciones, historial y WhatsApp.'},
@@ -1434,12 +1436,12 @@
     }
     var so=document.getElementById('solo');so.style.display=m.src&&m.disponible?'inline':'none';if(m.src)so.href=m.src;
     document.title=(m.id==='inicio'?'':m.nombre+' · ')+'CRM Protect Motos';
-    aplicarTema(m.id==='inicio');
+    aplicarTema(m.id==='inicio'||m.id==='dashboard');
   }
   window.aplicarTema0=function(){aplicarTema()};window.aplicarTemaX=aplicarTema;
   function temaPref(){try{return localStorage.getItem('pm_tema_inicio')==='oscuro'?'oscuro':'claro'}catch(e){return 'claro'}}   /* por defecto fondo claro (más corporativo); el oscuro queda como opción */
   function aplicarTema(enInicio){
-    var p=temaPref();if(enInicio===undefined)enInicio=!!(document.getElementById('v-inicio')&&document.getElementById('v-inicio').classList.contains('activa'));
+    var p=temaPref();if(enInicio===undefined)enInicio=!!((document.getElementById('v-inicio')&&document.getElementById('v-inicio').classList.contains('activa'))||(document.getElementById('v-dashboard')&&document.getElementById('v-dashboard').classList.contains('activa')));
     document.body.classList.toggle('tema-inicio',enInicio&&p==='oscuro');document.body.classList.toggle('inicio-claro',enInicio&&p==='claro');
     document.body.classList.toggle('menu-claro',p==='claro');   /* el menú de la izquierda sigue la misma elección: claro u oscuro, en todas las pantallas */
     var b=document.getElementById('gTema');if(b)b.textContent=p==='claro'?'🌙 Fondo oscuro':'☀️ Fondo claro';
@@ -1559,7 +1561,7 @@
   window.pintarFin=pintarFin;
   [['fnAnio','a'],['fnForma','f'],['fnAses','s']].forEach(function(x){var e=document.getElementById(x[0]);if(e)e.addEventListener('change',function(){FNF[x[1]]=this.value;pintarFin()})});
   /* ===== Dinero que entra al banco (lee la hoja del banco con el conector, como Verificación bancaria) ===== */
-  var BK={filas:null,anio:'',mes:'',t:0,carg:false};
+  var BK={filas:null,anio:'',mes:'',t:0,carg:false};window.PM_BK=BK;
   function bkNorm(t){return String(t==null?'':t).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
   function bkNum(v){if(typeof v==='number')return v;var t=String(v==null?'':v).replace(/[$\s]/g,'');if(!t)return null;if(/,\d{1,2}$/.test(t))t=t.replace(/\./g,'').replace(',','.');else t=t.replace(/[.,](?=\d{3}(\D|$))/g,'');var n=parseFloat(t);return isNaN(n)?null:n}
   function bkFecha(v){var t=String(v==null?'':v).trim(),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(t);if(m)return{y:+m[1],m:+m[2],d:+m[3]};m=/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/.exec(t);return m?{y:+m[3],m:+m[2],d:+m[1]}:null}
@@ -2601,6 +2603,7 @@
   /* El módulo Contratos nombra sus PDF con el título de la página: lo recibimos y lo ponemos mientras se imprime */
   (function(){var base=null;window.addEventListener('message',function(ev){var d=ev.data;if(!d||typeof d!=='object'||!('pmTitulo' in d))return;if(typeof d.pmTitulo==='string'&&d.pmTitulo){if(base===null)base=document.title;document.title=d.pmTitulo}else if(base!==null){document.title=base;base=null}})})();
 </script>
+<script src="assets/dashboard.js"></script>
 <script src="assets/corporativo.js"></script>
 </body>
 </html>
